@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WardrobeApp</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/3/w3.css">
+</head>
+
+<body>
+{% extends "base.html" %}
+{% block content %}
+
+<section>
+  <img class="mySlides" src="../static/image/wallpaper_wardrobe.jpg"
+  style="width:100%">
+</section>
+
+
+<section class="w3-container w3-center w3-content" style="max-width:600px">
+  <h2 class="w3-wide">WardrobeApp</h2>
+  <p class="w3-opacity"><i>Your outfits have never been easier to plan</i></p>
+  <p class="w3-justify-center">Already have an account?</p>
+
+</section>
+
+
+<section class="w3-row-padding w3-center w3-light-grey">
+  <article class="w3-third">
+    <p>
+       <form action="/register/" method="get">
+        <input type="submit" value="Register"
+         name="Submit" class="btn" id="frm1_submit" /></form>
+    </p>
+  </article>
+
+<article class="w3-third">
+    <p></p>
+  </article>
+
+  <article class="w3-third">
+    <p>
+        <form action="/login/" method="get">
+        <input type="submit" value="Log In"
+         name="Submit" class="btn" id="frm1_submit" /></form>
+    </p>
+
+  </article>
+</section>
+
+
+<footer class="w3-container w3-padding-64 w3-center w3-black w3-xlarge">
+{#  <a href="#"><i class="fa fa-facebook-official"></i></a>#}
+{#  <a href="#"><i class="fa fa-pinterest-p"></i></a>#}
+{#  <a href="#"><i class="fa fa-twitter"></i></a>#}
+{#  <a href="#"><i class="fa fa-flickr"></i></a>#}
+{#  <a href="#"><i class="fa fa-linkedin"></i></a>#}
+  <p class="w3-medium">
+  Powered by <a>Rotila Diana-Andreea</a>
+  </p>
+</footer>
+</body>
+
+
+</html>
+
+{% endblock %}

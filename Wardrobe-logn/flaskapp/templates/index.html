@@ -1,0 +1,49 @@
+{% extends "base.html" %} {% block content %}
+  <div class="card-wrapper">
+    <div class="card">
+     <h2 class="center">Your Info:</h2>
+      <p>
+
+        <strong>Hello, </strong> {{ session['user']['name'] }}<strong>!</strong><br>
+        <strong>logged with:</strong> {{ session['user']['email'] }}
+      </p>
+
+         <div class="center">
+        <a href="/user/signout" class="btn btn--secondary">Sign Out</a>
+      </div>
+
+    </div>
+
+     <div class="card">
+         <h2 class="center">Add clothes to your wardrobe</h2>
+            <h3 class="center"> Step 1/3</h3>
+
+      <form id="upload-file" method="post" enctype="multipart/form-data">
+        <label for="imageUpload" class="upload-label">
+            Choose...
+        </label>
+        <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg">
+    </form>
+
+    <div>
+        <div class="image-section" style="display:none;">
+            <div class="img-preview">
+                <div id="imagePreview">
+                </div>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary btn-lg " id="btn-predict">Predict!</button>
+            </div>
+        </div>
+        <div class="loader" style="display:none;"></div>
+        <h3 id="result">
+            <span> </span>
+        </h3>
+
+    </div>
+
+
+    </div>
+</div>
+<script src="/static/js/main.js"></script>
+{% endblock %}
