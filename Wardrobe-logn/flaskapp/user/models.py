@@ -9,6 +9,7 @@ class User:
     del user['password']
     session['logged_in'] = True
     session['user'] = user
+    print(session['user'])
     return jsonify(user), 200
 
   def signup(self):
@@ -19,12 +20,11 @@ class User:
       "_id": uuid.uuid4().hex,
       "name": request.form.get('name'),
       "email": request.form.get('email'),
-      "password": request.form.get('password')
+      "password": request.form.get('password'),
     }
 
     # Encrypt the password
     user['password'] = pbkdf2_sha256.encrypt(user['password'])
-
     # Check for existing email address
     if db.users.find_one({ "email": user['email'] }):
       return jsonify({ "error": "Email address already in use" }), 400
@@ -37,7 +37,10 @@ class User:
   def signout(self):
     session.clear()
     return redirect('/login/')
-  
+  def get_id(self):
+        """Return the email address to satisfy Flask-Login's requirements."""
+        return self.get_id()
+
   def login(self):
 
     user = db.users.find_one({
@@ -48,3 +51,35 @@ class User:
       return self.start_session(user)
     
     return jsonify({ "error": "Invalid login credentials" }), 401
+
+class Item(object):
+  def __init__(self):
+    self.collection_name = 'item'  # collection name
+
+    self.fields = {
+      "_id": uuid.uuid4().hex,
+      "name": "string",
+      "color": "string",
+      "created": "datetime",
+      "updated": "datetime",
+    }
+
+class Wardrobe:
+
+  def isOK(self):
+
+    return jsonify(self), 200
+
+  def add(self):
+    print(request.form)
+
+    wardrobe = {
+        "_id": uuid.uuid4().hex,
+        "label": request.form.get('label'),
+        "color": request.form.get('color'),
+        "userId":  session['user']['_id']
+      }
+
+
+    if db.wardrobe.insert_one(wardrobe):
+      return 'OK'

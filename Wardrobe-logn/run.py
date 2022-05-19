@@ -1,23 +1,24 @@
 from __future__ import division, print_function
 import os
 import numpy as np
-from flask import render_template, request
+from flask import render_template, request, session
 from flaskapp import app, login_required
-
 from matplotlib import pyplot as plt
 from werkzeug.utils import secure_filename
+import pymongo
 
 
 from keras.models import load_model
 from keras.preprocessing import image
 
+client = pymongo.MongoClient('localhost', 27017)
+db = client.user_login_system_test
+# Image loader
 # Image loader
 import cv2
 
 from sklearn.cluster import KMeans
 import imutils
-
-
 
 # Model saved with Keras model.save()
 MODEL_PATH = 'my_second_model.h5'
@@ -26,25 +27,27 @@ MODEL_PATH = 'my_second_model.h5'
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
 
+
 def model_predict(img_path, model):
     img = image.load_img(img_path, target_size=(28, 28))
 
     img_array = np.asarray(img)
-    x = cv2.cvtColor(img_array,cv2.COLOR_BGR2GRAY)
+    x = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
     result = int(img_array[0][0][0])
     print(result)
     if result > 128:
-      img = cv2.bitwise_not(x)
+        img = cv2.bitwise_not(x)
     else:
-      img = x
-    img = img/255
-    img = (np.expand_dims(img,0))
-    preds =  model.predict(img)
+        img = x
+    img = img / 255
+    img = (np.expand_dims(img, 0))
+    preds = model.predict(img)
 
     print(preds)
 
-    #predicting color
+    # predicting color
     return preds
+
 
 def predict_color(img_path):
     clusters = 5
@@ -68,7 +71,6 @@ def predict_color(img_path):
 
     # print("one col" +p_and_c[0])
     block = np.ones((50, 50, 3), dtype='uint')
-
 
     plt.figure(figsize=(12, 8))
     for i in range(clusters):
@@ -119,32 +121,68 @@ def predict_color(img_path):
         start = end + 20
 
     plt.show()
+    return p_and_c[1]
 
 
 @app.route('/')
 def home():
-  return render_template('welcome.html')
+    return render_template('welcome.html')
+
 
 from flaskapp.user.routes import *
+
+
 @app.route('/login/')
 def dologin():
-  return render_template('home.html')
+    return render_template('home.html')
+
 
 from flaskapp.user.routes import *
+
+
 @app.route('/register/')
 def doregister():
-  return render_template('register.html')
+    return render_template('register.html')
+
 
 @app.route('/dashboard/')
 @login_required
 def dashboard():
-  return render_template('dashboard.html')
+    return render_template('dashboard.html')
+
 
 @app.route('/model', methods=['GET'])
 @login_required
 def index():
     # Main page
     return render_template('index.html')
+
+
+from flaskapp.user.routes import *
+
+
+@app.route('/wardrobe', methods=['GET', 'POST'])
+def add_wardrobe():
+    if request.method == 'POST':
+        # Get the file from post request
+        f = request.files['file']
+        # Save the file to ./uploads
+        basepath = os.path.dirname(__file__)
+
+        file_path = os.path.join(
+            basepath, 'uploads', secure_filename(f.filename))
+        f.save(file_path)
+        # Make prediction
+        preds = model_predict(file_path, model)
+         # color = predict_color(file_path)
+        class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                       'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+        predicted_label = np.argmax(preds)
+
+        result = class_names[predicted_label]
+
+    return render_template('wardrobe.html')
+
 
 
 @app.route('/predict', methods=['GET', 'POST'])
@@ -159,20 +197,22 @@ def upload():
         file_path = os.path.join(
             basepath, 'uploads', secure_filename(f.filename))
         f.save(file_path)
-
         # Make prediction
-
         preds = model_predict(file_path, model)
-        predict_color(file_path)
+        _, color = predict_color(file_path)
+
+        listToStr = ' '.join(map(str, color))
+        print(listToStr)
         class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+                       'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
         predicted_label = np.argmax(preds)
         result = class_names[predicted_label]
-
+        userId = session['user']['_id']
+        db.wardrobe.insert_one({ 'label': result, 'color': listToStr, 'userId':userId
+                                })
         return result
     return None
 
 
-
 if __name__ == '__main__':
-  app.run(debug=True)
+    app.run(debug=True)

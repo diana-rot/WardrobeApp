@@ -28,6 +28,7 @@ $(document).ready(function () {
     $('#btn-predict').click(function () {
         var form_data = new FormData($('#upload-file')[0]);
 
+
         // Show loading animation
         $(this).hide();
         $('.loader').show();
@@ -46,9 +47,13 @@ $(document).ready(function () {
                 $('.loader').hide();
                 $('#result').fadeIn(600);
                 $('#result').text(' Result:  ' + data);
-                console.log('Success!');
+               var prediction = data
+                // window.location.href = "/dashboard/?result="+data;
+                console.log('Success!' + prediction);
             },
         });
     });
+
+
 
 });

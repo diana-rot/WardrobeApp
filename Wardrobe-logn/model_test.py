@@ -1,9 +1,9 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 # install helper utilities
-import ssp19ai_utils.utils as utils
+
 import importlib
 from numpy import mean
-importlib.reload(utils)
+
 from numpy import std
 from matplotlib import pyplot
 from sklearn.model_selection import KFold
@@ -101,11 +101,10 @@ def plot_confusion_matrix(y_true, y_pred, classes=None,
 def label_with_highest_prob(probabilities):
   return np.argmax(probabilities, axis = 1)
 
-
-def load_data():
-    # load dataset
+def load_set():
     fashion_mnist = keras.datasets.fashion_mnist
     (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+
     # sorting based on index
     idx = np.argsort(train_labels)
     train_images = train_images[idx]
@@ -115,76 +114,62 @@ def load_data():
     test_images = test_images[idx]
     test_labels = test_labels[idx]
 
-
     labels = ["T-Shirt", "Trouser", "Pullover", "Dress", "Coat",
               "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
 
     label_mapping = dict(zip(labels, range(10)))
-
-    class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                    'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
     return label_mapping
 
 def get_data(mapping, classes):
-    label_mapping = load_data()
-    fashion_mnist = keras.datasets.fashion_mnist
-    (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
-    print( len(train_images),len(train_labels))
+        label_mapping = load_set()
+        fashion_mnist = keras.datasets.fashion_mnist
+        (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 
-    idx = np.argsort(train_labels)
-    train_images = train_images[idx]
-    train_labels = train_labels[idx]
-    print( len(train_images), len(train_labels))
+        # sorting based on index
+        idx = np.argsort(train_labels)
+        train_images = train_images[idx]
+        train_labels = train_labels[idx]
 
-    idx = np.argsort(test_labels)
-    test_images = test_images[idx]
-    test_labels = test_labels[idx]
-    print(len(test_images), len(test_labels))
+        idx = np.argsort(test_labels)
+        test_images = test_images[idx]
+        test_labels = test_labels[idx]
 
-    # X_train, X_test, y_train, y_test =  np.array([]),  np.array([]),  np.array([]),  np.array([])
-    X_train, X_test, y_train, y_test = [], [], [], []
-    for cls in classes:
-        idx = mapping[cls]
-        start = idx * 6000
-        end = idx * 6000 + 6000
-        X_train.append(train_images[start: end])
-        print("X_train")
-        print(len(X_train))
-        print(X_train)
-        y_train.append(train_labels[start: end])
-        print("y_train")
-        print(len(y_train))
-        print(y_train)
-        start = idx * 1000
-        end = idx * 1000 + 1000
-        X_test = np.append(X_test,test_images[start: end])
-        y_test = np.append(y_test,test_labels[start: end])
+        labels = ["T-Shirt", "Trouser", "Pullover", "Dress", "Coat",
+                  "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
 
-    X_train_array = np.array(X_train)
-    y_train_array = np.array(y_train)
-    X_test_array = np.array(X_test)
-    y_test_array = np.array(y_test)
-
-    print("dezo")
-    print(len(X_train_array))
-    print(X_train_array)
-    print("label")
-    print(len(y_train_array))
-
-
-    return   X_train_array, X_test_array, y_train_array, y_test_array
-
+        label_mapping = dict(zip(labels, range(10)))
+        X_train, X_test, y_train, y_test = [], [], [], []
+        for cls in classes:
+            idx = mapping[cls]
+            start = idx * 6000
+            end = idx * 6000 + 6000
+            X_train.append(train_images[start: end])
+            y_train.append(train_labels[start: end])
+            start = idx * 1000
+            end = idx * 1000 + 1000
+            X_test.append(test_images[start: end])
+            y_test.append(test_labels[start: end])
+        return X_train, X_test, y_train, y_test
 
 
 def load_dataset():
-    label_mapping = load_data()
-    train_images,test_images, train_labels,test_labels = get_data(label_mapping,
+    # load dataset
+    # fashion_mnist = keras.datasets.fashion_mnist
+    # (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+    label_mapping = load_set()
+    train_images, test_images, train_labels,test_labels = get_data(label_mapping,
                                                 classes=["T-Shirt", "Shirt"])
 
-    print("ce")
-    print(len(train_images), len(train_labels))
+    class_names = ['T-shirt/top',  'Shirt']
 
-    class_names = ['T-shirt/top',  'Shirt','Trouser']
+    # reshape dataset to have a single channel
+    train_i = np.array(train_images)
+    test_i = np.array(test_images)
+    train_images = train_i.reshape((train_i.shape[0], 28, 28, 1))
+    test_images = test_i.reshape((test_i.shape[0], 28, 28, 1))
+    # one hot encode target values
+    train_labels = to_categorical(train_labels)
+    test_labels = to_categorical(test_labels)
     return train_images, train_labels, test_images, test_labels, class_names
 
 
@@ -194,10 +179,11 @@ def prep_pixels(train, test):
     # convert from integers to floats
     train_norm = train.astype('float32')
     test_norm = test.astype('float32')
-
+    # normalize to range 0-1
+    #train images
     train_norm = train_norm / 255.0
     test_norm = test_norm / 255.0
-
+    # return normalized images
 
     return train_norm, test_norm
 
@@ -252,95 +238,124 @@ def plot_multi_images_prob(predictions, labels, images, class_names=None, start=
 
 # define cnn model
 def define_model():
-
-
-    model = keras.Sequential([
-        keras.layers.Flatten(input_shape=(28, 28)),
-        keras.layers.Dense(128, activation='relu'),
-        keras.layers.Dense(2, activation='softmax')
-    ])
-    model.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3),
+                     activation='relu', kernel_initializer='he_uniform',
+                     input_shape=(28, 28, 1)))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Flatten())
+    model.add(Dense(100, activation='relu',
+                    kernel_initializer='he_uniform'))
+    model.add(Dense(10, activation='softmax'))
+    # compile model
+    opt = SGD(learning_rate=0.01, momentum=0.9)
+    model.compile(optimizer=opt, loss='categorical_crossentropy',
                   metrics=['accuracy'])
     model.summary()
- 
+   # utils.draw_model(model)
+   #  model.save('my_new_my_model.h5')
+
     return model
 
 
 
-def evaluate_model(train_images, train_labels, test_images, test_labels,class_names, n_folds=5):
+def evaluate_model(dataX, dataY,  class_names, n_folds=5):
     scores, histories = list(), list()
+    # prepare cross validation
+    kfold = KFold(n_folds, shuffle=True, random_state=1)
+    # enumerate splits
 
-    # define model
-    model = define_model()
+    for train_ix, test_ix in kfold.split(dataX):
+        # define model
+        model = define_model()
+        # select rows for train and test
+        train_images, train_labels, test_images, test_labels =\
+            dataX[train_ix], dataY[train_ix], dataX[test_ix], dataY[test_ix]
+        # fit model
+        history = model.fit(train_images, train_labels, epochs=8,
+                            batch_size=32, validation_data=(test_images, test_labels),
+                            verbose=0)
+        # evaluate model
+        _, acc = model.evaluate(test_images, test_labels, verbose=0)
+        # utils.plot_accuracy_and_loss(history)
+        print('> %.3f' % (acc * 100.0))
+        # append scores
+        scores.append(acc)
+        histories.append(history)
 
-    history = model.fit(train_images, train_labels, validation_split=0.25, epochs=10)
+    model.save('my_model.h5')
+    (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+    test_images = test_images / 255.0
 
-    model.save('my_2_model.h5')
+    predictions = model.predict(test_images)
+    print(predictions)
+    predicted_classes = label_with_highest_prob(predictions)
+    print(predicted_classes)
+    class_names = ['T-shirt/top', 'Shirt']
+
+    # Plot the matrix
+
+
+    plot_confusion_matrix(y_pred=predicted_classes,
+                            y_true=test_labels,
+                            classes=np.array(class_names))
+    plt.show()
+
+    plot_multi_images_prob(predictions, test_labels, test_images)
+
+
     #
-    # predictions = model.predict(np.expand_dims(test_images[0],0))
-    # print(predictions)
-    # predicted_classes = label_with_highest_prob(predictions)
-    # print(predicted_classes)
-    # class_names = ['T-shirt/top','Shirt','Trouser']
-    #
-    # plot_confusion_matrix(y_pred=predicted_classes,
-    #                         y_true=test_labels,
-    #                         classes=np.array(class_names))
-    # plt.show()
-    #
-    # plot_multi_images_prob(predictions, test_labels, test_images)
-    #
-    # corect_predictions = []
-    # for i in range(len(test_labels)):
-    #     if(predicted_classes[i] == test_labels[i]):
-    #         corect_predictions.append(i)
-    #     if(len(corect_predictions) == 25):
-    #         print("correctly_predicted")
-    #         break
-    #
-    # row = 5
-    # column = 5
-    # fig, ax = plt.subplots(5, 5, figsize=(10, 5))
-    # fig.set_size_inches(8, 8)
-    # j = 0;
-    # for aux in range(0, 5):
-    #     for auxi in range(0, 5):
-    #
-    #         ax[aux, auxi].imshow(test_images[corect_predictions[j]].reshape(28, 28), cmap='gray')
-    #         print(aux,auxi,j)
-    #         ax[aux, auxi].set_title(
-    #             "P:" + str(class_names[predicted_classes[corect_predictions[j]]]) + " " + "A: " +
-    #             str(class_names[test_labels[corect_predictions[j]]]), fontsize=7)
-    #         j= j+1
-    #
-    # plt.show();
+    # # visualitzation of corectly predicted classes
+    corect_predictions = []
+    for i in range(len(test_labels)):
+        if(predicted_classes[i] == test_labels[i]):
+            corect_predictions.append(i)
+        if(len(corect_predictions) == 25):
+            print("correctly_predicted")
+            break
+
+    row = 5
+    column = 5
+    fig, ax = plt.subplots(5, 5, figsize=(10, 5))
+    fig.set_size_inches(8, 8)
+    j = 0;
+    for aux in range(0, 5):
+        for auxi in range(0, 5):
+
+            ax[aux, auxi].imshow(test_images[corect_predictions[j]].reshape(28, 28), cmap='gray')
+            print(aux,auxi,j)
+            ax[aux, auxi].set_title(
+                "P:" + str(class_names[predicted_classes[corect_predictions[j]]]) + " " + "A: " +
+                str(class_names[test_labels[corect_predictions[j]]]), fontsize=7)
+            j= j+1
+
+    plt.show();
 
     # visualitzation of incorectly predicted classes
 
-    # incorrect_predictions = []
-    # for j in range(len(test_labels)):
-    #     if (not predicted_classes[j] == test_labels[j]):
-    #         incorrect_predictions.append(j)
-    #     if (len(incorrect_predictions) == 25):
-    #         print("hello")
-    #         break
-    #
-    # fig, ax = plt.subplots(5, 5, figsize=(10, 5))
-    # fig.set_size_inches(8, 8)
-    # j = 0;
-    # for aux in range(0, 5):
-    #     for auxi in range(0, 5):
-    #
-    #         ax[aux, auxi].imshow(test_images[incorrect_predictions[j]].reshape(28, 28), cmap='gray')
-    #         print(aux,auxi,j)
-    #         ax[aux, auxi].set_title(
-    #             "P:" + str(class_names[predicted_classes[incorrect_predictions[j]]]) + " " + "A: " +
-    #             str(class_names[test_labels[incorrect_predictions[j]]]),  fontsize=7)
-    #         j= j+1
-    #
-    # plt.show();
-    #
+    incorrect_predictions = []
+    for j in range(len(test_labels)):
+        if (not predicted_classes[j] == test_labels[j]):
+            incorrect_predictions.append(j)
+        if (len(incorrect_predictions) == 25):
+            print("hello")
+            break
+
+    fig, ax = plt.subplots(5, 5, figsize=(10, 5))
+    fig.set_size_inches(8, 8)
+    j = 0;
+    for aux in range(0, 5):
+        for auxi in range(0, 5):
+
+            ax[aux, auxi].imshow(test_images[incorrect_predictions[j]].reshape(28, 28), cmap='gray')
+            print(aux,auxi,j)
+            ax[aux, auxi].set_title(
+                "P:" + str(class_names[predicted_classes[incorrect_predictions[j]]]) + " " + "A: " +
+                str(class_names[test_labels[incorrect_predictions[j]]]),  fontsize=7)
+            j= j+1
+
+    plt.show();
+
 
 
     return scores, histories
@@ -396,14 +411,15 @@ def summarize_performance(scores):
 def run_test_harness():
 
     # load dataset
-    class_names = ['T-shirt/top',  'Shirt']
+    class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                   'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
     train_images, train_labels, test_images, test_labels, class_names= load_dataset()
     # prepare pixel data
     train_images, test_images = prep_pixels(train_images, test_images)
     # evaluate model
 
-    scores, histories = evaluate_model(train_images, train_labels, test_images, test_labels,class_names)
+    scores, histories = evaluate_model(train_images, train_labels, class_names)
     summarize_diagnostics(histories)
     # summarize estimated performance
     summarize_performance(scores)
