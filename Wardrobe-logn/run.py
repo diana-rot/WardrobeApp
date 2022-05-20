@@ -6,6 +6,7 @@ from flaskapp import app, login_required
 from matplotlib import pyplot as plt
 from werkzeug.utils import secure_filename
 import pymongo
+import requests
 
 
 from keras.models import load_model
@@ -13,6 +14,7 @@ from keras.preprocessing import image
 
 client = pymongo.MongoClient('localhost', 27017)
 db = client.user_login_system_test
+
 # Image loader
 # Image loader
 import cv2
@@ -145,10 +147,42 @@ def doregister():
     return render_template('register.html')
 
 
-@app.route('/dashboard/')
+@app.route('/dashboard/',methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+
+    userId = session['user']['_id']
+    cityByDefault = 'Bucharest'
+
+    if request.method == 'POST':
+        new_city = request.form.get('city')
+
+        if new_city:
+            db.city.insert_one({'name': new_city, 'userId': userId})
+
+    filter = {'userId': userId}
+    if db.city.find(filter) is None:
+        db.city.insert_one({'name': cityByDefault, 'userId': userId})
+
+    cities = db.city.find(filter)
+    url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+
+    weather_data = []
+
+    for city in cities:
+
+        r = requests.get(url.format(city['name'])).json()
+
+        weather = {
+            'city': city['name'],
+            'temperature': r['main']['temp'],
+            'description': r['weather'][0]['description'],
+            'icon': r['weather'][0]['icon'],
+        }
+
+        weather_data.append(weather)
+
+    return render_template('dashboard.html', weather_data = weather_data)
 
 
 @app.route('/model', methods=['GET'])
