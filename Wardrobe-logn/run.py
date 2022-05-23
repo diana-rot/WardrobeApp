@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from werkzeug.utils import secure_filename
 import pymongo
 import requests
+from gridfs import GridFS
 
 
 from keras.models import load_model
@@ -196,6 +197,7 @@ from flaskapp.user.routes import *
 
 
 @app.route('/wardrobe', methods=['GET', 'POST'])
+@login_required
 def add_wardrobe():
     if request.method == 'POST':
         # Get the file from post request
@@ -218,6 +220,26 @@ def add_wardrobe():
     return render_template('wardrobe.html')
 
 
+@app.route('/wardrobe/all', methods=['GET', 'POST'])
+@login_required
+def view_wardrobe_all():
+    userId = session['user']['_id']
+    print(userId)
+    filter = {'userId': userId}
+    users_clothes = db.wardrobe.find(filter)
+    try:
+        record = users_clothes.next()
+        print(record)
+    except StopIteration:
+        print("Empty cursor!")
+
+    # # print(users_clothes)
+    # while (users_clothes.hasNext()):
+    #     print(tojson(user_clothes.next()))
+
+    return render_template('wardrobe_all.html', wardrobes = users_clothes )
+
+
 
 @app.route('/predict', methods=['GET', 'POST'])
 @login_required
@@ -227,23 +249,42 @@ def upload():
         f = request.files['file']
 
         # Save the file to ./uploads
-        basepath = os.path.dirname(__file__)
+        # basepath = os.path.dirname(__file__)
+        # file_path = os.path.join(
+        #     basepath, 'uploads', secure_filename(f.filename))
+        # f.save(file_path)
+
         file_path = os.path.join(
-            basepath, 'uploads', secure_filename(f.filename))
+            'flaskapp/static/image_users/',secure_filename(f.filename))
         f.save(file_path)
+        print(file_path)
+        file_path_bd = os.path.join(
+            '../static/image_users/', secure_filename(f.filename))
+        # f.save(file_path_bd)
+
+        # fs = gridfs.GridFS(dB)
+        #
+        # with open(file, 'rb') as f:
+        #     contents = f.read()
+        # fs.put(contents, filename="file")
+
+
         # Make prediction
         preds = model_predict(file_path, model)
         _, color = predict_color(file_path)
 
         listToStr = ' '.join(map(str, color))
         print(listToStr)
+
+
         class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                        'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
         predicted_label = np.argmax(preds)
         result = class_names[predicted_label]
         userId = session['user']['_id']
-        db.wardrobe.insert_one({ 'label': result, 'color': listToStr, 'userId':userId
-                                })
+        db.wardrobe.insert_one({ 'label': result, 'color': listToStr, 'userId':userId,
+                               'file_path': file_path_bd })
+
         return result
     return None
 

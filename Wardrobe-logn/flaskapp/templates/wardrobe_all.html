@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+
+<script src="../static/js/scripts.js"></script>{% extends "base.html" %}
+
+{% block content %}
+<html lang="en">
+<head>
+
+</head>
+<body>
+                    <ul class="list-group t20">
+						{% for item in wardrobes %}
+
+                            <li class="list-group-item ">
+								{{ item.label }}
+								{{ item.color }}
+								<img src= {{item.file_path}} height="200px" width="200px">
+
+							</li>
+
+						{% endfor %}
+					</ul>
+
+</body>
+</html>
+
+{% endblock %}
