@@ -23,9 +23,13 @@
        </div>
     </div>
         <div class="card">
-            <div class="loader" style="display:none;"></div>
-                <h3>The result:</h3>
-                <h3 id="result"></h3>
+            <h2>The result:</h2>
+                <div class="loader" style="display:none;"></div>
+                    <h3 id="result"></h3>
+               <div>
+
+            </div>
+
             <style>
                 div {
                     color: rgb(255, 255, 255);
@@ -53,10 +57,20 @@
           </p>
              <div class="center">
             <a href="/user/signout" class="btn btn--secondary">Sign Out</a>
-            <a href ="/dashboard" class="btn btn--secondary">Back to dashboard </a>
-             <a href ="/wardrobe/all" class="btn btn--secondary">View wardrobe </a>
             </div>
         </div>
+
+
+          <div class="card">
+        <div class="center">
+           <h2 class="center">ToolBox</h2>
+            <a href ="/dashboard" class="btn btn--secondary">Back to dashboard </a>
+            <a href ="/wardrobe/all" class="btn btn--secondary">View your wardrobe</a>
+             <a href ="/wardrobe/all" class="btn btn--secondary">Generate outfits</a>
+             <a href ="/wardrobe/all" class="btn btn--secondary">Outfit of the day</a>
+
+      </div>
+    </div>
 
   </div>
 {% endblock %}

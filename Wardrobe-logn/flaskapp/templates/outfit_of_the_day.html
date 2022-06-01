@@ -12,15 +12,11 @@
 
     <div class="card">
 
-      <h1 class="center">Dashboard</h1>
-      <p class="center">You are currently logged in.</p>
+      <h1 class="center">Outfit of the day</h1>
       <div class="center">
-           <h2 class="center">Your Info</h2>
-          <p>
-            <strong>ID:</strong> {{ session['user']['_id'] }}<br>
-            <strong>Name:</strong> {{ session['user']['name'] }}<br>
-            <strong>Email:</strong> {{ session['user']['email'] }}
-            </p>
+           <h2 class="center">Hello</h2>
+           <strong>Name:</strong> {{ session['user']['name'] }}<br>
+
           <a href="/user/signout" class="btn btn--secondary">Sign Out</a>
       </div>
     </div>
@@ -30,8 +26,7 @@
            <h2 class="center">ToolBox</h2>
             <a href ="/wardrobe" class="btn btn--secondary">Add to wardrobe </a>
             <a href ="/wardrobe/all" class="btn btn--secondary">View your wardrobe</a>
-             <a href ="/generate/outfit" class="btn btn--secondary">Generate outfits</a>
-             <a href ="/outfit/day" class="btn btn--secondary">Outfit of the day</a>
+             <a href ="/dashboard" class="btn btn--secondary">Back to Dashboard</a>
 
       </div>
     </div>

@@ -147,6 +147,54 @@ from flaskapp.user.routes import *
 def doregister():
     return render_template('register.html')
 
+@app.route('/generate/outfit', methods=['GET', 'POST'])
+@login_required
+def generate_outfit():
+    userId = session['user']['_id']
+    print(userId)
+    filter = {'userId': userId}
+    users_clothes = db.wardrobe.find(filter)
+
+
+
+    return render_template('outfit_generator.html' )
+
+
+@app.route('/outfit/day', methods=['GET', 'POST'])
+@login_required
+def get_outfit():
+    userId = session['user']['_id']
+    cityByDefault = 'Bucharest'
+
+    if request.method == 'POST':
+        new_city = request.form.get('city')
+
+        if new_city:
+            db.city.insert_one({'name': new_city, 'userId': userId})
+
+    filter = {'userId': userId}
+    if db.city.find(filter) is None:
+        db.city.insert_one({'name': cityByDefault, 'userId': userId})
+
+    cities = db.city.find(filter)
+    url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+
+    weather_data = []
+
+    for city in cities:
+        r = requests.get(url.format(city['name'])).json()
+
+        weather = {
+            'city': city['name'],
+            'temperature': r['main']['temp'],
+            'description': r['weather'][0]['description'],
+            'icon': r['weather'][0]['icon'],
+        }
+
+        weather_data.append(weather)
+
+    return render_template('outfit_of_the_day.html',weather_data = weather_data)
+
 
 @app.route('/dashboard/',methods=['GET', 'POST'])
 @login_required
@@ -216,7 +264,12 @@ def add_wardrobe():
         predicted_label = np.argmax(preds)
 
         result = class_names[predicted_label]
-
+        # _, color = predict_color(file_path)
+        #
+        # listToStr = ' '.join(map(str, color))
+        # print(listToStr)
+        # my_result = tuple(map(int, listToStr.split(' ')))
+        # print(my_result)
     return render_template('wardrobe.html')
 
 
@@ -233,12 +286,7 @@ def view_wardrobe_all():
     except StopIteration:
         print("Empty cursor!")
 
-    # # print(users_clothes)
-    # while (users_clothes.hasNext()):
-    #     print(tojson(user_clothes.next()))
-
     return render_template('wardrobe_all.html', wardrobes = users_clothes )
-
 
 
 @app.route('/predict', methods=['GET', 'POST'])
@@ -247,35 +295,28 @@ def upload():
     if request.method == 'POST':
         # Get the file from post request
         f = request.files['file']
-
-        # Save the file to ./uploads
-        # basepath = os.path.dirname(__file__)
-        # file_path = os.path.join(
-        #     basepath, 'uploads', secure_filename(f.filename))
-        # f.save(file_path)
-
         file_path = os.path.join(
             'flaskapp/static/image_users/',secure_filename(f.filename))
         f.save(file_path)
         print(file_path)
         file_path_bd = os.path.join(
             '../static/image_users/', secure_filename(f.filename))
-        # f.save(file_path_bd)
-
-        # fs = gridfs.GridFS(dB)
-        #
-        # with open(file, 'rb') as f:
-        #     contents = f.read()
-        # fs.put(contents, filename="file")
-
 
         # Make prediction
         preds = model_predict(file_path, model)
         _, color = predict_color(file_path)
 
         listToStr = ' '.join(map(str, color))
-        print(listToStr)
 
+        print(listToStr)
+        # my_result = listToStr
+
+
+        # my_result = tuple(map(int,  listToStr.split(' ')))
+        # str = ','.join(my_result)
+        # string_res = '('.join()
+        # rez = "background-color:rgb" +  my_result;
+        # # print(my_result)
 
         class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                        'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -286,6 +327,30 @@ def upload():
                                'file_path': file_path_bd })
 
         return result
+    return None
+
+
+@app.route('/color', methods=['GET', 'POST'])
+@login_required
+def def_color():
+    if request.method == 'POST':
+        f = request.files['file']
+        file_path = os.path.join(
+            'flaskapp/static/image_users/', secure_filename(f.filename))
+        f.save(file_path)
+        print(file_path)
+        file_path_bd = os.path.join(
+            '../static/image_users/', secure_filename(f.filename))
+
+        _, color = predict_color(file_path)
+
+        listToStr = ' '.join(map(str, color))
+        print(listToStr)
+        # my_result = listToStr
+        my_result = tuple(map(int, listToStr.split(' ')))
+        print(my_result)
+
+        return listToStr
     return None
 
 

@@ -43,13 +43,39 @@ $(document).ready(function () {
             processData: false,
             async: true,
             success: function (data) {
-                // Get and display the result
+
                 $('.loader').hide();
                 $('#result').fadeIn(600);
                 $('#result').text(data);
-               var prediction = data
-                // window.location.href = "/dashboard/?result="+data;
-                console.log('Success!' + prediction);
+
+            },
+        });
+    });
+
+     $('#btn-color').click(function () {
+        var form_data = new FormData($('#upload-file')[0]);
+
+
+        // Show loading animation
+        $(this).hide();
+        $('.loader').show();
+
+        // Make prediction by calling api /predict
+        $.ajax({
+            type: 'POST',
+            url: '/color',
+            data: form_data,
+            contentType: false,
+            cache: false,
+            processData: false,
+            async: true,
+            success: function (data) {
+
+
+                $('.loader').hide();
+                $('#result').fadeIn(600);
+                $('#result').text(data);
+
             },
         });
     });
