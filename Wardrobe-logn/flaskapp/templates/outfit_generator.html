@@ -1,10 +1,150 @@
-<!DOCTYPE html>
-<html lang="en">
+<script src="../static/js/outfit.js"></script>{% extends "base.html" %}
+
+{% block content %}
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <style>
+    #piece1{
+        display: none;
+    }
+     #piece2{
+        display: none;
+    }
+      #piece3{
+        display: none;
+    }
+       #outfit1{
+        display: none;
+    }
+    #outfit2{
+        display: none;
+    }
+     #outfit3{
+        display: none;
+    }
+    #submit{
+        display: none;
+    }
 
-</body>
-</html>
+    #textDisplay1{
+        display: none;
+    }
+    #textDisplay2{
+        display: none;
+    }
+
+    </style>
+</head>
+
+  <div class="card-wrapper">
+    <div class="card">
+      <h1 class="center">Outfits</h1>
+      <div class="center">
+            <h3> Step 1/3: Would you like to include the weather predictions?</h3>
+            <input type="radio" name="weather" id="yes" value="Summer"> Yes <br>
+            <input type="radio" name="weather" id="no" value="Winter"> No <br>
+
+            <h3>Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
+            <input type="radio" name="location" id="event" value="event">Event<br>
+            <input type="radio" name="location" id="casual" value="casual">Walk<br>
+            <input type="radio" name="location" id="work" value="work">Work<br>
+            <input type="radio" name="location" id="party" value="party">Party<br>
+            <input type="radio" name="location" id="home" value="home">Home<br>
+
+           <button type="button" onclick=" checkButton()"> Submit </button>
+
+            <h3 id="disp" style= "color:green"> </h3>
+            <h4 id="error" style= "color:red"> </h4>
+
+
+        <script>
+        function checkButton() {
+            if(document.getElementById('event').checked) {
+                document.getElementById("disp").innerHTML
+                    = document.getElementById("event").value
+                    + " radio button is checked";
+            }
+            else if(document.getElementById('casual').checked) {
+                document.getElementById("disp").innerHTML
+                    = document.getElementById("casual").value
+                    + " radio button is checked";
+            }
+            else if(document.getElementById('work').checked) {
+                document.getElementById("disp").innerHTML
+                    = document.getElementById("work").value
+                    + " radio button is checked";
+            }
+            else if(document.getElementById('party').checked) {
+                document.getElementById("disp").innerHTML
+                    = document.getElementById("party").value
+                    + " radio button is checked";
+            }
+              else if(document.getElementById('home').checked) {
+                document.getElementById("disp").innerHTML
+                    = document.getElementById("home").value
+                    + " radio button is checked";
+            }
+            else {
+                document.getElementById("error").innerHTML
+                    = "You have not selected any season";
+            }
+        }
+    </script>
+            <div>
+
+                <button  type = "button"
+                          class="btn btn-primary btn-lg"
+                         onclick = "myFunction()"
+                         id="btn-show">Generate</button>
+
+
+            </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+        <div class="center">
+           <h2 class="center">ToolBox</h2>
+            <a href ="/wardrobe" class="btn btn--secondary">Add to wardrobe </a>
+            <a href ="/wardrobe/all" class="btn btn--secondary">View your wardrobe</a>
+            <a href ="/dashboard" class="btn btn--secondary">Back to Dashboard</a>
+            <a href="/user/signout" class="btn btn-secondary">Sign Out</a>
+      </div>
+    </div>
+
+        <div class="card">
+             <div class="center">
+             <h2  id="textDisplay1" class="center">{{ session['user']['name'] }}, check our top 3 picks </h2>
+
+            <h3 id="textDisplay2">Step 3/3: Pick your favorite outfit:</h3>
+                 <form name="myForm" action="" method="post" onsubmit="">
+                    <p>
+                 <input type="radio" name="options" id="piece1" value="piece1">
+                 <img    id="outfit1"
+                         src= {{outfit1.file_path}} height="200px" width="200px" >
+                 </input><br>
+
+                        <input type="radio" name="options" id="piece2" value="piece2">
+                        <img    id="outfit2"
+                         src= {{outfit2.file_path}} height="200px" width="200px" >
+                        </input><br>
+
+                        <input type="radio" name="options" id="piece3" value="piece3">
+                         <img    id="outfit3"
+                         src= {{outfit3.file_path}} height="200px" width="200px" >
+
+                        </input><br>
+
+                </p>
+                <p><input
+                        id="submit"
+                        type=submit value=Next></p>
+                </form>
+
+        </div>
+  </div>
+{% endblock %}
+  </div>

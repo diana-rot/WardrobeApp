@@ -25,7 +25,8 @@ import imutils
 
 # Model saved with Keras model.save()
 MODEL_PATH = 'my_second_model.h5'
-
+# MODEL_PATH = 'my_model.h5'
+#MODEL_PATH ='my_2_class_model.h5'
 # Load your trained model
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
@@ -152,12 +153,26 @@ def doregister():
 def generate_outfit():
     userId = session['user']['_id']
     print(userId)
-    filter = {'userId': userId}
-    users_clothes = db.wardrobe.find(filter)
+    filter = {'userId': userId,'label':'Dress'}
+    users_some_clothes = db.wardrobe.find(filter).limit(3)
+    print("clothes, buth how many?")
+    count = 0;
 
+    clothes1 = users_some_clothes[1]
+    clothes2 = users_some_clothes[2]
+    clothes3 = users_some_clothes[3]
+    print(clothes1)
+    print(clothes2)
+    print(clothes3)
+    # for key, item in users_some_clothes:
+    #     print(item['label'])
+    # aici iau modelul si astept
 
-
-    return render_template('outfit_generator.html' )
+    # option = request.form['options']
+    # print(option)
+    option = request.form.getlist('options')
+    print(option)
+    return render_template('outfit_generator.html', outfit1 = clothes1, outfit2 = clothes2, outfit3= clothes3)
 
 
 @app.route('/outfit/day', methods=['GET', 'POST'])
