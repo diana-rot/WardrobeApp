@@ -1,5 +1,6 @@
-<script src="../static/js/outfit.js"></script>{% extends "base.html" %}
+<script src="../static/js/outfit.js"></script>
 
+{% extends "base.html" %}
 {% block content %}
 <head>
     <meta charset="UTF-8">
@@ -35,6 +36,72 @@
         display: none;
     }
 
+     #textDisplay3{
+        display: none;
+    }
+      #textDisplay4{
+        display: none;
+    }
+    #city_1{
+        display: none;
+    }
+
+    #city_2{
+        display: none;
+    }
+
+    #city_3{
+        display: none;
+    }
+     #city_name_1{
+        display: none;
+    }
+    #city_name_2{
+        display: none;
+    }
+   #city_name_3{
+        display: none;
+    }
+    #btn-ok{
+        display: none;
+    }
+    #event{
+        display: none;
+    }
+    #casual{
+        display: none;
+    }
+    #work{
+        display: none;
+    }
+    #party{
+        display: none;
+    }
+    #home{
+        display: none;
+    }
+
+  #submit_btn{
+        display: none;
+    }
+    #event_name_1{
+        display: none;
+    }
+     #event_name_2{
+        display: none;
+    }
+      #event_name_3{
+        display: none;
+    }
+    #event_name_4{
+        display: none;
+    }
+     #event_name_5{
+        display: none;
+    }
+     #btn-show{
+          display: none;
+     }
     </style>
 </head>
 
@@ -42,55 +109,48 @@
     <div class="card">
       <h1 class="center">Outfits</h1>
       <div class="center">
-            <h3> Step 1/3: Would you like to include the weather predictions?</h3>
-            <input type="radio" name="weather" id="yes" value="Summer"> Yes <br>
-            <input type="radio" name="weather" id="no" value="Winter"> No <br>
+          <h3> Step 1/3: Would you like to include the weather predictions?</h3>
+          <input type="radio" name="weather" id="yes" value="yes"> Yes <br>
+          <input type="radio" name="weather" id="no" value="no"> No <br>
+          <div>
+              <button  type = "button"
+                       class="btn btn-primary btn-lg"
+                       onclick = "send()"
+                       id="btn-send">Next</button>
+          </div>
 
-            <h3>Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
-            <input type="radio" name="location" id="event" value="event">Event<br>
-            <input type="radio" name="location" id="casual" value="casual">Walk<br>
-            <input type="radio" name="location" id="work" value="work">Work<br>
-            <input type="radio" name="location" id="party" value="party">Party<br>
-            <input type="radio" name="location" id="home" value="home">Home<br>
+            <h3 id="textDisplay3">For which city?</h3>
+            <form name="myForm1" action="" method="post" btn-ok="">
+                <input type="radio" name="city" id= city_1 value={{ city1.city}}><p id = "city_name_1"> {{city1.city}}</p>
+                <input type="radio" name="city" id= city_2 value={{ city2.city}}><p id = "city_name_2"> {{city2.city}}</p>
+                <input type="radio" name="city" id= city_3 value={{ city3.city}}><p id = "city_name_3"> {{ city3.city }}</p>
+                <p><input
+                        id="btn-ok"
+                        class="btn btn-primary btn-lg"
+                        onclick = "send_city()"
+                        type=button value=Send></p>
 
-           <button type="button" onclick=" checkButton()"> Submit </button>
+            </form>
+
+
+
+            <h3 id="textDisplay4">Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
+            <input type="radio" name="location" id="event" value="event"><p id = "event_name_1">Event<br>
+            <input type="radio" name="location" id="casual" value="casual"><p id = "event_name_2">Walk<br>
+            <input type="radio" name="location" id="work" value="work"><p id = "event_name_3">Work<br>
+            <input type="radio" name="location" id="party" value="party"><p id = "event_name_4">Party<br>
+            <input type="radio" name="location" id="home" value="home"><p id = "event_name_5">Home<br>
+
+           <button type="button"
+                   onclick=" checkButton()"
+                    id = "submit_btn"> Submit </button>
 
             <h3 id="disp" style= "color:green"> </h3>
             <h4 id="error" style= "color:red"> </h4>
 
 
         <script>
-        function checkButton() {
-            if(document.getElementById('event').checked) {
-                document.getElementById("disp").innerHTML
-                    = document.getElementById("event").value
-                    + " radio button is checked";
-            }
-            else if(document.getElementById('casual').checked) {
-                document.getElementById("disp").innerHTML
-                    = document.getElementById("casual").value
-                    + " radio button is checked";
-            }
-            else if(document.getElementById('work').checked) {
-                document.getElementById("disp").innerHTML
-                    = document.getElementById("work").value
-                    + " radio button is checked";
-            }
-            else if(document.getElementById('party').checked) {
-                document.getElementById("disp").innerHTML
-                    = document.getElementById("party").value
-                    + " radio button is checked";
-            }
-              else if(document.getElementById('home').checked) {
-                document.getElementById("disp").innerHTML
-                    = document.getElementById("home").value
-                    + " radio button is checked";
-            }
-            else {
-                document.getElementById("error").innerHTML
-                    = "You have not selected any season";
-            }
-        }
+
     </script>
             <div>
 
@@ -98,8 +158,6 @@
                           class="btn btn-primary btn-lg"
                          onclick = "myFunction()"
                          id="btn-show">Generate</button>
-
-
             </div>
 
       </div>

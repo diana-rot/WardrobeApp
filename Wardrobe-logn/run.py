@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 import os
+import gc
 import numpy as np
 from flask import render_template, request, session
 from flaskapp import app, login_required
@@ -8,7 +9,6 @@ from werkzeug.utils import secure_filename
 import pymongo
 import requests
 from gridfs import GridFS
-
 
 from keras.models import load_model
 from keras.preprocessing import image
@@ -172,7 +172,48 @@ def generate_outfit():
     # print(option)
     option = request.form.getlist('options')
     print(option)
-    return render_template('outfit_generator.html', outfit1 = clothes1, outfit2 = clothes2, outfit3= clothes3)
+
+    userId = session['user']['_id']
+    cityByDefault = 'Bucharest'
+
+    if request.method == 'POST':
+        new_city = request.form.get('city')
+
+        if new_city:
+            db.city.insert_one({'name': new_city, 'userId': userId})
+
+    filter = {'userId': userId}
+    if db.city.find(filter) is None:
+        db.city.insert_one({'name': cityByDefault, 'userId': userId})
+
+    cities = db.city.find(filter)
+    url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+
+    weather_data = []
+
+    for city in cities:
+        r = requests.get(url.format(city['name'])).json()
+
+        weather = {
+            'city': city['name'],
+            'temperature': r['main']['temp'],
+            'description': r['weather'][0]['description'],
+            'icon': r['weather'][0]['icon'],
+        }
+
+        weather_data.append(weather)
+    city1 = weather_data[0]
+    city2 = weather_data[1]
+    city3 = weather_data[2]
+
+    result_weather = request.form.getlist('city')
+    result_location = request.form.getlist('location')
+    print(result_weather)
+    print(result_location)
+
+
+    return render_template('outfit_generator.html', outfit1 = clothes1, outfit2 = clothes2, outfit3= clothes3,
+                           city1 = city1,city2 = city2, city3 = city3)
 
 
 @app.route('/outfit/day', methods=['GET', 'POST'])
@@ -207,6 +248,8 @@ def get_outfit():
         }
 
         weather_data.append(weather)
+
+
 
     return render_template('outfit_of_the_day.html',weather_data = weather_data)
 
@@ -320,18 +363,13 @@ def upload():
         # Make prediction
         preds = model_predict(file_path, model)
         _, color = predict_color(file_path)
+        # path = ''
+        # learn = load_learner(path, 'atr-recognition-stage-11-resnet34.pkl')
+        # learn.show_results()
 
         listToStr = ' '.join(map(str, color))
 
         print(listToStr)
-        # my_result = listToStr
-
-
-        # my_result = tuple(map(int,  listToStr.split(' ')))
-        # str = ','.join(my_result)
-        # string_res = '('.join()
-        # rez = "background-color:rgb" +  my_result;
-        # # print(my_result)
 
         class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                        'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
