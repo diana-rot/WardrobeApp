@@ -103,18 +103,10 @@ if __name__ == '__main__':
                           metrics=metrics, opt_func=opt_func).to_fp16()
 
     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
-    # # assert os.path.isfile(path)
-    # # map_location = torch.device('cpu')
-    # map_location = torch.device('cpu')
-    # learn = load_learner(path, cpu=False)
-    # learn = torch.load(path, map_location='cpu')
+
     print(fastai.__version__)
     learn.load_state_dict(torch.load(path,
                                      map_location=torch.device('cpu'))['model'])
 
-    # learn.data = test_dls
-    # learn.validate()
-
-    # learn.show_results(figsize=(12, 12))
     image_path = PATH + '/4.jpg'
     print(predict_attribute(learn, image_path))

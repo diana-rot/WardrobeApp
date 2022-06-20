@@ -12,6 +12,15 @@ from gridfs import GridFS
 
 from keras.models import load_model
 from keras.preprocessing import image
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+
+
+import joblib
 
 client = pymongo.MongoClient('localhost', 27017)
 db = client.user_login_system_test
@@ -23,13 +32,14 @@ import cv2
 from sklearn.cluster import KMeans
 import imutils
 
-# Model saved with Keras model.save()
 MODEL_PATH = 'my_second_model.h5'
 # MODEL_PATH = 'my_model.h5'
 #MODEL_PATH ='my_2_class_model.h5'
 # Load your trained model
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
+
+
 
 
 def model_predict(img_path, model):
@@ -128,6 +138,118 @@ def predict_color(img_path):
     return p_and_c[1]
 
 
+
+import fastai
+from fastai.vision.all import *
+import gc
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from fastai.vision import *
+from fastai.metrics import accuracy, top_k_accuracy
+from PIL import Image
+
+PATH = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn'
+PATH1 = r"C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn"
+def load_model():
+    path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
+    # assert os.path.isfile(path)
+    # map_location = torch.device('cpu')
+    learn = load_learner(path, cpu=True)
+    print(learn)
+    return learn
+
+def get_x(r):
+  new_path = r["image_name"].replace('\\', '//')
+  one_path = os.path.join(PATH1,new_path)
+  filename = Path(one_path)
+  # print(filename)
+  return filename
+
+def get_y(r): return r['labels'].split(',')
+def splitter(df):
+    train = df.index[df['is_valid']==0].tolist()
+    valid = df.index[df['is_valid']==1].tolist()
+    return train,valid
+
+
+def predict_attribute(model, path, display_img=True):
+    predicted = model.predict(path)
+    # if display_img:
+    #     size = 244,244
+    #     img=Image.open(path)
+    #     # img.thumbnail(size,Image.ANTIALIAS)
+    #     img.show()
+    return predicted[0]
+
+def accuracy_multi(inp, targ, thresh=0.5, sigmoid=True):
+    "Compute accuracy when `inp` and `targ` are the same size."
+    if sigmoid: inp = inp.sigmoid()
+    return ((inp>thresh)==targ.bool()).float().mean()
+
+
+class LabelSmoothingBCEWithLogitsLossFlat(BCEWithLogitsLossFlat):
+    def __init__(self, eps: float = 0.1, **kwargs):
+        self.eps = eps
+        super().__init__(thresh=0.2, **kwargs)
+
+    def __call__(self, inp, targ, **kwargs):
+        # https://www.kaggle.com/c/siim-isic-melanoma-classification/discussion/166833#929222
+        targ_smooth = targ.float() * (1. - self.eps) + 0.5 * self.eps
+        return super().__call__(inp, targ_smooth, **kwargs)
+
+    def __repr__(self):
+        return "FlattenedLoss of LabelSmoothingBCEWithLogits()"
+
+
+
+def predict_attribute_model(img_path):
+    TRAIN_PATH = "multilabel-train.csv"
+    TEST_PATH = "multilabel-test.csv"
+    CLASSES_PATH = "attribute-classes.txt"
+
+    train_df = pd.read_csv(TRAIN_PATH)
+    train_df.head()
+    wd = 5e-7  # weight decay parameter
+    opt_func = partial(ranger, wd=wd)
+
+    dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
+                       splitter=splitter,
+                       get_x=get_x,
+                       get_y=get_y,
+                       item_tfms=RandomResizedCrop(224, min_scale=0.8),
+                       batch_tfms=aug_transforms())
+
+    dls = dblock.dataloaders(train_df, num_workers=0)
+    dls.show_batch(nrows=1, ncols=6)
+
+    dsets = dblock.datasets(train_df)
+    metrics = [FBetaMulti(2.0, 0.2, average='samples'), partial(accuracy_multi, thresh=0.2)]
+
+    test_df = pd.read_csv(TEST_PATH)
+    test_df.head()
+    dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
+                       get_x=get_x,
+                       get_y=get_y,
+                       item_tfms=Resize(224))  # Not Sure)
+
+    test_dls = dblock.dataloaders(test_df, num_workers=0)
+
+    print(dls.vocab)
+    learn = vision_learner(dls, resnet34, loss_func=LabelSmoothingBCEWithLogitsLossFlat(),
+                           metrics=metrics, opt_func=opt_func).to_fp16()
+
+    path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
+
+    learn.load_state_dict(torch.load(path,
+                                     map_location=torch.device('cpu'))['model'])
+    label_result = predict_attribute(learn, img_path)
+    print(label_result)
+    return label_result
+
 @app.route('/')
 def home():
     return render_template('welcome.html')
@@ -211,6 +333,13 @@ def generate_outfit():
     print(result_weather)
     print(result_location)
 
+
+    # aici e random classifier
+
+    loaded_classifier = joblib.load("./random_forest.joblib")
+    load_clas1 = loaded_classifier.predict([[0, 0, 0, 0,0,0,1,0,0,0]])
+    load_clas2 = loaded_classifier.predict([[1, 1, 0, 0,0,0,0,1,0,0]])
+    print(load_clas1, load_clas2)
 
     return render_template('outfit_generator.html', outfit1 = clothes1, outfit2 = clothes2, outfit3= clothes3,
                            city1 = city1,city2 = city2, city3 = city3)
@@ -328,6 +457,7 @@ def add_wardrobe():
         # print(listToStr)
         # my_result = tuple(map(int, listToStr.split(' ')))
         # print(my_result)
+
     return render_template('wardrobe.html')
 
 
@@ -363,6 +493,13 @@ def upload():
         # Make prediction
         preds = model_predict(file_path, model)
         _, color = predict_color(file_path)
+        attribute_predict = predict_attribute_model(file_path)
+        print(attribute_predict)
+        mySeparator= ","
+        if attribute_predict is not None:
+          resulted_attribute = mySeparator.join(attribute_predict)
+
+        print("alo"+ resulted_attribute)
         # path = ''
         # learn = load_learner(path, 'atr-recognition-stage-11-resnet34.pkl')
         # learn.show_results()
@@ -376,7 +513,7 @@ def upload():
         predicted_label = np.argmax(preds)
         result = class_names[predicted_label]
         userId = session['user']['_id']
-        db.wardrobe.insert_one({ 'label': result, 'color': listToStr, 'userId':userId,
+        db.wardrobe.insert_one({ 'label': result, 'attribute':resulted_attribute,'color': listToStr, 'userId':userId,
                                'file_path': file_path_bd })
 
         return result

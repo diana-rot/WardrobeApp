@@ -1,8 +1,10 @@
 <script src="../static/js/outfit.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 {% extends "base.html" %}
 {% block content %}
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -62,28 +64,20 @@
    #city_name_3{
         display: none;
     }
-    #btn-ok{
-        display: none;
-    }
+
     #event{
         display: none;
     }
-    #casual{
+    #walk{
         display: none;
     }
     #work{
         display: none;
     }
-    #party{
-        display: none;
-    }
-    #home{
+    #travel{
         display: none;
     }
 
-  #submit_btn{
-        display: none;
-    }
     #event_name_1{
         display: none;
     }
@@ -96,72 +90,107 @@
     #event_name_4{
         display: none;
     }
-     #event_name_5{
+
+    #btn-weather {
+        display: none;
+    }
+
+    #btn-events{
         display: none;
     }
      #btn-show{
           display: none;
      }
+
     </style>
 </head>
 
+<body>
+
   <div class="card-wrapper">
+
+
     <div class="card">
-      <h1 class="center">Outfits</h1>
-      <div class="center">
+        <h1 class="center">Outfits</h1>
+
+        <div class="center">
+
+          <form class="toeic_pages" id="1">
+
           <h3> Step 1/3: Would you like to include the weather predictions?</h3>
-          <input type="radio" name="weather" id="yes" value="yes"> Yes <br>
-          <input type="radio" name="weather" id="no" value="no"> No <br>
-          <div>
+			  <label class="item1">
+          		<input type="radio" name="toeic" id="yes" value="yes"> Yes <br>
+			  </label>
+			  <label class="item2">
+          		<input type="radio" name="toeic" id="no" value="no"> No <br>
+			  </label>
+            <div class="center">
               <button  type = "button"
                        class="btn btn-primary btn-lg"
                        onclick = "send()"
                        id="btn-send">Next</button>
-          </div>
+            </div>
+		  </form>
 
-            <h3 id="textDisplay3">For which city?</h3>
-            <form name="myForm1" action="" method="post" btn-ok="">
-                <input type="radio" name="city" id= city_1 value={{ city1.city}}><p id = "city_name_1"> {{city1.city}}</p>
-                <input type="radio" name="city" id= city_2 value={{ city2.city}}><p id = "city_name_2"> {{city2.city}}</p>
-                <input type="radio" name="city" id= city_3 value={{ city3.city}}><p id = "city_name_3"> {{ city3.city }}</p>
-                <p><input
-                        id="btn-ok"
-                        class="btn btn-primary btn-lg"
-                        onclick = "send_city()"
-                        type=button value=Send></p>
 
+		   <form class="toeic_pages" id="2">
+			    <h3 id="textDisplay3">For which city?</h3>
+
+				<label class="item1">
+                	<input type="radio" name="toeic" id= city_1 value={{ city1.city}}><p id = "city_name_1"> {{city1.city}}</p>
+				</label>
+				<label class="item2">
+					<input type="radio" name="toeic" id= city_2 value={{ city2.city}}><p id = "city_name_2"> {{city2.city}}</p>
+				</label>
+				<label class="item3">
+                	<input type="radio" name="toeic" id= city_3 value={{ city3.city}}><p id = "city_name_3"> {{ city3.city }}</p>
+				</label>
+
+               <div class="center">
+                 <button  type = "button"
+                       class="btn btn-primary btn-lg"
+                       onclick = "send_city()"
+                       id="btn-weather">Next
+                 </button>
+               </div>
             </form>
 
 
+			<form class="toeic_pages" id="3">
+				<h3 id="textDisplay4">Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
+				<label class="item1">
+                    <input type="radio" name="toeic" id="event" value="event"> <p id = "event_name_1">Event<br></p>
+				</label>
+				<label class="item2">
+				<input type="radio" name="toeic" id="walk" value="walk"><p id = "event_name_2">Walk<br></p>
+				</label>
+				<label class="item3">
+					<input type="radio" name="toeic" id="work" value="work"><p id = "event_name_3">Work<br></p>
+				</label>
+				<label class="item4">
+				<input type="radio" name="toeic" id="travel" value="travel"><p id = "event_name_4">Travel<br></p>
+                </label>
 
-            <h3 id="textDisplay4">Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
-            <input type="radio" name="location" id="event" value="event"><p id = "event_name_1">Event<br>
-            <input type="radio" name="location" id="casual" value="casual"><p id = "event_name_2">Walk<br>
-            <input type="radio" name="location" id="work" value="work"><p id = "event_name_3">Work<br>
-            <input type="radio" name="location" id="party" value="party"><p id = "event_name_4">Party<br>
-            <input type="radio" name="location" id="home" value="home"><p id = "event_name_5">Home<br>
+                <div class="center">
+                     <button type="button"
+                        class="btn btn-primary btn-lg"
+					   onclick=" checkButton()"
+						id = "btn-events"> Next
+                     </button>
+                </div>
+			</form>
 
-           <button type="button"
-                   onclick=" checkButton()"
-                    id = "submit_btn"> Submit </button>
-
-            <h3 id="disp" style= "color:green"> </h3>
-            <h4 id="error" style= "color:red"> </h4>
-
-
-        <script>
-
-    </script>
-            <div>
-
+            <div class="center">
                 <button  type = "button"
                           class="btn btn-primary btn-lg"
                          onclick = "myFunction()"
                          id="btn-show">Generate</button>
+                <button id="finish">Get Answers</button>
             </div>
 
-      </div>
+        </div>
     </div>
+
 
     <div class="card">
         <div class="center">
@@ -173,18 +202,20 @@
       </div>
     </div>
 
-        <div class="card">
-             <div class="center">
-             <h2  id="textDisplay1" class="center">{{ session['user']['name'] }}, check our top 3 picks </h2>
 
-            <h3 id="textDisplay2">Step 3/3: Pick your favorite outfit:</h3>
+      <div class="card">
+             <div class="center">
+
+                 <h2  id="textDisplay1" class="center">{{ session['user']['name'] }}, check our top 3 picks </h2>
+
+                 <h3 id="textDisplay2">Step 3/3: Pick your favorite outfit:</h3>
+
                  <form name="myForm" action="" method="post" onsubmit="">
                     <p>
                  <input type="radio" name="options" id="piece1" value="piece1">
                  <img    id="outfit1"
                          src= {{outfit1.file_path}} height="200px" width="200px" >
                  </input><br>
-
                         <input type="radio" name="options" id="piece2" value="piece2">
                         <img    id="outfit2"
                          src= {{outfit2.file_path}} height="200px" width="200px" >
@@ -196,13 +227,49 @@
 
                         </input><br>
 
-                </p>
-                <p><input
-                        id="submit"
-                        type=submit value=Next></p>
-                </form>
+                        </p>
+                        <p><input
+                                id="submit"
+                                type=submit value=Next></p>
+                         </form>
 
         </div>
+
+
+
+
   </div>
+
+
+    </div>
+
+<script>
+		$(document).ready(function() {
+
+		   $("#finish").click(function() {
+			var answersList = [];
+			//Loop over all questoins
+			$(".toeic_pages").each(function() {
+
+			  var questionId = $(this).attr("id");
+			  var answer = $("input[name='toeic']:checked", $(this)).val();
+
+			  //if Answer isnt provided do not update the answersList
+			  if (answer !== undefined) {
+				answersList.push({
+				  question: questionId,
+				  answer: answer
+				});
+			  }
+              console.log(answersList)
+			});
+		  });
+		});
+
+	</script>
+
 {% endblock %}
-  </div>
+
+    </div>
+ </div>
+</body>
