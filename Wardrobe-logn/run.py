@@ -427,9 +427,7 @@ def index():
     # Main page
     return render_template('index.html')
 
-
 from flaskapp.user.routes import *
-
 
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
@@ -451,12 +449,6 @@ def add_wardrobe():
         predicted_label = np.argmax(preds)
 
         result = class_names[predicted_label]
-        # _, color = predict_color(file_path)
-        #
-        # listToStr = ' '.join(map(str, color))
-        # print(listToStr)
-        # my_result = tuple(map(int, listToStr.split(' ')))
-        # print(my_result)
 
     return render_template('wardrobe.html')
 
@@ -499,15 +491,7 @@ def upload():
         if attribute_predict is not None:
           resulted_attribute = mySeparator.join(attribute_predict)
 
-        print("alo"+ resulted_attribute)
-        # path = ''
-        # learn = load_learner(path, 'atr-recognition-stage-11-resnet34.pkl')
-        # learn.show_results()
-
         listToStr = ' '.join(map(str, color))
-
-        print(listToStr)
-
         class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                        'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
         predicted_label = np.argmax(preds)
@@ -519,29 +503,6 @@ def upload():
         return result
     return None
 
-
-@app.route('/color', methods=['GET', 'POST'])
-@login_required
-def def_color():
-    if request.method == 'POST':
-        f = request.files['file']
-        file_path = os.path.join(
-            'flaskapp/static/image_users/', secure_filename(f.filename))
-        f.save(file_path)
-        print(file_path)
-        file_path_bd = os.path.join(
-            '../static/image_users/', secure_filename(f.filename))
-
-        _, color = predict_color(file_path)
-
-        listToStr = ' '.join(map(str, color))
-        print(listToStr)
-        # my_result = listToStr
-        my_result = tuple(map(int, listToStr.split(' ')))
-        print(my_result)
-
-        return listToStr
-    return None
 
 
 if __name__ == '__main__':
