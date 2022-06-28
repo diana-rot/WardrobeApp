@@ -32,9 +32,7 @@ import cv2
 from sklearn.cluster import KMeans
 import imutils
 
-MODEL_PATH = 'my_second_model.h5'
-# MODEL_PATH = 'my_model.h5'
-#MODEL_PATH ='my_2_class_model.h5'
+MODEL_PATH = 'my_25model.h5'
 # Load your trained model
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
@@ -333,6 +331,12 @@ def generate_outfit():
     print(result_weather)
     print(result_location)
 
+    result_a = request.form.getlist('finish')
+    print("cf")
+    print(result_a)
+    result_b = request.form.getlist('toeic_pages')
+    print("cfff")
+    print(result_b)
 
     # aici e random classifier
 
@@ -340,6 +344,8 @@ def generate_outfit():
     load_clas1 = loaded_classifier.predict([[0, 0, 0, 0,0,0,1,0,0,0]])
     load_clas2 = loaded_classifier.predict([[1, 1, 0, 0,0,0,0,1,0,0]])
     print(load_clas1, load_clas2)
+
+
 
     return render_template('outfit_generator.html', outfit1 = clothes1, outfit2 = clothes2, outfit3= clothes3,
                            city1 = city1,city2 = city2, city3 = city3)
@@ -377,8 +383,6 @@ def get_outfit():
         }
 
         weather_data.append(weather)
-
-
 
     return render_template('outfit_of_the_day.html',weather_data = weather_data)
 
@@ -419,13 +423,6 @@ def dashboard():
         weather_data.append(weather)
 
     return render_template('dashboard.html', weather_data = weather_data)
-
-
-@app.route('/model', methods=['GET'])
-@login_required
-def index():
-    # Main page
-    return render_template('index.html')
 
 from flaskapp.user.routes import *
 

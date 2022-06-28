@@ -218,7 +218,7 @@ def evaluate_model(dataX, dataY,  class_names, n_folds=5):
         train_images, train_labels, test_images, test_labels =\
             dataX[train_ix], dataY[train_ix], dataX[test_ix], dataY[test_ix]
         # fit model
-        history = model.fit(train_images, train_labels, epochs=4,
+        history = model.fit(train_images, train_labels, epochs=5,
                             batch_size=32, validation_data=(test_images, test_labels),
                             verbose=0)
         # evaluate model
@@ -229,7 +229,7 @@ def evaluate_model(dataX, dataY,  class_names, n_folds=5):
         scores.append(acc)
         histories.append(history)
 
-    model.save('my_model.h5')
+    model.save('my_model_june.h5')
     (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
     test_images = test_images / 255.0
 

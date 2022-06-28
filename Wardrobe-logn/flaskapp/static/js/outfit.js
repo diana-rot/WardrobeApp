@@ -1,4 +1,6 @@
+function submit_this_form() {
 
+}
 
 function myFunction(){
     document.getElementById("piece1").style.display ="block";
