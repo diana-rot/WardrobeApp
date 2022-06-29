@@ -19,7 +19,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 
-
 import joblib
 
 client = pymongo.MongoClient('localhost', 27017)
@@ -36,8 +35,6 @@ MODEL_PATH = 'my_25model.h5'
 # Load your trained model
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
-
-
 
 
 def model_predict(img_path, model):
@@ -136,7 +133,6 @@ def predict_color(img_path):
     return p_and_c[1]
 
 
-
 import fastai
 from fastai.vision.all import *
 import gc
@@ -152,6 +148,8 @@ from PIL import Image
 
 PATH = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn'
 PATH1 = r"C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn"
+
+
 def load_model():
     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
     # assert os.path.isfile(path)
@@ -160,18 +158,22 @@ def load_model():
     print(learn)
     return learn
 
+
 def get_x(r):
-  new_path = r["image_name"].replace('\\', '//')
-  one_path = os.path.join(PATH1,new_path)
-  filename = Path(one_path)
-  # print(filename)
-  return filename
+    new_path = r["image_name"].replace('\\', '//')
+    one_path = os.path.join(PATH1, new_path)
+    filename = Path(one_path)
+    # print(filename)
+    return filename
+
 
 def get_y(r): return r['labels'].split(',')
+
+
 def splitter(df):
-    train = df.index[df['is_valid']==0].tolist()
-    valid = df.index[df['is_valid']==1].tolist()
-    return train,valid
+    train = df.index[df['is_valid'] == 0].tolist()
+    valid = df.index[df['is_valid'] == 1].tolist()
+    return train, valid
 
 
 def predict_attribute(model, path, display_img=True):
@@ -183,10 +185,11 @@ def predict_attribute(model, path, display_img=True):
     #     img.show()
     return predicted[0]
 
+
 def accuracy_multi(inp, targ, thresh=0.5, sigmoid=True):
     "Compute accuracy when `inp` and `targ` are the same size."
     if sigmoid: inp = inp.sigmoid()
-    return ((inp>thresh)==targ.bool()).float().mean()
+    return ((inp > thresh) == targ.bool()).float().mean()
 
 
 class LabelSmoothingBCEWithLogitsLossFlat(BCEWithLogitsLossFlat):
@@ -201,7 +204,6 @@ class LabelSmoothingBCEWithLogitsLossFlat(BCEWithLogitsLossFlat):
 
     def __repr__(self):
         return "FlattenedLoss of LabelSmoothingBCEWithLogits()"
-
 
 
 def predict_attribute_model(img_path):
@@ -248,6 +250,7 @@ def predict_attribute_model(img_path):
     print(label_result)
     return label_result
 
+
 @app.route('/')
 def home():
     return render_template('welcome.html')
@@ -268,12 +271,13 @@ from flaskapp.user.routes import *
 def doregister():
     return render_template('register.html')
 
+
 @app.route('/generate/outfit', methods=['GET', 'POST'])
 @login_required
 def generate_outfit():
     userId = session['user']['_id']
     print(userId)
-    filter = {'userId': userId,'label':'Dress'}
+    filter = {'userId': userId, 'label': 'Dress'}
     users_some_clothes = db.wardrobe.find(filter).limit(3)
     print("clothes, buth how many?")
     count = 0;
@@ -284,12 +288,7 @@ def generate_outfit():
     print(clothes1)
     print(clothes2)
     print(clothes3)
-    # for key, item in users_some_clothes:
-    #     print(item['label'])
-    # aici iau modelul si astept
 
-    # option = request.form['options']
-    # print(option)
     option = request.form.getlist('options')
     print(option)
 
@@ -341,14 +340,12 @@ def generate_outfit():
     # aici e random classifier
 
     loaded_classifier = joblib.load("./random_forest.joblib")
-    load_clas1 = loaded_classifier.predict([[0, 0, 0, 0,0,0,1,0,0,0]])
-    load_clas2 = loaded_classifier.predict([[1, 1, 0, 0,0,0,0,1,0,0]])
+    load_clas1 = loaded_classifier.predict([[0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
+    load_clas2 = loaded_classifier.predict([[1, 1, 0, 0, 0, 0, 0, 1, 0, 0]])
     print(load_clas1, load_clas2)
 
-
-
-    return render_template('outfit_generator.html', outfit1 = clothes1, outfit2 = clothes2, outfit3= clothes3,
-                           city1 = city1,city2 = city2, city3 = city3)
+    return render_template('outfit_generator.html', outfit1=clothes1, outfit2=clothes2, outfit3=clothes3,
+                           city1=city1, city2=city2, city3=city3)
 
 
 @app.route('/outfit/day', methods=['GET', 'POST'])
@@ -381,16 +378,81 @@ def get_outfit():
             'description': r['weather'][0]['description'],
             'icon': r['weather'][0]['icon'],
         }
-
+        print(weather)
         weather_data.append(weather)
 
-    return render_template('outfit_of_the_day.html',weather_data = weather_data)
+
+    city1 = weather_data[0]
+    print('alo')
+    print(city1['temperature'])
+    city2 = weather_data[1]
+    city3 = weather_data[2]
+
+    if request.method == 'POST':
+        include_weather = request.form.get('weather')
+        print(include_weather)
+        city = request.form.get('city')
+        print(city)
+        event = request.form.get('events')
+        print(event)
+
+        loaded_classifier = joblib.load("./random_forest.joblib")
+        # aici rezulta ceva de genul [0] care e o rochie si [2] care e ceva cu un coat
+        # dar ce forma trebuie sa fac eu predictuil inca nu imi e clar un tuplu?[[]]
+        to_be_predicted = []
+        # print(weather_data[0].temperature)
+        # print(weather_data[1].temperature)
+        # print(weather_data[2].temperature)
+        # #pw logica de yes, apoi trebuie sa includ logica venita de la open weather API
+        if include_weather == 'yes':
+            to_be_predicted.append(1)
+            #aici trebuie sa adaug vremea corespunzatoare orasului cu WeatehrOpenAPI
+
+        elif include_weather == 'no':
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            if event == 'event':
+                to_be_predicted.append(1)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+            elif event == 'walk':
+                to_be_predicted.append(0)
+                to_be_predicted.append(1)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+            elif event == 'work':
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(1)
+                to_be_predicted.append(0)
+            elif event == 'travel':
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(1)
 
 
-@app.route('/dashboard/',methods=['GET', 'POST'])
+
+        print(to_be_predicted)
+        predict_form = []
+        predict_form.append(to_be_predicted)
+        print(predict_form)
+
+        load_clas1 = loaded_classifier.predict([[0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
+        load_clas2 = loaded_classifier.predict([[1, 1, 0, 0, 0, 0, 0, 1, 0, 0]])
+        load_clas3 = loaded_classifier.predict(predict_form)
+        print(load_clas1, load_clas2, load_clas3)
+    return render_template('outfit_of_the_day.html', city1=city1, city2=city2, city3=city3)
+
+
+@app.route('/dashboard/', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-
     userId = session['user']['_id']
     cityByDefault = 'Bucharest'
 
@@ -410,7 +472,6 @@ def dashboard():
     weather_data = []
 
     for city in cities:
-
         r = requests.get(url.format(city['name'])).json()
 
         weather = {
@@ -422,9 +483,11 @@ def dashboard():
 
         weather_data.append(weather)
 
-    return render_template('dashboard.html', weather_data = weather_data)
+    return render_template('dashboard.html', weather_data=weather_data)
+
 
 from flaskapp.user.routes import *
+
 
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
@@ -440,7 +503,7 @@ def add_wardrobe():
         f.save(file_path)
         # Make prediction
         preds = model_predict(file_path, model)
-         # color = predict_color(file_path)
+        # color = predict_color(file_path)
         class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                        'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
         predicted_label = np.argmax(preds)
@@ -463,7 +526,7 @@ def view_wardrobe_all():
     except StopIteration:
         print("Empty cursor!")
 
-    return render_template('wardrobe_all.html', wardrobes = users_clothes )
+    return render_template('wardrobe_all.html', wardrobes=users_clothes)
 
 
 @app.route('/predict', methods=['GET', 'POST'])
@@ -473,20 +536,20 @@ def upload():
         # Get the file from post request
         f = request.files['file']
         file_path = os.path.join(
-            'flaskapp/static/image_users/',secure_filename(f.filename))
+            'flaskapp/static/image_users/', secure_filename(f.filename))
         f.save(file_path)
         print(file_path)
         file_path_bd = os.path.join(
             '../static/image_users/', secure_filename(f.filename))
 
-        # Make prediction
+        # Make predictionoutfit
         preds = model_predict(file_path, model)
         _, color = predict_color(file_path)
         attribute_predict = predict_attribute_model(file_path)
         print(attribute_predict)
-        mySeparator= ","
+        mySeparator = ","
         if attribute_predict is not None:
-          resulted_attribute = mySeparator.join(attribute_predict)
+            resulted_attribute = mySeparator.join(attribute_predict)
 
         listToStr = ' '.join(map(str, color))
         class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
@@ -494,12 +557,11 @@ def upload():
         predicted_label = np.argmax(preds)
         result = class_names[predicted_label]
         userId = session['user']['_id']
-        db.wardrobe.insert_one({ 'label': result, 'attribute':resulted_attribute,'color': listToStr, 'userId':userId,
-                               'file_path': file_path_bd })
+        db.wardrobe.insert_one({'label': result, 'attribute': resulted_attribute, 'color': listToStr, 'userId': userId,
+                                'file_path': file_path_bd})
 
         return result
     return None
-
 
 
 if __name__ == '__main__':

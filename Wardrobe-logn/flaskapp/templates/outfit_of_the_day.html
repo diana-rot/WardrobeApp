@@ -1,99 +1,91 @@
+<script src="../static/js/outfit.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 {% extends "base.html" %}
-
 {% block content %}
 <head>
-     <meta charset="UTF-8">
+
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <style>
 
+    </style>
 </head>
+
+<body>
 
   <div class="card-wrapper">
 
+
     <div class="card">
+        <h1 class="center">Outfits</h1>
 
-      <h1 class="center">Outfit of the day</h1>
-      <div class="center">
-           <h2 class="center">Hello</h2>
-           <strong>Name:</strong> {{ session['user']['name'] }}<br>
+        <div class="center">
 
-          <a href="/user/signout" class="btn btn--secondary">Sign Out</a>
-      </div>
+            <form method="post">
+
+                <fieldset id="weather">
+                    <h3> Step 1/3: Would you like to include the weather predictions?</h3>
+                    <input type="radio" name="weather" id="yes" value="yes"> Yes </input>
+                    <input type="radio" name="weather" id="no" value="no"> No </input>
+                </fieldset>
+
+                <h3 >For which city?</h3>
+                  <fieldset id="city">
+                	<input type="radio" name="city" id= city_1 value={{ city1.city}}> {{city1.city}}</input>
+					<input type="radio" name="city" id= city_2 value={{ city2.city}}> {{city2.city}}</input>
+                	<input type="radio" name="city" id= city_3 value={{ city3.city}}> {{ city3.city }}</input>
+                  </fieldset>
+
+                Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
+                <fieldset id="events">
+                    <input type="radio" name="events" id="event" value="event"> Event </input>
+				    <input type="radio" name="events" id="walk" value="walk"> Walk </input>
+					<input type="radio" name="events" id="work" value="work"> Work </input>
+				    <input type="radio" name="events" id="travel" value="travel"> Travel </input>
+                  </fieldset>
+
+                <input type="submit" name="submit_button" value="Do Something">
+            </form>
+
+              </div>
     </div>
+
 
     <div class="card">
         <div class="center">
            <h2 class="center">ToolBox</h2>
             <a href ="/wardrobe" class="btn btn--secondary">Add to wardrobe </a>
             <a href ="/wardrobe/all" class="btn btn--secondary">View your wardrobe</a>
-             <a href ="/dashboard" class="btn btn--secondary">Back to Dashboard</a>
-
+            <a href ="/dashboard" class="btn btn--secondary">Back to Dashboard</a>
+            <a href="/user/signout" class="btn btn-secondary">Sign Out</a>
       </div>
     </div>
 
 
+      <div class="card">
+             <div class="center">
+
+                 <h2  id="textDisplay1" class="center">{{ session['user']['name'] }}, check our top 3 picks </h2>
+
+                 <h3 id="textDisplay2">Step 3/3: Pick your favorite outfit:</h3>
 
 
-    <div class="card">
-        <section class="hero is-primary">
-            <div class="hero-body">
-                <div class="container">
-                    <h1 class="title">
-                        What's the weather like?
-                    </h1>
-                </div>
-            </div>
-        </section>
-        <section class="section">
-            <div class="container">
-                <div class="columns">
-                    <div class="column is-offset-4 is-4">
-                        <form method="POST">
-                            <div class="field has-addons">
-                                <div class="control is-expanded">
-                                    <input class="input" name="city" type="text" placeholder="City Name">
-                                </div>
-                                <div class="control">
-                                    <button class="button is-info">
-                                        Add City
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </section>
 
-        <section class="section">
-            <div class="container">
-                <div class="columns">
-                    <div class="column is-offset-4 is-4">
-                        {% for weather in weather_data %}
-                        <div class="box">
-                            <article class="media">
-                                <div class="media-left">
-                                    <figure class="image is-50x50">
-                                        <img src="http://openweathermap.org/img/w/{{ weather.icon }}.png" alt="Image">
-                                    </figure>
-                                </div>
-                                <div class="media-content">
-                                    <div class="content">
-                                        <p>
-                                            <span class="title">{{ weather.city }}</span>
-                                            <br>
-                                            <span class="subtitle">{{ weather.temperature }}° C</span>
-                                            <br> {{ weather.description }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </article>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </section>
-      </div>
+        </div>
+
+
+
+
   </div>
+
+
+    </div>
+
+
 {% endblock %}
+
+    </div>
+ </div>
+</body>
