@@ -407,6 +407,17 @@ def get_outfit():
         if include_weather == 'yes':
             to_be_predicted.append(1)
             #aici trebuie sa adaug vremea corespunzatoare orasului cu WeatehrOpenAPI
+            if city == city1['city']:
+                temperature = city1['temperature']
+
+
+            elif city == city2['city']:
+                temperature = city2['temperature']
+
+            elif city == city3['city']:
+                temperature = city3['temperature']
+
+               
 
         elif include_weather == 'no':
             to_be_predicted.append(0)
