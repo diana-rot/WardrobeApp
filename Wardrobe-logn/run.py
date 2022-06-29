@@ -406,18 +406,48 @@ def get_outfit():
         # #pw logica de yes, apoi trebuie sa includ logica venita de la open weather API
         if include_weather == 'yes':
             to_be_predicted.append(1)
-            #aici trebuie sa adaug vremea corespunzatoare orasului cu WeatehrOpenAPI
+                #aici trebuie sa adaug vremea corespunzatoare orasului cu WeatehrOpenAPI
             if city == city1['city']:
                 temperature = city1['temperature']
-
-
             elif city == city2['city']:
                 temperature = city2['temperature']
-
             elif city == city3['city']:
                 temperature = city3['temperature']
 
-               
+#includ si raining dupa ce fac un rezultat aproape de perfect
+
+            if temperature <= 6.0:
+                print('iarna')
+                to_be_predicted.append(1)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+
+            elif temperature > 15.0 and temperature < 23.0:
+                print('primavara')
+                to_be_predicted.append(0)
+                to_be_predicted.append(1)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+
+            elif temperature > 6.0 and temperature <= 15.0:
+                 print('toamna')
+                 to_be_predicted.append(0)
+                 to_be_predicted.append(0)
+                 to_be_predicted.append(1)
+                 to_be_predicted.append(0)
+                 to_be_predicted.append(0)
+
+            elif temperature >= 23.0:
+                print('vara')
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(0)
+                to_be_predicted.append(1)
+                to_be_predicted.append(0)
+
 
         elif include_weather == 'no':
             to_be_predicted.append(0)
@@ -426,38 +456,39 @@ def get_outfit():
             to_be_predicted.append(0)
             to_be_predicted.append(0)
             to_be_predicted.append(0)
-            if event == 'event':
-                to_be_predicted.append(1)
-                to_be_predicted.append(0)
-                to_be_predicted.append(0)
-                to_be_predicted.append(0)
-            elif event == 'walk':
-                to_be_predicted.append(0)
-                to_be_predicted.append(1)
-                to_be_predicted.append(0)
-                to_be_predicted.append(0)
-            elif event == 'work':
-                to_be_predicted.append(0)
-                to_be_predicted.append(0)
-                to_be_predicted.append(1)
-                to_be_predicted.append(0)
-            elif event == 'travel':
-                to_be_predicted.append(0)
-                to_be_predicted.append(0)
-                to_be_predicted.append(0)
-                to_be_predicted.append(1)
 
 
+
+        if event == 'event':
+            to_be_predicted.append(1)
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+        elif event == 'walk':
+            to_be_predicted.append(0)
+            to_be_predicted.append(1)
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+        elif event == 'work':
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            to_be_predicted.append(1)
+            to_be_predicted.append(0)
+        elif event == 'travel':
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            to_be_predicted.append(0)
+            to_be_predicted.append(1)
 
         print(to_be_predicted)
         predict_form = []
         predict_form.append(to_be_predicted)
         print(predict_form)
 
-        load_clas1 = loaded_classifier.predict([[0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
-        load_clas2 = loaded_classifier.predict([[1, 1, 0, 0, 0, 0, 0, 1, 0, 0]])
+        # load_clas1 = loaded_classifier.predict([[0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
+        # load_clas2 = loaded_classifier.predict([[1, 1, 0, 0, 0, 0, 0, 1, 0, 0]])
         load_clas3 = loaded_classifier.predict(predict_form)
-        print(load_clas1, load_clas2, load_clas3)
+        print(load_clas3)
     return render_template('outfit_of_the_day.html', city1=city1, city2=city2, city3=city3)
 
 
