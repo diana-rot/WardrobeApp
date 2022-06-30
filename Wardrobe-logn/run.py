@@ -2,8 +2,8 @@ from __future__ import division, print_function
 import os
 import gc
 import numpy as np
-from flask import render_template, request, session
-from flaskapp import app, login_required
+from flask import render_template, request, session, url_for
+from flaskapp import app, login_required,redirect
 from matplotlib import pyplot as plt
 from werkzeug.utils import secure_filename
 import pymongo
@@ -367,6 +367,9 @@ def get_outfit():
     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
 
     weather_data = []
+    outfit1 = []
+    outfit2 = []
+    outfit3 = []
 
     for city in cities:
         r = requests.get(url.format(city['name'])).json()
@@ -486,9 +489,7 @@ def get_outfit():
         print(result_outfit[index_of_outfit])
         #de aici va trebui sa fac un strtok si sa iau cele 3 outfituri pentru a le afisa in front end
         #gandit logica cu
-        outfit1=[]
-        outfit2=[]
-        outfit3=[]
+
         txt = result_outfit[index_of_outfit]
         filters_outfits = txt.split('-')
         print(filters_outfits)
@@ -498,17 +499,25 @@ def get_outfit():
             filter = {'userId': userId, 'label': filter_name}
             print(filter)
             count = 0
-            while count != 3:
-                users_clothes = db.wardrobe.find(filter)
-                print(users_clothes)
-                outfit1.append(users_clothes[1])
-                outfit2.append(users_clothes[2])
-                outfit3.append(users_clothes[3])
-                print(count)
-                count = count + 1
+            # while count != 3:
+            users_clothes = db.wardrobe.find(filter).limit(1)
+            print(users_clothes)
+            outfit1.append(users_clothes[1])
+            outfit2.append(users_clothes[2])
+            outfit3.append(users_clothes[3])
+                # print(count)
+            print('are you ok?1')
+            print(outfit1)
+            print('are you ok?2')
+            print(outfit2)
+            print('are you ok?3')
+            print(outfit3)
+            # count = count + 1
 
-            post_result(outfit1,outfit2,outfit3,city1,city2,city3)
-    return render_template('outfit_of_the_day.html', city1=city1, city2=city2, city3=city3)
+            # post_result(outfit1,outfit2,outfit3,city1,city2,city3)
+
+            # return redirect(url_for(get_outfit, outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3))
+    return render_template('outfit_of_the_day.html',  outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3)
 
 
 @app.route("/outfit/day", methods=['POST'])

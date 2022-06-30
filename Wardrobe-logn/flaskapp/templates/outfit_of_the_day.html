@@ -46,7 +46,7 @@
 				    <input type="radio" name="events" id="travel" value="travel"> Travel </input>
                   </fieldset>
 
-                <input type="submit" name="submit_button" value="Do Something">
+                <input type="submit" name="submit_button" value="Submit">
             </form>
 
               </div>
@@ -70,17 +70,39 @@
                  <h2  id="textDisplay1" class="center">{{ session['user']['name'] }}, check our top 3 picks </h2>
 
                  <h3 id="textDisplay2">Step 3/3: Pick your favorite outfit:</h3>
+                 <form name="options"  method="post" >
+
+                     <input type="radio" name="options" id="piece1" value="piece1">
+                        <h2>outfit 1</h2>
+                        {% for clothes in outfit1 %}
+                        <h2>{{clothes.label}}:</h2>
+                            <img src= {{clothes.file_path}} height="200px" width="200px" >
+                        {% endfor %}
+                     </input><br>
 
 
-                 <div class="card">
-            <h2>The result:</h2>
-                <div class="loader" style="display:none;"></div>
-                    <h3 id="result"></h3>
-               <div>
+                      <input type="radio" name="options" id="piece2" value="piece2">
+                      <h2>outfit 2</h2>
+                      {% for clothes in outfit2 %}
+                            <h2>{{clothes.label}}:</h2>
+                            <img src= {{clothes.file_path}} height="200px" width="200px">
+                         {% endfor %}
+                     </input><br>
 
-            </div>
-                     {% for clothes in outfit1 %}
-                 {% endfor %}
+                     <input type="radio" name="options" id="piece3" value="piece3">
+
+                        <h2>outfit 3</h2>
+                        {% for clothes in outfit3 %}
+                                <h2>{{clothes.label}}:</h2>
+                                <img src= {{clothes.file_path}} height="200px" width="200px" >
+                             {% endfor %}
+                       </input><br>
+
+
+
+                         <p>
+                             <input type="submit" name="submit_button_2" value="Save">
+                 </form>
 
 
 

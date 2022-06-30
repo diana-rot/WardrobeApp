@@ -70,9 +70,11 @@ function send_city(){
 }
 
 
-   function checkButton() {
+function checkButton() {
 
             document.getElementById('btn-show').style.display = "block";
             // document.getElementById('submit_btn').style.display = "none";
 
         }
+
+
