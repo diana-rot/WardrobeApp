@@ -395,6 +395,7 @@ def get_outfit():
         event = request.form.get('events')
         print(event)
 
+
         loaded_classifier = joblib.load("./random_forest.joblib")
         #to be predicted sunt preferintele utilizatorului
         to_be_predicted = []
@@ -477,41 +478,39 @@ def get_outfit():
         predict_form = []
         #aici il formatez sa il trimit la padurea de arbori
         predict_form.append(to_be_predicted)
-
-        print(predict_form)
-
-        # load_clas1 = loaded_classifier.predict([[0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
-        # load_clas2 = loaded_classifier.predict([[1, 1, 0, 0, 0, 0, 0, 1, 0, 0]])
         #result forest are indexul sub forma de vector
-        result_forest = loaded_classifier.predict(predict_form)
-        print(result_forest)
-        index_of_outfit = result_forest[0]
-        print(result_outfit[index_of_outfit])
+        if event is not None:
+            print("not none?")
+            print(predict_form)
+            result_forest = loaded_classifier.predict(predict_form)
+            print(result_forest)
+            index_of_outfit = result_forest[0]
+            print(result_outfit[index_of_outfit])
         #de aici va trebui sa fac un strtok si sa iau cele 3 outfituri pentru a le afisa in front end
         #gandit logica cu
 
-        txt = result_outfit[index_of_outfit]
-        filters_outfits = txt.split('-')
-        print(filters_outfits)
-        count = 0
-        for filter_name in filters_outfits:
-            print(filter_name)
-            filter = {'userId': userId, 'label': filter_name}
-            print(filter)
-            count = 0
-            # while count != 3:
-            users_clothes = db.wardrobe.find(filter).limit(1)
-            print(users_clothes)
-            outfit1.append(users_clothes[1])
-            outfit2.append(users_clothes[2])
-            outfit3.append(users_clothes[3])
-                # print(count)
-            print('are you ok?1')
-            print(outfit1)
-            print('are you ok?2')
-            print(outfit2)
-            print('are you ok?3')
-            print(outfit3)
+            txt = result_outfit[index_of_outfit]
+            filters_outfits = txt.split('-')
+            print(filters_outfits)
+
+            for filter_name in filters_outfits:
+                print(filter_name)
+                filter = {'userId': userId, 'label': filter_name}
+                print(filter)
+                count = 0
+                # while count != 3:
+                users_clothes = db.wardrobe.find(filter).limit(1)
+                print(users_clothes)
+                outfit1.append(users_clothes[1])
+                outfit2.append(users_clothes[2])
+                outfit3.append(users_clothes[3])
+                    # print(count)
+                print('are you ok?1')
+                print(outfit1)
+                print('are you ok?2')
+                print(outfit2)
+                print('are you ok?3')
+                print(outfit3)
             # count = count + 1
 
             # post_result(outfit1,outfit2,outfit3,city1,city2,city3)

@@ -31,22 +31,24 @@
                     <input type="radio" name="weather" id="no" value="no"> No </input>
                 </fieldset>
 
-                <h3 >For which city?</h3>
+
                   <fieldset id="city">
+                      <h3 >For which city?</h3>
                 	<input type="radio" name="city" id= city_1 value={{ city1.city}}> {{city1.city}}</input>
 					<input type="radio" name="city" id= city_2 value={{ city2.city}}> {{city2.city}}</input>
                 	<input type="radio" name="city" id= city_3 value={{ city3.city}}> {{ city3.city }}</input>
                   </fieldset>
 
-                Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
+
                 <fieldset id="events">
+                   <h3> Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
                     <input type="radio" name="events" id="event" value="event"> Event </input>
 				    <input type="radio" name="events" id="walk" value="walk"> Walk </input>
 					<input type="radio" name="events" id="work" value="work"> Work </input>
 				    <input type="radio" name="events" id="travel" value="travel"> Travel </input>
                   </fieldset>
 
-                <input type="submit" name="submit_button" value="Submit">
+                <input type="submit" name="submit_button"  value="Submit"  class="btn btn--secondary">
             </form>
 
               </div>
@@ -76,7 +78,7 @@
                         <h2>outfit 1</h2>
                         {% for clothes in outfit1 %}
                         <h2>{{clothes.label}}:</h2>
-                            <img src= {{clothes.file_path}} height="200px" width="200px" >
+                            <img src= {{clothes.file_path}} height="150px" width="150px">
                         {% endfor %}
                      </input><br>
 
@@ -85,7 +87,7 @@
                       <h2>outfit 2</h2>
                       {% for clothes in outfit2 %}
                             <h2>{{clothes.label}}:</h2>
-                            <img src= {{clothes.file_path}} height="200px" width="200px">
+                            <img src= {{clothes.file_path}} height="200px" width="100px">
                          {% endfor %}
                      </input><br>
 
@@ -94,15 +96,12 @@
                         <h2>outfit 3</h2>
                         {% for clothes in outfit3 %}
                                 <h2>{{clothes.label}}:</h2>
-                                <img src= {{clothes.file_path}} height="200px" width="200px" >
+                                <img src= {{clothes.file_path}}  height="100px" width="100px" >
                              {% endfor %}
                        </input><br>
+                    <input type="submit" name="submit_button_2" value="Save" class ="btn btn--secondary">
 
-
-
-                         <p>
-                             <input type="submit" name="submit_button_2" value="Save">
-                 </form>
+                    </form>
 
 
 
