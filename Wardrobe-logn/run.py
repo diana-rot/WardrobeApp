@@ -330,12 +330,6 @@ def generate_outfit():
     print(result_weather)
     print(result_location)
 
-    result_a = request.form.getlist('finish')
-    print("cf")
-    print(result_a)
-    result_b = request.form.getlist('toeic_pages')
-    print("cfff")
-    print(result_b)
 
     # aici e random classifier
 
@@ -353,6 +347,11 @@ def generate_outfit():
 def get_outfit():
     userId = session['user']['_id']
     cityByDefault = 'Bucharest'
+    result_outfit = []
+    result_outfit.append('Dress-Sandal')#0
+    result_outfit.append('Tshirt-Trouser')#1
+    result_outfit.append('Dress-Sandal-Coat')#2
+
 
     if request.method == 'POST':
         new_city = request.form.get('city')
@@ -378,13 +377,10 @@ def get_outfit():
             'description': r['weather'][0]['description'],
             'icon': r['weather'][0]['icon'],
         }
-        print(weather)
         weather_data.append(weather)
 
 
     city1 = weather_data[0]
-    print('alo')
-    print(city1['temperature'])
     city2 = weather_data[1]
     city3 = weather_data[2]
 
@@ -397,13 +393,9 @@ def get_outfit():
         print(event)
 
         loaded_classifier = joblib.load("./random_forest.joblib")
-        # aici rezulta ceva de genul [0] care e o rochie si [2] care e ceva cu un coat
-        # dar ce forma trebuie sa fac eu predictuil inca nu imi e clar un tuplu?[[]]
+        #to be predicted sunt preferintele utilizatorului
         to_be_predicted = []
-        # print(weather_data[0].temperature)
-        # print(weather_data[1].temperature)
-        # print(weather_data[2].temperature)
-        # #pw logica de yes, apoi trebuie sa includ logica venita de la open weather API
+
         if include_weather == 'yes':
             to_be_predicted.append(1)
                 #aici trebuie sa adaug vremea corespunzatoare orasului cu WeatehrOpenAPI
@@ -457,8 +449,6 @@ def get_outfit():
             to_be_predicted.append(0)
             to_be_predicted.append(0)
 
-
-
         if event == 'event':
             to_be_predicted.append(1)
             to_be_predicted.append(0)
@@ -482,14 +472,52 @@ def get_outfit():
 
         print(to_be_predicted)
         predict_form = []
+        #aici il formatez sa il trimit la padurea de arbori
         predict_form.append(to_be_predicted)
+
         print(predict_form)
 
         # load_clas1 = loaded_classifier.predict([[0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
         # load_clas2 = loaded_classifier.predict([[1, 1, 0, 0, 0, 0, 0, 1, 0, 0]])
-        load_clas3 = loaded_classifier.predict(predict_form)
-        print(load_clas3)
+        #result forest are indexul sub forma de vector
+        result_forest = loaded_classifier.predict(predict_form)
+        print(result_forest)
+        index_of_outfit = result_forest[0]
+        print(result_outfit[index_of_outfit])
+        #de aici va trebui sa fac un strtok si sa iau cele 3 outfituri pentru a le afisa in front end
+        #gandit logica cu
+        outfit1=[]
+        outfit2=[]
+        outfit3=[]
+        txt = result_outfit[index_of_outfit]
+        filters_outfits = txt.split('-')
+        print(filters_outfits)
+        count = 0
+        for filter_name in filters_outfits:
+            print(filter_name)
+            filter = {'userId': userId, 'label': filter_name}
+            print(filter)
+            count = 0
+            while count != 3:
+                users_clothes = db.wardrobe.find(filter)
+                print(users_clothes)
+                outfit1.append(users_clothes[1])
+                outfit2.append(users_clothes[2])
+                outfit3.append(users_clothes[3])
+                print(count)
+                count = count + 1
+
+            post_result(outfit1,outfit2,outfit3,city1,city2,city3)
     return render_template('outfit_of_the_day.html', city1=city1, city2=city2, city3=city3)
+
+
+@app.route("/outfit/day", methods=['POST'])
+def post_result(outfit1,outfit2,outfit3,city1,city2,city3):
+
+    print('help me')
+    print(outfit1)
+    print(outfit2)
+    return render_template('outfit_of_the_day.html',outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3)
 
 
 @app.route('/dashboard/', methods=['GET', 'POST'])
