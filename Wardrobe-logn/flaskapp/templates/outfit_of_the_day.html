@@ -78,7 +78,7 @@
                         <h2>outfit 1</h2>
                         {% for clothes in outfit1 %}
                         <h2>{{clothes.label}}:</h2>
-                            <img src= {{clothes.file_path}} height="150px" width="150px">
+                            <img src= {{clothes.file_path}} >
                         {% endfor %}
                      </input><br>
 
@@ -87,7 +87,7 @@
                       <h2>outfit 2</h2>
                       {% for clothes in outfit2 %}
                             <h2>{{clothes.label}}:</h2>
-                            <img src= {{clothes.file_path}} height="200px" width="100px">
+                            <img src= {{clothes.file_path}} >
                          {% endfor %}
                      </input><br>
 
@@ -96,7 +96,7 @@
                         <h2>outfit 3</h2>
                         {% for clothes in outfit3 %}
                                 <h2>{{clothes.label}}:</h2>
-                                <img src= {{clothes.file_path}}  height="100px" width="100px" >
+                                <img src= {{clothes.file_path}} >
                              {% endfor %}
                        </input><br>
                     <input type="submit" name="submit_button_2" value="Save" class ="btn btn--secondary">

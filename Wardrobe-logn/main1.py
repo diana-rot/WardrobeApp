@@ -64,6 +64,9 @@ class LabelSmoothingBCEWithLogitsLossFlat(BCEWithLogitsLossFlat):
     def __repr__(self):
         return "FlattenedLoss of LabelSmoothingBCEWithLogits()"
 
+
+
+
 if __name__ == '__main__':
 
     TRAIN_PATH = "multilabel-train.csv"
@@ -107,6 +110,8 @@ if __name__ == '__main__':
     print(fastai.__version__)
     learn.load_state_dict(torch.load(path,
                                      map_location=torch.device('cpu'))['model'])
-
+    print('hello')
     image_path = PATH + '/4.jpg'
-    print(predict_attribute(learn, image_path))
+    interp = ClassificationInterpretation.from_learner(learn)
+    print("hi")
+    interp.plot_confusion_matrix(figsize=(10, 10), dpi=10)

@@ -31,7 +31,7 @@ import cv2
 from sklearn.cluster import KMeans
 import imutils
 
-MODEL_PATH = 'my_25model.h5'
+MODEL_PATH = 'my_1_july_20epc_model.h5'
 # Load your trained model
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
@@ -207,6 +207,7 @@ class LabelSmoothingBCEWithLogitsLossFlat(BCEWithLogitsLossFlat):
 
 
 def predict_attribute_model(img_path):
+    print('alo alo')
     TRAIN_PATH = "multilabel-train.csv"
     TEST_PATH = "multilabel-test.csv"
     CLASSES_PATH = "attribute-classes.txt"
@@ -226,7 +227,7 @@ def predict_attribute_model(img_path):
     dls = dblock.dataloaders(train_df, num_workers=0)
     dls.show_batch(nrows=1, ncols=6)
 
-    dsets = dblock.datasets(train_df)
+    # dsets = dblock.datasets(train_df)
     metrics = [FBetaMulti(2.0, 0.2, average='samples'), partial(accuracy_multi, thresh=0.2)]
 
     test_df = pd.read_csv(TEST_PATH)
@@ -236,7 +237,7 @@ def predict_attribute_model(img_path):
                        get_y=get_y,
                        item_tfms=Resize(224))  # Not Sure)
 
-    test_dls = dblock.dataloaders(test_df, num_workers=0)
+    # test_dls = dblock.dataloaders(test_df, num_workers=0)
 
     print(dls.vocab)
     learn = vision_learner(dls, resnet34, loss_func=LabelSmoothingBCEWithLogitsLossFlat(),
@@ -275,6 +276,7 @@ def doregister():
 @app.route('/generate/outfit', methods=['GET', 'POST'])
 @login_required
 def generate_outfit():
+
     userId = session['user']['_id']
     print(userId)
     filter = {'userId': userId, 'label': 'Dress'}
@@ -348,9 +350,11 @@ def get_outfit():
     userId = session['user']['_id']
     cityByDefault = 'Bucharest'
     result_outfit = []
-    result_outfit.append('Dress-Sandal')#0
-    result_outfit.append('Tshirt-Trouser')#1
-    result_outfit.append('Dress-Sandal-Coat')#2
+    result_outfit.append('Dress_Sandal')#0
+    result_outfit.append('T-shirt/top_Trouser')#1
+    result_outfit.append('Dress-Sandal_Coat')#2
+
+
 
 
     if request.method == 'POST':
@@ -370,6 +374,7 @@ def get_outfit():
     outfit1 = []
     outfit2 = []
     outfit3 = []
+
 
     for city in cities:
         r = requests.get(url.format(city['name'])).json()
@@ -394,6 +399,30 @@ def get_outfit():
         print(city)
         event = request.form.get('events')
         print(event)
+        option = request.form.get('options')
+        print(option)
+        if option is not None:
+            filter_lookup = {'userId': userId, 'outfitNo': option}
+            # print(filter_lookup)
+            # outfit_rez= db.outfits.getLastInsertedDocument.find(filter_lookup).limit(1);
+            outfit_rez = db.outfits.find(filter_lookup).limit(1)
+            for doc in outfit_rez:
+                print(doc)
+                print(doc['nota'])
+                print(doc['outfit'])
+                for piece in doc['outfit']:
+                    print(piece['label'])
+                    print(piece['id'])
+
+
+                doc['nota'] = doc['nota'] + 1
+                print(doc['nota'])
+                myquery = {'_id': doc['_id']}
+                print(myquery)
+                newvalues = {"$set": {"nota": doc['nota']}}
+
+                db.outfits.update_one(myquery, newvalues)
+
 
 
         loaded_classifier = joblib.load("./random_forest.joblib")
@@ -490,7 +519,7 @@ def get_outfit():
         #gandit logica cu
 
             txt = result_outfit[index_of_outfit]
-            filters_outfits = txt.split('-')
+            filters_outfits = txt.split('_')
             print(filters_outfits)
 
             for filter_name in filters_outfits:
@@ -507,15 +536,25 @@ def get_outfit():
                     # print(count)
                 print('are you ok?1')
                 print(outfit1)
+
+                option1 = outfit1
                 print('are you ok?2')
                 print(outfit2)
+
+                option2 = outfit1
                 print('are you ok?3')
                 print(outfit3)
-            # count = count + 1
 
-            # post_result(outfit1,outfit2,outfit3,city1,city2,city3)
+                option3 = outfit3
 
-            # return redirect(url_for(get_outfit, outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3))
+            db.outfits.insert_one(
+                    {'outfit': outfit1, 'userId': userId, 'nota': 5, 'outfitNo':'piece1'})
+            db.outfits.insert_one(
+                    {'outfit': outfit2, 'userId': userId, 'nota': 5, 'outfitNo':'piece2'})
+            db.outfits.insert_one(
+                    {'outfit': outfit3, 'userId': userId, 'nota': 5, 'outfitNo':'piece3'})
+
+
     return render_template('outfit_of_the_day.html',  outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3)
 
 
@@ -635,7 +674,7 @@ def upload():
         predicted_label = np.argmax(preds)
         result = class_names[predicted_label]
         userId = session['user']['_id']
-        db.wardrobe.insert_one({'label': result, 'attribute': resulted_attribute, 'color': listToStr, 'userId': userId,
+        db.wardrobe.insert_one({'label': result, 'attribute': resulted_attribute, 'color': listToStr,'nota':4, 'userId': userId,
                                 'file_path': file_path_bd})
 
         return result
