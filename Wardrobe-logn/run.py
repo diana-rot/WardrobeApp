@@ -75,12 +75,8 @@ def predict_color(img_path):
     p_and_c = zip(percentages, dominant_colors)
     p_and_c = sorted(p_and_c, reverse=True)
     print("the colour in the db")
-    # print(p_and_c[1][0])
     print(p_and_c[1])
-
-    # print("one col" +p_and_c[0])
     block = np.ones((50, 50, 3), dtype='uint')
-
     plt.figure(figsize=(12, 8))
     for i in range(clusters):
         plt.subplot(1, clusters, i + 1)
@@ -235,9 +231,8 @@ def predict_attribute_model(img_path):
     dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
                        get_x=get_x,
                        get_y=get_y,
-                       item_tfms=Resize(224))  # Not Sure)
+                       item_tfms=Resize(224))
 
-    # test_dls = dblock.dataloaders(test_df, num_workers=0)
 
     print(dls.vocab)
     learn = vision_learner(dls, resnet34, loss_func=LabelSmoothingBCEWithLogitsLossFlat(),
@@ -295,10 +290,6 @@ def get_outfit():
     result_outfit.append('Dress_Sandal_Bag') #12
 
 
-
-    # if request.method == 'POST':
-    #     new_city = request.form.get('city')
-
     filter = {'userId': userId}
     if db.city.find(filter) is None:
         db.city.insert_one({'name': cityByDefault, 'userId': userId})
@@ -337,16 +328,17 @@ def get_outfit():
         print(event)
         option = request.form.get('options')
         print(option)
+        #take the last introduced outfit and modify the score
+
         if option is not None:
             filter_lookup = {'userId': userId, 'outfitNo': option}
-            # print(filter_lookup)
-
             outfit_rez= db.outfits.find(filter_lookup).sort('_id', -1).limit(1);
             #outfit_rez = db.outfits.find(filter_lookup).limit(1)
             print(filter)
             print(filter_lookup)
             print('hello')
             print(outfit_rez)
+            #for every piece of clothing in the outfit, update the score of the clothing
             for doc in outfit_rez:
                 print(doc)
                 print(doc['nota'])
@@ -357,7 +349,7 @@ def get_outfit():
                     mydocq = {'_id': piece['_id']}
                     piece['nota'] = piece['nota'] + 1
                     newvalue_doc = {"$set": {"nota": piece['nota']}}
-                    db.outfits.update_one(mydocq, newvalue_doc)
+                    db.wardrobe.update_one(mydocq, newvalue_doc)
 
 
                 doc['nota'] = doc['nota'] + 1
@@ -370,13 +362,14 @@ def get_outfit():
                 db.outfits.update_one(myquery, newset)
 
 
+        #Random forect classificer
         loaded_classifier = joblib.load("./random_forest_classifier.joblib")
-        #to be predicted sunt preferintele utilizatorului
+        #to be predicted - users preferences
         to_be_predicted = []
 
         if include_weather == 'yes':
             to_be_predicted.append(1)
-                #aici trebuie sa adaug vremea corespunzatoare orasului cu WeatehrOpenAPI
+
             if city == city1['city']:
                 temperature = city1['temperature']
             elif city == city2['city']:
@@ -454,25 +447,31 @@ def get_outfit():
         predict_form.append(to_be_predicted)
         #result forest are indexul sub forma de vector
         if event is not None:
-            print("not none?")
+
             print(predict_form)
             result_forest = loaded_classifier.predict(predict_form)
             print(result_forest)
             index_of_outfit = result_forest[0]
             print(result_outfit[index_of_outfit])
-        #de aici va trebui sa fac un strtok si sa iau cele 3 outfituri pentru a le afisa in front end
-        #gandit logica cu
 
+            #the results to be separated for the FE
             txt = result_outfit[index_of_outfit]
             filters_outfits = txt.split('_')
             print(filters_outfits)
 
+            #if we already have some favourites
             for filter_name in filters_outfits:
                 print(filter_name)
+
+                #nu merge, trebuie sa gasesc o alta cale
+                #facem asa, scot nota momentan de aici, ma duc sa printez documentul si pana m
+                #ma intorc, am si timp sa ma gandesc
+                # {"$lt": 5}
                 filter = {'userId': userId, 'label': filter_name}
+                print("here it suppose to go")
                 print(filter)
                 count = 0
-                # while count != 3:
+                #each item of clothing
                 users_clothes = db.wardrobe.find(filter).limit(1)
                 print(users_clothes)
                 outfit1.append(users_clothes[1])
@@ -502,14 +501,6 @@ def get_outfit():
 
     return render_template('outfit_of_the_day.html',  outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3)
 
-
-@app.route("/outfit/day", methods=['POST'])
-def post_result(outfit1,outfit2,outfit3,city1,city2,city3):
-
-    print('help me')
-    print(outfit1)
-    print(outfit2)
-    return render_template('outfit_of_the_day.html',outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3)
 
 
 @app.route('/dashboard/', methods=['GET', 'POST'])
