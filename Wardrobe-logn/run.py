@@ -272,76 +272,76 @@ from flaskapp.user.routes import *
 def doregister():
     return render_template('register.html')
 
-
-@app.route('/generate/outfit', methods=['GET', 'POST'])
-@login_required
-def generate_outfit():
-
-    userId = session['user']['_id']
-    print(userId)
-    filter = {'userId': userId, 'label': 'Dress'}
-    users_some_clothes = db.wardrobe.find(filter).limit(3)
-    print("clothes, buth how many?")
-    count = 0;
-
-    clothes1 = users_some_clothes[1]
-    clothes2 = users_some_clothes[2]
-    clothes3 = users_some_clothes[3]
-    print(clothes1)
-    print(clothes2)
-    print(clothes3)
-
-    option = request.form.getlist('options')
-    print(option)
-
-    userId = session['user']['_id']
-    cityByDefault = 'Bucharest'
-
-    if request.method == 'POST':
-        new_city = request.form.get('city')
-
-        if new_city:
-            db.city.insert_one({'name': new_city, 'userId': userId})
-
-    filter = {'userId': userId}
-    if db.city.find(filter) is None:
-        db.city.insert_one({'name': cityByDefault, 'userId': userId})
-
-    cities = db.city.find(filter)
-    url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
-
-    weather_data = []
-
-    for city in cities:
-        r = requests.get(url.format(city['name'])).json()
-
-        weather = {
-            'city': city['name'],
-            'temperature': r['main']['temp'],
-            'description': r['weather'][0]['description'],
-            'icon': r['weather'][0]['icon'],
-        }
-
-        weather_data.append(weather)
-    city1 = weather_data[0]
-    city2 = weather_data[1]
-    city3 = weather_data[2]
-
-    result_weather = request.form.getlist('city')
-    result_location = request.form.getlist('location')
-    print(result_weather)
-    print(result_location)
-
-
-    # aici e random classifier
-
-    loaded_classifier = joblib.load("./random_forest.joblib")
-    load_clas1 = loaded_classifier.predict([[0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
-    load_clas2 = loaded_classifier.predict([[1, 1, 0, 0, 0, 0, 0, 1, 0, 0]])
-    print(load_clas1, load_clas2)
-
-    return render_template('outfit_generator.html', outfit1=clothes1, outfit2=clothes2, outfit3=clothes3,
-                           city1=city1, city2=city2, city3=city3)
+#
+# @app.route('/generate/outfit', methods=['GET', 'POST'])
+# @login_required
+# def generate_outfit():
+#
+#     userId = session['user']['_id']
+#     print(userId)
+#     filter = {'userId': userId, 'label': 'Dress'}
+#     users_some_clothes = db.wardrobe.find(filter).limit(3)
+#     print("clothes, buth how many?")
+#     count = 0;
+#
+#     clothes1 = users_some_clothes[1]
+#     clothes2 = users_some_clothes[2]
+#     clothes3 = users_some_clothes[3]
+#     print(clothes1)
+#     print(clothes2)
+#     print(clothes3)
+#
+#     option = request.form.getlist('options')
+#     print(option)
+#
+#     userId = session['user']['_id']
+#     cityByDefault = 'Bucharest'
+#
+#     if request.method == 'POST':
+#         new_city = request.form.get('city')
+#
+#         if new_city:
+#             db.city.insert_one({'name': new_city, 'userId': userId})
+#
+#     filter = {'userId': userId}
+#     if db.city.find(filter) is None:
+#         db.city.insert_one({'name': cityByDefault, 'userId': userId})
+#
+#     cities = db.city.find(filter)
+#     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+#
+#     weather_data = []
+#
+#     for city in cities:
+#         r = requests.get(url.format(city['name'])).json()
+#
+#         weather = {
+#             'city': city['name'],
+#             'temperature': r['main']['temp'],
+#             'description': r['weather'][0]['description'],
+#             'icon': r['weather'][0]['icon'],
+#         }
+#
+#         weather_data.append(weather)
+#     city1 = weather_data[0]
+#     city2 = weather_data[1]
+#     city3 = weather_data[2]
+#
+#     result_weather = request.form.getlist('city')
+#     result_location = request.form.getlist('location')
+#     print(result_weather)
+#     print(result_location)
+#
+#
+#     # aici e random classifier
+#
+#     loaded_classifier = joblib.load("./random_forest.joblib")
+#     load_clas1 = loaded_classifier.predict([[0, 0, 0, 0, 0, 0, 1, 0, 0, 0]])
+#     load_clas2 = loaded_classifier.predict([[1, 1, 0, 0, 0, 0, 0, 1, 0, 0]])
+#     print(load_clas1, load_clas2)
+#
+#     return render_template('outfit_generator.html', outfit1=clothes1, outfit2=clothes2, outfit3=clothes3,
+#                            city1=city1, city2=city2, city3=city3)
 
 
 @app.route('/outfit/day', methods=['GET', 'POST'])
@@ -351,9 +351,18 @@ def get_outfit():
     cityByDefault = 'Bucharest'
     result_outfit = []
     result_outfit.append('Dress_Sandal')#0
-    result_outfit.append('T-shirt/top_Trouser')#1
-    result_outfit.append('Dress-Sandal_Coat')#2
-
+    result_outfit.append('T-shirt/top_Trouser_Sneaker')#1
+    result_outfit.append('Shirt_Trouser')#2
+    result_outfit.append('Shirt_Trouser_Sneaker')# 3
+    result_outfit.append('Dress_Sandal_Coat')# 4
+    result_outfit.append('T-shirt/top_Trouser')# 5
+    result_outfit.append('Shirt_Trouser_Coat')# 6
+    result_outfit.append('Shirt_Trouser_Coat')# 7
+    result_outfit.append('Dress_Ankle-boot_Coat')  # 8
+    result_outfit.append('Pullover_Trouser_Ankle-boot')  # 9
+    result_outfit.append('Dress_Sneaker')  # 10
+    result_outfit.append('Shirt_Trouser_Sandal')# 11
+    result_outfit.append('Dress_Sandal_Bag') #12
 
 
 
@@ -406,13 +415,15 @@ def get_outfit():
             # print(filter_lookup)
             # outfit_rez= db.outfits.getLastInsertedDocument.find(filter_lookup).limit(1);
             outfit_rez = db.outfits.find(filter_lookup).limit(1)
+            print(filter)
+            print(filter_lookup)
             for doc in outfit_rez:
                 print(doc)
                 print(doc['nota'])
                 print(doc['outfit'])
                 for piece in doc['outfit']:
                     print(piece['label'])
-                    print(piece['id'])
+                    print(piece['_id'])
 
 
                 doc['nota'] = doc['nota'] + 1
@@ -425,7 +436,7 @@ def get_outfit():
 
 
 
-        loaded_classifier = joblib.load("./random_forest.joblib")
+        loaded_classifier = joblib.load("./random_forest_classifier.joblib")
         #to be predicted sunt preferintele utilizatorului
         to_be_predicted = []
 
@@ -449,7 +460,7 @@ def get_outfit():
                 to_be_predicted.append(0)
                 to_be_predicted.append(0)
 
-            elif temperature > 15.0 and temperature < 23.0:
+            elif temperature > 15.0 and temperature < 26.0:
                 print('primavara')
                 to_be_predicted.append(0)
                 to_be_predicted.append(1)
@@ -465,7 +476,7 @@ def get_outfit():
                  to_be_predicted.append(0)
                  to_be_predicted.append(0)
 
-            elif temperature >= 23.0:
+            elif temperature >= 25.0:
                 print('vara')
                 to_be_predicted.append(0)
                 to_be_predicted.append(0)
