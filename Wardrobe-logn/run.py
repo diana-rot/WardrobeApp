@@ -664,6 +664,29 @@ def view_wardrobe_all():
     return render_template('wardrobe_all.html', wardrobes=users_clothes)
 
 
+@app.route('/outfits/all', methods=['GET', 'POST'])
+@login_required
+def view_outfits_all():
+    userId = session['user']['_id']
+    print(userId)
+    filter = {'userId': userId,'isFavorite':'yes'}
+    users_clothes = db.outfits.find(filter)
+    # for piece in users_clothes:
+    #     print(piece)
+    #     for ok in piece:
+    #         print(ok)
+    # for doc in users_clothes:
+    #     print("helloooo")
+    #     print(doc['outfit'])
+    try:
+        record = users_clothes.next()
+        print(record)
+    except StopIteration:
+        print("Empty cursor!")
+
+    return render_template('outfits_all.html', wardrobes=users_clothes)
+
+
 @app.route('/predict', methods=['GET', 'POST'])
 @login_required
 def upload():
