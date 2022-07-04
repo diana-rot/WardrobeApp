@@ -3,6 +3,8 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 {% extends "base.html" %}
 {% block content %}
+
+
 <head>
 
     <meta charset="UTF-8">
@@ -12,6 +14,7 @@
 
     </style>
 </head>
+
 
 <body>
 
@@ -48,7 +51,13 @@
 				    <input type="radio" name="events" id="travel" value="travel"> Travel </input>
                   </fieldset>
 
-                <input type="submit" name="submit_button"  value="Submit"  class="btn btn--secondary">
+                <input id = "submit"
+                       type="submit"
+                       name="submit_button"
+                       value="Submit"
+                       class="btn btn--secondary"
+
+                >
             </form>
 
               </div>
@@ -58,10 +67,10 @@
     <div class="card">
         <div class="center">
            <h2 class="center">ToolBox</h2>
+            <a href ="/dashboard" class="btn btn--secondary">Back to Dashboard</a>
             <a href ="/wardrobe" class="btn btn--secondary">Add to wardrobe </a>
             <a href ="/wardrobe/all" class="btn btn--secondary">View your wardrobe</a>
             <a href ="/outfits/all" class="btn btn--secondary">View your favourite outfits</a>
-            <a href ="/dashboard" class="btn btn--secondary">Back to Dashboard</a>
             <a href="/user/signout" class="btn btn-secondary">Sign Out</a>
       </div>
     </div>
@@ -76,7 +85,7 @@
                  <form name="options"  method="post" >
 
                      <input type="radio" name="options" id="piece1" value="piece1">
-                        <h2>outfit 1</h2>
+                        <h2 id="outfit1">outfit 1</h2>
                         {% for clothes in outfit1 %}
                         <h2>{{clothes.label}}:</h2>
                             <img src= {{clothes.file_path}} >
@@ -85,7 +94,7 @@
 
 
                       <input type="radio" name="options" id="piece2" value="piece2">
-                      <h2>outfit 2</h2>
+                      <h2 id="outfit2">outfit 2</h2>
                       {% for clothes in outfit2 %}
                             <h2>{{clothes.label}}:</h2>
                             <img src= {{clothes.file_path}} >
@@ -94,7 +103,7 @@
 
                      <input type="radio" name="options" id="piece3" value="piece3">
 
-                        <h2>outfit 3</h2>
+                        <h2 id="outfit3">outfit 3</h2>
                         {% for clothes in outfit3 %}
                                 <h2>{{clothes.label}}:</h2>
                                 <img src= {{clothes.file_path}} >
