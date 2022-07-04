@@ -359,7 +359,7 @@ def get_outfit():
     result_outfit.append('Shirt_Trouser_Coat')# 6
     result_outfit.append('Shirt_Trouser_Coat')# 7
     result_outfit.append('Dress_Ankle-boot_Coat')  # 8
-    result_outfit.append('Pullover_Trouser_Ankle-boot')  # 9
+    result_outfit.append('Pullover_Trouser_Ankle-boot')# 9
     result_outfit.append('Dress_Sneaker')  # 10
     result_outfit.append('Shirt_Trouser_Sandal')# 11
     result_outfit.append('Dress_Sandal_Bag') #12
@@ -413,10 +413,13 @@ def get_outfit():
         if option is not None:
             filter_lookup = {'userId': userId, 'outfitNo': option}
             # print(filter_lookup)
-            # outfit_rez= db.outfits.getLastInsertedDocument.find(filter_lookup).limit(1);
-            outfit_rez = db.outfits.find(filter_lookup).limit(1)
+
+            outfit_rez= db.outfits.find(filter_lookup).sort('_id', -1).limit(1);
+            #outfit_rez = db.outfits.find(filter_lookup).limit(1)
             print(filter)
             print(filter_lookup)
+            print('hello')
+            print(outfit_rez)
             for doc in outfit_rez:
                 print(doc)
                 print(doc['nota'])
@@ -424,6 +427,10 @@ def get_outfit():
                 for piece in doc['outfit']:
                     print(piece['label'])
                     print(piece['_id'])
+                    mydocq = {'_id': piece['_id']}
+                    piece['nota'] = piece['nota'] + 1
+                    newvalue_doc = {"$set": {"nota": piece['nota']}}
+                    db.outfits.update_one(mydocq, newvalue_doc)
 
 
                 doc['nota'] = doc['nota'] + 1
@@ -431,9 +438,9 @@ def get_outfit():
                 myquery = {'_id': doc['_id']}
                 print(myquery)
                 newvalues = {"$set": {"nota": doc['nota']}}
-
+                newset = {"$set": {"isFavorite": 'yes'}}
                 db.outfits.update_one(myquery, newvalues)
-
+                db.outfits.update_one(myquery, newset)
 
 
         loaded_classifier = joblib.load("./random_forest_classifier.joblib")
@@ -559,11 +566,11 @@ def get_outfit():
                 option3 = outfit3
 
             db.outfits.insert_one(
-                    {'outfit': outfit1, 'userId': userId, 'nota': 5, 'outfitNo':'piece1'})
+                    {'outfit': outfit1, 'userId': userId, 'nota': 4, 'outfitNo':'piece1', 'isFavorite':'no'})
             db.outfits.insert_one(
-                    {'outfit': outfit2, 'userId': userId, 'nota': 5, 'outfitNo':'piece2'})
+                    {'outfit': outfit2, 'userId': userId, 'nota': 4, 'outfitNo':'piece2','isFavorite':'no'})
             db.outfits.insert_one(
-                    {'outfit': outfit3, 'userId': userId, 'nota': 5, 'outfitNo':'piece3'})
+                    {'outfit': outfit3, 'userId': userId, 'nota': 4, 'outfitNo':'piece3','isFavorite':'no'})
 
 
     return render_template('outfit_of_the_day.html',  outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3)
