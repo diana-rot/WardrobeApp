@@ -9,9 +9,12 @@ from werkzeug.utils import secure_filename
 import pymongo
 import requests
 from gridfs import GridFS
-
-from keras.models import load_model
+import tensorflow
+from tensorflow.keras.models import load_model
+from tensorflow.keras.utils import load_img
 from keras.preprocessing import image
+
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -24,14 +27,12 @@ import joblib
 client = pymongo.MongoClient('localhost', 27017)
 db = client.user_login_system_test
 
-# Image loader
-# Image loader
 import cv2
 
 from sklearn.cluster import KMeans
 import imutils
 
-MODEL_PATH = 'my_1_july_20epc_model.h5'
+MODEL_PATH = 'my_second_model.h5'
 # Load your trained model
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
@@ -39,7 +40,6 @@ print('Model loaded. Check http://127.0.0.1:5000/')
 
 def model_predict(img_path, model):
     img = image.load_img(img_path, target_size=(28, 28))
-
     img_array = np.asarray(img)
     x = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
     result = int(img_array[0][0][0])
@@ -52,8 +52,7 @@ def model_predict(img_path, model):
     img = (np.expand_dims(img, 0))
     preds = model.predict(img)
 
-    print(preds)
-
+    print(f"preds type: {type(preds)}, preds: {preds}")
     # predicting color
     return preds
 
@@ -201,50 +200,156 @@ class LabelSmoothingBCEWithLogitsLossFlat(BCEWithLogitsLossFlat):
     def __repr__(self):
         return "FlattenedLoss of LabelSmoothingBCEWithLogits()"
 
+from fastai.vision.all import DataBlock, ImageBlock, MultiCategoryBlock, RandomResizedCrop, aug_transforms
+import pandas as pd
+import torch
+from fastai.vision.all import *
+from functools import partial
+
 
 def predict_attribute_model(img_path):
     print('alo alo')
+
+    # Define paths to files
     TRAIN_PATH = "multilabel-train.csv"
     TEST_PATH = "multilabel-test.csv"
     CLASSES_PATH = "attribute-classes.txt"
 
-    train_df = pd.read_csv(TRAIN_PATH)
-    train_df.head()
+    # Load training data
+    try:
+        train_df = pd.read_csv(TRAIN_PATH)
+        print("Training data loaded successfully.")
+    except Exception as e:
+        print(f"Error loading training data: {e}")
+        return
+
+    # Parameters and functions for optimization
     wd = 5e-7  # weight decay parameter
     opt_func = partial(ranger, wd=wd)
 
-    dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
-                       splitter=splitter,
-                       get_x=get_x,
-                       get_y=get_y,
-                       item_tfms=RandomResizedCrop(224, min_scale=0.8),
-                       batch_tfms=aug_transforms())
+    # Ensure splitter, get_x, and get_y are defined. For now, I'll assume they are as placeholders.
+    splitter = RandomSplitter()  # Example splitter
+    get_x = lambda x: x[0]  # Example get_x function
+    get_y = lambda x: x[1]  # Example get_y function
 
-    dls = dblock.dataloaders(train_df, num_workers=0)
-    dls.show_batch(nrows=1, ncols=6)
+    # Define DataBlock
+    print('Define datablock')
+    try:
+        dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
+                           splitter=splitter,
+                           get_x=get_x,
+                           get_y=get_y,
+                           item_tfms=RandomResizedCrop(224, min_scale=0.8),
+                           batch_tfms=aug_transforms())
 
-    # dsets = dblock.datasets(train_df)
+        dls = dblock.dataloaders(train_df, num_workers=0)
+        print('DataBlock and DataLoaders created successfully.')
+    except Exception as e:
+        print(f"Error creating DataBlock or DataLoaders: {e}")
+        return
+
+    # Show a batch of images
+    try:
+        dls.show_batch(nrows=1, ncols=6)
+        print('Batch of images shown.')
+    except Exception as e:
+        print(f"Error showing batch: {e}")
+
+    # Define metrics
     metrics = [FBetaMulti(2.0, 0.2, average='samples'), partial(accuracy_multi, thresh=0.2)]
 
-    test_df = pd.read_csv(TEST_PATH)
-    test_df.head()
-    dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
-                       get_x=get_x,
-                       get_y=get_y,
-                       item_tfms=Resize(224))
+    # Load test data
+    try:
+        test_df = pd.read_csv(TEST_PATH)
+        print("Test data loaded successfully.")
+    except Exception as e:
+        print(f"Error loading test data: {e}")
+        return
 
+    # Define a new DataBlock for test data
+    try:
+        dblock_test = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
+                                get_x=get_x,
+                                get_y=get_y,
+                                item_tfms=Resize(224))
+        print('Test DataBlock created.')
+    except Exception as e:
+        print(f"Error creating test DataBlock: {e}")
+        return
 
-    print(dls.vocab)
-    learn = vision_learner(dls, resnet34, loss_func=LabelSmoothingBCEWithLogitsLossFlat(),
-                           metrics=metrics, opt_func=opt_func).to_fp16()
+    # Initialize and load model
+    try:
+        learn = vision_learner(dls, resnet34, loss_func=LabelSmoothingBCEWithLogitsLossFlat(),
+                               metrics=metrics, opt_func=opt_func).to_fp16()
 
-    path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
+        # Load the pre-trained model
+        path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
+        learn.load_state_dict(torch.load(path, map_location=torch.device('cpu'))['model'])
+        print('Model loaded successfully.')
+    except Exception as e:
+        print(f"Error initializing or loading model: {e}")
+        return
 
-    learn.load_state_dict(torch.load(path,
-                                     map_location=torch.device('cpu'))['model'])
-    label_result = predict_attribute(learn, img_path)
-    print(label_result)
-    return label_result
+    # Predict attributes
+    try:
+        label_result = predict_attribute(learn, img_path)  # Ensure predict_attribute function is defined
+        print(f'Prediction result: {label_result}')
+        return label_result
+    except Exception as e:
+        print(f"Error predicting attributes: {e}")
+        return
+
+# def predict_attribute_model(img_path):
+#     print('alo alo')
+#     TRAIN_PATH = "multilabel-train.csv"
+#     TEST_PATH = "multilabel-test.csv"
+#     CLASSES_PATH = "attribute-classes.txt"
+#
+#     train_df = pd.read_csv(TRAIN_PATH)
+#
+#     train_df.head()
+#     wd = 5e-7  # weight decay parameter
+#     opt_func = partial(ranger, wd=wd)
+#     print('pana aci ok+2')
+#
+#     # aci e buba
+#     dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
+#                        splitter=splitter,
+#                        get_x=get_x,
+#                        get_y=get_y,
+#                        item_tfms=RandomResizedCrop(224, min_scale=0.8),
+#                        batch_tfms=aug_transforms())
+#
+#
+#     dls = dblock.dataloaders(train_df, num_workers=0)
+#     print('pana aci ok--3')
+#     dls.show_batch(nrows=1, ncols=6)
+#     print('pana aci ok+3')
+#
+#     # dsets = dblock.datasets(train_df)
+#     metrics = [FBetaMulti(2.0, 0.2, average='samples'), partial(accuracy_multi, thresh=0.2)]
+#     print('pana aci ok+4')
+#     test_df = pd.read_csv(TEST_PATH)
+#     test_df.head()
+#     print('pana aci ok+5')
+#     dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
+#                        get_x=get_x,
+#                        get_y=get_y,
+#                        item_tfms=Resize(224))
+#     print('pana aci ok+6')
+#
+#     print(dls.vocab)
+#     print('pana aci ok+7')
+#     learn = vision_learner(dls, resnet34, loss_func=LabelSmoothingBCEWithLogitsLossFlat(),
+#                            metrics=metrics, opt_func=opt_func).to_fp16()
+#
+#     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
+#
+#     learn.load_state_dict(torch.load(path,
+#                                      map_location=torch.device('cpu'))['model'])
+#     label_result = predict_attribute(learn, img_path)
+#     print(label_result)
+#     return label_result
 
 
 @app.route('/')
@@ -296,6 +401,7 @@ def get_outfit():
 
     cities = db.city.find(filter)
     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+
 
     weather_data = []
     outfit1 = []
@@ -604,41 +710,46 @@ def view_outfits_all():
 
     return render_template('outfits_all.html', wardrobes=users_clothes)
 
-
-@app.route('/predict', methods=['GET', 'POST'])
+@app.route('/predict', methods=['POST'])
 @login_required
 def upload():
     if request.method == 'POST':
-        # Get the file from post request
-        f = request.files['file']
-        file_path = os.path.join(
-            'flaskapp/static/image_users/', secure_filename(f.filename))
-        f.save(file_path)
-        print(file_path)
-        file_path_bd = os.path.join(
-            '../static/image_users/', secure_filename(f.filename))
+        try:
+            # Get the file from post request
+            f = request.files['file']
+            file_path = os.path.join(
+                'flaskapp/static/image_users/', secure_filename(f.filename))
+            f.save(file_path)
+            print(file_path)
+            file_path_bd = os.path.join(
+                '../static/image_users/', secure_filename(f.filename))
 
-        # Make predictionoutfit
-        preds = model_predict(file_path, model)
-        _, color = predict_color(file_path)
-        attribute_predict = predict_attribute_model(file_path)
-        print(attribute_predict)
-        mySeparator = ","
-        if attribute_predict is not None:
-            resulted_attribute = mySeparator.join(attribute_predict)
+            # Make prediction
+            preds = model_predict(file_path, model)
+            # _, color = predict_color(file_path)
+            attribute_predict = predict_attribute_model(file_path)
 
-        listToStr = ' '.join(map(str, color))
-        class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                       'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-        predicted_label = np.argmax(preds)
-        result = class_names[predicted_label]
-        userId = session['user']['_id']
-        db.wardrobe.insert_one({'label': result, 'attribute': resulted_attribute, 'color': listToStr,'nota':4, 'userId': userId,
-                                'file_path': file_path_bd})
+            mySeparator = ","
+            resulted_attribute = "N/A"  # Initialize resulted_attribute
+            if attribute_predict is not None:
+                resulted_attribute = mySeparator.join(attribute_predict)
 
-        return result
+            # listToStr = ' '.join(map(str, color))
+            listToStr = 'black'  # Assume 'black' for color as a placeholder
+            class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                           'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+            predicted_label = np.argmax(preds)
+            result = class_names[predicted_label]
+            userId = session['user']['_id']
+            db.wardrobe.insert_one({'label': result, 'attribute': resulted_attribute, 'color': listToStr, 'nota': 4, 'userId': userId,
+                                    'file_path': file_path_bd})
+
+            return result
+        except Exception as e:
+            return str(e), 500
     return None
 
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
