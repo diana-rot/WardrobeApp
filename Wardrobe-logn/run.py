@@ -662,7 +662,7 @@ def add_wardrobe():
         f.save(file_path)
         # Make prediction
         preds = model_predict(file_path, model)
-        # color = predict_color(file_path)
+        color = predict_color(file_path)
         class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                        'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
         predicted_label = np.argmax(preds)
@@ -726,7 +726,8 @@ def upload():
 
             # Make prediction
             preds = model_predict(file_path, model)
-            # _, color = predict_color(file_path)
+            # aici comentez ultima data
+            _, color = predict_color(file_path)
             attribute_predict = predict_attribute_model(file_path)
 
             mySeparator = ","
@@ -734,8 +735,8 @@ def upload():
             if attribute_predict is not None:
                 resulted_attribute = mySeparator.join(attribute_predict)
 
-            # listToStr = ' '.join(map(str, color))
-            listToStr = 'black'  # Assume 'black' for color as a placeholder
+            listToStr = ' '.join(map(str, color))
+            # listToStr = 'black'  # Assume 'black' for color as a placeholder
             class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                            'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
             predicted_label = np.argmax(preds)
