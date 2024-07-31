@@ -56,7 +56,6 @@ def model_predict(img_path, model):
     # predicting color
     return preds
 
-
 def predict_color(img_path):
     clusters = 5
     img = cv2.imread(img_path)
@@ -153,7 +152,6 @@ def load_model():
     print(learn)
     return learn
 
-
 def get_x(r):
     new_path = r["image_name"].replace('\\', '//')
     one_path = os.path.join(PATH1, new_path)
@@ -161,15 +159,12 @@ def get_x(r):
     # print(filename)
     return filename
 
-
 def get_y(r): return r['labels'].split(',')
-
 
 def splitter(df):
     train = df.index[df['is_valid'] == 0].tolist()
     valid = df.index[df['is_valid'] == 1].tolist()
     return train, valid
-
 
 def predict_attribute(model, path, display_img=True):
     predicted = model.predict(path)
@@ -299,59 +294,6 @@ def predict_attribute_model(img_path):
         print(f"Error predicting attributes: {e}")
         return
 
-# def predict_attribute_model(img_path):
-#     print('alo alo')
-#     TRAIN_PATH = "multilabel-train.csv"
-#     TEST_PATH = "multilabel-test.csv"
-#     CLASSES_PATH = "attribute-classes.txt"
-#
-#     train_df = pd.read_csv(TRAIN_PATH)
-#
-#     train_df.head()
-#     wd = 5e-7  # weight decay parameter
-#     opt_func = partial(ranger, wd=wd)
-#     print('pana aci ok+2')
-#
-#     # aci e buba
-#     dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
-#                        splitter=splitter,
-#                        get_x=get_x,
-#                        get_y=get_y,
-#                        item_tfms=RandomResizedCrop(224, min_scale=0.8),
-#                        batch_tfms=aug_transforms())
-#
-#
-#     dls = dblock.dataloaders(train_df, num_workers=0)
-#     print('pana aci ok--3')
-#     dls.show_batch(nrows=1, ncols=6)
-#     print('pana aci ok+3')
-#
-#     # dsets = dblock.datasets(train_df)
-#     metrics = [FBetaMulti(2.0, 0.2, average='samples'), partial(accuracy_multi, thresh=0.2)]
-#     print('pana aci ok+4')
-#     test_df = pd.read_csv(TEST_PATH)
-#     test_df.head()
-#     print('pana aci ok+5')
-#     dblock = DataBlock(blocks=(ImageBlock, MultiCategoryBlock),
-#                        get_x=get_x,
-#                        get_y=get_y,
-#                        item_tfms=Resize(224))
-#     print('pana aci ok+6')
-#
-#     print(dls.vocab)
-#     print('pana aci ok+7')
-#     learn = vision_learner(dls, resnet34, loss_func=LabelSmoothingBCEWithLogitsLossFlat(),
-#                            metrics=metrics, opt_func=opt_func).to_fp16()
-#
-#     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
-#
-#     learn.load_state_dict(torch.load(path,
-#                                      map_location=torch.device('cpu'))['model'])
-#     label_result = predict_attribute(learn, img_path)
-#     print(label_result)
-#     return label_result
-
-
 @app.route('/')
 def home():
     return render_template('welcome.html')
@@ -371,7 +313,6 @@ from flaskapp.user.routes import *
 @app.route('/register/')
 def doregister():
     return render_template('register.html')
-
 
 
 @app.route('/outfit/day', methods=['GET', 'POST'])
@@ -608,42 +549,75 @@ def get_outfit():
     return render_template('outfit_of_the_day.html',  outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3)
 
 
-
 @app.route('/dashboard/', methods=['GET', 'POST'])
 @login_required
 def dashboard():
     userId = session['user']['_id']
     cityByDefault = 'Bucharest'
+    api_key = 'aa73cad280fbd125cc7073323a135efa'
 
     if request.method == 'POST':
         new_city = request.form.get('city')
+        print(f"New city submitted: {new_city}")
 
         if new_city:
-            db.city.insert_one({'name': new_city, 'userId': userId})
+            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={new_city}&limit=1&appid={api_key}'
+            geocode_response = requests.get(geocode_url).json()
+            print(f"Geocode response: {geocode_response}")
+
+            if geocode_response:
+                lat = geocode_response[0].get('lat')
+                lon = geocode_response[0].get('lon')
+                if lat and lon:
+                    db.city.insert_one({'name': new_city, 'lat': lat, 'lon': lon, 'userId': userId})
 
     filter = {'userId': userId}
-    if db.city.find(filter) is None:
-        db.city.insert_one({'name': cityByDefault, 'userId': userId})
+    if db.city.find_one(filter) is None:
+        geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={cityByDefault}&limit=1&appid={api_key}'
+        geocode_response = requests.get(geocode_url).json()
+        print(f"Default city geocode response: {geocode_response}")
+
+        if geocode_response:
+            lat = geocode_response[0].get('lat')
+            lon = geocode_response[0].get('lon')
+            if lat and lon:
+                db.city.insert_one({'name': cityByDefault, 'lat': lat, 'lon': lon, 'userId': userId})
 
     cities = db.city.find(filter)
-    url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+    url = 'https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}&units=metric'
 
     weather_data = []
 
     for city in cities:
-        r = requests.get(url.format(city['name'])).json()
+        if 'lat' not in city or 'lon' not in city:
+            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={city["name"]}&limit=1&appid={api_key}'
+            geocode_response = requests.get(geocode_url).json()
+            print(f"Geocode response for {city['name']}: {geocode_response}")
 
-        weather = {
-            'city': city['name'],
-            'temperature': r['main']['temp'],
-            'description': r['weather'][0]['description'],
-            'icon': r['weather'][0]['icon'],
-        }
+            if geocode_response:
+                lat = geocode_response[0].get('lat')
+                lon = geocode_response[0].get('lon')
+                if lat and lon:
+                    db.city.update_one({'_id': city['_id']}, {'$set': {'lat': lat, 'lon': lon}})
+                    city['lat'] = lat
+                    city['lon'] = lon
+            else:
+                continue
 
-        weather_data.append(weather)
+        r = requests.get(url.format(city['lat'], city['lon'], api_key)).json()
+        print(f"Weather API response for {city['name']}: {r}")
 
+        if r.get('weather') and r.get('main'):
+            weather = {
+                'city': city['name'],
+                'temperature': r['main']['temp'],
+                'description': r['weather'][0]['description'],
+                'icon': r['weather'][0]['icon'],
+            }
+            weather_data.append(weather)
+
+    print(f"Weather data to be rendered: {weather_data}")
     return render_template('dashboard.html', weather_data=weather_data)
-
 
 from flaskapp.user.routes import *
 
