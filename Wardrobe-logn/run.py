@@ -13,6 +13,8 @@ import tensorflow
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import load_img
 from keras.preprocessing import image
+
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -304,6 +306,8 @@ def dologin():
 @app.route('/register/')
 def doregister():
     return render_template('register.html')
+
+
 
 @app.route('/outfit/day', methods=['GET', 'POST'])
 @login_required
