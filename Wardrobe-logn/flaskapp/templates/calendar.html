@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Outfit Calendar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta name="viewport" content="width=device-width" />
+    <script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        /* Color Variables */
+        :root {
+            --black: #000000;
+            --almost-black: #263238;
+            --white: #ffffff;
+            --grey-light: rgb(201, 173, 167);
+            --grey-medium: #78909C;
+            --grey-dark: #455A64;
+            --primary: #343633;
+            --primary-dark: #d0fef5;
+            --secondary: #ffffff;
+            --secondary-dark: #B0BEC5;
+            --red: #EF4836;
+        }
+
+        /* Basic Reset and Setup */
+        * {
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            font-size: 18px;
+            line-height: 28px;
+            color: var(--black);
+            background: var(--white);
+        }
+
+        /* Typography */
+        .center {
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0.5em 0 1em;
+            font-size: 26px;
+            line-height: 1.2;
+            color: var(--almost-black);
+        }
+
+        h2 {
+            margin: 0.5em 0 1em;
+            font-size: 20px;
+            line-height: 1.2;
+            color: var(--grey-dark);
+        }
+
+        p {
+            margin: 24px 0;
+        }
+
+        /* Cards */
+        .card-wrapper {
+            margin: 0 auto;
+            padding: 60px 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            display: flex;
+        }
+
+        .card {
+            margin: 0 20px 40px;
+            padding: 20px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 8px 26px -4px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            background: var(--grey-light);
+            text-align: center;
+        }
+
+        .card-calendar {
+            margin: 0 20px 40px;
+            padding: 20px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 8px 26px -4px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            background: var(--grey-light);
+        }
+
+        .card .btn {
+            padding: 8px 20px;
+            font-size: 12px;
+            line-height: 20px;
+        }
+
+        /* Forms */
+        form {
+            transition: opacity .15s ease;
+        }
+
+        form.loading {
+            pointer-events: none;
+            opacity: 0.75;
+        }
+
+        label {
+            margin: 0 0 2px;
+            font-size: 14px;
+            line-height: 24px;
+            letter-spacing: 1px;
+            color: var(--grey-medium);
+            display: block;
+        }
+
+        .field {
+            margin: 0 0 24px;
+            padding: 11px 16px 9px;
+            width: 100%;
+            font-size: 16px;
+            line-height: 26px;
+            color: var(--almost-black);
+            border: 1px solid var(--grey);
+            border-radius: 4px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+            background: var(--white);
+            transition: border-color .15s ease;
+        }
+
+        .field:focus {
+            border-color: var(--grey-medium);
+            outline: none;
+        }
+
+        .error {
+            margin: 0;
+            font-size: 16px;
+            line-height: 26px;
+            text-align: center;
+            color: var(--red);
+        }
+
+        .error--hidden {
+            display: none;
+        }
+
+        /* Buttons */
+        .btn {
+            margin: 0 0 24px;
+            padding: 8px 20px;
+            font-size: 12px;
+            line-height: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            display: inline-block;
+            background: var(--primary);
+            transition: color .15s ease, background-color .15s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn--secondary {
+            color: var(--almost-black);
+            background: var(--secondary);
+        }
+
+        .btn--secondary:hover {
+            background: var(--secondary-dark);
+        }
+
+        input[type=submit] {
+            margin: 34px auto 24px;
+            display: block;
+        }
+
+        /* Navigation */
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .navigation a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .navigation a:hover {
+            color: var(--grey-dark);
+            text-decoration: underline;
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            table {
+                font-size: 14px;
+            }
+
+            .card-wrapper {
+                padding: 30px 10px;
+            }
+
+            .card, .card-calendar {
+                margin: 0 10px 20px;
+                width: calc(100% - 20px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card-wrapper">
+        <!-- Calendar Card -->
+        <div class="card-calendar">
+            <h1>Outfit Calendar</h1>
+            <div class="navigation">
+                <a href="{{ url_for('calendar_view', month=prev_month, year=prev_year) }}">Previous</a>
+                <h2>{{ month }} {{ year }}</h2>
+                <a href="{{ url_for('calendar_view', month=next_month, year=next_year) }}">Next</a>
+            </div>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        {% for day in days_of_week %}
+                            <th>{{ day }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for week in calendar %}
+                        <tr>
+                            {% for day in week %}
+                                <td>
+                                    <div class="day-number">{{ day.day }}</div>
+                                    {% if day.day in outfits %}
+                                        <div class="outfit-info">
+                                            <img src="{{ url_for('uploaded_file', filename=outfits[day.day].outfit_image) }}" alt="Outfit Image">
+                                            <br>
+                                            {{ outfits[day.day].outfit_name }}
+                                        </div>
+                                    {% endif %}
+                                    <button class="btn btn-primary btn-sm float-right" data-toggle="modal" data-target="#outfitModal" data-date="{{ day.day }}">+</button>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- User Info Card -->
+        <div class="card">
+            <h2>Your Info</h2>
+            <p>
+                <strong>Name:</strong> {{ session['user']['name'] }}<br>
+                <strong>Email:</strong> {{ session['user']['email'] }}
+            </p>
+            <a href="/user/signout" class="btn btn--secondary">Sign Out</a>
+        </div>
+
+        <!-- Toolbox Card -->
+        <div class="card">
+            <h2>ToolBox</h2>
+            <div>
+                <a href="/dashboard" class="btn btn--secondary">Back to Dashboard</a>
+                <a href="/wardrobe/all" class="btn btn--secondary">View Your Wardrobe</a>
+                <a href="/outfit/day" class="btn btn--secondary">Generate Outfits</a>
+                <a href="/outfit/suggestions" class="btn btn--secondary">Get Suggestions</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outfit Modal -->
+    <div class="modal fade" id="outfitModal" tabindex="-1" role="dialog" aria-labelledby="outfitModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="outfitModalLabel">Add Outfit</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="outfit-form" action="{{ url_for('add_outfit_action', calendar_id=calendar_id, year=year, month=month) }}" method="post" enctype="multipart/form-data">
+                        <input type="hidden" id="day-input" name="day">
+                        <div class="form-group">
+                            <label for="outfit_name">Outfit Name</label>
+                            <input type="text" class="form-control" id="outfit_name" name="outfit_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="outfit_image">Outfit Image</label>
+                            <input type="file" class="form-control-file" id="outfit_image" name="outfit_image" accept=".png, .jpg, .jpeg" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Outfit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#outfitModal').on('show.bs.modal', function(event) {
+                var button = $(event.relatedTarget); // Button that triggered the modal
+                var day = button.data('date'); // Extract info from data-* attributes
+                var modal = $(this);
+                modal.find('.modal-body #day-input').val(day);
+            });
+        });
+    </script>
+</body>
+</html>

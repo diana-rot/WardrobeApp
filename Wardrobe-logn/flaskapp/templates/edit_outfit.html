@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Outfit</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Edit Outfit</h1>
+        <form action="{{ url_for('update_outfit_action', calendar_id=calendar_id, year=year, month=month, day=day, outfit_id=outfit['_id']) }}" method="post" enctype="multipart/form-data">
+            <label for="outfit_name">Outfit Name:</label>
+            <input type="text" id="outfit_name" name="outfit_name" value="{{ outfit['outfit_name'] }}" required>
+
+            <label for="outfit_image">Outfit Image:</label>
+            <input type="file" id="outfit_image" name="outfit_image">
+
+            {% if outfit['outfit_image'] %}
+                <div>
+                    <img src="{{ url_for('static', filename='uploaded_images/' + outfit['outfit_image']) }}" alt="Current Outfit Image" style="max-width: 200px;">
+                </div>
+            {% endif %}
+
+            <button type="submit">Update Outfit</button>
+        </form>
+        <br>
+        <a href="{{ url_for('calendar_view', year=year, month=month) }}">Back to Calendar</a>
+    </div>
+</body>
+</html>
