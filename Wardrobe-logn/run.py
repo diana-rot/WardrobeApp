@@ -316,489 +316,6 @@ def doregister():
     return render_template('register.html')
 
 
-# @app.route('/outfit/day', methods=['GET', 'POST'])
-# @login_required
-# def get_outfit():
-#     userId = session['user']['_id']
-#     cityByDefault = 'Bucharest'
-#     result_outfit = []
-#     result_outfit.append('Dress_Sandal')#0
-#     result_outfit.append('T-shirt/top_Trouser_Sneaker')#1
-#     result_outfit.append('Shirt_Trouser')#2
-#     result_outfit.append('Shirt_Trouser_Sneaker')# 3
-#     result_outfit.append('Dress_Sandal_Coat')# 4
-#     result_outfit.append('T-shirt/top_Trouser')# 5
-#     result_outfit.append('Shirt_Trouser_Coat')# 6
-#     result_outfit.append('Shirt_Trouser_Coat')# 7
-#     result_outfit.append('Dress_Ankle-boot_Coat')  # 8
-#     result_outfit.append('Pullover_Trouser_Ankle-boot')# 9
-#     result_outfit.append('Dress_Sneaker')  # 10
-#     result_outfit.append('Shirt_Trouser_Sandal')# 11
-#     result_outfit.append('Dress_Sandal_Bag') #12
-#
-#
-#     filter = {'userId': userId}
-#     if db.city.find(filter) is None:
-#         db.city.insert_one({'name': cityByDefault, 'userId': userId})
-#
-#     cities = db.city.find(filter)
-#     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
-#
-#
-#     weather_data = []
-#     outfit1 = []
-#     outfit2 = []
-#     outfit3 = []
-#
-#
-#     for city in cities:
-#         r = requests.get(url.format(city['name'])).json()
-#
-#         weather = {
-#             'city': city['name'],
-#             'temperature': r['main']['temp'],
-#             'description': r['weather'][0]['description'],
-#             'icon': r['weather'][0]['icon'],
-#         }
-#         weather_data.append(weather)
-#
-#
-#     city1 = weather_data[0]
-#     city2 = weather_data[1]
-#     city3 = weather_data[2]
-#
-#     if request.method == 'POST':
-#         include_weather = request.form.get('weather')
-#         print(include_weather)
-#         city = request.form.get('city')
-#         print(city)
-#         event = request.form.get('events')
-#         print(event)
-#         option = request.form.get('options')
-#         print(option)
-#         #take the last introduced outfit and modify the score
-#
-#         if option is not None:
-#             filter_lookup = {'userId': userId, 'outfitNo': option}
-#             outfit_rez= db.outfits.find(filter_lookup).sort('_id', -1).limit(1);
-#             #outfit_rez = db.outfits.find(filter_lookup).limit(1)
-#             print(filter)
-#             print(filter_lookup)
-#             print('hello')
-#             print(outfit_rez)
-#             #for every piece of clothing in the outfit, update the score of the clothing
-#             for doc in outfit_rez:
-#                 print(doc)
-#                 print(doc['nota'])
-#                 print(doc['outfit'])
-#                 for piece in doc['outfit']:
-#                     print(piece['label'])
-#                     print(piece['_id'])
-#                     mydocq = {'_id': piece['_id']}
-#                     piece['nota'] = piece['nota'] + 1
-#                     newvalue_doc = {"$set": {"nota": piece['nota']}}
-#                     db.wardrobe.update_one(mydocq, newvalue_doc)
-#
-#
-#                 doc['nota'] = doc['nota'] + 1
-#                 print(doc['nota'])
-#                 myquery = {'_id': doc['_id']}
-#                 print(myquery)
-#                 newvalues = {"$set": {"nota": doc['nota']}}
-#                 newset = {"$set": {"isFavorite": 'yes'}}
-#                 db.outfits.update_one(myquery, newvalues)
-#                 db.outfits.update_one(myquery, newset)
-#
-#
-#         #Random forect classificer
-#         loaded_classifier = joblib.load("./random_forest.joblib")
-#         # loaded_classifier = joblib.load("./random_forest_classifier.joblib")
-#         #to be predicted - users preferences
-#         to_be_predicted = []
-#
-#         if include_weather == 'yes':
-#             to_be_predicted.append(1)
-#
-#             if city == city1['city']:
-#                 temperature = city1['temperature']
-#             elif city == city2['city']:
-#                 temperature = city2['temperature']
-#             elif city == city3['city']:
-#                 temperature = city3['temperature']
-#
-# #includ si raining dupa ce fac un rezultat aproape de perfect
-#
-#             if temperature <= 6.0:
-#                 print('iarna')
-#                 to_be_predicted.append(1)
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(0)
-#
-#             elif temperature > 15.0 and temperature < 26.0:
-#                 print('primavara')
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(1)
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(0)
-#
-#             elif temperature > 6.0 and temperature <= 15.0:
-#                  print('toamna')
-#                  to_be_predicted.append(0)
-#                  to_be_predicted.append(0)
-#                  to_be_predicted.append(1)
-#                  to_be_predicted.append(0)
-#                  to_be_predicted.append(0)
-#
-#             elif temperature >= 25.0:
-#                 print('vara')
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(0)
-#                 to_be_predicted.append(1)
-#                 to_be_predicted.append(0)
-#
-#
-#         elif include_weather == 'no':
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#
-#         if event == 'event':
-#             to_be_predicted.append(1)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#         elif event == 'walk':
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(1)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#         elif event == 'work':
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(1)
-#             to_be_predicted.append(0)
-#         elif event == 'travel':
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(0)
-#             to_be_predicted.append(1)
-#
-#         print(to_be_predicted)
-#         predict_form = []
-#         #aici il formatez sa il trimit la padurea de arbori
-#         predict_form.append(to_be_predicted)
-#         #result forest are indexul sub forma de vector
-#         if event is not None:
-#
-#             print(predict_form)
-#             result_forest = loaded_classifier.predict(predict_form)
-#             print(result_forest)
-#             index_of_outfit = result_forest[0]
-#             print(result_outfit[index_of_outfit])
-#
-#             #the results to be separated for the FE
-#             txt = result_outfit[index_of_outfit]
-#             filters_outfits = txt.split('_')
-#             print(filters_outfits)
-#
-#             #if we already have some favourites
-#             for filter_name in filters_outfits:
-#                 print(filter_name)
-#
-#                 #nu merge, trebuie sa gasesc o alta cale
-#                 #facem asa, scot nota momentan de aici, ma duc sa printez documentul si pana m
-#                 #ma intorc, am si timp sa ma gandesc
-#                 # {"$lt": 5}
-#                 filter = {'userId': userId, 'label': filter_name}
-#                 print("here it suppose to go")
-#                 print(filter)
-#                 count = 0
-#                 #each item of clothing
-#                 users_clothes = db.wardrobe.find(filter).limit(1)
-#                 print(users_clothes)
-#                 outfit1.append(users_clothes[1])
-#                 outfit2.append(users_clothes[2])
-#                 outfit3.append(users_clothes[3])
-#                     # print(count)
-#                 print('are you ok?1')
-#                 print(outfit1)
-#
-#                 option1 = outfit1
-#                 print('are you ok?2')
-#                 print(outfit2)
-#
-#                 option2 = outfit1
-#                 print('are you ok?3')
-#                 print(outfit3)
-#
-#                 option3 = outfit3
-#
-#             db.outfits.insert_one(
-#                     {'outfit': outfit1, 'userId': userId, 'nota': 4, 'outfitNo':'piece1', 'isFavorite':'no'})
-#             db.outfits.insert_one(
-#                     {'outfit': outfit2, 'userId': userId, 'nota': 4, 'outfitNo':'piece2','isFavorite':'no'})
-#             db.outfits.insert_one(
-#                     {'outfit': outfit3, 'userId': userId, 'nota': 4, 'outfitNo':'piece3','isFavorite':'no'})
-#
-#
-#     return render_template('outfit_of_the_day.html',  outfit1 = outfit1, outfit2= outfit2, outfit3= outfit3, city1=city1, city2=city2, city3=city3)
-#
-
-#
-# @app.route('/outfit/day', methods=['GET', 'POST'])
-# @login_required
-# def get_outfit():
-#     userId = session['user']['_id']
-#     cityByDefault = 'Bucharest'
-#     result_outfit = [
-#         'Dress_Sandal', 'T-shirt/top_Trouser_Sneaker', 'Shirt_Trouser', 'Shirt_Trouser_Sneaker',
-#         'Dress_Sandal_Coat', 'T-shirt/top_Trouser', 'Shirt_Trouser_Coat', 'Shirt_Trouser_Coat',
-#         'Dress_Ankle-boot_Coat', 'Pullover_Trouser_Ankle-boot', 'Dress_Sneaker', 'Shirt_Trouser_Sandal',
-#         'Dress_Sandal_Bag'
-#     ]
-#
-#     filter = {'userId': userId}
-#     if db.city.find(filter) is None:
-#         db.city.insert_one({'name': cityByDefault, 'userId': userId})
-#
-#     cities = db.city.find(filter)
-#     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
-#
-#     weather_data = []
-#     for city in cities:
-#         r = requests.get(url.format(city['name'])).json()
-#         weather = {
-#             'city': city['name'],
-#             'temperature': r['main']['temp'],
-#             'description': r['weather'][0]['description'],
-#             'icon': r['weather'][0]['icon'],
-#         }
-#         weather_data.append(weather)
-#
-#     if len(weather_data) < 3:
-#         # Handle the case where not enough weather data is available
-#         # For example, set default values or raise an exception
-#         weather_data.extend([{'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}] * (3 - len(weather_data)))
-#
-#     city1, city2, city3 = weather_data[:3]
-#
-#     if request.method == 'POST':
-#         include_weather = request.form.get('weather')
-#         city = request.form.get('city')
-#         event = request.form.get('events')
-#         option = request.form.get('options')
-#
-#         if option is not None:
-#             filter_lookup = {'userId': userId, 'outfitNo': option}
-#             outfit_rez = db.outfits.find(filter_lookup).sort('_id', -1).limit(1)
-#             for doc in outfit_rez:
-#                 for piece in doc['outfit']:
-#                     mydocq = {'_id': piece['_id']}
-#                     piece['nota'] = piece['nota'] + 1
-#                     newvalue_doc = {"$set": {"nota": piece['nota']}}
-#                     db.wardrobe.update_one(mydocq, newvalue_doc)
-#
-#                 doc['nota'] = doc['nota'] + 1
-#                 myquery = {'_id': doc['_id']}
-#                 newvalues = {"$set": {"nota": doc['nota']}}
-#                 newset = {"$set": {"isFavorite": 'yes'}}
-#                 db.outfits.update_one(myquery, newvalues)
-#                 db.outfits.update_one(myquery, newset)
-#
-#         loaded_classifier = joblib.load("./random_forest.joblib")
-#         to_be_predicted = []
-#
-#         temperature = 20  # Default temperature
-#
-#         if include_weather == 'yes':
-#             to_be_predicted.append(1)
-#
-#             if city == city1['city']:
-#                 temperature = city1['temperature']
-#             elif city == city2['city']:
-#                 temperature = city2['temperature']
-#             elif city == city3['city']:
-#                 temperature = city3['temperature']
-#
-#             if temperature <= 6.0:
-#                 to_be_predicted.extend([1, 0, 0, 0, 0])
-#             elif 15.0 < temperature < 26.0:
-#                 to_be_predicted.extend([0, 1, 0, 0, 0])
-#             elif 6.0 < temperature <= 15.0:
-#                 to_be_predicted.extend([0, 0, 1, 0, 0])
-#             elif temperature >= 25.0:
-#                 to_be_predicted.extend([0, 0, 0, 1, 0])
-#         else:
-#             to_be_predicted.extend([0, 0, 0, 0, 0])
-#
-#         if event == 'event':
-#             to_be_predicted.extend([1, 0, 0, 0])
-#         elif event == 'walk':
-#             to_be_predicted.extend([0, 1, 0, 0])
-#         elif event == 'work':
-#             to_be_predicted.extend([0, 0, 1, 0])
-#         elif event == 'travel':
-#             to_be_predicted.extend([0, 0, 0, 1])
-#
-#         predict_form = [to_be_predicted]
-#         result_forest = loaded_classifier.predict(predict_form)
-#         index_of_outfit = result_forest[0]
-#         txt = result_outfit[index_of_outfit]
-#         filters_outfits = txt.split('_')
-#
-#         outfit1, outfit2, outfit3 = [], [], []
-#
-#         for filter_name in filters_outfits:
-#             filter = {'userId': userId, 'label': filter_name}
-#             users_clothes = list(db.wardrobe.find(filter))
-#             if len(users_clothes) >= 3:
-#                 outfit1.append(users_clothes[0])
-#                 outfit2.append(users_clothes[1])
-#                 outfit3.append(users_clothes[2])
-#
-#         db.outfits.insert_one({'outfit': outfit1, 'userId': userId, 'nota': 4, 'outfitNo':'piece1', 'isFavorite':'no'})
-#         db.outfits.insert_one({'outfit': outfit2, 'userId': userId, 'nota': 4, 'outfitNo':'piece2','isFavorite':'no'})
-#         db.outfits.insert_one({'outfit': outfit3, 'userId': userId, 'nota': 4, 'outfitNo':'piece3','isFavorite':'no'})
-#
-#     return render_template('outfit_of_the_day.html', outfit1=outfit1, outfit2=outfit2, outfit3=outfit3, city1=city1, city2=city2, city3=city3)
-
-#
-#
-# @app.route('/outfit/day', methods=['GET', 'POST'])
-# @login_required
-# def get_outfit():
-#     userId = session['user']['_id']
-#     cityByDefault = 'Bucharest'
-#     result_outfit = [
-#         'Dress_Sandal', 'T-shirt/top_Trouser_Sneaker', 'Shirt_Trouser', 'Shirt_Trouser_Sneaker',
-#         'Dress_Sandal_Coat', 'T-shirt/top_Trouser', 'Shirt_Trouser_Coat', 'Shirt_Trouser_Coat',
-#         'Dress_Ankle-boot_Coat', 'Pullover_Trouser_Ankle-boot', 'Dress_Sneaker', 'Shirt_Trouser_Sandal',
-#         'Dress_Sandal_Bag'
-#     ]
-#
-#     # Default city initialization
-#     filter = {'userId': userId}
-#     if db.city.count_documents(filter) == 0:
-#         db.city.insert_one({'name': cityByDefault, 'userId': userId})
-#
-#     # Fetch weather data for cities
-#     cities = db.city.find(filter)
-#     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
-#
-#     weather_data = []
-#     for city in cities:
-#         r = requests.get(url.format(city['name'])).json()
-#         weather = {
-#             'city': city['name'],
-#             'temperature': r['main']['temp'],
-#             'description': r['weather'][0]['description'],
-#             'icon': r['weather'][0]['icon'],
-#         }
-#         weather_data.append(weather)
-#
-#     # Ensure we have at least 3 weather data points
-#     if len(weather_data) < 3:
-#         weather_data.extend([{'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}] * (3 - len(weather_data)))
-#
-#     city1, city2, city3 = weather_data[:3]
-#
-#     # Initialize outfit variables
-#     outfit1, outfit2, outfit3 = [], [], []
-#
-#     if request.method == 'POST':
-#         include_weather = request.form.get('weather')
-#         city = request.form.get('city')
-#         event = request.form.get('events')
-#         option = request.form.get('options')
-#
-#         # Update outfit scores
-#         if option is not None:
-#             filter_lookup = {'userId': userId, 'outfitNo': option}
-#             outfit_rez = db.outfits.find(filter_lookup).sort('_id', -1).limit(1)
-#             for doc in outfit_rez:
-#                 for piece in doc['outfit']:
-#                     mydocq = {'_id': piece['_id']}
-#                     piece['nota'] += 1
-#                     db.wardrobe.update_one(mydocq, {"$set": {"nota": piece['nota']}})
-#
-#                 doc['nota'] += 1
-#                 db.outfits.update_one({'_id': doc['_id']}, {"$set": {"nota": doc['nota'], "isFavorite": 'yes'}})
-#
-#         # Predict outfit
-#         loaded_classifier = joblib.load("./random_forest.joblib")
-#         to_be_predicted = []
-#
-#         # Weather data processing
-#         temperature = 20  # Default temperature
-#
-#         if include_weather == 'yes':
-#             to_be_predicted.append(1)
-#             if city == city1['city']:
-#                 temperature = city1['temperature']
-#             elif city == city2['city']:
-#                 temperature = city2['temperature']
-#             elif city == city3['city']:
-#                 temperature = city3['temperature']
-#
-#             # Update `to_be_predicted` based on temperature
-#             if temperature <= 6.0:
-#                 to_be_predicted.extend([1, 0, 0, 0, 0])
-#             elif 15.0 < temperature < 26.0:
-#                 to_be_predicted.extend([0, 1, 0, 0, 0])
-#             elif 6.0 < temperature <= 15.0:
-#                 to_be_predicted.extend([0, 0, 1, 0, 0])
-#             elif temperature >= 25.0:
-#                 to_be_predicted.extend([0, 0, 0, 1, 0])
-#         else:
-#             to_be_predicted.extend([0, 0, 0, 0, 0])
-#
-#         # Event processing
-#         if event == 'event':
-#             to_be_predicted.extend([1, 0, 0, 0])
-#         elif event == 'walk':
-#             to_be_predicted.extend([0, 1, 0, 0])
-#         elif event == 'work':
-#             to_be_predicted.extend([0, 0, 1, 0])
-#         elif event == 'travel':
-#             to_be_predicted.extend([0, 0, 0, 1])
-#
-#         # Predict outfit
-#         predict_form = [to_be_predicted]
-#         result_forest = loaded_classifier.predict(predict_form)
-#         index_of_outfit = result_forest[0]
-#         txt = result_outfit[index_of_outfit]
-#         filters_outfits = txt.split('_')
-#
-#         # Retrieve and prepare outfits
-#         for filter_name in filters_outfits:
-#             filter = {'userId': userId, 'label': filter_name}
-#             users_clothes = list(db.wardrobe.find(filter))
-#             if users_clothes:
-#                 # Add items to outfits ensuring there are at least 3 items
-#                 if len(users_clothes) > 0:
-#                     outfit1.append(users_clothes[0])
-#                 if len(users_clothes) > 1:
-#                     outfit2.append(users_clothes[1])
-#                 if len(users_clothes) > 2:
-#                     outfit3.append(users_clothes[2])
-#
-#         # Insert outfits into the database
-#         if outfit1:
-#             db.outfits.insert_one({'outfit': outfit1, 'userId': userId, 'nota': 4, 'outfitNo':'piece1', 'isFavorite':'no'})
-#         if outfit2:
-#             db.outfits.insert_one({'outfit': outfit2, 'userId': userId, 'nota': 4, 'outfitNo':'piece2','isFavorite':'no'})
-#         if outfit3:
-#             db.outfits.insert_one({'outfit': outfit3, 'userId': userId, 'nota': 4, 'outfitNo':'piece3','isFavorite':'no'})
-#
-#     return render_template('outfit_of_the_day.html', outfit1=outfit1, outfit2=outfit2, outfit3=outfit3, city1=city1, city2=city2, city3=city3)
-#
 
 @app.route('/outfit/day', methods=['GET', 'POST'])
 @login_required
@@ -1037,6 +554,180 @@ def add_wardrobe():
 
     return render_template('wardrobe.html')
 
+
+# @app.route('/calendar', methods=['GET', 'POST'])
+# @login_required
+# def add_calendar():
+#     if request.method == 'POST':
+#         # Get the file from post request
+#         f = request.files['file']
+#         # Save the file to ./uploads
+#         basepath = os.path.dirname(__file__)
+#
+#         file_path = os.path.join(
+#             basepath, 'uploads', secure_filename(f.filename))
+#         f.save(file_path)
+#         # Make prediction
+#
+#
+#     return render_template('calendar.html')
+
+
+
+# @app.route('/add_outfit', methods=['GET', 'POST'])
+# @login_required
+# def add_outfit():
+#     if request.method == 'POST':
+#         outfit_name = request.form['outfit_name']
+#         outfit_date = request.form['outfit_date']
+#         file = request.files['outfit_image']
+#         if file and allowed_file(file.filename):
+#             filename = secure_filename(file.filename)
+#             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+#
+#             return redirect(url_for('calendar'))
+#     return render_template('add_outfit.html')
+
+import locale
+import os
+import calendar
+from datetime import datetime
+from typing import Dict, Optional
+
+from flask import Flask, Response, send_from_directory, request, render_template
+
+import config  # noqa: F401
+from flask_calendar.actions import (
+    delete_task_action,
+    edit_task_action,
+    hide_repetition_task_instance_action,
+    main_calendar_action,
+    new_task_action,
+    save_task_action,
+    update_task_action,
+    update_task_day_action,
+)
+from flask_calendar.app_utils import task_details_for_markup
+
+
+def create_app(config_overrides: Optional[Dict] = None) -> Flask:
+    app = Flask(__name__)
+    app.config.from_object("config")
+
+    if config_overrides is not None:
+        app.config.from_mapping(config_overrides)
+
+    if app.config["LOCALE"] is not None:
+        try:
+            locale.setlocale(locale.LC_ALL, app.config["LOCALE"])
+        except locale.Error as e:
+            app.logger.warning("{} ({})".format(str(e), app.config["LOCALE"]))
+
+    # To avoid main_calendar_action below swallowing favicon requests and generating error logs
+    @app.route("/favicon.ico")
+    def favicon() -> Response:
+        return send_from_directory(
+            os.path.join(app.root_path, "static"),
+            "favicon.ico",
+            mimetype="image/vnd.microsoft.icon",
+        )
+
+    # Existing route
+    app.add_url_rule("/<calendar_id>/", "main_calendar_action", main_calendar_action, methods=["GET"])
+    app.add_url_rule(
+        "/<calendar_id>/<year>/<month>/new_task",
+        "new_task_action",
+        new_task_action,
+        methods=["GET"],
+    )
+    app.add_url_rule(
+        "/<calendar_id>/<year>/<month>/<day>/<task_id>/",
+        "edit_task_action",
+        edit_task_action, methods=["GET"]
+    )
+    app.add_url_rule(
+        "/<calendar_id>/<year>/<month>/<day>/task/<task_id>",
+        "update_task_action",
+        update_task_action,
+        methods=["POST"],
+    )
+    app.add_url_rule(
+        "/<calendar_id>/new_task",
+        "save_task_action",
+        save_task_action,
+        methods=["POST"],
+    )
+    app.add_url_rule(
+        "/<calendar_id>/<year>/<month>/<day>/<task_id>/",
+        "delete_task_action",
+        delete_task_action,
+        methods=["DELETE"],
+    )
+    app.add_url_rule(
+        "/<calendar_id>/<year>/<month>/<day>/<task_id>/",
+        "update_task_day_action",
+        update_task_day_action,
+        methods=["PUT"],
+    )
+    app.add_url_rule(
+        "/<calendar_id>/<year>/<month>/<day>/<task_id>/hide/",
+        "hide_repetition_task_instance_action",
+        hide_repetition_task_instance_action,
+        methods=["POST"],
+    )
+
+    # Add calendar view route
+
+
+@app.route('/calendar', methods=['GET', 'POST'])
+@login_required
+def calendar_view():
+    # Get the current month and year from query parameters or default to current month
+    year = int(request.args.get('year', datetime.today().year))
+    month = int(request.args.get('month', datetime.today().month))
+
+    # Validate month and year
+    if month < 1:
+        month = 1
+    elif month > 12:
+        month = 12
+
+    cal = calendar.Calendar()
+    month_days = cal.monthdatescalendar(year, month)
+
+    # Prepare the days of the week
+    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    # Previous and Next Month calculations
+    if month == 1:
+        prev_month = 12
+        prev_year = year - 1
+    else:
+        prev_month = month - 1
+        prev_year = year
+
+    if month == 12:
+        next_month = 1
+        next_year = year + 1
+    else:
+        next_month = month + 1
+        next_year = year
+
+    print(month )
+    print('olala')
+
+    return render_template('calendar.html',
+                           calendar=month_days,
+                           days=days_of_week,
+                           month=calendar.month_name[month],
+                           year=year,
+                           prev_month=prev_month,
+                           prev_year=prev_year,
+                           next_month=next_month,
+                           next_year=next_year)
+
+
+app.jinja_env.filters["task_details_for_markup"] = task_details_for_markup
 
 @app.route('/wardrobe/all', methods=['GET', 'POST'])
 @login_required
