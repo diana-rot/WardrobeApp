@@ -49,3 +49,36 @@ input[type="file"] {
     100% { transform: rotate(360deg); }
 }
 
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.calendar-grid .day-cell {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    text-align: center;
+    padding: 10px;
+    position: relative;
+}
+
+.calendar-grid .day-cell img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.calendar-grid .day-cell .description {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.calendar-grid .day-cell .add-outfit-btn {
+    margin-top: 5px;
+    font-size: 0.8rem;
+}

@@ -13,7 +13,7 @@ import tensorflow
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import load_img
 from keras.preprocessing import image
-
+import calendar
 
 import numpy as np
 import pandas as pd
@@ -623,283 +623,135 @@ def upload():
 
 # calendar logic
 
-# @app.route('/calendar', methods=['GET', 'POST'])
-# @login_required
-# def add_calendar():
-#     if request.method == 'POST':
-#         # Get the file from post request
-#         f = request.files['file']
-#         # Save the file to ./uploads
-#         basepath = os.path.dirname(__file__)
-#
-#         file_path = os.path.join(
-#             basepath, 'uploads', secure_filename(f.filename))
-#         f.save(file_path)
-#         # Make prediction
-#
-#
-#     return render_template('calendar.html')
+UPLOAD_FOLDER = './uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}
 
+def save_file(file):
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    return file_path
+# Routes
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
-
-# @app.route('/add_outfit', methods=['GET', 'POST'])
-# @login_required
-# def add_outfit():
-#     if request.method == 'POST':
-#         outfit_name = request.form['outfit_name']
-#         outfit_date = request.form['outfit_date']
-#         file = request.files['outfit_image']
-#         if file and allowed_file(file.filename):
-#             filename = secure_filename(file.filename)
-#             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-#
-#             return redirect(url_for('calendar'))
-#     return render_template('add_outfit.html')
-import os
-import locale
-import calendar
-from datetime import datetime
-from typing import Dict, Optional
-from flask import Flask, Response, send_from_directory, request, render_template, redirect, url_for, session
-from werkzeug.utils import secure_filename
-
-
-
-def save_outfit_to_db(calendar_id, year, month, day, outfit_name, outfit_image):
-    user_id = session.get('user', {}).get('_id')
-    if user_id:
-        db.outfits.insert_one({
-            'calendar_id': calendar_id,
-            'year': year,
-            'month': month,
-            'day': day,
-            'outfit_name': outfit_name,
-            'outfit_image': outfit_image,
-            'user_id': user_id
-        })
-
-
-def get_outfit_from_db(outfit_id):
-    return db.outfits.find_one({'_id': pymongo.ObjectId(outfit_id)})
-
-
-def update_outfit_in_db(outfit_id, outfit_name=None, outfit_image=None):
-    update_fields = {}
-    if outfit_name:
-        update_fields['outfit_name'] = outfit_name
-    if outfit_image:
-        update_fields['outfit_image'] = outfit_image
-
-    if update_fields:
-        db.outfits.update_one(
-            {'_id': pymongo.ObjectId(outfit_id)},
-            {'$set': update_fields}
-        )
-
-
-def delete_outfit_from_db(outfit_id):
-    db.outfits.delete_one({'_id': pymongo.ObjectId(outfit_id)})
-
-
-def create_app(config_overrides: Optional[Dict] = None) -> Flask:
-    app = Flask(__name__)
-
-    # Ensure the upload folder is set correctly
-    app.config['UPLOAD_FOLDER'] = './Calendar_upload'
-
-    # Load configuration from file or overrides
-    app.config.from_object("config")
-    if config_overrides is not None:
-        app.config.from_mapping(config_overrides)
-
-    # Set locale if specified
-    if app.config.get("LOCALE"):
-        try:
-            locale.setlocale(locale.LC_ALL, app.config["LOCALE"])
-        except locale.Error as e:
-            app.logger.warning("{} ({})".format(str(e), app.config["LOCALE"]))
-
-    @app.route("/favicon.ico")
-    def favicon() -> Response:
-        return send_from_directory(
-            os.path.join(app.root_path, "static"),
-            "favicon.ico",
-            mimetype="image/vnd.microsoft.icon",
-        )
-
-    # Define routes
-    app.add_url_rule("/<calendar_id>/", "main_calendar_action", main_calendar_action, methods=["GET"])
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/new_task",
-        "new_task_action",
-        new_task_action,
-        methods=["GET"],
-    )
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/<task_id>/",
-        "edit_task_action",
-        edit_task_action, methods=["GET"]
-    )
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/task/<task_id>",
-        "update_task_action",
-        update_task_action,
-        methods=["POST"],
-    )
-    app.add_url_rule(
-        "/<calendar_id>/new_task",
-        "save_task_action",
-        save_task_action,
-        methods=["POST"],
-    )
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/<task_id>/",
-        "delete_task_action",
-        delete_task_action,
-        methods=["DELETE"],
-    )
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/<task_id>/update/",
-        "update_task_day_action",
-        update_task_day_action,
-        methods=["PUT"],
-    )
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/<task_id>/hide/",
-        "hide_repetition_task_instance_action",
-        hide_repetition_task_instance_action,
-        methods=["POST"],
-    )
-
-    # Outfit routes
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/add_outfit_action",
-        "add_outfit_action",
-        add_outfit_action,
-        methods=["POST"],
-    )
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/<outfit_id>/edit_outfit",
-        "edit_outfit_action",
-        edit_outfit_action,
-        methods=["GET"],
-    )
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/<outfit_id>/update_outfit",
-        "update_outfit_action",
-        update_outfit_action,
-        methods=["POST"],
-    )
-    app.add_url_rule(
-        "/<calendar_id>/<year>/<month>/<day>/<outfit_id>/delete_outfit",
-        "delete_outfit_action",
-        delete_outfit_action,
-        methods=["POST"],
-    )
-
-    app.jinja_env.filters["task_details_for_markup"] = task_details_for_markup
-
-    return app
-
-
-@app.route('/calendar/<calendar_id>/<year>/<month>/add_outfit_action', methods=['POST'])
-@login_required
-def add_outfit_action(calendar_id, year, month):
-    day = request.form.get('day')
-    outfit_name = request.form.get('outfit_name')
-    outfit_image = request.files.get('outfit_image')
-
-    if outfit_image and outfit_name:
-        filename = secure_filename(outfit_image.filename)
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-
-        # Ensure upload directory exists
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
-
-        file_path = os.path.join(upload_folder, filename)
-        outfit_image.save(file_path)
-
-        save_outfit_to_db(calendar_id, year, month, day, outfit_name, filename)
-
-    return redirect(url_for('calendar_view', year=year, month=month))
-
-@app.route('/calendar/<calendar_id>/<year>/<month>/<day>/<outfit_id>/edit_outfit', methods=['GET'])
-@login_required
-def edit_outfit_action(calendar_id, year, month, day, outfit_id):
-    outfit = get_outfit_from_db(outfit_id)
-    return render_template('edit_outfit.html', outfit=outfit)
-
-
-@app.route('/calendar/<calendar_id>/<year>/<month>/<day>/<outfit_id>/update_outfit', methods=['POST'])
-@login_required
-def update_outfit_action(calendar_id, year, month, day, outfit_id):
-    outfit_name = request.form.get('outfit_name')
-    outfit_image = request.files.get('outfit_image')
-    filename = None
-    if outfit_image:
-        filename = secure_filename(outfit_image.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        outfit_image.save(file_path)
-    update_outfit_in_db(outfit_id, outfit_name, filename)
-    return redirect(url_for('calendar_view', year=year, month=month))
-
-
-@app.route('/calendar/<calendar_id>/<year>/<month>/<day>/<outfit_id>/delete_outfit', methods=['POST'])
-@login_required
-def delete_outfit_action(calendar_id, year, month, day, outfit_id):
-    delete_outfit_from_db(outfit_id)
-    return redirect(url_for('calendar_view', year=year, month=month))
-
-
+# Routes
 @app.route('/calendar', methods=['GET'])
 @login_required
 def calendar_view():
-    year = int(request.args.get('year', datetime.today().year))
-    month = int(request.args.get('month', datetime.today().month))
+    year = int(request.args.get('year', datetime.now().year))
+    month = int(request.args.get('month', datetime.now().month))
 
-    if month < 1:
-        month = 1
-    elif month > 12:
-        month = 12
+    # Total zile în lună
+    total_days = calendar.monthrange(year, month)[1]
+    days = list(range(1, total_days + 1))
 
-    cal = calendar.Calendar()
-    month_days = cal.monthdatescalendar(year, month)
-    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-    # Calculate previous and next month/year
-    if month == 1:
-        prev_month = 12
-        prev_year = year - 1
-    else:
-        prev_month = month - 1
-        prev_year = year
-
-    if month == 12:
-        next_month = 1
-        next_year = year + 1
-    else:
-        next_month = month + 1
-        next_year = year
-
-    # Define calendar_id
-    calendar_id = f"{year}-{month:02d}"
-
-    # Fetch outfits from the database using calendar_id
-    outfits_cursor = db.outfits.find({'calendar_id': calendar_id})
-
-    # Convert query results to a dictionary with days as keys
-    outfits_data = {}
-    for outfit in outfits_cursor:
-        day = outfit['day']
-        outfits_data[day] = {
-            'outfit_image': outfit['outfit_image'],
-            'outfit_name': outfit['outfit_name']
+    # Fetch ținutele din baza de date pentru luna curentă
+    outfits = list(db.calendar.find({"year": year, "month": month}))
+    outfit_map = {
+        o["day"]: {
+            "id": str(o["_id"]),
+            "image_path": o.get("image_path", ""),
+            "description": o.get("description", "")
         }
+        for o in outfits
+    }
 
-    return render_template('calendar.html', calendar_id=calendar_id, year=year, month=month,
-                           days_of_week=days_of_week, calendar=month_days, prev_month=prev_month,
-                           prev_year=prev_year, next_month=next_month, next_year=next_year, outfits=outfits_data)
+    # Definește numele lunilor
+    month_names = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+
+    # Renderizează calendar.html cu variabilele necesare
+    return render_template('calendar.html', year=year, month=month, days=days, outfits=outfit_map, month_names=month_names)
+
+
+
+
+@app.route('/calendar/add', methods=['POST'])
+@login_required
+def add_outfit():
+    date = request.form.get('date')
+    description = request.form.get('description')
+    file = request.files['file']
+
+    if file:
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        year, month, day = map(int, date.split('-'))
+        db.calendar.insert_one({
+            "year": year,
+            "month": month,
+            "day": day,
+            "image_path": filepath,
+            "description": description
+        })
+
+    return jsonify({"success": True})
+
+@app.route('/calendar/delete', methods=['POST'])
+@login_required
+def delete_outfit():
+    outfit_id = request.json.get('id')
+    if outfit_id:
+        db.calendar.delete_one({"_id": outfit_id})
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 400
+
+#
+# @app.route('/calendar', methods=['GET', 'POST'])
+# def calendar_view():
+#     year = int(request.args.get('year', datetime.now().year))
+#     month = int(request.args.get('month', datetime.now().month))
+#
+#     cal = calendar.Calendar()
+#     days = cal.monthdatescalendar(year, month)
+#
+#     outfits = list(db.calendar.find({"year": year, "month": month}))
+#     outfit_map = {o['day']: o for o in outfits}
+#
+#     if request.method == 'POST':
+#         date = request.form['date']
+#         file = request.files['file']
+#         if file and allowed_file(file.filename):
+#             file_path = save_file(file)
+#             description = request.form.get('description', '')
+#             day = int(date.split('-')[2])
+#             db.calendar.insert_one({
+#                 "year": year,
+#                 "month": month,
+#                 "day": day,
+#                 "image_path": file_path,
+#                 "description": description,
+#                 "user_id": session.get('user', {}).get('_id')
+#             })
+#         return redirect(url_for('calendar_view', year=year, month=month))
+#
+#     return render_template('calendar.html', days=days, year=year, month=month, outfit_map=outfit_map, calendar=calendar)
+#
+# @app.route('/calendar/delete/<int:year>/<int:month>/<int:day>', methods=['POST'])
+# def delete_outfit(year, month, day):
+#     db.calendar.delete_one({"year": year, "month": month, "day": day})
+#     return redirect(url_for('calendar_view', year=year, month=month))
+#
+# from flask import Response
+
+@app.route('/api/avatar', methods=['GET'])
+def get_avatar():
+    # Servește modelul din `static/models`
+    return send_from_directory('static/models', 'woman.gltf', mimetype='model/gltf+json')
+@app.route('/api/update-avatar', methods=['POST'])
+
+
+@app.route('/avatar')
+@login_required
+def avatar_page():
+    return render_template('avatar.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
