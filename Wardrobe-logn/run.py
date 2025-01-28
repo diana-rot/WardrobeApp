@@ -5,7 +5,7 @@ import numpy as np
 from flask import render_template, request, session, url_for
 from flaskapp import app, login_required,redirect
 from matplotlib import pyplot as plt
-from werkzeug.utils import secure_filename
+from werkzeug.utils import secure_filename, send_from_directory
 import pymongo
 import requests
 from gridfs import GridFS
@@ -22,6 +22,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 import joblib
+
+from flask import send_file
 
 client = pymongo.MongoClient('localhost', 27017)
 db = client.user_login_system_test
@@ -623,122 +625,99 @@ def upload():
 
 # calendar logic
 
-UPLOAD_FOLDER = './uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}
-
-def save_file(file):
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
-    return file_path
-# Routes
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
-# Routes
+
+# Upload folder configuration
+UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), 'uploads-calendar'))
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+
+# Allowed file extensions
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+
 @app.route('/calendar', methods=['GET'])
 @login_required
 def calendar_view():
     year = int(request.args.get('year', datetime.now().year))
     month = int(request.args.get('month', datetime.now().month))
 
-    # Total zile în lună
+    # Generate calendar data
     total_days = calendar.monthrange(year, month)[1]
     days = list(range(1, total_days + 1))
+    outfits = db.calendar.find({"user_id": session['user']['_id'], "year": year, "month": month})
 
-    # Fetch ținutele din baza de date pentru luna curentă
-    outfits = list(db.calendar.find({"year": year, "month": month}))
-    outfit_map = {
-        o["day"]: {
-            "id": str(o["_id"]),
-            "image_path": o.get("image_path", ""),
-            "description": o.get("description", "")
-        }
-        for o in outfits
-    }
+    outfit_map = {o["day"]: {"id": str(o["_id"]), "image_path": o["image_path"], "description": o.get("description", "")} for o in outfits}
 
-    # Definește numele lunilor
-    month_names = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ]
-
-    # Renderizează calendar.html cu variabilele necesare
-    return render_template('calendar.html', year=year, month=month, days=days, outfits=outfit_map, month_names=month_names)
+    return render_template(
+        'calendar.html',
+        year=year,
+        month=month,
+        days=days,
+        outfits=outfit_map,
+        month_names=[
+            'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
+        ]
+    )
 
 
 
+@app.route('/uploads-calendar/<path:filename>')
+def uploaded_file(filename):
+    try:
+        # Construiește calea absolută a fișierului
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        print(f"Requested file path: {file_path}")  # Debugging
 
+        # Verifică dacă fișierul există
+        if not os.path.isfile(file_path):
+            print(f"File not found: {file_path}")
+            return jsonify({"error": "File not found"}), 404
+
+        # Servește fișierul
+        return send_file(file_path)
+
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
 @app.route('/calendar/add', methods=['POST'])
-@login_required
 def add_outfit():
-    date = request.form.get('date')
-    description = request.form.get('description')
-    file = request.files['file']
+    try:
+        user_id = session.get('user', {}).get('_id', None)
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 401
 
-    if file:
+        date = request.form.get('date')
+        description = request.form.get('description', '').strip()
+        file = request.files.get('file')
+
+        if not date or not file:
+            return jsonify({"success": False, "message": "Date or file is missing"}), 400
+        if not allowed_file(file.filename):
+            return jsonify({"success": False, "message": "Invalid file type"}), 400
+
+        # Construiește calea fișierului
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        print(f"Saving file to: {filepath}")  # Debugging
         file.save(filepath)
 
-        year, month, day = map(int, date.split('-'))
+        # Salvează informațiile în baza de date
         db.calendar.insert_one({
-            "year": year,
-            "month": month,
-            "day": day,
-            "image_path": filepath,
-            "description": description
+            "user_id": user_id,
+            "date": date,
+            "description": description,
+            "image_path": filename  # Stocăm doar numele fișierului
         })
 
-    return jsonify({"success": True})
+        return jsonify({"success": True, "message": "Outfit added successfully!"})
 
-@app.route('/calendar/delete', methods=['POST'])
-@login_required
-def delete_outfit():
-    outfit_id = request.json.get('id')
-    if outfit_id:
-        db.calendar.delete_one({"_id": outfit_id})
-        return jsonify({"success": True})
-    return jsonify({"success": False}), 400
-
-#
-# @app.route('/calendar', methods=['GET', 'POST'])
-# def calendar_view():
-#     year = int(request.args.get('year', datetime.now().year))
-#     month = int(request.args.get('month', datetime.now().month))
-#
-#     cal = calendar.Calendar()
-#     days = cal.monthdatescalendar(year, month)
-#
-#     outfits = list(db.calendar.find({"year": year, "month": month}))
-#     outfit_map = {o['day']: o for o in outfits}
-#
-#     if request.method == 'POST':
-#         date = request.form['date']
-#         file = request.files['file']
-#         if file and allowed_file(file.filename):
-#             file_path = save_file(file)
-#             description = request.form.get('description', '')
-#             day = int(date.split('-')[2])
-#             db.calendar.insert_one({
-#                 "year": year,
-#                 "month": month,
-#                 "day": day,
-#                 "image_path": file_path,
-#                 "description": description,
-#                 "user_id": session.get('user', {}).get('_id')
-#             })
-#         return redirect(url_for('calendar_view', year=year, month=month))
-#
-#     return render_template('calendar.html', days=days, year=year, month=month, outfit_map=outfit_map, calendar=calendar)
-#
-# @app.route('/calendar/delete/<int:year>/<int:month>/<int:day>', methods=['POST'])
-# def delete_outfit(year, month, day):
-#     db.calendar.delete_one({"year": year, "month": month, "day": day})
-#     return redirect(url_for('calendar_view', year=year, month=month))
-#
-# from flask import Response
+    except Exception as e:
+        print(f"Error in add_outfit: {e}")
+        return jsonify({"success": False, "message": "An error occurred"}), 500
 
 @app.route('/api/avatar', methods=['GET'])
 def get_avatar():
