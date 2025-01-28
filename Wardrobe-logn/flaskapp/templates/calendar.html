@@ -29,6 +29,11 @@
             padding: 10px;
         }
 
+        .day-label {
+            font-weight: bold;
+            text-align: center;
+        }
+
         .day-cell {
             background-color: #fff;
             border: 1px solid #ccc;
@@ -70,16 +75,31 @@
                     <button class="btn btn-primary" onclick="navigateMonth(1)">Next</button>
                 </div>
                 <div class="calendar-grid">
-                    {% for day in days %}
-                    <div class="day-cell" data-day="{{ day }}">
-                        <div>{{ day }}</div>
-                        {% if day in outfits %}
-                            <img src="{{ url_for('uploaded_file', filename=outfits[day].image_path) }}" alt="Outfit" onerror="this.onerror=null; this.src='/static/image/placeholder.png';">
-                            <p>{{ outfits[day].description if outfits[day].description else '' }}</p>
-                            <button class="btn btn-danger btn-sm" onclick="deleteOutfit({{ day }})">Delete</button>
-                        {% endif %}
-                        <button class="btn btn-secondary add-outfit-btn" onclick="openAddOutfitModal({{ day }})" {% if day in outfits %}style="display:none;"{% endif %}>Add Outfit</button>
-                    </div>
+                    <!-- Weekday Labels -->
+                    <div class="day-label">Mon</div>
+                    <div class="day-label">Tue</div>
+                    <div class="day-label">Wed</div>
+                    <div class="day-label">Thu</div>
+                    <div class="day-label">Fri</div>
+                    <div class="day-label">Sat</div>
+                    <div class="day-label">Sun</div>
+
+                    <!-- Days of the Month -->
+                    {% for week in weeks %}
+                        {% for day in week %}
+                            <div class="day-cell">
+                                {% if day > 0 %}
+                                    <div>{{ day }}</div>
+                                    {% if day in outfits %}
+                                        <img src="{{ url_for('uploaded_file', filename=outfits[day].image_path) }}" alt="Outfit" onerror="this.onerror=null; this.src='/static/image/placeholder.png';">
+                                        <p>{{ outfits[day].description }}</p>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteOutfit({{ day }})">Delete</button>
+                                    {% else %}
+                                        <button class="btn btn-secondary add-outfit-btn" onclick="openAddOutfitModal({{ day }})">Add Outfit</button>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
                     {% endfor %}
                 </div>
             </div>
@@ -87,47 +107,74 @@
     </div>
 
     <!-- Add Outfit Modal -->
-    <div class="modal fade" id="addOutfitModal" tabindex="-1" aria-labelledby="addOutfitModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addOutfitModalLabel">Add Outfit for <span id="modalDate"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addOutfitForm">
-                        <input type="hidden" id="selectedDay">
-                        <div class="mb-3">
-                            <label for="file" class="form-label">Image</label>
-                            <input type="file" class="form-control" id="outfitFile" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="outfitDescription"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Save</button>
-                    </form>
-                </div>
+<!-- Add Outfit Modal -->
+<div class="modal fade" id="addOutfitModal" tabindex="-1" aria-labelledby="addOutfitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addOutfitModalLabel">Add Outfit for <span id="modalDate"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addOutfitForm">
+                    <input type="hidden" id="selectedDay">
+                    <input type="hidden" id="selectedYear"> <!-- Hidden field for year -->
+                    <input type="hidden" id="selectedMonth"> <!-- Hidden field for month -->
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Image</label>
+                        <input type="file" class="form-control" id="outfitFile" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="outfitDescription"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
             </div>
         </div>
     </div>
+</div>
+
 
     <script>
-        function openAddOutfitModal(day) {
-            const modalDate = document.getElementById('modalDate');
-            const selectedDay = document.getElementById('selectedDay');
+        function navigateMonth(direction) {
+            let newMonth = {{ month }} + direction;
+            let newYear = {{ year }};
 
-            modalDate.textContent = `Day ${day}`;
-            selectedDay.value = day;
+            if (newMonth < 1) {
+                newMonth = 12;
+                newYear -= 1;
+            } else if (newMonth > 12) {
+                newMonth = 1;
+                newYear += 1;
+            }
 
-            new bootstrap.Modal(document.getElementById('addOutfitModal')).show();
+            const url = `/calendar?year=${newYear}&month=${newMonth}`;
+            window.location.href = url;
         }
+
+
+    function openAddOutfitModal(day) {
+        const modalDate = document.getElementById('modalDate');
+        const selectedDay = document.getElementById('selectedDay');
+        const selectedYear = document.getElementById('selectedYear');
+        const selectedMonth = document.getElementById('selectedMonth');
+
+        modalDate.textContent = `Day ${day}`;
+        selectedDay.value = day;
+        selectedYear.value = {{ year }};
+        selectedMonth.value = {{ month }};
+
+        new bootstrap.Modal(document.getElementById('addOutfitModal')).show();
+    }
 
         document.getElementById('addOutfitForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
             const formData = new FormData();
             formData.append('day', document.getElementById('selectedDay').value);
+            formData.append('year', document.getElementById('selectedYear').value);  // Add year
+            formData.append('month', document.getElementById('selectedMonth').value);  // Add month
             formData.append('file', document.getElementById('outfitFile').files[0]);
             formData.append('description', document.getElementById('outfitDescription').value);
 
@@ -145,6 +192,8 @@
             })
             .catch(error => console.error('Error:', error));
         });
+
+
 
         function deleteOutfit(day) {
             fetch(`/calendar/delete?day=${day}`, { method: 'DELETE' })

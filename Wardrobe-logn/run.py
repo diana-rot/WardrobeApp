@@ -635,16 +635,47 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
+# @app.route('/calendar', methods=['GET'])
+# def calendar_view():
+#     year = int(request.args.get('year', datetime.now().year))
+#     month = int(request.args.get('month', datetime.now().month))
+#
+#     # Generate calendar data
+#     total_days = calendar.monthrange(year, month)[1]
+#     days = list(range(1, total_days + 1))
+#     outfits = db.calendar.find({"user_id": session.get('user', {}).get('_id', ''), "year": year, "month": month})
+#
+#     outfit_map = {
+#         o["day"]: {
+#             "id": str(o["_id"]),
+#             "image_path": o.get("image_path", ""),
+#             "description": o.get("description", "No description")
+#         }
+#         for o in outfits
+#     }
+#
+#     return render_template(
+#         'calendar.html',
+#         year=year,
+#         month=month,
+#         days=days,
+#         outfits=outfit_map,
+#         month_names=[
+#             'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
+#         ]
+#     )
+
+
 @app.route('/calendar', methods=['GET'])
 def calendar_view():
     year = int(request.args.get('year', datetime.now().year))
     month = int(request.args.get('month', datetime.now().month))
 
-    # Generate calendar data
-    total_days = calendar.monthrange(year, month)[1]
-    days = list(range(1, total_days + 1))
-    outfits = db.calendar.find({"user_id": session.get('user', {}).get('_id', ''), "year": year, "month": month})
+    # Generate weeks for the month (each week contains 7 days, 0 for blank days)
+    calendar.setfirstweekday(calendar.MONDAY)  # Start the week on Monday
+    weeks = calendar.monthcalendar(year, month)
 
+    outfits = db.calendar.find({"user_id": session.get('user', {}).get('_id', ''), "year": year, "month": month})
     outfit_map = {
         o["day"]: {
             "id": str(o["_id"]),
@@ -658,17 +689,47 @@ def calendar_view():
         'calendar.html',
         year=year,
         month=month,
-        days=days,
+        weeks=weeks,
         outfits=outfit_map,
         month_names=[
             'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
         ]
     )
+# @app.route('/calendar/add', methods=['POST'])
+# def add_outfit():
+#     user_id = session.get('user', {}).get('_id', '')
+#     day = request.form.get('day', type=int)
+#     description = request.form.get('description', '')
+#     file = request.files.get('file')
+#
+#     if not file or not allowed_file(file.filename):
+#         return jsonify({"success": False, "message": "Invalid file"}), 400
+#
+#     filename = secure_filename(file.filename)
+#     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#     print(f"Saving file to: {file_path}")  # Debugging log
+#     print(f"Saving file to: {file_path}")  # Confirmă locația de salvare
+#
+#     file.save(file_path)
+#
+#     db.calendar.insert_one({
+#         "user_id": user_id,
+#         "day": day,
+#         "year": datetime.now().year,
+#         "month": datetime.now().month,
+#         "image_path": filename,
+#         "description": description
+#     })
+#
+#     return jsonify({"success": True, "message": "Outfit added successfully!", "image_path": f"/uploads-calendar/{filename}"})
+
 
 @app.route('/calendar/add', methods=['POST'])
 def add_outfit():
     user_id = session.get('user', {}).get('_id', '')
     day = request.form.get('day', type=int)
+    year = request.form.get('year', type=int)
+    month = request.form.get('month', type=int)
     description = request.form.get('description', '')
     file = request.files.get('file')
 
@@ -677,16 +738,13 @@ def add_outfit():
 
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    print(f"Saving file to: {file_path}")  # Debugging log
-    print(f"Saving file to: {file_path}")  # Confirmă locația de salvare
-
     file.save(file_path)
 
     db.calendar.insert_one({
         "user_id": user_id,
         "day": day,
-        "year": datetime.now().year,
-        "month": datetime.now().month,
+        "year": year,
+        "month": month,
         "image_path": filename,
         "description": description
     })
