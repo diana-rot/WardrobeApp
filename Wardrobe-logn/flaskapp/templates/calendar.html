@@ -1,191 +1,3 @@
-{#<!DOCTYPE html>#}
-{#<html lang="en">#}
-{#<head>#}
-{#    <meta charset="UTF-8">#}
-{#    <meta name="viewport" content="width=device-width, initial-scale=1.0">#}
-{#    <title>Calendar</title>#}
-{#    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">#}
-{#    <style>#}
-{#        body {#}
-{#            font-family: 'Arial', sans-serif;#}
-{#            background-color: #f8f9fa;#}
-{#        }#}
-{##}
-{#        .toolbox {#}
-{#            height: 100vh;#}
-{#            background-color: #d5c3c1;#}
-{#            padding: 20px;#}
-{#            box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.1);#}
-{#        }#}
-{##}
-{#        .toolbox h2 {#}
-{#            font-size: 1.5rem;#}
-{#            margin-bottom: 20px;#}
-{#            text-align: center;#}
-{#        }#}
-{##}
-{#        .toolbox button {#}
-{#            width: 100%;#}
-{#            margin-bottom: 10px;#}
-{#            font-size: 1rem;#}
-{#            background-color: #fafafa;#}
-{#            border: none;#}
-{#            color: #333;#}
-{#            cursor: pointer;#}
-{#        }#}
-{##}
-{#        .toolbox button:hover {#}
-{#            background-color: #e7e7e7;#}
-{#        }#}
-{##}
-{#        .calendar-container {#}
-{#            padding: 20px;#}
-{#            background-color: white;#}
-{#            border-radius: 8px;#}
-{#            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);#}
-{#        }#}
-{##}
-{#        .calendar-header {#}
-{#            display: flex;#}
-{#            justify-content: space-between;#}
-{#            align-items: center;#}
-{#            margin-bottom: 20px;#}
-{#        }#}
-{##}
-{#        .calendar-header h1 {#}
-{#            font-size: 1.8rem;#}
-{#            margin: 0;#}
-{#        }#}
-{##}
-{#        .calendar-grid {#}
-{#            display: grid;#}
-{#            grid-template-columns: repeat(7, 1fr);#}
-{#            gap: 5px;#}
-{#        }#}
-{##}
-{#        .calendar-cell {#}
-{#            border: 1px solid #ddd;#}
-{#            background-color: #fff;#}
-{#            text-align: center;#}
-{#            padding: 15px;#}
-{#            border-radius: 5px;#}
-{#            position: relative;#}
-{#        }#}
-{##}
-{#        .calendar-cell:hover {#}
-{#            background-color: #f9f9f9;#}
-{#            cursor: pointer;#}
-{#        }#}
-{##}
-{#        .calendar-cell img {#}
-{#            max-width: 100%;#}
-{#            height: 50px;#}
-{#            margin-top: 10px;#}
-{#        }#}
-{##}
-{#        .calendar-cell button {#}
-{#            margin-top: 10px;#}
-{#            padding: 5px 10px;#}
-{#            font-size: 0.9rem;#}
-{#            background-color: #d5c3c1;#}
-{#            border: none;#}
-{#            color: white;#}
-{#            border-radius: 4px;#}
-{#            cursor: pointer;#}
-{#        }#}
-{##}
-{#        .calendar-cell button:hover {#}
-{#            background-color: #b3a2a1;#}
-{#        }#}
-{#    </style>#}
-{#</head>#}
-{#<body>#}
-{#    <div class="container-fluid">#}
-{#        <div class="row">#}
-{#            <!-- Toolbox -->#}
-{#            <div class="col-3 toolbox">#}
-{#                <h2>ToolBox</h2>#}
-{#                <button onclick="location.href='/dashboard'">Back to Dashboard</button>#}
-{#                <button onclick="openAddOutfitModal()">Add to Calendar</button>#}
-{#                <button onclick="location.href='/avatar'">Go to Avatar</button>#}
-{#                <button onclick="location.href='/favourites'">View Your Favourite Outfits</button>#}
-{#            </div>#}
-{##}
-{#            <!-- Calendar -->#}
-{#            <div class="col-9">#}
-{#                <div class="calendar-container">#}
-{#                    <div class="calendar-header">#}
-{#                        <button class="btn btn-secondary" onclick="navigateMonth(-1)">Back</button>#}
-{#                        <h1 id="calendarTitle"></h1>#}
-{#                        <button class="btn btn-secondary" onclick="navigateMonth(1)">Next</button>#}
-{#                    </div>#}
-{##}
-{#                    <div class="calendar-grid" id="calendarGrid"></div>#}
-{#                </div>#}
-{#            </div>#}
-{#        </div>#}
-{#    </div>#}
-{##}
-{#    <script>#}
-{#        document.addEventListener('DOMContentLoaded', () => {#}
-{#            const currentDate = new Date();#}
-{#            let currentYear = currentDate.getFullYear();#}
-{#            let currentMonth = currentDate.getMonth();#}
-{##}
-{#            function renderCalendar(year, month, days, outfits) {#}
-{#                const calendarTitle = document.getElementById('calendarTitle');#}
-{#                const calendarGrid = document.getElementById('calendarGrid');#}
-{##}
-{#                calendarTitle.textContent = `${new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(year, month))} ${year}`;#}
-{#                calendarGrid.innerHTML = '';#}
-{##}
-{#                days.forEach((day) => {#}
-{#                    const cell = document.createElement('div');#}
-{#                    cell.className = 'calendar-cell';#}
-{#                    cell.innerHTML = `<span>${day}</span>`;#}
-{#                    if (outfits[day]) {#}
-{#                        const outfit = outfits[day];#}
-{#                        cell.innerHTML += `#}
-{#                            <img src="${outfit.image_path}" alt="Outfit">#}
-{#                            <p>${outfit.description}</p>#}
-{#                        `;#}
-{#                    } else {#}
-{#                        cell.innerHTML += `<button onclick="openAddOutfitModal(${year}, ${month + 1}, ${day})">Add Outfit</button>`;#}
-{#                    }#}
-{#                    calendarGrid.appendChild(cell);#}
-{#                });#}
-{#            }#}
-{##}
-{#            function fetchCalendarData(year, month) {#}
-{#                fetch(`/calendar?year=${year}&month=${month + 1}`)#}
-{#                    .then((response) => response.json())#}
-{#                    .then((data) => renderCalendar(year, month, data.days, data.outfits));#}
-{#            }#}
-{##}
-{#            fetchCalendarData(currentYear, currentMonth);#}
-{##}
-{#            window.navigateMonth = function (direction) {#}
-{#                currentMonth += direction;#}
-{#                if (currentMonth < 0) {#}
-{#                    currentMonth = 11;#}
-{#                    currentYear--;#}
-{#                } else if (currentMonth > 11) {#}
-{#                    currentMonth = 0;#}
-{#                    currentYear++;#}
-{#                }#}
-{#                fetchCalendarData(currentYear, currentMonth);#}
-{#            };#}
-{##}
-{#            window.openAddOutfitModal = function (year, month, day) {#}
-{#                // Add logic to open the modal for adding an outfit#}
-{#                console.log(`Open modal for ${year}-${month}-${day}`);#}
-{#            };#}
-{#        });#}
-{#    </script>#}
-{#</body>#}
-{#</html>#}
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -224,6 +36,7 @@
             text-align: center;
             border-radius: 5px;
             box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
 
         .day-cell img {
@@ -236,23 +49,11 @@
         .day-cell button {
             margin-top: 10px;
         }
-
-        .month-navigation {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .month-navigation button {
-            font-size: 1.2rem;
-        }
     </style>
 </head>
 <body>
     <div class="container-fluid">
         <div class="row">
-            <!-- Toolbox -->
             <div class="col-3 toolbox">
                 <h2 class="text-center">ToolBox</h2>
                 <div class="d-grid gap-3">
@@ -262,24 +63,22 @@
                     <button class="btn btn-secondary" onclick="location.href='/favourites'">View Your Favourite Outfits</button>
                 </div>
             </div>
-
-            <!-- Calendar -->
             <div class="col-9 calendar-container">
                 <div class="month-navigation">
-                    <button class="btn btn-primary" id="prevMonth" onclick="navigateMonth(-1)">Back</button>
-                    <h1 class="text-center">{{ month_names[month - 1] }} {{ year }}</h1>
-                    <button class="btn btn-primary" id="nextMonth" onclick="navigateMonth(1)">Next</button>
+                    <button class="btn btn-primary" onclick="navigateMonth(-1)">Back</button>
+                    <h1>{{ month_names[month - 1] }} {{ year }}</h1>
+                    <button class="btn btn-primary" onclick="navigateMonth(1)">Next</button>
                 </div>
-                <div class="calendar-grid" id="calendarGrid">
+                <div class="calendar-grid">
                     {% for day in days %}
-                    <div class="day-cell">
+                    <div class="day-cell" data-day="{{ day }}">
                         <div>{{ day }}</div>
                         {% if day in outfits %}
-                        <img src="{{ outfits[day].image_path }}" alt="Outfit">
-                        <p>{{ outfits[day].description }}</p>
-                        {% else %}
-                        <button class="btn btn-secondary" onclick="openAddOutfitModal({{ day }})">Add Outfit</button>
+                            <img src="{{ url_for('uploaded_file', filename=outfits[day].image_path) }}" alt="Outfit" onerror="this.onerror=null; this.src='/static/image/placeholder.png';">
+                            <p>{{ outfits[day].description if outfits[day].description else '' }}</p>
+                            <button class="btn btn-danger btn-sm" onclick="deleteOutfit({{ day }})">Delete</button>
                         {% endif %}
+                        <button class="btn btn-secondary add-outfit-btn" onclick="openAddOutfitModal({{ day }})" {% if day in outfits %}style="display:none;"{% endif %}>Add Outfit</button>
                     </div>
                     {% endfor %}
                 </div>
@@ -287,20 +86,17 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Add Outfit Modal -->
     <div class="modal fade" id="addOutfitModal" tabindex="-1" aria-labelledby="addOutfitModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addOutfitModalLabel">Add Outfit</h5>
+                    <h5 class="modal-title" id="addOutfitModalLabel">Add Outfit for <span id="modalDate"></span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addOutfitForm">
-                        <div class="mb-3">
-                            <label for="date" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="outfitDate" required>
-                        </div>
+                        <input type="hidden" id="selectedDay">
                         <div class="mb-3">
                             <label for="file" class="form-label">Image</label>
                             <input type="file" class="form-control" id="outfitFile" required>
@@ -316,23 +112,60 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function openAddOutfitModal(day) {
-            const modal = new bootstrap.Modal(document.getElementById('addOutfitModal'));
-            document.getElementById('outfitDate').value = `{{ year }}-{{ month }}-${day}`;
-            modal.show();
+            const modalDate = document.getElementById('modalDate');
+            const selectedDay = document.getElementById('selectedDay');
+
+            modalDate.textContent = `Day ${day}`;
+            selectedDay.value = day;
+
+            new bootstrap.Modal(document.getElementById('addOutfitModal')).show();
         }
 
-        function navigateMonth(direction) {
-            const newMonth = {{ month }} + direction;
-            const newYear = {{ year }} + Math.floor(newMonth / 12);
-            const month = (newMonth % 12) || 12;
+        document.getElementById('addOutfitForm').addEventListener('submit', function (e) {
+            e.preventDefault();
 
-            const url = `/calendar?year=${newYear}&month=${month}`;
-            window.location.href = url;
+            const formData = new FormData();
+            formData.append('day', document.getElementById('selectedDay').value);
+            formData.append('file', document.getElementById('outfitFile').files[0]);
+            formData.append('description', document.getElementById('outfitDescription').value);
+
+            fetch('/calendar/add', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        function deleteOutfit(day) {
+            fetch(`/calendar/delete?day=${day}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const dayCell = document.querySelector(`[data-day="${day}"]`);
+                    if (dayCell) {
+                        dayCell.querySelector("img")?.remove();
+                        dayCell.querySelector("p")?.remove();
+                        dayCell.querySelector(".btn-danger")?.remove();
+                        dayCell.querySelector(".add-outfit-btn").style.display = "block";
+                    }
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
