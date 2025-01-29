@@ -520,6 +520,53 @@ def dashboard():
     print(f"Weather data to be rendered: {weather_data}")
     return render_template('dashboard.html', weather_data=weather_data)
 
+
+users_collection = db["users"]
+
+UPLOAD_FOLDER = "static/uploads"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+# Ensure the upload directory exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+# @app.route('/user/profile', methods=['GET', 'POST'])
+# def user_profile():
+#
+#     user = users_collection.find_one({"_id": session["user_id"]})
+#
+#     if request.method == 'POST':
+#         username = request.form.get("username")
+#         email = request.form.get("email")
+#
+#         # Handling Profile Picture Upload
+#         if "profile_picture" in request.files:
+#             file = request.files["profile_picture"]
+#             if file and file.filename:
+#                 filename = secure_filename(file.filename)
+#                 file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+#                 file.save(file_path)
+#                 profile_picture_url = f"/{app.config['UPLOAD_FOLDER']}/{filename}"
+#
+#                 # Update database with new profile picture
+#                 users_collection.update_one({"_id": user["_id"]}, {"$set": {"profile_picture": profile_picture_url}})
+#             else:
+#                 profile_picture_url = user.get("profile_picture", "/static/image/default-avatar.png")
+#         else:
+#             profile_picture_url = user.get("profile_picture", "/static/image/default-avatar.png")
+#
+#         # Update User Info in Database
+#         users_collection.update_one({"_id": user["_id"]}, {"$set": {
+#             "username": username,
+#             "email": email,
+#             "profile_picture": profile_picture_url
+#         }})
+#
+#
+#         return redirect(url_for("user_profile"))
+#
+#     return render_template("profile.html", user=user)
+
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
 def add_wardrobe():

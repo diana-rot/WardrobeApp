@@ -13,18 +13,15 @@
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script>
-function toggleDarkMode() {
-        document.body.classList.toggle("dark-mode");
-        let isDark = document.body.classList.contains("dark-mode");
-        localStorage.setItem('darkMode', isDark ? "enabled" : "disabled");
-    }
-
-    // Keep dark mode persistent after page refresh
-    document.addEventListener("DOMContentLoaded", function() {
-        if (localStorage.getItem('darkMode') === "enabled") {
-            document.body.classList.add("dark-mode");
+       function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+            localStorage.setItem('darkMode', document.body.classList.contains("dark-mode"));
         }
-    });
+         document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add("dark-mode");
+            }
+        });
     </script>
     <style>
         :root {
@@ -32,7 +29,7 @@ function toggleDarkMode() {
             --almost-black: #263238;
             --white: #ffffff;
             --almost-white: #ffffff;
-            --grey-light: rgb(241, 226, 221);
+            --grey-light: rgb(243, 226, 222);
             --grey: #ffffff;
             --grey-medium: #78909C;
             --grey-dark: #455A64;
@@ -57,8 +54,7 @@ function toggleDarkMode() {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #F8E8E8; /* Softer pink for elegance */
-            border-bottom: 2px solid #D3A5A5; /* Adds subtle depth */
+            background: var(--pink-bright);
             padding: 10px 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             position: fixed;
@@ -94,43 +90,38 @@ function toggleDarkMode() {
             height: 100%;
             margin-top: 60px;
         }
-
         .sidebar {
-   background-color: #d9c2ba; /* More muted brown-pink */
-    color: var(--white);
-    width: 220px;
-    height: calc(100vh - 60px);
-    position: fixed;
-    top: 60px;
-    left: 0;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-}
-/* 🌙 Dark Mode Fix */
-.dark-mode .sidebar {
-    background: var(--almost-black);
-}
-
-.sidebar a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    font-weight: bold;
-    color: #263238;
-    text-decoration: none;
-    transition: background 0.3s, transform 0.2s;
-}
-.sidebar a:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05);
-}
-
+            background: var(--toolbar-dark);
+            padding: 20px;
+            color: var(--white);
+            width: 220px;
+            height: calc(100vh - 60px);
+            position: fixed;
+            top: 60px;
+            left: 0;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+        }
         .sidebar h3 {
             margin-top: 0;
             font-size: 18px;
             text-align: center;
         }
-
+        .sidebar a {
+            display: block;
+            text-decoration: none;
+            color: var(--white);
+            background: var(--primary);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .sidebar a:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
         .dashboard-widgets {
             display: flex;
             flex-wrap: wrap;
@@ -150,26 +141,6 @@ function toggleDarkMode() {
             font-weight: bold;
             transition: transform 0.3s ease-in-out;
         }
-        .dark-mode {
-    background-color: var(--black);
-    color: var(--almost-white);
-}
-
-.dark-mode .navbar {
-    background: var(--almost-black);
-}
-
-
-.dark-mode .sidebar a {
-    background: var(--almost-white);
-}
-
-.dark-mode .button {
-    background: var(--grey-dark);
-    color: var(--white);
-}
-
-
     </style>
 </head>
 
@@ -185,6 +156,7 @@ function toggleDarkMode() {
     </nav>
     <div class="main-content">
         <div class="sidebar">
+            <h3>ToolBox</h3>
             <a href="/wardrobe">Add to Wardrobe</a>
             <a href="/outfit/day">Generate Outfits</a>
             <a href="/wardrobe/all">View Your Wardrobe</a>
