@@ -556,7 +556,7 @@ def view_wardrobe_all():
     except StopIteration:
         print("Empty cursor!")
 
-    return render_template('wardrobe_all.html', wardrobes=users_clothes)
+    return render_template('wardrobe_all2.html', wardrobes=users_clothes)
 
 
 @app.route('/outfits/all', methods=['GET', 'POST'])
@@ -724,32 +724,6 @@ def calendar_view():
 #     return jsonify({"success": True, "message": "Outfit added successfully!", "image_path": f"/uploads-calendar/{filename}"})
 
 
-@app.route('/calendar/add', methods=['POST'])
-def add_outfit():
-    user_id = session.get('user', {}).get('_id', '')
-    day = request.form.get('day', type=int)
-    year = request.form.get('year', type=int)
-    month = request.form.get('month', type=int)
-    description = request.form.get('description', '')
-    file = request.files.get('file')
-
-    if not file or not allowed_file(file.filename):
-        return jsonify({"success": False, "message": "Invalid file"}), 400
-
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
-
-    db.calendar.insert_one({
-        "user_id": user_id,
-        "day": day,
-        "year": year,
-        "month": month,
-        "image_path": filename,
-        "description": description
-    })
-
-    return jsonify({"success": True, "message": "Outfit added successfully!", "image_path": f"/uploads-calendar/{filename}"})
 
 @app.route('/calendar/delete', methods=['DELETE'])
 def delete_outfit():
