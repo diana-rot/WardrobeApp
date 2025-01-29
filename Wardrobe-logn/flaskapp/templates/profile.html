@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script>
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function () {
+                const output = document.getElementById('profile-preview');
+                output.src = reader.result;
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f8f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .profile-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            text-align: center;
+        }
+        .profile-container h2 {
+            margin-bottom: 15px;
+        }
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #d3a5a5;
+        }
+        .upload-section {
+            margin-top: 15px;
+        }
+        .file-input {
+            display: none;
+        }
+        .upload-btn {
+            background: #d3a5a5;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .save-btn {
+            background: #343633;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            width: 100%;
+            margin-top: 15px;
+        }
+        .save-btn:hover {
+            background: #2c2c2c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="profile-container">
+        <h2>User Profile</h2>
+
+        <!-- Profile Picture Preview -->
+        <img id="profile-preview" class="profile-picture"
+            src="{{ user.profile_picture if user.profile_picture else '/static/image/default-avatar.png' }}"
+            alt="Profile Picture">
+
+        <form action="{{ url_for('user_profile') }}" method="POST" enctype="multipart/form-data">
+            <div class="upload-section">
+                <label for="profile_picture" class="upload-btn">Upload New Photo</label>
+                <input type="file" name="profile_picture" id="profile_picture" class="file-input" accept="image/*" onchange="previewImage(event)">
+            </div>
+
+            <input type="text" name="username" placeholder="Username" value="{{ user.username }}" required>
+            <input type="email" name="email" placeholder="Email" value="{{ user.email }}" required>
+
+            <button type="submit" class="save-btn">Save Changes</button>
+        </form>
+    </div>
+</body>
+
+</html>
