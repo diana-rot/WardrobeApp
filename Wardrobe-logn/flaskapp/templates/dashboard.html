@@ -1,226 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
-
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>WardrobeApp</title>
-    <link rel="icon" href="../static/image/wardrobe1.png" type="image/png">
-    <link rel="stylesheet" href="/static/css/normalize.css">
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    <script>
-function toggleDarkMode() {
-        document.body.classList.toggle("dark-mode");
-        let isDark = document.body.classList.contains("dark-mode");
-        localStorage.setItem('darkMode', isDark ? "enabled" : "disabled");
+  <meta charset="UTF-8">
+  <title>WardrobeApp - Neutral Pastel with Custom Card</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/static/image/wardrobe1.png" type="image/png">
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <!-- Bootstrap Icons -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.7.2/font/bootstrap-icons.min.css"
+    rel="stylesheet"
+  >
+
+  <style>
+    /*
+      PALETĂ DE CULORI
+      - Fundal crem, accent bej/roz pal (#C8A68D) pentru carduri
+    */
+    :root {
+      --primary-color: #ffffff;      /* Fundal general crem deschis */
+      --secondary-color: #f3e5e1;    /* Crem pastel pentru zone majore: navbar/sidebar */
+      --accent-color: #c9ada7;       /* Bej/roz pal pentru carduri și hover */
+      --text-color: #333333;         /* Text închis */
+      --sidebar-width: 250px;
+
+      --transition-speed: 0.3s;      /* Pentru efecte de tranziție */
     }
 
-    // Keep dark mode persistent after page refresh
-    document.addEventListener("DOMContentLoaded", function() {
-        if (localStorage.getItem('darkMode') === "enabled") {
-            document.body.classList.add("dark-mode");
-        }
-    });
-    </script>
-    <style>
-        :root {
-            --black: #000000;
-            --almost-black: #263238;
-            --white: #ffffff;
-            --almost-white: #ffffff;
-            --grey-light: rgb(241, 226, 221);
-            --grey: #ffffff;
-            --grey-medium: #78909C;
-            --grey-dark: #455A64;
-            --primary: #343633;
-            --primary-dark: #d0fef5;
-            --secondary: #ffffff;
-            --secondary-dark: #B0BEC5;
-            --red: #EF4836;
-            --pink-bright: #FFEEEE;
-            --toolbar-dark: #2C2C2C;
-        }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--white);
-            color: var(--black);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            margin: 0;
-        }
-        .navbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #F8E8E8; /* Softer pink for elegance */
-            border-bottom: 2px solid #D3A5A5; /* Adds subtle depth */
-            padding: 10px 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1000;
-        }
-        .navbar-brand img {
-            height: 40px;
-        }
-        .profile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-        .profile img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid var(--white);
-        }
-        .profile a {
-            text-decoration: none;
-            color: var(--black);
-            font-weight: bold;
-        }
-        .main-content {
-            display: flex;
-            flex-direction: row;
-            width: 100%;
-            height: 100%;
-            margin-top: 60px;
-        }
+    /* Dark Mode */
+    body.dark-mode {
+      --primary-color: #2C2C2C;
+      --secondary-color: #3C3C3C;
+      --accent-color: #555555;
+      --text-color: #F1F1F1;
+    }
 
-        .sidebar {
-   background-color: #d9c2ba; /* More muted brown-pink */
-    color: var(--white);
-    width: 220px;
-    height: calc(100vh - 60px);
-    position: fixed;
-    top: 60px;
-    left: 0;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-}
-/* 🌙 Dark Mode Fix */
-.dark-mode .sidebar {
-    background: var(--almost-black);
-}
+    /* Reset de bază */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-.sidebar a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    font-weight: bold;
-    color: #263238;
-    text-decoration: none;
-    transition: background 0.3s, transform 0.2s;
-}
-.sidebar a:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05);
-}
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 16px;
+      background-color: var(--primary-color);
+      color: var(--text-color);
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
 
-        .sidebar h3 {
-            margin-top: 0;
-            font-size: 18px;
-            text-align: center;
-        }
+    /* Navbar */
+    .navbar {
+      background-color: var(--secondary-color);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: fixed;
+      width: 100%;
+      z-index: 1000;
+      transition: background-color var(--transition-speed);
+    }
 
-        .dashboard-widgets {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            flex-grow: 1;
-            margin-left: 250px;
-            padding: 30px;
-        }
-        .dashboard-widgets .widget {
-            background: var(--grey-light);
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            width: 280px;
-            min-height: 150px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            font-weight: bold;
-            transition: transform 0.3s ease-in-out;
-        }
-        .dark-mode {
-    background-color: var(--black);
-    color: var(--almost-white);
-}
+    .navbar-brand {
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
 
-.dark-mode .navbar {
-    background: var(--almost-black);
-}
+    /* Butonul de toggle pentru Dark Mode */
+    .btn-darkmode {
+      border: none;
+      background: transparent;
+      font-size: 1.4rem;
+      color: var(--text-color);
+      transition: color var(--transition-speed);
+    }
+    .btn-darkmode:hover {
+      opacity: 0.7;
+    }
 
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 56px; /* Înălțimea navbarului */
+      left: 0;
+      width: var(--sidebar-width);
+      height: calc(100vh - 56px);
+      background-color: var(--secondary-color);
+      padding: 20px;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+      transition: background-color var(--transition-speed);
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      color: var(--text-color);
+      text-decoration: none;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+    .nav-link i {
+      margin-right: 8px;
+      font-size: 1.2rem;
+    }
+    .nav-link:hover {
+      background-color: var(--accent-color);
+      text-decoration: none;
+    }
 
-.dark-mode .sidebar a {
-    background: var(--almost-white);
-}
+    /* Conținut principal */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 80px 20px 20px;
+      transition: margin-left var(--transition-speed);
+    }
 
-.dark-mode .button {
-    background: var(--grey-dark);
-    color: var(--white);
-}
+    /* Carduri */
+    .card {
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      background-color: var(--accent-color);
+      transition: transform 0.2s, background-color var(--transition-speed);
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card-title {
+      font-weight: 600;
+    }
 
+    /* Card de vreme */
+    .weather-card {
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 10px;
+      background-color: var(--accent-color);
+      transition: background-color var(--transition-speed);
+    }
 
-    </style>
+    /* Iconița de vreme */
+    .weather-icon {
+      width: 50px;
+      height: 50px;
+    }
+
+    /* Profil user navbar */
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 8px;
+    }
+
+    /* Alte ajustări la input și butoane */
+    .form-control {
+      border-radius: 8px;
+    }
+    .btn-primary {
+      background-color: #9C7D68; /* O nuanță puțin mai închisă față de accent */
+      border: none;
+      transition: background-color var(--transition-speed);
+    }
+    .btn-primary:hover {
+      background-color: #876955;
+    }
+  </style>
 </head>
-
-
 <body>
-    <nav class="navbar">
-        <a class="navbar-brand" href="#"> <img src="../static/image/wardrobe1.png"></a>
-        <div class="profile" onclick="window.location.href='/user/profile'">
-            <img src="profile-placeholder.png" alt="Profile Picture">
-            <a href="/user/profile">Welcome, User</a>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg py-2">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="../static/image/wardrobe1.png" alt="Logo" height="40" class="me-2">
+        WardrobeApp
+      </a>
+      <div class="d-flex align-items-center">
+        <button class="btn-darkmode me-3" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+          <i class="bi bi-moon"></i>
+        </button>
+        <div class="d-flex align-items-center">
+          <img
+            src="https://via.placeholder.com/40"
+            alt="Profile"
+            class="profile-img"
+          >
+          <span>Welcome, User</span>
         </div>
-        <button class="button" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
-    </nav>
-    <div class="main-content">
-        <div class="sidebar">
-            <a href="/wardrobe">Add to Wardrobe</a>
-            <a href="/outfit/day">Generate Outfits</a>
-            <a href="/wardrobe/all">View Your Wardrobe</a>
-            <a href="/outfits/all">View Your Favourite Outfits</a>
-            <a href="/calendar">Plan Your Outfits</a>
-        </div>
-        <div class="dashboard-widgets">
-            <div class="widget">
-                <h3>Weather</h3>
-                <form method="POST">
-                    <input class="input" name="city" type="text" placeholder="City Name">
-                    <button class="button is-info">Add City</button>
-                </form>
-                {% for weather in weather_data %}
-                <div class="box">
-                    <article class="media">
-                        <div class="media-left">
-                            <figure class="image is-64x64">
-                                <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" alt="Weather icon">
-                            </figure>
-                        </div>
-                        <div class="media-content">
-                            <div class="content">
-                                <p>
-                                    <strong>{{ weather.city }}</strong>
-                                    <br>
-                                    <span class="subtitle">{{ weather.temperature }}° C</span>
-                                    <br> {{ weather.description }}
-                                </p>
-                            </div>
-                        </div>
-                    </article>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+      </div>
     </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav flex-column">
+      <a href="/wardrobe" class="nav-link">
+        <i class="bi bi-plus-circle"></i> Add to Wardrobe
+      </a>
+      <a href="/outfit/day" class="nav-link">
+        <i class="bi bi-palette"></i> Generate Outfits
+      </a>
+      <a href="/wardrobe/all" class="nav-link">
+        <i class="bi bi-grid"></i> View Your Wardrobe
+      </a>
+      <a href="/outfits/all" class="nav-link">
+        <i class="bi bi-heart"></i> View Your Favourite Outfits
+      </a>
+      <a href="/calendar" class="nav-link">
+        <i class="bi bi-calendar"></i> Plan Your Outfits
+      </a>
+    </div>
+  </div>
+
+  <!-- Conținut principal -->
+  <div class="main-content">
+    <div class="container-fluid">
+      <div class="row g-4">
+        <!-- Weather Widget -->
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title mb-4">Weather</h5>
+              <form id="weatherForm" method="POST">
+                <div class="input-group mb-3">
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="city"
+                    placeholder="City Name"
+                  >
+                  <button class="btn btn-primary" type="submit">Add City</button>
+                </div>
+              </form>
+              <div id="weatherData">
+                <!-- Exemplu static -->
+                <div class="weather-card">
+                  <div class="d-flex align-items-center">
+                    <img
+                      src="https://openweathermap.org/img/wn/10d@2x.png"
+                      alt="Weather icon"
+                      class="weather-icon me-3"
+                    >
+                    <div>
+                      <h6 class="mb-1">București</h6>
+                      <div class="text-muted">7.1° C</div>
+                      <small>light rain</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="weather-card">
+                  <div class="d-flex align-items-center">
+                    <img
+                      src="https://openweathermap.org/img/wn/01d@2x.png"
+                      alt="Weather icon"
+                      class="weather-icon me-3"
+                    >
+                    <div>
+                      <h6 class="mb-1">Timișoara</h6>
+                      <div class="text-muted">10.2° C</div>
+                      <small>clear sky</small>
+                    </div>
+                  </div>
+                </div>
+                <!-- end exemplu -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Alte carduri, secțiuni etc. -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper -->
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"
+  ></script>
+
+  <!-- Dark Mode Toggle Script -->
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+
+      const moonIcon = document.querySelector('.btn-darkmode i');
+      if (isDark) {
+        moonIcon.classList.remove('bi-moon');
+        moonIcon.classList.add('bi-sun');
+      } else {
+        moonIcon.classList.remove('bi-sun');
+        moonIcon.classList.add('bi-moon');
+      }
+    }
+
+    // Reține setarea Dark Mode
+    document.addEventListener('DOMContentLoaded', function() {
+      if (localStorage.getItem('darkMode') === 'enabled') {
+        document.body.classList.add('dark-mode');
+        const moonIcon = document.querySelector('.btn-darkmode i');
+        moonIcon.classList.remove('bi-moon');
+        moonIcon.classList.add('bi-sun');
+      }
+    });
+  </script>
 </body>
 </html>
