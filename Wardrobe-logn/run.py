@@ -14,7 +14,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import load_img
 from keras.preprocessing import image
 import calendar
-
+import base64
 from bson import ObjectId
 from datetime import datetime
 from flask import jsonify, request, session
@@ -525,51 +525,6 @@ def dashboard():
     return render_template('dashboard.html', weather_data=weather_data)
 
 
-users_collection = db["users"]
-
-UPLOAD_FOLDER = "static/uploads"
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-# Ensure the upload directory exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-
-# @app.route('/user/profile', methods=['GET', 'POST'])
-# def user_profile():
-#
-#     user = users_collection.find_one({"_id": session["user_id"]})
-#
-#     if request.method == 'POST':
-#         username = request.form.get("username")
-#         email = request.form.get("email")
-#
-#         # Handling Profile Picture Upload
-#         if "profile_picture" in request.files:
-#             file = request.files["profile_picture"]
-#             if file and file.filename:
-#                 filename = secure_filename(file.filename)
-#                 file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-#                 file.save(file_path)
-#                 profile_picture_url = f"/{app.config['UPLOAD_FOLDER']}/{filename}"
-#
-#                 # Update database with new profile picture
-#                 users_collection.update_one({"_id": user["_id"]}, {"$set": {"profile_picture": profile_picture_url}})
-#             else:
-#                 profile_picture_url = user.get("profile_picture", "/static/image/default-avatar.png")
-#         else:
-#             profile_picture_url = user.get("profile_picture", "/static/image/default-avatar.png")
-#
-#         # Update User Info in Database
-#         users_collection.update_one({"_id": user["_id"]}, {"$set": {
-#             "username": username,
-#             "email": email,
-#             "profile_picture": profile_picture_url
-#         }})
-#
-#
-#         return redirect(url_for("user_profile"))
-#
-#     return render_template("profile.html", user=user)
 
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
@@ -677,78 +632,19 @@ def upload():
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
-U# Upload folder configuration
-UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), 'uploads-calendar'))
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Allowed file extensions
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
 
-# Calendar routes in run.py
-@app.route('/calendar', methods=['GET'])
-@login_required
-def calendar_view():
-    year = int(request.args.get('year', datetime.now().year))
-    month = int(request.args.get('month', datetime.now().month))
 
-    calendar.setfirstweekday(calendar.MONDAY)
-    weeks = calendar.monthcalendar(year, month)
-
-    outfit_map = {}
-    try:
-        outfits = db.calendar.find({
-            "user_id": session.get('user', {}).get('_id', ''),
-            "year": year,
-            "month": month
-        })
-
-        for outfit in outfits:
-            items = []
-            if 'items' in outfit:
-                for item_id in outfit['items']:
-                    item = db.wardrobe.find_one({'_id': item_id})
-                    if item:
-                        items.append({
-                            'id': str(item['_id']),
-                            'label': item['label'],
-                            'file_path': item['file_path'],
-                            'color': item.get('color', '')
-                        })
-
-            outfit_map[outfit['day']] = {
-                'id': str(outfit['_id']),
-                'items': items,
-                'description': outfit.get('description', '')
-            }
-    except Exception as e:
-        print(f"Error loading outfits: {str(e)}")
-        outfit_map = {}
-
-    return render_template(
-        'calendar.html',
-        year=year,
-        month=month,
-        weeks=weeks,
-        outfits=outfit_map,
-        month_names=[
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'
-        ]
-    )
-
+# ------------------ API: Fetch Wardrobe Items ------------------#
 @app.route('/api/wardrobe-items', methods=['GET'])
-@login_required
 def get_wardrobe_items():
-    """Get user's wardrobe items grouped by category"""
-    userId = session['user']['_id']
+    """Get wardrobe items grouped by category"""
+    user_id = session.get('user', {}).get('_id', '')
+    if not user_id:
+        return jsonify({"success": False, "message": "User not logged in"}), 400
 
-    # Get all wardrobe items for the user
-    wardrobe_items = list(db.wardrobe.find({'userId': userId}))
+    items_cursor = db.wardrobe.find({'userId': user_id})
 
-    # Group items by category
     categories = {
         'tops': ['T-shirt/top', 'Shirt', 'Pullover'],
         'bottoms': ['Trouser'],
@@ -758,279 +654,84 @@ def get_wardrobe_items():
         'accessories': ['Bag']
     }
 
-    grouped_items = {category: [] for category in categories}
+    grouped_items = {cat: [] for cat in categories.keys()}
 
-    for item in wardrobe_items:
-        for category, labels in categories.items():
-            if item['label'] in labels:
-                grouped_items[category].append({
-                    '_id': str(item['_id']),
-                    'label': item['label'],
-                    'file_path': item['file_path'],
-                    'color': item.get('color', '')
-                })
-                break
+    for item_doc in items_cursor:
+        label = item_doc.get('label', '')
+        category = next((cat for cat, lbls in categories.items() if label in lbls), None)
+        if category:
+            grouped_items[category].append({
+                '_id': str(item_doc['_id']),
+                'label': label,
+                'file_path': normalize_path(item_doc.get('file_path', '')),
+                'color': item_doc.get('color', '')
+            })
 
     return jsonify(grouped_items)
 
+# ------------------ API: Fetch Calendar Data ------------------#
 
-import base64
-import os
-from bson import ObjectId
-from datetime import datetime
-from flask import jsonify, request, session
+# ------------------ API: Add or Edit Outfit ------------------#
+
+# ------------------ API: Delete Outfit ------------------#
 
 
-@app.route('/calendar/add', methods=['POST'])
+@app.route('/debug/outfit/<day>')
 @login_required
-def add_calendar_outfit():
-    """Add or update outfit in calendar"""
+def debug_outfit(day):
     try:
-        # Get user ID and ensure it's a valid ObjectId
         user_id = session.get('user', {}).get('_id', '')
-        if not isinstance(user_id, ObjectId):
-            try:
-                user_id = ObjectId(str(user_id))
-            except Exception as e:
-                return jsonify({
-                    'success': False,
-                    'message': f'Invalid user ID format: {str(e)}'
-                }), 400
+        month = request.args.get('month', datetime.now().month)
+        year = request.args.get('year', datetime.now().year)
 
-        data = request.json
-        if not data:
-            return jsonify({
-                'success': False,
-                'message': 'No data provided'
-            }), 400
-
-        # Validate required fields
-        required_fields = ['day', 'month', 'year']
-        if not all(field in data for field in required_fields):
-            return jsonify({
-                'success': False,
-                'message': 'Missing required fields'
-            }), 400
-
-        try:
-            # Initialize outfit document with proper type conversion
-            outfit_data = {
-                'user_id': user_id,
-                'day': int(data['day']),
-                'month': int(data['month']),
-                'year': int(data['year']),
-                'description': str(data.get('description', '')),
-                'created_at': datetime.now()
-            }
-        except ValueError as e:
-            return jsonify({
-                'success': False,
-                'message': f'Invalid date format: {str(e)}'
-            }), 400
-
-        # Handle uploaded image if present
-        if data.get('uploaded_image'):
-            try:
-                # Remove data URL prefix and decode
-                image_data = data['uploaded_image'].split(',')[1]
-                image_bytes = base64.b64decode(image_data)
-
-                # Generate unique filename
-                filename = f"outfit_{str(user_id)}_{outfit_data['year']}_{outfit_data['month']}_{outfit_data['day']}.jpg"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-                # Ensure upload directory exists
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-                # Save image
-                with open(filepath, 'wb') as f:
-                    f.write(image_bytes)
-
-                outfit_data['custom_image'] = f'/static/uploads/{filename}'
-            except Exception as e:
-                print(f"Error saving image: {str(e)}")
-                # Continue without image if there's an error
-
-        # Handle selected items if present
-        if data.get('selected_items'):
-            try:
-                # Convert item IDs to ObjectId
-                outfit_data['items'] = [
-                    ObjectId(str(item_id))
-                    for item_id in data['selected_items']
-                    if item_id
-                ]
-            except Exception as e:
-                return jsonify({
-                    'success': False,
-                    'message': f'Invalid item ID format: {str(e)}'
-                }), 400
-
-        # Check for existing outfit
-        existing_outfit = db.calendar.find_one({
-            'user_id': user_id,
-            'day': outfit_data['day'],
-            'month': outfit_data['month'],
-            'year': outfit_data['year']
-        })
-
-        if existing_outfit:
-            # Update existing outfit
-            result = db.calendar.update_one(
-                {'_id': existing_outfit['_id']},
-                {'$set': outfit_data}
-            )
-            message = 'Outfit updated successfully'
-        else:
-            # Insert new outfit
-            result = db.calendar.insert_one(outfit_data)
-            message = 'Outfit added successfully'
-
-        return jsonify({
-            'success': True,
-            'message': message
-        })
-
-    except Exception as e:
-        print(f"Error in add_calendar_outfit: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f'Server error: {str(e)}'
-        }), 500
-
-
-@app.route('/calendar/get_outfit/<day>', methods=['GET'])
-@login_required
-def get_calendar_outfit(day):
-    """Get outfit for a specific calendar day"""
-    try:
-        # Get and validate user ID
-        user_id = session.get('user', {}).get('_id', '')
-        if not isinstance(user_id, ObjectId):
-            try:
-                user_id = ObjectId(str(user_id))
-            except Exception as e:
-                return jsonify({
-                    'success': False,
-                    'message': f'Invalid user ID format: {str(e)}'
-                }), 400
-
-        # Get and validate query parameters
-        try:
-            year = int(request.args.get('year'))
-            month = int(request.args.get('month'))
-            day = int(day)
-        except (TypeError, ValueError) as e:
-            return jsonify({
-                'success': False,
-                'message': f'Invalid date format: {str(e)}'
-            }), 400
-
-        # Find outfit for the specified day
         outfit = db.calendar.find_one({
             'user_id': user_id,
-            'day': day,
-            'month': month,
-            'year': year
+            'day': int(day),
+            'month': int(month),
+            'year': int(year)
         })
 
         if outfit:
-            # Get all items details
-            items = []
-            if 'items' in outfit:
-                for item_id in outfit['items']:
-                    item = db.wardrobe.find_one({'_id': item_id})
-                    if item:
-                        items.append({
-                            '_id': str(item['_id']),
-                            'label': item['label'],
-                            'file_path': item['file_path'],
-                            'color': item.get('color', '')
-                        })
+            # Convert ObjectId to string for JSON serialization
+            outfit['_id'] = str(outfit['_id'])
 
-            response_data = {
-                'id': str(outfit['_id']),
-                'description': outfit.get('description', ''),
-                'items': items
+            # Add debugging information
+            debug_info = {
+                'file_exists': None,
+                'full_path': None
             }
 
-            if 'custom_image' in outfit:
-                response_data['custom_image'] = outfit['custom_image']
+            if outfit.get('custom_image'):
+                # Get the full path of the image
+                full_path = os.path.join(
+                    app.static_folder,
+                    outfit['custom_image'].lstrip('/static/')
+                )
+                debug_info['full_path'] = full_path
+                debug_info['file_exists'] = os.path.exists(full_path)
 
             return jsonify({
                 'success': True,
-                'outfit': response_data
+                'outfit': outfit,
+                'debug_info': debug_info
             })
 
         return jsonify({
             'success': False,
-            'message': 'No outfit found'
+            'message': 'No outfit found',
+            'query': {
+                'user_id': user_id,
+                'day': int(day),
+                'month': int(month),
+                'year': int(year)
+            }
         })
-
-    except Exception as e:
-        print(f"Error in get_calendar_outfit: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f'Server error: {str(e)}'
-        }), 500
-
-
-@app.route('/calendar/delete', methods=['DELETE'])
-@login_required
-def delete_calendar_outfit():
-    """Delete outfit from calendar"""
-    try:
-        user_id = session['user']['_id']
-        day = int(request.args.get('day'))
-        month = int(request.args.get('month'))
-        year = int(request.args.get('year'))
-
-        result = db.calendar.delete_one({
-            'user_id': user_id,
-            'day': day,
-            'month': month,
-            'year': year
-        })
-
-        if result.deleted_count > 0:
-            return jsonify({
-                'success': True,
-                'message': 'Outfit deleted successfully'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Outfit not found'
-            }), 404
 
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': str(e)
-        }), 500
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            'error': str(e)
+        })
 
 
 
@@ -1050,6 +751,175 @@ def get_avatar():
 @login_required
 def avatar_page():
     return render_template('avatar.html')
+
+
+UPLOAD_FOLDER = 'static/image_users/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(os.path.join('flaskapp', UPLOAD_FOLDER), exist_ok=True)
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+
+
+def save_uploaded_image(base64_string, user_id):
+    try:
+        base64_data = base64_string.split(',')[1] if ',' in base64_string else base64_string
+        image_data = base64.b64decode(base64_data)
+        images_dir = os.path.join('flaskapp', app.config['UPLOAD_FOLDER'], user_id)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'calendar_outfit_{timestamp}.jpg'
+        full_path = os.path.join(images_dir, filename)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, 'wb') as f:
+            f.write(image_data)
+        print(f"Image saved to: {full_path}")
+        return f'/static/image_users/{user_id}/{filename}'
+    except Exception as e:
+        print(f"Error saving image: {str(e)}")
+        return None
+
+
+def normalize_path(file_path):
+    if not file_path:
+        return None
+    return file_path.lstrip('/')
+
+
+@app.route('/calendar/add', methods=['POST'])
+@login_required
+def add_calendar_outfit():
+    try:
+        user_id = session.get('user', {}).get('_id', '')
+        if not user_id:
+            return jsonify({'success': False, 'message': 'User not found in session!'}), 400
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided!'}), 400
+
+        day = int(data.get('day', 0))
+        month = int(data.get('month', 0))
+        year = int(data.get('year', 0))
+        description = data.get('description', '')
+        selected_items = data.get('selected_items', [])
+        items_object_ids = [ObjectId(i) for i in selected_items if i]
+
+        custom_image_path = None
+        uploaded_image = data.get('uploaded_image')
+        if uploaded_image:
+            custom_image_path = save_uploaded_image(uploaded_image, user_id)
+
+        existing_outfit = db.calendar.find_one({
+            'user_id': user_id,
+            'day': day,
+            'month': month,
+            'year': year
+        })
+
+        if existing_outfit:
+            update_data = {
+                'description': description,
+                'items': items_object_ids
+            }
+            if custom_image_path:
+                update_data['custom_image'] = custom_image_path
+            db.calendar.update_one(
+                {'_id': existing_outfit['_id']},
+                {'$set': update_data}
+            )
+            msg = 'Outfit updated successfully!'
+        else:
+            insert_data = {
+                'user_id': user_id,
+                'day': day,
+                'month': month,
+                'year': year,
+                'description': description,
+                'items': items_object_ids,
+                'created_at': datetime.now()
+            }
+            if custom_image_path:
+                insert_data['custom_image'] = custom_image_path
+            db.calendar.insert_one(insert_data)
+            msg = 'Outfit added successfully!'
+
+        return jsonify({'success': True, 'message': msg})
+    except Exception as e:
+        print(f"[ERROR] add_calendar_outfit: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/calendar', methods=['GET'])
+@login_required
+def calendar_view():
+    year = int(request.args.get('year', datetime.now().year))
+    month = int(request.args.get('month', datetime.now().month))
+    user_id = session.get('user', {}).get('_id', '')
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 403
+
+    calendar.setfirstweekday(calendar.MONDAY)
+    weeks = calendar.monthcalendar(year, month)
+    outfit_map = {}
+
+    try:
+        outfits_cursor = db.calendar.find({"user_id": user_id, "year": year, "month": month})
+        for outfit_doc in outfits_cursor:
+            day_number = outfit_doc['day']
+            outfit_items = []
+            if 'items' in outfit_doc and isinstance(outfit_doc['items'], list):
+                for item_id in outfit_doc['items']:
+                    item_obj = db.wardrobe.find_one({'_id': ObjectId(item_id)})
+                    if item_obj:
+                        outfit_items.append({
+                            'id': str(item_obj['_id']),
+                            'label': item_obj['label'],
+                            'file_path': normalize_path(item_obj.get('file_path', '')),
+                            'color': item_obj.get('color', '')
+                        })
+            custom_image = normalize_path(outfit_doc.get('custom_image'))
+            print(f"Normalized custom image path: {custom_image}")
+            if custom_image:
+                full_path = os.path.join('flaskapp', custom_image.lstrip('/'))
+                print(f"Full path: {full_path}")
+                print(f"File exists: {os.path.exists(full_path)}")
+            outfit_map[day_number] = {
+                'id': str(outfit_doc['_id']),
+                'outfit_items': outfit_items,
+                'description': outfit_doc.get('description', ''),
+                'custom_image': custom_image
+            }
+    except Exception as e:
+        print(f"Error loading outfits: {str(e)}")
+        outfit_map = {}
+
+    return render_template(
+        'calendar.html',
+        year=year,
+        month=month,
+        weeks=weeks,
+        outfits=outfit_map,
+        month_names=[
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ]
+    )
+
+
+@app.route('/calendar/delete', methods=['DELETE'])
+def delete_calendar_outfit():
+    """Delete an outfit from the calendar."""
+    user_id = session.get('user', {}).get('_id', '')
+    day, month, year = int(request.args.get('day')), int(request.args.get('month')), int(request.args.get('year'))
+
+    result = db.calendar.delete_one({"user_id": user_id, "day": day, "month": month, "year": year})
+
+    if result.deleted_count > 0:
+        return jsonify({"success": True, "message": "Outfit deleted successfully!"})
+    return jsonify({"success": False, "message": "Outfit not found!"}), 404
+
+
+
 
 
 
