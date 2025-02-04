@@ -5,7 +5,7 @@
 /* Setup */
 :root {
   --black: #000000;
-  --almost-black: #263238;
+  --almost-black: #070707;
   --white: #ffffff;
   --almost-white: #ffffff;
   --grey-light: rgb(201, 173, 167);
@@ -83,7 +83,7 @@ p {
   width: 460px;
   box-shadow: 0 8px 26px -4px rgba(0,0,0,0.15);
   border-radius: 5px;
-  background: rgb(255, 255, 255);
+  background: rgb(255, 238, 238);
 }
 
 

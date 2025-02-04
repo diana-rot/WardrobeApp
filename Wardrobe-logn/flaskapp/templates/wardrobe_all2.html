@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Wardrobe - WardrobeApp</title>
+  <link rel="icon" href="/static/image/wardrobe1.png" type="image/png">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.7.2/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #ffffff;
+      --secondary-color: #f3e5e1;
+      --accent-color: #c9ada7;
+      --text-color: #333333;
+      --sidebar-width: 250px;
+      --transition-speed: 0.3s;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 16px;
+      background-color: var(--primary-color);
+      color: var(--text-color);
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+
+    .navbar {
+      background-color: var(--secondary-color);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: fixed;
+      width: 100%;
+      z-index: 1000;
+      transition: background-color var(--transition-speed);
+    }
+
+    .navbar-brand {
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .btn-darkmode {
+      border: none;
+      background: transparent;
+      font-size: 1.4rem;
+      color: var(--text-color);
+      transition: color var(--transition-speed);
+    }
+    .btn-darkmode:hover {
+      opacity: 0.7;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      width: var(--sidebar-width);
+      height: calc(100vh - 56px);
+      background-color: var(--secondary-color);
+      padding: 20px;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+      transition: background-color var(--transition-speed);
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      color: var(--text-color);
+      text-decoration: none;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+    .nav-link i {
+      margin-right: 8px;
+      font-size: 1.2rem;
+    }
+    .nav-link:hover {
+      background-color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 80px 20px 20px;
+      transition: margin-left var(--transition-speed);
+    }
+
+    .toolbox {
+      background-color: var(--secondary-color);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .toolbox h2 {
+      color: var(--text-color);
+    }
+
+    .btn-custom {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      width: 100%;
+      margin-bottom: 10px;
+      font-weight: bold;
+      transition: background-color var(--transition-speed);
+    }
+
+    .btn-custom:hover {
+      background-color: #aa8d7c;
+    }
+
+    .wardrobe-title {
+      color: var(--text-color);
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .carousel-item img {
+      max-height: 500px;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .carousel-caption {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .carousel-control-prev, .carousel-control-next {
+      width: 8%;
+    }
+
+    .carousel-control-prev-icon, .carousel-control-next-icon {
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 50%;
+      padding: 15px;
+      width: 50px;
+      height: 50px;
+    }
+
+    .carousel-control-prev:hover .carousel-control-prev-icon,
+    .carousel-control-next:hover .carousel-control-next-icon {
+      background-color: rgba(0, 0, 0, 1);
+    }
+
+    .img-preview {
+      width: 256px;
+      height: 256px;
+      position: relative;
+      border: 5px solid #F8F8F8;
+      box-shadow: 0px 2px 4px 0px rgb(242, 233, 228);
+      margin-top: 1em;
+      margin-bottom: 1em;
+    }
+
+    .img-preview > div {
+      width: 100%;
+      height: 100%;
+      background-size: 256px 256px;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .upload-label {
+      display: inline-block;
+      padding: 12px 30px;
+      background: var(--accent-color);
+      color: white;
+      font-size: 1em;
+      transition: background-color var(--transition-speed);
+      cursor: pointer;
+    }
+
+    .upload-label:hover {
+      background-color: #aa8d7c;
+    }
+
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid var(--accent-color);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .calendar-grid .day-cell {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      text-align: center;
+      padding: 10px;
+      position: relative;
+    }
+
+    .calendar-grid .day-cell img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+      margin-top: 5px;
+    }
+
+    .calendar-grid .day-cell .description {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .calendar-grid .day-cell .add-outfit-btn {
+      margin-top: 5px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg py-2">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="../static/image/wardrobe1.png" alt="Logo" height="40" class="me-2">
+        WardrobeApp
+      </a>
+      <div class="d-flex align-items-center">
+        <button class="btn-darkmode me-3" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+          <i class="bi bi-moon"></i>
+        </button>
+        <div class="d-flex align-items-center">
+          <img
+            src="https://via.placeholder.com/40"
+            alt="Profile"
+            class="profile-img"
+          >
+          <span>Welcome, User</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav flex-column">
+      <a href="/wardrobe" class="nav-link active">
+        <i class="bi bi-plus-circle"></i> Add to Wardrobe
+      </a>
+      <a href="/outfit/day" class="nav-link">
+        <i class="bi bi-palette"></i> Generate Outfits
+      </a>
+         <a href="/outfits/all" class="nav-link">
+        <i class="bi bi-heart"></i> View Your Favourite Outfits
+      </a>
+        <a href="/calendar" class="nav-link">
+        <i class="bi bi-calendar"></i> Plan Your Outfits
+      </a>
+
+      <a href="/dashboard" class="nav-link">
+        <i class="bi bi-speedometer2"></i> Go to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="container mt-4">
+      <h1 class="wardrobe-title">Your Wardrobe</h1>
+
+        <!-- Carousel on the right -->
+        <div class="col-md-8">
+          {% set wardrobe_list = wardrobes | list %}
+          {% if wardrobe_list|length > 0 %}
+            <div id="wardrobeCarousel" class="carousel slide" data-bs-ride="carousel">
+              <div class="carousel-indicators">
+                {% for item in wardrobe_list %}
+                  <button type="button" data-bs-target="#wardrobeCarousel" data-bs-slide-to="{{ loop.index0 }}" {% if loop.first %}class="active"{% endif %}></button>
+                {% endfor %}
+              </div>
+
+              <div class="carousel-inner">
+                {% for item in wardrobe_list %}
+                  <div class="carousel-item {% if loop.first %}active{% endif %}">
+                    <img src="{{ item.file_path }}" class="d-block w-100 img-fluid" alt="Clothing Item">
+                    <div class="carousel-caption d-none d-md-block">
+                      <h5>{{ item.label }}</h5>
+                      <p>Color: {{ item.color }}</p>
+                      <button class="btn btn-warning add-to-favorites" data-id="{{ item.id }}">Add to Favorites</button>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+
+              <button class="carousel-control-prev" type="button" data-bs-target="#wardrobeCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#wardrobeCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              </button>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+
+      const moonIcon = document.querySelector('.btn-darkmode i');
+      if (isDark) {
+        moonIcon.classList.remove('bi-moon');
+        moonIcon.classList.add('bi-sun');
+      } else {
+        moonIcon.classList.remove('bi-sun');
+        moonIcon.classList.add('bi-moon');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (localStorage.getItem('darkMode') === 'enabled') {
+        document.body.classList.add('dark-mode');
+        const moonIcon = document.querySelector('.btn-darkmode i');
+        moonIcon.classList.remove('bi-moon');
+        moonIcon.classList.add('bi-sun');
+      }
+    });
+  </script>
+</body>
+</html>

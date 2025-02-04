@@ -1,129 +1,437 @@
-<script src="../static/js/outfit.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-{% extends "base.html" %}
-{% block content %}
-
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <style>
+    <title>WardrobeApp - Outfit Generator</title>
+    <link rel="icon" href="/static/image/wardrobe1.png" type="image/png">
 
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #ffffff;
+            --secondary-color: #f3e5e1;
+            --accent-color: #c9ada7;
+            --text-color: #333333;
+            --transition-speed: 0.3s;
+        }
+
+        body.dark-mode {
+            --primary-color: #2C2C2C;
+            --secondary-color: #3C3C3C;
+            --accent-color: #555555;
+            --text-color: #F1F1F1;
+        }
+
+        body {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            padding-top: 56px; /* Navbar height */
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--secondary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            transition: background-color var(--transition-speed);
+        }
+
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 8px;
+        }
+
+        .btn-darkmode {
+            border: none;
+            background: transparent;
+            font-size: 1.4rem;
+            color: var(--text-color);
+            transition: color var(--transition-speed);
+        }
+        .btn-darkmode:hover {
+            opacity: 0.7;
+        }
+
+        .sidebar {
+            background-color: var(--secondary-color);
+            height: calc(100vh - 56px);
+            position: fixed;
+            left: 0;
+            top: 56px;
+            width: 250px;
+            padding: 20px;
+            transition: background-color var(--transition-speed);
+        }
+
+        .nav-link {
+            color: var(--text-color);
+            transition: background-color var(--transition-speed);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-link:hover {
+            background-color: var(--accent-color);
+        }
+
+        .nav-link svg {
+            margin-right: 10px;
+        }
+
+        .generator-container {
+            background-color: var(--secondary-color);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 800px;
+            margin: 50px auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color var(--transition-speed);
+        }
+
+        .step {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s, transform 0.5s;
+        }
+
+        .step.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .progress {
+            height: 5px;
+            background-color: var(--accent-color);
+        }
+
+        .btn-primary {
+            background-color: #9C7D68;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #876955;
+        }
+
+        .option-card {
+            border: 2px solid var(--accent-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .option-card.selected {
+            background-color: var(--accent-color);
+            color: white;
+        }
     </style>
 </head>
-
-
 <body>
-
-  <div class="card-wrapper">
-
-
-    <div class="card">
-        <h1 class="center">Outfits</h1>
-
-        <div class="center">
-
-            <form method="post">
-
-                <fieldset id="weather">
-                    <h3> Step 1/3: Would you like to include the weather predictions?</h3>
-                    <input type="radio" name="weather" id="yes" value="yes"> Yes </input>
-                    <input type="radio" name="weather" id="no" value="no"> No </input>
-                </fieldset>
-
-
-                  <fieldset id="city">
-                      <h3 >For which city?</h3>
-                	<input type="radio" name="city" id= city_1 value={{ city1.city}}> {{city1.city}}</input>
-					<input type="radio" name="city" id= city_2 value={{ city2.city}}> {{city2.city}}</input>
-                	<input type="radio" name="city" id= city_3 value={{ city3.city}}> {{ city3.city }}</input>
-                  </fieldset>
-
-
-                <fieldset id="events">
-                   <h3> Step 2/3: Choose an event where are you intending to wear this outfit:</h3>
-                    <input type="radio" name="events" id="event" value="event"> Event </input>
-				    <input type="radio" name="events" id="walk" value="walk"> Walk </input>
-					<input type="radio" name="events" id="work" value="work"> Work </input>
-				    <input type="radio" name="events" id="travel" value="travel"> Travel </input>
-                  </fieldset>
-
-                <input id = "submit"
-                       type="submit"
-                       name="submit_button"
-                       value="Submit"
-                       class="btn btn--secondary"
-
-                >
-            </form>
-
-              </div>
-    </div>
-
-
-    <div class="card">
-        <div class="center">
-           <h2 class="center">ToolBox</h2>
-            <a href ="/dashboard" class="btn btn--secondary">Back to Dashboard</a>
-            <a href ="/wardrobe" class="btn btn--secondary">Add to wardrobe </a>
-            <a href ="/wardrobe/all" class="btn btn--secondary">View your wardrobe</a>
-            <a href ="/outfits/all" class="btn btn--secondary">View your favourite outfits</a>
-            <a href="/user/signout" class="btn btn-secondary">Sign Out</a>
-      </div>
-    </div>
-
-
-      <div class="card">
-             <div class="center">
-
-                 <h2  id="textDisplay1" class="center">{{ session['user']['name'] }}, check our top 3 picks </h2>
-
-                 <h3 id="textDisplay2">Step 3/3: Pick your favorite outfit:</h3>
-                 <form name="options"  method="post" >
-
-                     <input type="radio" name="options" id="piece1" value="piece1">
-                        <h2 id="outfit1">outfit 1</h2>
-                        {% for clothes in outfit1 %}
-                        <h2>{{clothes.label}}:</h2>
-                            <img src= {{clothes.file_path}} >
-                        {% endfor %}
-                     </input><br>
-
-
-                      <input type="radio" name="options" id="piece2" value="piece2">
-                      <h2 id="outfit2">outfit 2</h2>
-                      {% for clothes in outfit2 %}
-                            <h2>{{clothes.label}}:</h2>
-                            <img src= {{clothes.file_path}} >
-                         {% endfor %}
-                     </input><br>
-
-                     <input type="radio" name="options" id="piece3" value="piece3">
-
-                        <h2 id="outfit3">outfit 3</h2>
-                        {% for clothes in outfit3 %}
-                                <h2>{{clothes.label}}:</h2>
-                                <img src= {{clothes.file_path}} >
-                             {% endfor %}
-                       </input><br>
-                    <input type="submit" name="submit_button_2" value="Save" class ="btn btn--secondary">
-
-                    </form>
-
-
-
-
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg py-2">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="../static/image/wardrobe1.png" alt="Logo" height="40" class="me-2">
+                WardrobeApp
+            </a>
+            <div class="d-flex align-items-center">
+                <button class="btn-darkmode me-3" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+                    <i data-lucide="moon"></i>
+                </button>
+                <div class="d-flex align-items-center">
+                    <img src="https://via.placeholder.com/40" alt="Profile" class="profile-img">
+                    <span>Welcome, User</span>
+                </div>
+            </div>
         </div>
+    </nav>
 
-
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="nav flex-column">
+            <a href="/wardrobe" class="nav-link" id="addWardrobe">
+                <i data-lucide="plus-circle"></i> Add to Wardrobe
+            </a>
+            <a href="/outfit/day" class="nav-link active" id="generateOutfit">
+                <i data-lucide="palette"></i> Generate Outfits
+            </a>
+            <a href="/wardrobe/all" class="nav-link" id="viewWardrobe">
+                <i data-lucide="grid"></i> View Wardrobe
+            </a>
+            <a href="/outfits/all" class="nav-link" id="favoriteOutfits">
+                <i data-lucide="heart"></i> Favorite Outfits
+            </a>
+            <a href="/calendar" class="nav-link" id="planOutfits">
+                <i data-lucide="calendar"></i> Plan Outfits
+            </a>
+        </div>
     </div>
 
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="generator-container">
+            <!-- Progress Bar -->
+            <div class="progress mb-4" id="progressBar">
+                <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
 
-{% endblock %}
+            <!-- Steps Container -->
+            <div id="stepsContainer">
+                <!-- Weather Step -->
+                <div class="step" id="weatherStep">
+                    <h2 class="mb-4">Step 1: Weather Consideration</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="option-card" data-weather="include">
+                                <h4>Include Weather Predictions</h4>
+                                <p>Get outfit recommendations based on current weather</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="option-card" data-weather="skip">
+                                <h4>Skip Weather</h4>
+                                <p>Choose an outfit without weather constraints</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- City Step -->
+                <div class="step" id="cityStep">
+                    <h2 class="mb-4">Step 2: Select City</h2>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="option-card" data-city="New York">
+                                <h4>New York</h4>
+                                <p>Urban style recommendations</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="option-card" data-city="London">
+                                <h4>London</h4>
+                                <p>Classic British fashion</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="option-card" data-city="Tokyo">
+                                <h4>Tokyo</h4>
+                                <p>Cutting-edge street style</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Step -->
+                <div class="step" id="eventStep">
+                    <h2 class="mb-4">Step 3: Choose Event</h2>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="option-card" data-event="casual">
+                                <h4>Casual</h4>
+                                <p>Relaxed, everyday look</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="option-card" data-event="work">
+                                <h4>Work</h4>
+                                <p>Professional attire</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="option-card" data-event="evening">
+                                <h4>Evening</h4>
+                                <p>Night out style</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="option-card" data-event="travel">
+                                <h4>Travel</h4>
+                                <p>Comfortable journey wear</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+                <button id="prevBtn" class="btn btn-secondary" style="display:none;">Previous</button>
+                <button id="nextBtn" class="btn btn-primary">Next Step</button>
+            </div>
+        </div>
     </div>
- </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Dark Mode Toggle Function
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const moonIcon = document.querySelector('.btn-darkmode i');
+
+            // Update icon
+            if (document.body.classList.contains('dark-mode')) {
+                moonIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                moonIcon.setAttribute('data-lucide', 'moon');
+            }
+
+            // Re-render Lucide icons
+            lucide.createIcons();
+        }
+
+        // Outfit Generator Logic
+        class OutfitGenerator {
+            constructor() {
+                this.currentStep = 1;
+                this.weatherSelection = null;
+                this.citySelection = null;
+                this.eventSelection = null;
+
+                this.initializeEventListeners();
+                this.showStep(this.currentStep);
+            }
+
+            initializeEventListeners() {
+                // Option Card Selections
+                document.querySelectorAll('.option-card').forEach(card => {
+                    card.addEventListener('click', () => this.selectOption(card));
+                });
+
+                // Navigation Buttons
+                document.getElementById('prevBtn').addEventListener('click', () => this.previousStep());
+                document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
+            }
+
+            selectOption(card) {
+                const parentStep = card.closest('.step');
+                const stepId = parentStep.id;
+
+                // Remove selected class from all cards in this step
+                parentStep.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+
+                // Add selected class to clicked card
+                card.classList.add('selected');
+
+                // Store selection based on step
+                switch(stepId) {
+                    case 'weatherStep':
+                        this.weatherSelection = card.dataset.weather;
+                        break;
+                    case 'cityStep':
+                        this.citySelection = card.dataset.city;
+                        break;
+                    case 'eventStep':
+                        this.eventSelection = card.dataset.event;
+                        break;
+                }
+            }
+
+            showStep(stepNumber) {
+                // Hide all steps
+                document.querySelectorAll('.step').forEach(step => {
+                    step.classList.remove('active');
+                });
+
+                // Show current step
+                const currentStepElement = document.querySelector(`#stepsContainer .step:nth-child(${stepNumber})`);
+                if (currentStepElement) {
+                    currentStepElement.classList.add('active');
+                }
+
+                // Update progress bar
+                const progressBar = document.querySelector('.progress-bar');
+                progressBar.style.width = `${(stepNumber - 1) * 50}%`;
+
+                // Manage navigation buttons
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
+
+                prevBtn.style.display = stepNumber > 1 ? 'block' : 'none';
+                nextBtn.textContent = stepNumber === 3 ? 'Generate Outfit' : 'Next Step';
+            }
+
+            nextStep() {
+                // Validate current step before proceeding
+                let canProceed = false;
+                switch(this.currentStep) {
+                    case 1:
+                        canProceed = this.weatherSelection !== null;
+                        break;
+                    case 2:
+                        canProceed = this.citySelection !== null;
+                        break;
+                    case 3:
+                        canProceed = this.eventSelection !== null;
+                        break;
+                }
+
+                if (canProceed) {
+                    if (this.currentStep < 3) {
+                        this.currentStep++;
+                        this.showStep(this.currentStep);
+                    } else {
+                        this.generateOutfit();
+                    }
+                } else {
+                    alert('Please select an option before proceeding.');
+                }
+            }
+
+            previousStep() {
+                if (this.currentStep > 1) {
+                    this.currentStep--;
+                    this.showStep(this.currentStep);
+                }
+            }
+
+            generateOutfit() {
+                // Collect final selections
+                const outfitParams = {
+                    weather: this.weatherSelection,
+                    city: this.citySelection,
+                    event: this.eventSelection
+                };
+
+                // Here you would typically send this to a backend service
+                console.log('Generating outfit with parameters:', outfitParams);
+                alert('Generating your perfect outfit!');
+            }
+        }
+
+        // Initialize the outfit generator when page loads
+   // Initialize the outfit generator when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new OutfitGenerator();
+        });
+    </script>
 </body>
+</html>

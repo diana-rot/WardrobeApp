@@ -28,7 +28,7 @@ from tensorflow.keras.utils import to_categorical # Utilities
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from sklearn.metrics import plot_confusion_matrix
+# from sklearn.metrics import plot_confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import multilabel_confusion_matrix
 # from sklearn.metrics import confusion_matrix
