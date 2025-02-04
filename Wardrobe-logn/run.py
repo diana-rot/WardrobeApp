@@ -153,6 +153,45 @@ from PIL import Image
 PATH = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn'
 PATH1 = r"C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn"
 
+@app.route('/predict', methods=['POST'])
+@login_required
+def upload():
+    if request.method == 'POST':
+        try:
+            # Get the file from post request
+            f = request.files['file']
+            user_id = session['user']['_id']
+            upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, secure_filename(f.filename))
+            f.save(file_path)
+            file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+            print(file_path_db + 'file-path-db')
+            print(file_path + 'file-path')
+
+            # Make prediction
+            preds = model_predict(file_path, model)
+            _, color = predict_color(file_path)
+            attribute_predict = predict_attribute_model(file_path)
+
+            mySeparator = ","
+            resulted_attribute = "N/A"  # Initialize resulted_attribute
+            if attribute_predict is not None:
+                resulted_attribute = mySeparator.join(attribute_predict)
+
+            listToStr = ' '.join(map(str, color))
+            class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                           'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+            predicted_label = np.argmax(preds)
+            result = class_names[predicted_label]
+            userId = session['user']['_id']
+            db.wardrobe.insert_one({'label': result, 'attribute': resulted_attribute, 'color': listToStr, 'nota': 4, 'userId': userId,
+                                    'file_path': file_path_db})
+
+            return result
+        except Exception as e:
+            return str(e), 500
+    return None
 def load_model():
     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
     # assert os.path.isfile(path)
@@ -319,6 +358,31 @@ def doregister():
     return render_template('register.html')
 
 
+@app.route('/wardrobe/delete/<item_id>', methods=['DELETE'])
+@login_required
+def delete_wardrobe_item(item_id):
+    try:
+        userId = session['user']['_id']
+        # Get item to delete its image file
+        item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': userId})
+
+        if not item:
+            return jsonify({'error': 'Item not found'}), 404
+
+        # Delete physical file if it exists
+        file_path = os.path.join('flaskapp', item['file_path'].lstrip('/'))
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        # Delete from database
+        result = db.wardrobe.delete_one({'_id': ObjectId(item_id), 'userId': userId})
+
+        if result.deleted_count:
+            return jsonify({'success': True})
+        return jsonify({'error': 'Delete failed'}), 500
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/outfit/day', methods=['GET', 'POST'])
 @login_required
@@ -460,7 +524,6 @@ def get_outfit():
     return render_template('outfit_of_the_day.html', outfit1=outfit1, outfit2=outfit2, outfit3=outfit3, city1=city1,
                            city2=city2, city3=city3)
 
-
 @app.route('/dashboard/', methods=['GET', 'POST'])
 @login_required
 def dashboard():
@@ -470,25 +533,12 @@ def dashboard():
 
     if request.method == 'POST':
         new_city = request.form.get('city')
-        weather_data = []
+        print(f"New city submitted: {new_city}")
 
         if new_city:
-            # Check if city already exists for this user
-            existing_city = db.city.find_one({
-                'userId': userId,
-                'name': {'$regex': f'^{new_city}$', '$options': 'i'}  # Case-insensitive match
-            })
-
-            if existing_city:
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({
-                        'error': 'duplicate',
-                        'message': f'You already have {new_city} in your cities list!'
-                    }), 400
-                return redirect(url_for('dashboard'))
-
             geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={new_city}&limit=1&appid={api_key}'
             geocode_response = requests.get(geocode_url).json()
+            print(f"Geocode response: {geocode_response}")
 
             if geocode_response:
                 lat = geocode_response[0].get('lat')
@@ -496,24 +546,18 @@ def dashboard():
                 if lat and lon:
                     db.city.insert_one({'name': new_city, 'lat': lat, 'lon': lon, 'userId': userId})
 
-                    weather_url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric'
-                    r = requests.get(weather_url).json()
-
-                    if r.get('weather') and r.get('main'):
-                        weather = {
-                            'city': new_city,
-                            'temperature': r['main']['temp'],
-                            'description': r['weather'][0]['description'],
-                            'icon': r['weather'][0]['icon'],
-                        }
-                        weather_data.append(weather)
-
-                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                            return jsonify({'weather_data': weather_data})
-
-
-    # Get all cities for this user
     filter = {'userId': userId}
+    if db.city.find_one(filter) is None:
+        geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={cityByDefault}&limit=1&appid={api_key}'
+        geocode_response = requests.get(geocode_url).json()
+        print(f"Default city geocode response: {geocode_response}")
+
+        if geocode_response:
+            lat = geocode_response[0].get('lat')
+            lon = geocode_response[0].get('lon')
+            if lat and lon:
+                db.city.insert_one({'name': cityByDefault, 'lat': lat, 'lon': lon, 'userId': userId})
+
     cities = db.city.find(filter)
     url = 'https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}&units=metric'
 
@@ -521,9 +565,22 @@ def dashboard():
 
     for city in cities:
         if 'lat' not in city or 'lon' not in city:
-            continue
+            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={city["name"]}&limit=1&appid={api_key}'
+            geocode_response = requests.get(geocode_url).json()
+            print(f"Geocode response for {city['name']}: {geocode_response}")
+
+            if geocode_response:
+                lat = geocode_response[0].get('lat')
+                lon = geocode_response[0].get('lon')
+                if lat and lon:
+                    db.city.update_one({'_id': city['_id']}, {'$set': {'lat': lat, 'lon': lon}})
+                    city['lat'] = lat
+                    city['lon'] = lon
+            else:
+                continue
 
         r = requests.get(url.format(city['lat'], city['lon'], api_key)).json()
+        print(f"Weather API response for {city['name']}: {r}")
 
         if r.get('weather') and r.get('main'):
             weather = {
@@ -534,45 +591,99 @@ def dashboard():
             }
             weather_data.append(weather)
 
+    print(f"Weather data to be rendered: {weather_data}")
     return render_template('dashboard.html', weather_data=weather_data)
 
-
-@app.route('/dashboard/delete_city/<city_name>', methods=['DELETE'])
-@login_required
-def delete_city(city_name):
-    userId = session['user']['_id']
-    try:
-        result = db.city.delete_one({
-            'userId': userId,
-            'name': city_name
-        })
-        if result.deleted_count > 0:
-            return jsonify({'success': True, 'message': f'{city_name} has been removed'})
-        return jsonify({'success': False, 'message': 'City not found'}), 404
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
 def add_wardrobe():
     if request.method == 'POST':
-        # Get the file from post request
-        f = request.files['file']
-        # Save the file to ./uploads
-        basepath = os.path.dirname(__file__)
+        try:
+            # Check if the post request has the file part
+            if 'file' not in request.files:
+                return jsonify({'error': 'No file part'}), 400
 
-        file_path = os.path.join(
-            basepath, 'uploads', secure_filename(f.filename))
-        f.save(file_path)
-        # Make prediction
-        preds = model_predict(file_path, model)
-        color = predict_color(file_path)
-        class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                       'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-        predicted_label = np.argmax(preds)
+            f = request.files['file']
+            if f.filename == '':
+                return jsonify({'error': 'No selected file'}), 400
 
-        result = class_names[predicted_label]
+            # Check if the file is allowed
+            allowed_extensions = {'png', 'jpg', 'jpeg'}
+            if not '.' in f.filename or \
+                    f.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+                return jsonify({'error': 'Invalid file type'}), 400
 
+            # Save the file
+            user_id = session['user']['_id']
+            upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
+            print('dir' + upload_dir);
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, secure_filename(f.filename))
+            f.save(file_path)
+            print(file_path + 'fsss')
+            file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+            print('fileeeDB'+ file_path_db);
+            # Rest of the code remains the same...
+
+            try:
+                # Make prediction
+                preds = model_predict(file_path, model)
+                class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+                # Get predicted label and confidence scores
+                predicted_label = np.argmax(preds)
+                clothing_type = class_names[predicted_label]
+
+                # Get color prediction
+                color_result = predict_color(file_path)
+                # color_result is a tuple of (percentage, RGB array)
+                color_percentage = float(color_result[0])
+                color_rgb = color_result[1].tolist()  # Convert numpy array to list
+
+                # Save image data
+                userId = session['user']['_id']
+                db.wardrobe.insert_one({
+                    'userId': userId,
+                    'label': clothing_type,
+                    'confidence': float(preds[0][predicted_label]),
+                    'color': {
+                        'percentage': color_percentage,
+                        'rgb': color_rgb
+                    },
+                    'filename': secure_filename(f.filename),
+                    'file_path': file_path_db,
+                    'created_at': datetime.now(),
+                    'last_worn': None,
+                    'times_worn': 0
+                })
+
+                # # Clean up the uploaded file
+                # os.remove(file_path)
+
+                # Return success response
+                return jsonify({
+                    'success': True,
+                    'prediction': clothing_type,
+                    'confidence': float(preds[0][predicted_label]),
+                    'color': {
+                        'percentage': color_percentage,
+                        'rgb': color_rgb
+                    }
+                })
+
+            except Exception as e:
+                print(f"Error in prediction: {str(e)}")
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                return jsonify({'error': f'Error processing image: {str(e)}'}), 500
+
+        except Exception as e:
+            print(f"Error in file upload: {str(e)}")
+            return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
+
+    # GET request
     return render_template('wardrobe.html')
 
 @app.route('/wardrobe/all', methods=['GET', 'POST'])
@@ -582,12 +693,6 @@ def view_wardrobe_all():
     print(userId)
     filter = {'userId': userId}
     users_clothes = db.wardrobe.find(filter)
-    try:
-        record = users_clothes.next()
-        print(record)
-    except StopIteration:
-        print("Empty cursor!")
-
     return render_template('wardrobe_all2.html', wardrobes=users_clothes)
 
 
@@ -596,62 +701,11 @@ def view_wardrobe_all():
 def view_outfits_all():
     userId = session['user']['_id']
     print(userId)
-    filter = {'userId': userId,'isFavorite':'yes'}
+    filter = {'userId': userId, 'isFavorite': 'yes'}
     users_clothes = db.outfits.find(filter)
-    # for piece in users_clothes:
-    #     print(piece)
-    #     for ok in piece:
-    #         print(ok)
-    # for doc in users_clothes:
-    #     print("helloooo")
-    #     print(doc['outfit'])
-    try:
-        record = users_clothes.next()
-        print(record)
-    except StopIteration:
-        print("Empty cursor!")
-
     return render_template('outfits_all.html', wardrobes=users_clothes)
 
-@app.route('/predict', methods=['POST'])
-@login_required
-def upload():
-    if request.method == 'POST':
-        try:
-            # Get the file from post request
-            f = request.files['file']
-            file_path = os.path.join(
-                'flaskapp/static/image_users/', secure_filename(f.filename))
-            f.save(file_path)
-            print(file_path)
-            file_path_bd = os.path.join(
-                '../static/image_users/', secure_filename(f.filename))
 
-            # Make prediction
-            preds = model_predict(file_path, model)
-            # aici comentez ultima data
-            _, color = predict_color(file_path)
-            attribute_predict = predict_attribute_model(file_path)
-
-            mySeparator = ","
-            resulted_attribute = "N/A"  # Initialize resulted_attribute
-            if attribute_predict is not None:
-                resulted_attribute = mySeparator.join(attribute_predict)
-
-            listToStr = ' '.join(map(str, color))
-            # listToStr = 'black'  # Assume 'black' for color as a placeholder
-            class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                           'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-            predicted_label = np.argmax(preds)
-            result = class_names[predicted_label]
-            userId = session['user']['_id']
-            db.wardrobe.insert_one({'label': result, 'attribute': resulted_attribute, 'color': listToStr, 'nota': 4, 'userId': userId,
-                                    'file_path': file_path_bd})
-
-            return result
-        except Exception as e:
-            return str(e), 500
-    return None
 
 
 

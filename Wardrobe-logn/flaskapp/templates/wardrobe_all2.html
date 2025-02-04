@@ -295,14 +295,17 @@
 
               <div class="carousel-inner">
                 {% for item in wardrobe_list %}
-                  <div class="carousel-item {% if loop.first %}active{% endif %}">
-                    <img src="{{ item.file_path }}" class="d-block w-100 img-fluid" alt="Clothing Item">
-                    <div class="carousel-caption d-none d-md-block">
-                      <h5>{{ item.label }}</h5>
-                      <p>Color: {{ item.color }}</p>
-                      <button class="btn btn-warning add-to-favorites" data-id="{{ item.id }}">Add to Favorites</button>
-                    </div>
-                  </div>
+                 <div class="carousel-item {% if loop.first %}active{% endif %}">
+  <img src="{{ item.file_path }}" class="d-block w-100 img-fluid" alt="Clothing Item">
+  <div class="carousel-caption d-none d-md-block">
+    <h5>{{ item.label }}</h5>
+    <p>Color: RGB({{ item.color.rgb|join(', ') }})</p>
+    <div class="d-flex justify-content-center gap-2">
+      <button class="btn btn-warning add-to-favorites" data-id="{{ item._id }}">Add to Favorites</button>
+      <button class="btn btn-danger delete-item" data-id="{{ item._id }}">Delete</button>
+    </div>
+  </div>
+</div>
                 {% endfor %}
               </div>
 
@@ -321,6 +324,9 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
   <script>
+
+
+
     function toggleDarkMode() {
       document.body.classList.toggle('dark-mode');
       const isDark = document.body.classList.contains('dark-mode');
@@ -344,6 +350,37 @@
         moonIcon.classList.add('bi-sun');
       }
     });
+
+// Add this JavaScript to handle deletion
+document.querySelectorAll('.delete-item').forEach(button => {
+  button.addEventListener('click', async function(e) {
+    e.preventDefault();
+    if (confirm('Are you sure you want to delete this item?')) {
+      const itemId = this.dataset.id;
+      try {
+        const response = await fetch(`/wardrobe/delete/${itemId}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          const carouselItem = this.closest('.carousel-item');
+          if (carouselItem.classList.contains('active')) {
+            const nextItem = carouselItem.nextElementSibling || carouselItem.parentNode.firstElementChild;
+            nextItem.classList.add('active');
+          }
+          carouselItem.remove();
+
+          if (document.querySelectorAll('.carousel-item').length === 0) {
+            window.location.reload();
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete item');
+      }
+    }
+  });
+});
+
   </script>
 </body>
 </html>

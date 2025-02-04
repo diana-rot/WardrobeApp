@@ -141,7 +141,8 @@
   <div class="main-content">
     <div class="card">
       <h1 class="center">Add clothes to your wardrobe:</h1>
-      <form id="upload-file" method="post" enctype="multipart/form-data">
+           <form id="upload-file" action="/predict" method="post" enctype="multipart/form-data">
+
         <label for="imageUpload" class="upload-label btn btn-primary">
           Choose Image...
         </label>
@@ -174,7 +175,125 @@
       </div>
     </div>
   </div>
+  </body>
 
   <script src="../static/js/scripts.js"></script>
-</body>
+<script>
+// Handle file selection and image preview
+document.getElementById('imageUpload').addEventListener('change', function(e) {
+    const imageSection = document.querySelector('.image-section');
+    const previewDiv = document.getElementById('imagePreview');
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    // Show image section
+    imageSection.style.display = 'block';
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        // Create image element
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.maxWidth = '300px';
+        img.style.height = 'auto';
+        img.style.borderRadius = '8px';
+        img.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+        // Clear previous preview and add new image
+        previewDiv.innerHTML = '';
+        previewDiv.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+});
+
+// Handle prediction
+document.getElementById('btn-predict').addEventListener('click', async function() {
+    const fileInput = document.getElementById('imageUpload');
+    const resultDiv = document.getElementById('result');
+    const loader = document.querySelector('.loader');
+
+    if (!fileInput.files[0]) {
+        alert('Please select an image first');
+        return;
+    }
+
+    // Show loader
+    loader.style.display = 'block';
+    resultDiv.innerHTML = '';
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    try {
+        const response = await fetch('/wardrobe', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        // Get confidence score
+        const confidence = Math.max(...Object.values(data.prediction)) * 100;
+
+        // Create color style for the preview
+        const rgbColor = `rgb(${data.color.rgb.join(', ')})`;
+        const percentage = (data.color.percentage * 100).toFixed(1);
+
+        // Update result with formatted information
+        resultDiv.innerHTML = `
+            <div class="prediction-result p-4 bg-white rounded-lg shadow">
+                <div class="mb-4">
+                    <h3 class="text-xl font-semibold mb-2">Clothing Type</h3>
+                    <p class="text-lg">${data.prediction}</p>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="text-xl font-semibold mb-2">Dominant Color</h3>
+                    <div class="flex items-center gap-3">
+                        <div class="color-preview" style="
+                            width: 50px;
+                            height: 50px;
+                            background-color: ${rgbColor};
+                            border-radius: 8px;
+                            border: 1px solid #ccc;
+                        "></div>
+                        <div>
+                            <p>RGB: ${data.color.rgb.join(', ')}</p>
+                            <p>Percentage: ${percentage}%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button onclick="location.reload()" class="btn btn-secondary">
+                        Add Another Item
+                    </button>
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `
+            <div class="error-message p-4 bg-red-100 text-red-700 rounded-lg">
+                ${error.message || 'Error processing image. Please try again.'}
+            </div>
+        `;
+    } finally {
+        // Hide loader
+        loader.style.display = 'none';
+    }
+});</script>
+
 </html>

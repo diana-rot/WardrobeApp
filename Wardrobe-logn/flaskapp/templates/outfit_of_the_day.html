@@ -149,6 +149,29 @@
             background-color: var(--accent-color);
             color: white;
         }
+
+        /* Add to your existing styles */
+.outfit-item {
+    border: 1px solid var(--accent-color);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+}
+
+.outfit-item img {
+    max-height: 200px;
+    object-fit: contain;
+}
+
+.card {
+    background-color: var(--primary-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
     </style>
 </head>
 <body>
@@ -222,29 +245,20 @@
                 </div>
 
                 <!-- City Step -->
-                <div class="step" id="cityStep">
-                    <h2 class="mb-4">Step 2: Select City</h2>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="option-card" data-city="New York">
-                                <h4>New York</h4>
-                                <p>Urban style recommendations</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="option-card" data-city="London">
-                                <h4>London</h4>
-                                <p>Classic British fashion</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="option-card" data-city="Tokyo">
-                                <h4>Tokyo</h4>
-                                <p>Cutting-edge street style</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+             <!-- City Step -->
+<div class="step" id="cityStep">
+    <h2 class="mb-4">Step 2: Select City</h2>
+    <div class="row">
+        {% for weather in weather_data %}
+        <div class="col-md-4">
+            <div class="option-card" data-city="{{ weather.city }}">
+                <h4>{{ weather.city }}</h4>
+                <p>{{ weather.temperature }}°C - {{ weather.description }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 
                 <!-- Event Step -->
                 <div class="step" id="eventStep">
@@ -284,154 +298,286 @@
                 <button id="nextBtn" class="btn btn-primary">Next Step</button>
             </div>
         </div>
-    </div>
+        <!-- Outfit Results Container -->
+<!-- Results Section -->
+<div class="results-container mt-5" {% if not outfit1 and not outfit2 and not outfit3 %}style="display: none"{% endif %}>
+    <div class="row">
+        <!-- Outfit 1 -->
+        <div class="col-md-4">
+            <div class="card outfit-card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Outfit 1</h5>
+                </div>
+                <div class="card-body">
+                    {% if outfit1 %}
+                        {% for item in outfit1 %}
+                        <div class="outfit-item mb-3">
+                            <img src="{{ item.image_path }}" alt="{{ item.label }}" class="img-fluid rounded mb-2">
+                            <h6>{{ item.label }}</h6>
+                            <p class="text-muted small mb-0">Color: {{ item.color }}</p>
+                        </div>
+                        {% endfor %}
+                        <form method="POST" class="mt-3">
+                            <input type="hidden" name="options" value="piece1">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Choose This Outfit</button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted text-center">No items in this outfit</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
+        <!-- Outfit 2 -->
+        <div class="col-md-4">
+            <div class="card outfit-card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Outfit 2</h5>
+                </div>
+                <div class="card-body">
+                    {% if outfit2 %}
+                        {% for item in outfit2 %}
+                        <div class="outfit-item mb-3">
+                            <img src="{{ item.image_path }}" alt="{{ item.label }}" class="img-fluid rounded mb-2">
+                            <h6>{{ item.label }}</h6>
+                            <p class="text-muted small mb-0">Color: {{ item.color }}</p>
+                        </div>
+                        {% endfor %}
+                        <form method="POST" class="mt-3">
+                            <input type="hidden" name="options" value="piece2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Choose This Outfit</button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted text-center">No items in this outfit</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Outfit 3 -->
+        <div class="col-md-4">
+            <div class="card outfit-card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Outfit 3</h5>
+                </div>
+                <div class="card-body">
+                    {% if outfit3 %}
+                        {% for item in outfit3 %}
+                        <div class="outfit-item mb-3">
+                            <img src="{{ item.image_path }}" alt="{{ item.label }}" class="img-fluid rounded mb-2">
+                            <h6>{{ item.label }}</h6>
+                            <p class="text-muted small mb-0">Color: {{ item.color }}</p>
+                        </div>
+                        {% endfor %}
+                        <form method="POST" class="mt-3">
+                            <input type="hidden" name="options" value="piece3">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Choose This Outfit</button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted text-center">No items in this outfit</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
+     // Initialize Lucide Icons
+lucide.createIcons();
 
-        // Dark Mode Toggle Function
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const moonIcon = document.querySelector('.btn-darkmode i');
+// Dark Mode Toggle Function
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const moonIcon = document.querySelector('.btn-darkmode i');
 
-            // Update icon
-            if (document.body.classList.contains('dark-mode')) {
-                moonIcon.setAttribute('data-lucide', 'sun');
-            } else {
-                moonIcon.setAttribute('data-lucide', 'moon');
-            }
+    // Update icon
+    if (document.body.classList.contains('dark-mode')) {
+        moonIcon.setAttribute('data-lucide', 'sun');
+    } else {
+        moonIcon.setAttribute('data-lucide', 'moon');
+    }
 
-            // Re-render Lucide icons
-            lucide.createIcons();
-        }
-
+    // Re-render Lucide icons
+    lucide.createIcons();
+}
         // Outfit Generator Logic
-        class OutfitGenerator {
-            constructor() {
-                this.currentStep = 1;
-                this.weatherSelection = null;
-                this.citySelection = null;
-                this.eventSelection = null;
 
-                this.initializeEventListeners();
-                this.showStep(this.currentStep);
-            }
+   class OutfitGenerator {
+    constructor() {
+        this.currentStep = 1;
+        this.weatherSelection = null;
+        this.citySelection = null;
+        this.eventSelection = null;
 
-            initializeEventListeners() {
-                // Option Card Selections
-                document.querySelectorAll('.option-card').forEach(card => {
-                    card.addEventListener('click', () => this.selectOption(card));
-                });
+        this.initializeEventListeners();
+        this.showStep(this.currentStep);
+    }
 
-                // Navigation Buttons
-                document.getElementById('prevBtn').addEventListener('click', () => this.previousStep());
-                document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
-            }
+    initializeEventListeners() {
+        // Option Card Selections
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', () => this.selectOption(card));
+        });
 
-            selectOption(card) {
-                const parentStep = card.closest('.step');
-                const stepId = parentStep.id;
+        // Navigation Buttons
+        document.getElementById('prevBtn').addEventListener('click', () => this.previousStep());
+        document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
+    }
 
-                // Remove selected class from all cards in this step
-                parentStep.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    selectOption(card) {
+        const parentStep = card.closest('.step');
+        const stepId = parentStep.id;
 
-                // Add selected class to clicked card
-                card.classList.add('selected');
+        // Remove selected class from all cards in this step
+        parentStep.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
 
-                // Store selection based on step
-                switch(stepId) {
-                    case 'weatherStep':
-                        this.weatherSelection = card.dataset.weather;
-                        break;
-                    case 'cityStep':
-                        this.citySelection = card.dataset.city;
-                        break;
-                    case 'eventStep':
-                        this.eventSelection = card.dataset.event;
-                        break;
-                }
-            }
+        // Add selected class to clicked card
+        card.classList.add('selected');
 
-            showStep(stepNumber) {
-                // Hide all steps
-                document.querySelectorAll('.step').forEach(step => {
-                    step.classList.remove('active');
-                });
+        // Store selection based on step
+        switch(stepId) {
+            case 'weatherStep':
+                this.weatherSelection = card.dataset.weather;
+                break;
+            case 'cityStep':
+                this.citySelection = card.dataset.city;
+                break;
+            case 'eventStep':
+                this.eventSelection = card.dataset.event;
+                break;
+        }
+    }
 
-                // Show current step
-                const currentStepElement = document.querySelector(`#stepsContainer .step:nth-child(${stepNumber})`);
-                if (currentStepElement) {
-                    currentStepElement.classList.add('active');
-                }
+    showStep(stepNumber) {
+        // Hide all steps
+        document.querySelectorAll('.step').forEach(step => {
+            step.classList.remove('active');
+        });
 
-                // Update progress bar
-                const progressBar = document.querySelector('.progress-bar');
-                progressBar.style.width = `${(stepNumber - 1) * 50}%`;
-
-                // Manage navigation buttons
-                const prevBtn = document.getElementById('prevBtn');
-                const nextBtn = document.getElementById('nextBtn');
-
-                prevBtn.style.display = stepNumber > 1 ? 'block' : 'none';
-                nextBtn.textContent = stepNumber === 3 ? 'Generate Outfit' : 'Next Step';
-            }
-
-            nextStep() {
-                // Validate current step before proceeding
-                let canProceed = false;
-                switch(this.currentStep) {
-                    case 1:
-                        canProceed = this.weatherSelection !== null;
-                        break;
-                    case 2:
-                        canProceed = this.citySelection !== null;
-                        break;
-                    case 3:
-                        canProceed = this.eventSelection !== null;
-                        break;
-                }
-
-                if (canProceed) {
-                    if (this.currentStep < 3) {
-                        this.currentStep++;
-                        this.showStep(this.currentStep);
-                    } else {
-                        this.generateOutfit();
-                    }
-                } else {
-                    alert('Please select an option before proceeding.');
-                }
-            }
-
-            previousStep() {
-                if (this.currentStep > 1) {
-                    this.currentStep--;
-                    this.showStep(this.currentStep);
-                }
-            }
-
-            generateOutfit() {
-                // Collect final selections
-                const outfitParams = {
-                    weather: this.weatherSelection,
-                    city: this.citySelection,
-                    event: this.eventSelection
-                };
-
-                // Here you would typically send this to a backend service
-                console.log('Generating outfit with parameters:', outfitParams);
-                alert('Generating your perfect outfit!');
-            }
+        // Show current step
+        const currentStepElement = document.querySelector(`#stepsContainer .step:nth-child(${stepNumber})`);
+        if (currentStepElement) {
+            currentStepElement.classList.add('active');
         }
 
+        // Update progress bar
+        const progressBar = document.querySelector('.progress-bar');
+        progressBar.style.width = `${(stepNumber - 1) * 50}%`;
+
+        // Manage navigation buttons
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        prevBtn.style.display = stepNumber > 1 ? 'block' : 'none';
+        nextBtn.textContent = stepNumber === 3 ? 'Generate Outfit' : 'Next Step';
+    }
+
+    nextStep() {
+        // Validate current step before proceeding
+        let canProceed = false;
+        switch(this.currentStep) {
+            case 1:
+                canProceed = this.weatherSelection !== null;
+                break;
+            case 2:
+                canProceed = this.citySelection !== null;
+                break;
+            case 3:
+                canProceed = this.eventSelection !== null;
+                break;
+        }
+
+        if (canProceed) {
+            if (this.currentStep < 3) {
+                this.currentStep++;
+                this.showStep(this.currentStep);
+            } else {
+                this.generateOutfit();
+            }
+        } else {
+            alert('Please select an option before proceeding.');
+        }
+    }
+
+    previousStep() {
+        if (this.currentStep > 1) {
+            this.currentStep--;
+            this.showStep(this.currentStep);
+        }
+    }
+
+    generateOutfit() {
+        console.log('Generating outfit with selections:', {
+            weather: this.weatherSelection,
+            city: this.citySelection,
+            event: this.eventSelection
+        });
+
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/outfit/day';
+
+        // Add weather selection
+        const weatherInput = document.createElement('input');
+        weatherInput.type = 'hidden';
+        weatherInput.name = 'weather';
+        weatherInput.value = this.weatherSelection === 'include' ? 'yes' : 'no';
+        form.appendChild(weatherInput);
+        console.log('Weather input:', weatherInput.value);
+
+        // Add city selection
+        const cityInput = document.createElement('input');
+        cityInput.type = 'hidden';
+        cityInput.name = 'city';
+        cityInput.value = this.citySelection;
+        form.appendChild(cityInput);
+        console.log('City input:', cityInput.value);
+
+        // Add event selection
+        const eventInput = document.createElement('input');
+        eventInput.type = 'hidden';
+        eventInput.name = 'events';
+        eventInput.value = this.eventSelection;
+        form.appendChild(eventInput);
+        console.log('Event input:', eventInput.value);
+
+        // Show loading state
+        const generatorContainer = document.querySelector('.generator-container');
+        generatorContainer.style.opacity = '0.5';
+        generatorContainer.style.pointerEvents = 'none';
+
+        // Show results container if it exists
+        const resultsContainer = document.querySelector('.results-container');
+        if (resultsContainer) {
+            resultsContainer.style.display = 'block';
+        }
+
+        // Submit the form
+        document.body.appendChild(form);
+        console.log('Submitting form...');
+        form.submit();
+    }
+}
+
+// Initialize the outfit generator when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new OutfitGenerator();
+
+    // Initialize any loading spinners or progress indicators
+    if (document.querySelector('.results-container')) {
+        document.querySelector('.results-container').style.display =
+            document.querySelector('.results-container').children.length > 0 ? 'block' : 'none';
+    }
+});
         // Initialize the outfit generator when page loads
    // Initialize the outfit generator when page loads
         document.addEventListener('DOMContentLoaded', () => {
             new OutfitGenerator();
         });
     </script>
-</body>
+
 </html>
