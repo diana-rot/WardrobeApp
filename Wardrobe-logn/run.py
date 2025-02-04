@@ -44,28 +44,32 @@ from sklearn.cluster import KMeans
 import imutils
 
 # MODEL_PATH = 'my_second_model.h5'
-MODEL_PATH = 'my_model_june.h5'
+MODEL_PATH = 'improved_fashion_model.h5'
 # Load your trained model
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
 
-def model_predict(img_path, model):
-    img = image.load_img(img_path, target_size=(28, 28))
-    img_array = np.asarray(img)
-    x = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
-    result = int(img_array[0][0][0])
-    print(result)
-    if result > 128:
-        img = cv2.bitwise_not(x)
-    else:
-        img = x
-    img = img / 255
-    img = (np.expand_dims(img, 0))
-    preds = model.predict(img)
 
-    print(f"preds type: {type(preds)}, preds: {preds}")
-    # predicting color
-    return preds
+def model_predict(img_path, model):
+    try:
+        img = image.load_img(img_path, target_size=(28, 28))
+        img_array = np.asarray(img)
+        x = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
+        result = int(img_array[0][0][0])
+
+        img = cv2.bitwise_not(x) if result > 128 else x
+        img = img / 255
+        img = np.expand_dims(img, 0)
+
+        preds = model.predict(img)
+        if preds is None or len(preds) == 0:
+            raise ValueError("Model prediction returned None or empty")
+
+        return preds
+
+    except Exception as e:
+        print(f"Error in model_predict: {str(e)}")
+        raise
 
 def predict_color(img_path):
     clusters = 5
@@ -153,44 +157,61 @@ from PIL import Image
 PATH = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn'
 PATH1 = r"C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn"
 
+
 @app.route('/predict', methods=['POST'])
 @login_required
 def upload():
     if request.method == 'POST':
         try:
-            # Get the file from post request
             f = request.files['file']
+            if not f:
+                return "No file uploaded", 400
+
             user_id = session['user']['_id']
             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
             os.makedirs(upload_dir, exist_ok=True)
             file_path = os.path.join(upload_dir, secure_filename(f.filename))
             f.save(file_path)
-            file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
-            print(file_path_db + 'file-path-db')
-            print(file_path + 'file-path')
 
-            # Make prediction
-            preds = model_predict(file_path, model)
-            _, color = predict_color(file_path)
-            attribute_predict = predict_attribute_model(file_path)
+            # Make predictions with validation
+            try:
+                preds = model_predict(file_path, model)
+                if not isinstance(preds, np.ndarray) or preds.size == 0:
+                    raise ValueError("Invalid prediction output")
 
-            mySeparator = ","
-            resulted_attribute = "N/A"  # Initialize resulted_attribute
-            if attribute_predict is not None:
-                resulted_attribute = mySeparator.join(attribute_predict)
+                color_result = predict_color(file_path)
+                if not color_result or len(color_result) < 2:
+                    raise ValueError("Invalid color prediction")
 
-            listToStr = ' '.join(map(str, color))
-            class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                           'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-            predicted_label = np.argmax(preds)
-            result = class_names[predicted_label]
-            userId = session['user']['_id']
-            db.wardrobe.insert_one({'label': result, 'attribute': resulted_attribute, 'color': listToStr, 'nota': 4, 'userId': userId,
-                                    'file_path': file_path_db})
+                predicted_label = np.argmax(preds)
+                class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
-            return result
+                if predicted_label >= len(class_names):
+                    raise ValueError("Invalid predicted label index")
+
+                result = class_names[predicted_label]
+
+                # Save to database
+                db.wardrobe.insert_one({
+                    'label': result,
+                    'color': ' '.join(map(str, color_result[1])),
+                    'nota': 4,
+                    'userId': user_id,
+                    'file_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+                })
+
+                return result
+
+            except Exception as e:
+                print(f"Prediction error: {str(e)}")
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                return str(e), 500
+
         except Exception as e:
             return str(e), 500
+
     return None
 def load_model():
     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
