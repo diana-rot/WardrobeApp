@@ -223,61 +223,68 @@
     <div class="container-fluid">
       <div class="row g-4">
         <!-- Weather Widget -->
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="card-title mb-4">Weather</h5>
-              <form id="weatherForm" method="POST">
-                <div class="input-group mb-3">
-                  <input
-                    type="text"
-                    class="form-control"
-                    name="city"
-                    placeholder="City Name"
-                  >
-                  <button class="btn btn-primary" type="submit">Add City</button>
-                </div>
-              </form>
-              <div id="weatherData">
-                <!-- Exemplu static -->
-                <div class="weather-card">
-                  <div class="d-flex align-items-center">
-                    <img
-                      src="https://openweathermap.org/img/wn/10d@2x.png"
-                      alt="Weather icon"
-                      class="weather-icon me-3"
-                    >
-                    <div>
-                      <h6 class="mb-1">București</h6>
-                      <div class="text-muted">7.1° C</div>
-                      <small>light rain</small>
-                    </div>
-                  </div>
-                </div>
-                <div class="weather-card">
-                  <div class="d-flex align-items-center">
-                    <img
-                      src="https://openweathermap.org/img/wn/01d@2x.png"
-                      alt="Weather icon"
-                      class="weather-icon me-3"
-                    >
-                    <div>
-                      <h6 class="mb-1">Timișoara</h6>
-                      <div class="text-muted">10.2° C</div>
-                      <small>clear sky</small>
-                    </div>
-                  </div>
-                </div>
-                <!-- end exemplu -->
-              </div>
-            </div>
-          </div>
+       <!-- Weather Widget -->
+<div class="col-12 col-md-6 col-lg-4">
+  <div class="card h-100">
+    <div class="card-body">
+      <h5 class="card-title mb-4">Weather</h5>
+      <form id="weatherForm" method="POST">
+        <div class="input-group mb-3">
+          <input
+            type="text"
+            class="form-control"
+            name="city"
+            id="cityInput"
+            placeholder="City Name"
+            required
+          >
+          <button class="btn btn-primary" type="submit">Add City</button>
         </div>
+      </form>
+   <div id="weatherData">
+    {% for weather in weather_data %}
+    <div class="weather-card" data-city="{{ weather.city }}">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <img
+                    src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png"
+                    alt="Weather icon"
+                    class="weather-icon me-3"
+                >
+                <div>
+                    <h6 class="mb-1">{{ weather.city }}</h6>
+                    <div class="text-muted">{{ weather.temperature }}° C</div>
+                    <small>{{ weather.description }}</small>
+                </div>
+            </div>
+            <button class="btn btn-link text-danger delete-city"
+                    data-city="{{ weather.city }}"
+                    title="Remove city">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+    </div>
+  </div>
+</div>
         <!-- Alte carduri, secțiuni etc. -->
       </div>
     </div>
   </div>
 
+
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="cityToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header bg-warning text-dark">
+      <strong class="me-auto">Notice</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body" id="toastMessage">
+    </div>
+  </div>
+</div>
   <!-- Bootstrap Bundle with Popper -->
   <script
     src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"
@@ -285,6 +292,124 @@
 
   <!-- Dark Mode Toggle Script -->
   <script>
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing weather form handling
+    const weatherForm = document.getElementById('weatherForm');
+    const weatherData = document.getElementById('weatherData');
+    const cityToast = document.getElementById('cityToast');
+    const toastMessage = document.getElementById('toastMessage');
+
+    // Initialize toast
+    const toast = new bootstrap.Toast(cityToast, {
+        delay: 3000
+    });
+
+    // Function to create weather card HTML
+    function createWeatherCard(weather) {
+        return `
+            <div class="weather-card" data-city="${weather.city}">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <img
+                            src="https://openweathermap.org/img/wn/${weather.icon}@2x.png"
+                            alt="Weather icon"
+                            class="weather-icon me-3"
+                        >
+                        <div>
+                            <h6 class="mb-1">${weather.city}</h6>
+                            <div class="text-muted">${weather.temperature}° C</div>
+                            <small>${weather.description}</small>
+                        </div>
+                    </div>
+                    <button class="btn btn-link text-danger delete-city"
+                            data-city="${weather.city}"
+                            title="Remove city">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Handle delete city
+    weatherData.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-city');
+        if (!deleteBtn) return;
+
+        const cityName = deleteBtn.dataset.city;
+        const weatherCard = deleteBtn.closest('.weather-card');
+
+        if (confirm(`Are you sure you want to remove ${cityName} from your weather list?`)) {
+            fetch(`/dashboard/delete_city/${encodeURIComponent(cityName)}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    weatherCard.remove();
+                    toastMessage.textContent = data.message;
+                    toast.show();
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                toastMessage.textContent = 'Error removing city. Please try again.';
+                toast.show();
+            });
+        }
+    });
+
+    // Existing form submit handler
+    weatherForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const cityInput = document.getElementById('cityInput');
+        const formData = new FormData(weatherForm);
+
+        fetch('/dashboard/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Add the new weather card to the existing ones
+            data.weather_data.forEach(weather => {
+                const weatherCard = createWeatherCard(weather);
+                weatherData.insertAdjacentHTML('beforeend', weatherCard);
+            });
+
+            // Clear the input field
+            cityInput.value = '';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (error.error === 'duplicate') {
+                // Show toast with duplicate city message
+                toastMessage.textContent = error.message;
+                toast.show();
+            } else {
+                // Show generic error toast
+                toastMessage.textContent = 'Error adding city. Please try again.';
+                toast.show();
+            }
+        });
+    });
+});
     function toggleDarkMode() {
       document.body.classList.toggle('dark-mode');
       const isDark = document.body.classList.contains('dark-mode');
@@ -295,6 +420,7 @@
         moonIcon.classList.remove('bi-moon');
         moonIcon.classList.add('bi-sun');
       } else {
+        moonIcon.classList.remove('bi-sun');
         moonIcon.classList.remove('bi-sun');
         moonIcon.classList.add('bi-moon');
       }
