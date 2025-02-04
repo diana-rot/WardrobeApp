@@ -644,7 +644,7 @@ def upload():
             f.save(file_path)
             print(file_path)
             file_path_bd = os.path.join(
-                '../static/image_users/', secure_filename(f.filename))
+                '../flaskapp/static/image_users/', secure_filename(f.filename))
 
             # Make prediction
             preds = model_predict(file_path, model)
