@@ -358,11 +358,6 @@ def predict_attribute_model(img_path):
         print(f"Error predicting attributes: {e}")
         return
 
-
-
-
-
-
 # flask app and routes
 @app.route('/')
 def home():
@@ -377,6 +372,169 @@ def dologin():
 @app.route('/register/')
 def doregister():
     return render_template('register.html')
+
+
+#profile
+# Add these imports to your existing imports
+import base64
+from bson.binary import Binary
+
+
+# Add this route to handle profile updates
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        try:
+            user_id = session['user']['_id']
+
+            # Handle profile picture upload
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file and allowed_file(file.filename):
+                    # Read the file and convert to binary for MongoDB storage
+                    file_data = file.read()
+
+                    # Create upload directory if it doesn't exist
+                    upload_dir = os.path.join('flaskapp', 'static', 'profile_pictures', str(user_id))
+                    os.makedirs(upload_dir, exist_ok=True)
+
+                    # Save file to disk
+                    filename = secure_filename(file.filename)
+                    file_path = os.path.join(upload_dir, filename)
+                    with open(file_path, 'wb') as f:
+                        f.write(file_data)
+
+                    # Update user document with profile picture path
+                    db.users.update_one(
+                        {'_id': user_id},
+                        {'$set': {
+                            'profile_picture': f'/static/profile_pictures/{user_id}/{filename}'
+                        }}
+                    )
+
+            # Update other profile information
+            name = request.form.get('name')
+            email = request.form.get('email')
+
+            # Update user document
+            update_data = {}
+            if name:
+                update_data['name'] = name
+            if email:
+                update_data['email'] = email
+
+            if update_data:
+                db.users.update_one(
+                    {'_id': user_id},
+                    {'$set': update_data}
+                )
+
+                # Update session data
+                user = db.users.find_one({'_id': user_id})
+                session['user'] = user
+
+            return jsonify({'success': True, 'message': 'Profile updated successfully'})
+
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    # GET request - display profile page
+    user_data = db.users.find_one({'_id': session['user']['_id']})
+    return render_template('profile.html', user=user_data)
+
+
+
+# Helper function to get user's profile picture
+def get_user_profile_picture():
+    if 'user' in session and session['user']:
+        user = db.users.find_one({'_id': session['user']['_id']})
+        return user.get('profile_picture', '/static/image/default-profile.png')
+    return '/static/image/default-profile.png'
+
+
+# Add this to your template context
+@app.context_processor
+def utility_processor():
+    return dict(get_user_profile_picture=get_user_profile_picture)
+
+@app.route('/dashboard/', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    userId = session['user']['_id']
+    cityByDefault = 'Bucharest'
+    api_key = 'aa73cad280fbd125cc7073323a135efa'
+
+    if request.method == 'POST':
+        new_city = request.form.get('city')
+        print(f"New city submitted: {new_city}")
+
+        if new_city:
+            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={new_city}&limit=1&appid={api_key}'
+            geocode_response = requests.get(geocode_url).json()
+            print(f"Geocode response: {geocode_response}")
+
+            if geocode_response:
+                lat = geocode_response[0].get('lat')
+                lon = geocode_response[0].get('lon')
+                if lat and lon:
+                    db.city.insert_one({'name': new_city, 'lat': lat, 'lon': lon, 'userId': userId})
+
+    filter = {'userId': userId}
+    if db.city.find_one(filter) is None:
+        geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={cityByDefault}&limit=1&appid={api_key}'
+        geocode_response = requests.get(geocode_url).json()
+        print(f"Default city geocode response: {geocode_response}")
+
+        if geocode_response:
+            lat = geocode_response[0].get('lat')
+            lon = geocode_response[0].get('lon')
+            if lat and lon:
+                db.city.insert_one({'name': cityByDefault, 'lat': lat, 'lon': lon, 'userId': userId})
+
+    cities = db.city.find(filter)
+    url = 'https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}&units=metric'
+
+    weather_data = []
+
+    for city in cities:
+        if 'lat' not in city or 'lon' not in city:
+            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={city["name"]}&limit=1&appid={api_key}'
+            geocode_response = requests.get(geocode_url).json()
+            print(f"Geocode response for {city['name']}: {geocode_response}")
+
+            if geocode_response:
+                lat = geocode_response[0].get('lat')
+                lon = geocode_response[0].get('lon')
+                if lat and lon:
+                    db.city.update_one({'_id': city['_id']}, {'$set': {'lat': lat, 'lon': lon}})
+                    city['lat'] = lat
+                    city['lon'] = lon
+            else:
+                continue
+
+        r = requests.get(url.format(city['lat'], city['lon'], api_key)).json()
+        print(f"Weather API response for {city['name']}: {r}")
+
+        if r.get('weather') and r.get('main'):
+            weather = {
+                'city': city['name'],
+                'temperature': r['main']['temp'],
+                'description': r['weather'][0]['description'],
+                'icon': r['weather'][0]['icon'],
+            }
+            weather_data.append(weather)
+
+    print(f"Weather data to be rendered: {weather_data}")
+    return render_template('dashboard.html', weather_data=weather_data)
+
+
+
+
+
+
+
+
 
 
 @app.route('/wardrobe/delete/<item_id>', methods=['DELETE'])
@@ -707,75 +865,6 @@ def get_outfit():
 #     return render_template('outfit_of_the_day.html', outfit1=outfit1, outfit2=outfit2, outfit3=outfit3, city1=city1,
 #                            city2=city2, city3=city3)
 
-@app.route('/dashboard/', methods=['GET', 'POST'])
-@login_required
-def dashboard():
-    userId = session['user']['_id']
-    cityByDefault = 'Bucharest'
-    api_key = 'aa73cad280fbd125cc7073323a135efa'
-
-    if request.method == 'POST':
-        new_city = request.form.get('city')
-        print(f"New city submitted: {new_city}")
-
-        if new_city:
-            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={new_city}&limit=1&appid={api_key}'
-            geocode_response = requests.get(geocode_url).json()
-            print(f"Geocode response: {geocode_response}")
-
-            if geocode_response:
-                lat = geocode_response[0].get('lat')
-                lon = geocode_response[0].get('lon')
-                if lat and lon:
-                    db.city.insert_one({'name': new_city, 'lat': lat, 'lon': lon, 'userId': userId})
-
-    filter = {'userId': userId}
-    if db.city.find_one(filter) is None:
-        geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={cityByDefault}&limit=1&appid={api_key}'
-        geocode_response = requests.get(geocode_url).json()
-        print(f"Default city geocode response: {geocode_response}")
-
-        if geocode_response:
-            lat = geocode_response[0].get('lat')
-            lon = geocode_response[0].get('lon')
-            if lat and lon:
-                db.city.insert_one({'name': cityByDefault, 'lat': lat, 'lon': lon, 'userId': userId})
-
-    cities = db.city.find(filter)
-    url = 'https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}&units=metric'
-
-    weather_data = []
-
-    for city in cities:
-        if 'lat' not in city or 'lon' not in city:
-            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={city["name"]}&limit=1&appid={api_key}'
-            geocode_response = requests.get(geocode_url).json()
-            print(f"Geocode response for {city['name']}: {geocode_response}")
-
-            if geocode_response:
-                lat = geocode_response[0].get('lat')
-                lon = geocode_response[0].get('lon')
-                if lat and lon:
-                    db.city.update_one({'_id': city['_id']}, {'$set': {'lat': lat, 'lon': lon}})
-                    city['lat'] = lat
-                    city['lon'] = lon
-            else:
-                continue
-
-        r = requests.get(url.format(city['lat'], city['lon'], api_key)).json()
-        print(f"Weather API response for {city['name']}: {r}")
-
-        if r.get('weather') and r.get('main'):
-            weather = {
-                'city': city['name'],
-                'temperature': r['main']['temp'],
-                'description': r['weather'][0]['description'],
-                'icon': r['weather'][0]['icon'],
-            }
-            weather_data.append(weather)
-
-    print(f"Weather data to be rendered: {weather_data}")
-    return render_template('dashboard.html', weather_data=weather_data)
 
 
 @app.route('/wardrobe', methods=['GET', 'POST'])

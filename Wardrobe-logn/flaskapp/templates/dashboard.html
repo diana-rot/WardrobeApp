@@ -175,27 +175,34 @@
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg py-2">
+<!-- Updated Navbar Section -->
+<nav class="navbar navbar-expand-lg py-2">
     <div class="container-fluid">
-      <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="../static/image/wardrobe1.png" alt="Logo" height="40" class="me-2">
-        WardrobeApp
-      </a>
-      <div class="d-flex align-items-center">
-        <button class="btn-darkmode me-3" onclick="toggleDarkMode()" title="Toggle Dark Mode">
-          <i class="bi bi-moon"></i>
-        </button>
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <img src="../static/image/wardrobe1.png" alt="Logo" height="40" class="me-2">
+            WardrobeApp
+        </a>
         <div class="d-flex align-items-center">
-          <img
-            src="https://via.placeholder.com/40"
-            alt="Profile"
-            class="profile-img"
-          >
-          <span>Welcome, User</span>
+            <button class="btn-darkmode me-3" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+                <i class="bi bi-moon"></i>
+            </button>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="{{ get_user_profile_picture() }}"
+                         alt="Profile"
+                         class="profile-img">
+                    <span>Welcome, {{ session['user'].get('name', 'User') }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="/profile">Profile Settings</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/user/signOut">Sign Out</a></li>
+                </ul>
+            </div>
         </div>
-      </div>
     </div>
-  </nav>
+</nav>
 
   <!-- Sidebar -->
   <div class="sidebar">
