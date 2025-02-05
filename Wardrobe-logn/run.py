@@ -537,6 +537,7 @@ def dashboard():
 
 
 
+
 @app.route('/wardrobe/delete/<item_id>', methods=['DELETE'])
 @login_required
 def delete_wardrobe_item(item_id):
@@ -566,9 +567,6 @@ def delete_wardrobe_item(item_id):
 @app.route('/outfit/day', methods=['GET', 'POST'])
 @login_required
 def get_outfit():
-
-
-
     userId = session['user']['_id']
     cityByDefault = 'Bucharest'
     result_outfit = [
