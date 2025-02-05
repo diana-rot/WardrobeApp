@@ -408,6 +408,9 @@ def delete_wardrobe_item(item_id):
 @app.route('/outfit/day', methods=['GET', 'POST'])
 @login_required
 def get_outfit():
+
+
+
     userId = session['user']['_id']
     cityByDefault = 'Bucharest'
     result_outfit = [
@@ -443,6 +446,27 @@ def get_outfit():
 
     # Initialize outfits
     outfit1, outfit2, outfit3 = [], [], []
+    option = request.form.get('options')
+    if option:
+        filter_lookup = {'userId': userId, 'outfitNo': option}
+        outfit_rez = db.outfits.find(filter_lookup).sort('_id', -1).limit(1)
+        for doc in outfit_rez:
+            for piece in doc['outfit']:
+                mydocq = {'_id': piece['_id']}
+                if 'nota' not in piece:
+                    piece['nota'] = 0
+                piece['nota'] += 1
+                newvalue_doc = {"$set": {"nota": piece['nota']}}
+                db.wardrobe.update_one(mydocq, newvalue_doc)
+
+            if 'nota' not in doc:
+                doc['nota'] = 0
+            doc['nota'] += 1
+            myquery = {'_id': doc['_id']}
+            newvalues = {"$set": {"nota": doc['nota']}}
+            newset = {"$set": {"isFavorite": 'yes'}}
+            db.outfits.update_one(myquery, newvalues)
+            db.outfits.update_one(myquery, newset)
 
     # Define feature preparation function
     def prepare_features(include_weather, event):
@@ -542,8 +566,146 @@ def get_outfit():
             print(f"Error during prediction: {e}")
             outfit1, outfit2, outfit3 = [], [], []  # Set empty lists if an error occurs
 
-    return render_template('outfit_of_the_day.html', outfit1=outfit1, outfit2=outfit2, outfit3=outfit3, city1=city1,
-                           city2=city2, city3=city3)
+    return render_template('outfit_of_the_day.html', outfit1=outfit1, outfit2=outfit2, outfit3=outfit3, city1=city1, city2=city2, city3=city3)
+# @app.route('/outfit/day', methods=['GET', 'POST'])
+# @login_required
+# def get_outfit():
+#     userId = session['user']['_id']
+#     cityByDefault = 'Bucharest'
+#     result_outfit = [
+#         'Dress_Sandal', 'T-shirt/top_Trouser_Sneaker', 'Shirt_Trouser', 'Shirt_Trouser_Sneaker',
+#         'Dress_Sandal_Coat', 'T-shirt/top_Trouser', 'Shirt_Trouser_Coat', 'Shirt_Trouser_Coat',
+#         'Dress_Ankle-boot_Coat', 'Pullover_Trouser_Ankle-boot', 'Dress_Sneaker', 'Shirt_Trouser_Sandal',
+#         'Dress_Sandal_Bag'
+#     ]
+#
+#     filter = {'userId': userId}
+#     if db.city.count_documents(filter) == 0:
+#         db.city.insert_one({'name': cityByDefault, 'userId': userId})
+#
+#     cities = db.city.find(filter)
+#     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+#
+#     weather_data = []
+#     for city in cities:
+#         r = requests.get(url.format(city['name'])).json()
+#         weather = {
+#             'city': city['name'],
+#             'temperature': r['main']['temp'],
+#             'description': r['weather'][0]['description'],
+#             'icon': r['weather'][0]['icon'],
+#         }
+#         weather_data.append(weather)
+#
+#     if len(weather_data) < 3:
+#         weather_data.extend(
+#             [{'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}] * (3 - len(weather_data)))
+#
+#     city1, city2, city3 = weather_data[:3]
+#
+#     # Initialize outfits
+#     outfit1, outfit2, outfit3 = [], [], []
+#
+#     # Define feature preparation function
+#     def prepare_features(include_weather, event):
+#         features = [0] * 10  # Initialize a list with 10 zeros
+#
+#         # Update features based on weather
+#         if include_weather == 'yes':
+#             features[0] = 1  # Assuming the first position is for weather inclusion
+#             if temperature <= 6.0:
+#                 features[1:6] = [1, 0, 0, 0, 0]
+#             elif 15.0 < temperature < 26.0:
+#                 features[1:6] = [0, 1, 0, 0, 0]
+#             elif 6.0 < temperature <= 15.0:
+#                 features[1:6] = [0, 0, 1, 0, 0]
+#             elif temperature >= 25.0:
+#                 features[1:6] = [0, 0, 0, 1, 0]
+#         else:
+#             features[0] = 0  # No weather included
+#             features[1:6] = [0, 0, 0, 0, 0]
+#
+#         # Update features based on event
+#         if event == 'event':
+#             features[6:10] = [1, 0, 0, 0]
+#         elif event == 'walk':
+#             features[6:10] = [0, 1, 0, 0]
+#         elif event == 'work':
+#             features[6:10] = [0, 0, 1, 0]
+#         elif event == 'travel':
+#             features[6:10] = [0, 0, 0, 1]
+#
+#         return features
+#
+#     if request.method == 'POST':
+#         include_weather = request.form.get('weather')
+#         city = request.form.get('city')
+#         event = request.form.get('events')
+#         option = request.form.get('options')
+#
+#         if option is not None:
+#             filter_lookup = {'userId': userId, 'outfitNo': option}
+#             outfit_rez = db.outfits.find(filter_lookup).sort('_id', -1).limit(1)
+#             for doc in outfit_rez:
+#                 for piece in doc['outfit']:
+#                     mydocq = {'_id': piece['_id']}
+#                     piece['nota'] = piece['nota'] + 1
+#                     newvalue_doc = {"$set": {"nota": piece['nota']}}
+#                     db.wardrobe.update_one(mydocq, newvalue_doc)
+#
+#                 doc['nota'] = doc['nota'] + 1
+#                 myquery = {'_id': doc['_id']}
+#                 newvalues = {"$set": {"nota": doc['nota']}}
+#                 newset = {"$set": {"isFavorite": 'yes'}}
+#                 db.outfits.update_one(myquery, newvalues)
+#                 db.outfits.update_one(myquery, newset)
+#
+#         loaded_classifier = joblib.load("./random_forest.joblib")
+#         temperature = 20  # Default temperature
+#
+#         if include_weather == 'yes':
+#             if city == city1['city']:
+#                 temperature = city1['temperature']
+#             elif city == city2['city']:
+#                 temperature = city2['temperature']
+#             elif city == city3['city']:
+#                 temperature = city3['temperature']
+#
+#         # Prepare the features for prediction
+#         to_be_predicted = prepare_features(include_weather, event)
+#         predict_form = [to_be_predicted]
+#
+#         try:
+#             # Predict the outfit
+#             result_forest = loaded_classifier.predict(predict_form)
+#             index_of_outfit = result_forest[0]
+#             txt = result_outfit[index_of_outfit]
+#             filters_outfits = txt.split('_')
+#
+#             outfit1, outfit2, outfit3 = [], [], []
+#
+#             for filter_name in filters_outfits:
+#                 filter = {'userId': userId, 'label': filter_name}
+#                 users_clothes = list(db.wardrobe.find(filter))
+#                 if len(users_clothes) >= 3:
+#                     outfit1.append(users_clothes[0])
+#                     outfit2.append(users_clothes[1])
+#                     outfit3.append(users_clothes[2])
+#
+#             db.outfits.insert_one(
+#                 {'outfit': outfit1, 'userId': userId, 'nota': 4, 'outfitNo': 'piece1', 'isFavorite': 'no'})
+#             db.outfits.insert_one(
+#                 {'outfit': outfit2, 'userId': userId, 'nota': 4, 'outfitNo': 'piece2', 'isFavorite': 'no'})
+#             db.outfits.insert_one(
+#                 {'outfit': outfit3, 'userId': userId, 'nota': 4, 'outfitNo': 'piece3', 'isFavorite': 'no'})
+#
+#         except ValueError as e:
+#             # Handle the exception if there is an issue with prediction
+#             print(f"Error during prediction: {e}")
+#             outfit1, outfit2, outfit3 = [], [], []  # Set empty lists if an error occurs
+#
+#     return render_template('outfit_of_the_day.html', outfit1=outfit1, outfit2=outfit2, outfit3=outfit3, city1=city1,
+#                            city2=city2, city3=city3)
 
 @app.route('/dashboard/', methods=['GET', 'POST'])
 @login_required
@@ -733,18 +895,86 @@ def view_outfits_all():
 
 
 # avatar logic
+@app.route('/api/avatar/<gender>', methods=['GET'])
+@login_required
+def get_avatar(gender):
+    if gender not in ['male', 'female']:
+        return jsonify({'error': 'Invalid gender specified'}), 400
 
-@app.route('/api/avatar', methods=['GET'])
-def get_avatar():
-    # Servește modelul din `static/models`
-    return send_from_directory('static/models', 'woman.gltf', mimetype='model/gltf+json')
-@app.route('/api/update-avatar', methods=['POST'])
+    model_file = f'{gender}.gltf'
+    return send_from_directory(app.config['MODELS_FOLDER'], model_file, mimetype='model/gltf+json')
+
+
+@app.route('/api/clothes', methods=['GET'])
+@login_required
+def get_available_clothes():
+    # Return list of available clothing items for the user
+    clothes_path = os.path.join(app.config['MODELS_FOLDER'], 'clothing')
+    available_clothes = []
+
+    for filename in os.listdir(clothes_path):
+        if allowed_file(filename):
+            clothes_id = filename.rsplit('.', 1)[0]
+            available_clothes.append({
+                'id': clothes_id,
+                'name': clothes_id.replace('_', ' ').title(),
+                'path': f'/api/models/clothing/{filename}'
+            })
+
+    return jsonify(available_clothes)
+
+
+
+def get_user_preferences(user_id):
+    try:
+        # You can replace this with your database query
+        with open(f'user_preferences/{user_id}.json', 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        # Return default preferences if none exist
+        return {
+            'gender': 'female',
+            'skinColor': '#FFE0BD',
+            'hairColor': '#000000',
+            'hairStyle': 'default',
+            'clothes': []
+        }
+
+
+def save_user_preferences(user_id, preferences):
+    # You can replace this with your database save logic
+    with open(f'user_preferences/{user_id}.json', 'w') as file:
+        json.dump(preferences, file)
 
 
 @app.route('/avatar')
-@login_required
 def avatar_page():
-    return render_template('avatar.html')
+    user_id = session.get('user_id')
+    user_preferences = get_user_preferences(user_id)
+    return render_template('avatar.html', user_preferences=user_preferences)
+
+
+@app.route('/api/avatar/customize', methods=['POST'])
+def customize_avatar():
+    user_id = session.get('user_id')
+    data = request.get_json()
+
+    # Update user preferences
+    user_preferences = {
+        'gender': data.get('gender', 'female'),
+        'skinColor': data.get('skinColor', '#FFE0BD'),
+        'hairColor': data.get('hairColor', '#000000'),
+        'hairStyle': data.get('hairStyle', 'default'),
+        'clothes': data.get('clothes', [])
+    }
+
+    # Save the updated preferences
+    save_user_preferences(user_id, user_preferences)
+
+    return jsonify({'status': 'success', 'preferences': user_preferences})
+
+
+
 
 
 
