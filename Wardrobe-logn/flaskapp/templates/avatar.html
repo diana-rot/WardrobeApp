@@ -1,29 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Avatar - Model Viewer</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-        }
-    </style>
-</head>
-<body>
-    <model-viewer
-        src="/static/models/woman.gltf"
-        alt="3D Avatar"
-        auto-rotate
-        camera-controls
-        shadow-intensity="1"
-        style="width: 100%; max-width: 800px; height: 500px;">
-    </model-viewer>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Avatar Customization - WardrobeApp{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        overflow: hidden;
+    }
+
+    #avatar-container {
+        flex: 1;
+        height: calc(100vh - 56px);
+        margin-left: var(--sidebar-width);
+    }
+
+    #customization-panel {
+        width: 300px;
+        padding: 20px;
+        background: white;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        overflow-y: auto;
+        position: fixed;
+        right: 0;
+        top: 56px;
+        height: calc(100vh - 56px);
+    }
+
+    .control-group {
+        margin-bottom: 20px;
+    }
+
+    .control-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+    }
+
+    select, input[type="color"] {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .clothes-item {
+        margin-bottom: 10px;
+        padding: 8px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="avatar-container"></div>
+
+<div id="customization-panel">
+    <div class="control-group">
+        <label>Gender</label>
+        <select id="gender-select">
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Skin Color</label>
+        <input type="color" id="skin-color" value="{{ user_preferences.skinColor }}">
+    </div>
+
+    <div class="control-group">
+        <label>Hair Color</label>
+        <input type="color" id="hair-color" value="{{ user_preferences.hairColor }}">
+    </div>
+
+    <div class="control-group">
+        <label>Hair Style</label>
+        <select id="hair-style">
+            <option value="default">Default</option>
+            <option value="short">Short</option>
+            <option value="long">Long</option>
+            <option value="ponytail">Ponytail</option>
+            <option value="bun">Bun</option>
+        </select>
+    </div>
+
+    <div class="control-group">
+        <label>Clothes</label>
+        <div id="clothes-list">
+            <!-- Will be populated dynamically -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script async src="https://unpkg.com/es-module-shims@1.7.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/",
+        "three/examples/jsm/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module" src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+{% endblock %}
