@@ -32,7 +32,13 @@ from flask import send_file
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
-
+# Right after all your imports and before any routes, add:
+@app.template_filter('normalize_path')
+def normalize_path_filter(file_path):
+    """Normalizes file paths for template rendering"""
+    if not file_path:
+        return None
+    return file_path.replace('/outfit/', '/').replace('/static/static/', '/static/').lstrip('/')
 
 
 client = pymongo.MongoClient('localhost', 27017)
@@ -43,8 +49,8 @@ import cv2
 from sklearn.cluster import KMeans
 import imutils
 
-# MODEL_PATH = 'my_second_model.h5'
-MODEL_PATH = 'improved_fashion_model.h5'
+MODEL_PATH = 'my_second_model.h5'
+# MODEL_PATH = 'my_model_june.h5'
 # Load your trained model
 model = load_model(MODEL_PATH)
 print('Model loaded. Check http://127.0.0.1:5000/')
@@ -534,10 +540,6 @@ def dashboard():
     return render_template('dashboard.html', weather_data=weather_data)
 
 
-
-
-
-
 @app.route('/wardrobe/delete/<item_id>', methods=['DELETE'])
 @login_required
 def delete_wardrobe_item(item_id):
@@ -600,14 +602,64 @@ def prepare_features(include_weather, event, temperature):
     return features
 
 
-@app.route('/outfit/day', methods=['GET', 'POST'])
+import re
+
+
+def normalize_path(file_path):
+    """
+    Comprehensive path normalization that handles all cases:
+    - Empty paths
+    - /outfit/ prefixes
+    - Duplicate /static/ paths
+    - Leading/trailing slashes
+    - Multiple combinations of the above
+    """
+    if not file_path:
+        return None
+
+    # First remove /outfit/ prefix anywhere in the path
+    normalized = file_path.replace('/outfit/', '/')
+
+    # Handle multiple static occurrences
+    while '/static/static/' in normalized:
+        normalized = normalized.replace('/static/static/', '/static/')
+
+    # Handle any remaining path cleanup
+    normalized = normalized.strip('/')
+
+    # Special case: ensure static paths start with static/
+    if 'static' in normalized and not normalized.startswith('static'):
+        normalized = 'static/' + normalized[normalized.index('static') + 6:]
+
+    return normalized
+def normalize_path(file_path):
+    if not file_path:
+        return None
+    return file_path.replace('/static/static/', '/static/').lstrip('/')
+
+
+@app.route('/recommendations', methods=['GET', 'POST'])
 @login_required
 def get_outfit():
     print("Debug: Entering get_outfit route")
 
     try:
         userId = session['user']['_id']
+        if not userId:
+            return jsonify({"success": False, "message": "User not logged in"}), 400
+
         print(f"Debug: User ID: {userId}")
+        user_filter = {'userId': userId, 'isFavorite': 'yes'}
+
+        # Get user's clothes with normalized paths
+        users_clothes = db.outfits.find(user_filter)
+        normalized_clothes = []
+        for outfit in users_clothes:
+            if 'outfit' in outfit:
+                for piece in outfit['outfit']:
+                    piece['file_path'] = normalize_path(piece.get('file_path', ''))
+                    print('olala' +  piece['file_path'])
+            normalized_clothes.append(outfit)
 
         cityByDefault = 'Bucharest'
         DEFAULT_RATING = 4
@@ -628,13 +680,13 @@ def get_outfit():
         ]
 
         # Initialize city if not exists
-        filter = {'userId': userId}
-        if db.city.count_documents(filter) == 0:
+        city_filter = {'userId': userId}
+        if db.city.count_documents(city_filter) == 0:
             print(f"Debug: Creating new city entry for user {userId}")
             db.city.insert_one({'name': cityByDefault, 'userId': userId})
 
         # Get weather data
-        cities = db.city.find(filter)
+        cities = db.city.find(city_filter)
         weather_data = []
         url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
 
@@ -682,33 +734,41 @@ def get_outfit():
 
                 if outfit_doc:
                     # Update outfit pieces ratings
+                    updated_pieces = []
                     for piece in outfit_doc['outfit']:
                         try:
                             current_piece = db.wardrobe.find_one({'_id': piece['_id']})
-                            current_rating = current_piece.get('nota',
-                                                               DEFAULT_RATING) if current_piece else DEFAULT_RATING
+                            if current_piece:
+                                piece_data = {
+                                    '_id': str(current_piece['_id']),
+                                    'label': current_piece.get('label', ''),
+                                    'file_path': normalize_path(current_piece.get('file_path', '')),
+                                    'color': current_piece.get('color', ''),
+                                    'nota': current_piece.get('nota', DEFAULT_RATING)
+                                }
 
-                            db.wardrobe.update_one(
-                                {'_id': piece['_id']},
-                                {'$set': {'nota': current_rating + 1}},
-                                upsert=True
-                            )
+                                # Update the rating
+                                db.wardrobe.update_one(
+                                    {'_id': current_piece['_id']},
+                                    {'$set': {'nota': piece_data['nota'] + 1}}
+                                )
+                                updated_pieces.append(piece_data)
                         except Exception as e:
                             print(f"Error updating piece rating: {str(e)}")
 
                     try:
-                        # Update outfit rating
+                        # Update outfit rating and pieces
                         current_outfit_rating = outfit_doc.get('nota', DEFAULT_RATING)
                         db.outfits.update_one(
                             {'_id': outfit_doc['_id']},
                             {
                                 '$set': {
                                     'nota': current_outfit_rating + 1,
-                                    'isFavorite': 'yes'
+                                    'isFavorite': 'yes',
+                                    'outfit': updated_pieces
                                 }
                             }
                         )
-                        # Show success message and hide outfits
                         success_message = "Outfit has been saved to your favorites!"
                         show_outfits = False
                         return render_template(
@@ -718,7 +778,8 @@ def get_outfit():
                             show_outfits=show_outfits,
                             city1=city1,
                             city2=city2,
-                            city3=city3
+                            city3=city3,
+                            wardrobes=normalized_clothes
                         )
                     except Exception as e:
                         print(f"Error updating outfit rating: {str(e)}")
@@ -728,9 +789,7 @@ def get_outfit():
             include_weather = request.form.get('weather') == 'yes'
             city = request.form.get('city')
             event = request.form.get('events')
-            temperature = 20  # Default temperature
-
-            print(f"Debug: Form data - weather: {include_weather}, city: {city}, event: {event}")
+            temperature = 20
 
             if include_weather and city:
                 selected_weather = next(
@@ -747,10 +806,8 @@ def get_outfit():
                 outfit_combination = result_outfit[index_of_outfit]
                 filters_outfits = outfit_combination.split('_')
 
-                print(f"Debug: Generated outfit combination: {outfit_combination}")
-
-                # Generate three outfits
-                for i, outfit_list in enumerate([outfit1, outfit2, outfit3]):
+                # Generate three outfits based on classifier suggestion
+                for i in range(3):
                     outfit_pieces = []
                     for filter_name in filters_outfits:
                         clothes = list(db.wardrobe.find({
@@ -759,17 +816,26 @@ def get_outfit():
                         }).sort('nota', -1))
 
                         if clothes:
-                            index = min(i, len(clothes) - 1)
-                            piece = clothes[index]
-                            if not piece.get('file_path'):
-                                piece['file_path'] = None
+                            # Get top rated pieces (top 5 or all if less than 5)
+                            num_top_pieces = min(5, len(clothes))
+                            top_pieces = clothes[:num_top_pieces]
+
+                            # Randomly select from top pieces
+                            piece = random.choice(top_pieces)
+                            piece_data = {
+                                '_id': str(piece['_id']),
+                                'label': piece.get('label', ''),
+                                'file_path': normalize_path(piece.get('file_path', '')),
+                                'color': piece.get('color', ''),
+                                'nota': piece.get('nota', DEFAULT_RATING)
+                            }
+
                             if 'nota' not in piece:
-                                piece['nota'] = DEFAULT_RATING
                                 db.wardrobe.update_one(
                                     {'_id': piece['_id']},
                                     {'$set': {'nota': DEFAULT_RATING}}
                                 )
-                            outfit_pieces.append(piece)
+                            outfit_pieces.append(piece_data)
 
                     if outfit_pieces:
                         outfit_doc = {
@@ -796,6 +862,15 @@ def get_outfit():
                 error_message = "Error generating outfits. Please try again."
 
         print("Debug: Rendering template")
+        # Get fresh cursor with normalized paths
+        users_clothes = db.outfits.find(user_filter)
+        normalized_clothes = []
+        for outfit in users_clothes:
+            if 'outfit' in outfit:
+                for piece in outfit['outfit']:
+                    piece['file_path'] = normalize_path(piece.get('file_path', ''))
+            normalized_clothes.append(outfit)
+
         return render_template(
             'outfit_of_the_day.html',
             outfit1=outfit1,
@@ -807,7 +882,8 @@ def get_outfit():
             show_generator=show_generator,
             show_outfits=show_outfits,
             success_message=success_message,
-            error_message=error_message
+            error_message=error_message,
+            wardrobes=normalized_clothes
         )
 
     except Exception as e:
@@ -819,8 +895,233 @@ def get_outfit():
             show_outfits=False,
             city1={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''},
             city2={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''},
-            city3={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}
+            city3={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''},
+            wardrobes=[]
         )
+
+# @app.route('/outfit/day', methods=['GET', 'POST'])
+# @login_required
+# def get_outfit():
+#     print("Debug: Entering get_outfit route")
+#
+#     try:
+#         userId = session['user']['_id']
+#         print(f"Debug: User ID: {userId}")
+#         filter = {'userId': userId, 'isFavorite': 'yes'}
+#         users_clothes = db.outfits.find(filter)
+#
+#         cityByDefault = 'Bucharest'
+#         DEFAULT_RATING = 4
+#
+#         # Default to show generator and hide outfits
+#         show_generator = True
+#         show_outfits = False
+#         success_message = None
+#         error_message = None
+#
+#         # Define available outfit combinations
+#         result_outfit = [
+#             'Dress_Sandal', 'T-shirt/top_Trouser_Sneaker', 'Shirt_Trouser',
+#             'Shirt_Trouser_Sneaker', 'Dress_Sandal_Coat', 'T-shirt/top_Trouser',
+#             'Shirt_Trouser_Coat', 'Shirt_Trouser_Coat', 'Dress_Ankle-boot_Coat',
+#             'Pullover_Trouser_Ankle-boot', 'Dress_Sneaker', 'Shirt_Trouser_Sandal',
+#             'Dress_Sandal_Bag'
+#         ]
+#
+#         # Initialize city if not exists
+#         filter = {'userId': userId}
+#         if db.city.count_documents(filter) == 0:
+#             print(f"Debug: Creating new city entry for user {userId}")
+#             db.city.insert_one({'name': cityByDefault, 'userId': userId})
+#
+#         # Get weather data
+#         cities = db.city.find(filter)
+#         weather_data = []
+#         url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+#
+#         for city in cities:
+#             try:
+#                 print(f"Debug: Fetching weather for {city['name']}")
+#                 r = requests.get(url.format(city['name']), timeout=5).json()
+#                 weather = {
+#                     'city': city['name'],
+#                     'temperature': r['main']['temp'],
+#                     'description': r['weather'][0]['description'],
+#                     'icon': r['weather'][0]['icon'],
+#                 }
+#                 weather_data.append(weather)
+#             except Exception as e:
+#                 print(f"Error fetching weather for {city['name']}: {e}")
+#                 weather_data.append({
+#                     'city': city['name'],
+#                     'temperature': 20,
+#                     'description': '',
+#                     'icon': ''
+#                 })
+#
+#         # Ensure we have 3 weather options
+#         while len(weather_data) < 3:
+#             weather_data.append({
+#                 'city': cityByDefault,
+#                 'temperature': 20,
+#                 'description': '',
+#                 'icon': ''
+#             })
+#
+#         city1, city2, city3 = weather_data[:3]
+#         outfit1, outfit2, outfit3 = [], [], []
+#
+#         if request.method == 'POST':
+#             print("Debug: Processing POST request")
+#
+#             # Handle outfit selection
+#             option = request.form.get('options')
+#             if option:
+#                 print(f"Debug: Selected option: {option}")
+#                 filter_lookup = {'userId': userId, 'outfitNo': option}
+#                 outfit_doc = db.outfits.find_one(filter_lookup, sort=[('_id', -1)])
+#
+#                 if outfit_doc:
+#                     # Update outfit pieces ratings
+#                     for piece in outfit_doc['outfit']:
+#                         try:
+#                             current_piece = db.wardrobe.find_one({'_id': piece['_id']})
+#                             current_rating = current_piece.get('nota',
+#                                                                DEFAULT_RATING) if current_piece else DEFAULT_RATING
+#
+#                             db.wardrobe.update_one(
+#                                 {'_id': piece['_id']},
+#                                 {'$set': {'nota': current_rating + 1}},
+#                                 upsert=True
+#                             )
+#                         except Exception as e:
+#                             print(f"Error updating piece rating: {str(e)}")
+#
+#                     try:
+#                         # Update outfit rating
+#                         current_outfit_rating = outfit_doc.get('nota', DEFAULT_RATING)
+#                         db.outfits.update_one(
+#                             {'_id': outfit_doc['_id']},
+#                             {
+#                                 '$set': {
+#                                     'nota': current_outfit_rating + 1,
+#                                     'isFavorite': 'yes'
+#                                 }
+#                             }
+#                         )
+#                         # Show success message and hide outfits
+#                         success_message = "Outfit has been saved to your favorites!"
+#                         show_outfits = False
+#                         return render_template(
+#                             'outfit_of_the_day.html',
+#                             success_message=success_message,
+#                             show_generator=show_generator,
+#                             show_outfits=show_outfits,
+#                             city1=city1,
+#                             city2=city2,
+#                             city3=city3
+#                         )
+#                     except Exception as e:
+#                         print(f"Error updating outfit rating: {str(e)}")
+#                         error_message = "Error saving outfit. Please try again."
+#
+#             # Generate new outfits
+#             include_weather = request.form.get('weather') == 'yes'
+#             city = request.form.get('city')
+#             event = request.form.get('events')
+#             temperature = 20  # Default temperature
+#
+#             print(f"Debug: Form data - weather: {include_weather}, city: {city}, event: {event}")
+#
+#             if include_weather and city:
+#                 selected_weather = next(
+#                     (w for w in weather_data if w['city'] == city),
+#                     {'temperature': 20}
+#                 )
+#                 temperature = selected_weather['temperature']
+#
+#             try:
+#                 loaded_classifier = joblib.load("./random_forest.joblib")
+#                 features = prepare_features(include_weather, event, temperature)
+#                 result_forest = loaded_classifier.predict([features])
+#                 index_of_outfit = result_forest[0]
+#                 outfit_combination = result_outfit[index_of_outfit]
+#                 filters_outfits = outfit_combination.split('_')
+#
+#                 print(f"Debug: Generated outfit combination: {outfit_combination}")
+#
+#                 # Generate three outfits
+#                 for i, outfit_list in enumerate([outfit1, outfit2, outfit3]):
+#                     outfit_pieces = []
+#                     for filter_name in filters_outfits:
+#                         clothes = list(db.wardrobe.find({
+#                             'userId': userId,
+#                             'label': filter_name
+#                         }).sort('nota', -1))
+#
+#                         if clothes:
+#                             index = min(i, len(clothes) - 1)
+#                             piece = clothes[index]
+#                             if not piece.get('file_path'):
+#                                 piece['file_path'] = None
+#                             if 'nota' not in piece:
+#                                 piece['nota'] = DEFAULT_RATING
+#                                 db.wardrobe.update_one(
+#                                     {'_id': piece['_id']},
+#                                     {'$set': {'nota': DEFAULT_RATING}}
+#                                 )
+#                             outfit_pieces.append(piece)
+#
+#                     if outfit_pieces:
+#                         outfit_doc = {
+#                             'outfit': outfit_pieces,
+#                             'userId': userId,
+#                             'nota': DEFAULT_RATING,
+#                             'outfitNo': f'piece{i + 1}',
+#                             'isFavorite': 'no',
+#                             'created_at': datetime.now()
+#                         }
+#                         db.outfits.insert_one(outfit_doc)
+#
+#                         if i == 0:
+#                             outfit1 = outfit_pieces
+#                         elif i == 1:
+#                             outfit2 = outfit_pieces
+#                         else:
+#                             outfit3 = outfit_pieces
+#
+#                 show_outfits = True
+#
+#             except Exception as e:
+#                 print(f"Error generating outfits: {e}")
+#                 error_message = "Error generating outfits. Please try again."
+#
+#         print("Debug: Rendering template")
+#         return render_template(
+#             'outfit_of_the_day.html',
+#             outfit1=outfit1,
+#             outfit2=outfit2,
+#             outfit3=outfit3,
+#             city1=city1,
+#             city2=city2,
+#             city3=city3,
+#             show_generator=show_generator,
+#             show_outfits=show_outfits,
+#             success_message=success_message,
+#             error_message=error_message
+#         )
+#
+#     except Exception as e:
+#         print(f"Error in get_outfit: {str(e)}")
+#         return render_template(
+#             'outfit_of_the_day.html',
+#             error_message="An error occurred. Please try again.",
+#             show_generator=True,
+#             show_outfits=False,
+#             city1={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''},
+#             city2={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''},
+#             city3={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}
+#         )
 
 
 @app.route('/wardrobe', methods=['GET', 'POST'])
@@ -1085,10 +1386,6 @@ def save_uploaded_image(base64_string, user_id):
         print(f"Error saving image: {str(e)}")
         return None
 
-def normalize_path(file_path):
-    if not file_path:
-        return None
-    return file_path.replace('/static/static/', '/static/').lstrip('/')
 
 @app.route('/calendar', methods=['GET'])
 @login_required

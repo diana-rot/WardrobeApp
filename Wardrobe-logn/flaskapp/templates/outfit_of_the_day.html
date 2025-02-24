@@ -3,377 +3,382 @@
 {% block title %}Smart Outfit Generator{% endblock %}
 
 {% block extra_css %}
-<style>
-    .generator-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
+    <style>
+        .generator-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
-    .step {
-        display: none;
-    }
+        .step {
+            display: none;
+        }
 
-    .step.active {
-        display: block;
-    }
+        .step.active {
+            display: block;
+        }
 
-    .option-card {
-        border: 2px solid var(--accent-color);
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 15px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
+        .option-card {
+            border: 2px solid var(--accent-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-    .option-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
 
-    .option-card.selected {
-        background-color: var(--accent-color);
-        color: white;
-    }
+        .option-card.selected {
+            background-color: var(--accent-color);
+            color: white;
+        }
 
-    .outfit-card {
-        border: none;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        border-radius: 10px;
-        overflow: hidden;
-    }
+        .outfit-card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
 
-    .outfit-item {
-        text-align: center;
-        padding: 1rem;
-        border: 1px solid #eee;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
+        .outfit-item {
+            text-align: center;
+            padding: 1rem;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
 
-    .outfit-item img {
-        max-height: 250px;
-        width: auto;
-        object-fit: contain;
-        margin: 10px auto;
-    }
+        .outfit-item img {
+            max-height: 250px;
+            width: auto;
+            object-fit: contain;
+            margin: 10px auto;
+        }
 
-    .image-placeholder {
-        width: 100%;
-        height: 200px;
-        background-color: #f5f5f5;
-        border: 2px dashed #ddd;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #666;
-        margin-bottom: 1rem;
-    }
+        .image-placeholder {
+            width: 100%;
+            height: 200px;
+            background-color: #f5f5f5;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            margin-bottom: 1rem;
+        }
 
-    .weather-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-top: 10px;
-    }
+        .weather-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 10px;
+        }
 
-    .weather-icon {
-        width: 50px;
-        height: 50px;
-    }
-</style>
+        .weather-icon {
+            width: 50px;
+            height: 50px;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="generator-container">
-    {% if success_message %}
-    <div class="alert alert-success">
-        <h4 class="alert-heading">Success!</h4>
-        <p>{{ success_message }}</p>
-        <hr>
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('view_outfits_all') }}" class="btn btn-primary">View in Favorites</a>
-            <a href="{{ url_for('get_outfit') }}" class="btn btn-secondary">Generate New Outfit</a>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if error_message %}
-    <div class="alert alert-danger">
-        {{ error_message }}
-    </div>
-    {% endif %}
-
-    {% if show_generator %}
-    <div class="progress mb-4">
-        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-    </div>
-
-    <div id="stepsContainer">
-        <!-- Weather Step -->
-        <div class="step active" id="weatherStep">
-            <h2 class="mb-4">Step 1: Weather Consideration</h2>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="option-card" data-weather="include">
-                        <h4>Include Weather</h4>
-                        <p>Get recommendations based on current weather</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="option-card" data-weather="skip">
-                        <h4>Skip Weather</h4>
-                        <p>Choose an outfit without weather constraints</p>
-                    </div>
+    <div class="generator-container">
+        {% if success_message %}
+            <div class="alert alert-success">
+                <h4 class="alert-heading">Success!</h4>
+                <p>{{ success_message }}</p>
+                <hr>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('view_outfits_all') }}" class="btn btn-primary">View in Favorites</a>
+                    <a href="{{ url_for('get_outfit') }}" class="btn btn-secondary">Generate New Outfit</a>
                 </div>
             </div>
-        </div>
+        {% endif %}
 
-        <!-- City Step -->
-        <div class="step" id="cityStep">
-            <h2 class="mb-4">Step 2: Select City</h2>
-            <div class="row">
-                {% for city in [city1, city2, city3] %}
-                <div class="col-md-4">
-                    <div class="option-card" data-city="{{ city.city }}">
-                        <h4>{{ city.city }}</h4>
-                        <div class="weather-info">
-                            {% if city.icon %}
-                            <img src="http://openweathermap.org/img/w/{{ city.icon }}.png"
-                                 alt="Weather icon"
-                                 class="weather-icon">
-                            {% endif %}
-                            <div>
-                                <p class="mb-0">{{ city.temperature }}°C</p>
-                                <p class="text-muted mb-0">{{ city.description }}</p>
+        {% if error_message %}
+            <div class="alert alert-danger">
+                {{ error_message }}
+            </div>
+        {% endif %}
+
+        {% if show_generator %}
+            <div class="progress mb-4">
+                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+
+            <div id="stepsContainer">
+                <!-- Weather Step -->
+                <div class="step active" id="weatherStep">
+                    <h2 class="mb-4">Step 1: Weather Consideration</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="option-card" data-weather="include">
+                                <h4>Include Weather</h4>
+                                <p>Get recommendations based on current weather</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="option-card" data-weather="skip">
+                                <h4>Skip Weather</h4>
+                                <p>Choose an outfit without weather constraints</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-        </div>
 
-        <!-- Event Step -->
-        <div class="step" id="eventStep">
-            <h2 class="mb-4">Step 3: Choose Event</h2>
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="option-card" data-event="casual">
-                        <h4>Casual</h4>
-                        <p>Relaxed, everyday look</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="option-card" data-event="work">
-                        <h4>Work</h4>
-                        <p>Professional attire</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="option-card" data-event="event">
-                        <h4>Event</h4>
-                        <p>Special occasion</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="option-card" data-event="travel">
-                        <h4>Travel</h4>
-                        <p>Comfortable journey wear</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="d-flex justify-content-between mt-4">
-        <button id="prevBtn" class="btn btn-secondary" style="display:none;">Previous</button>
-        <button id="nextBtn" class="btn btn-primary">Next Step</button>
-    </div>
-    {% endif %}
-
-    {% if show_outfits %}
-    <div class="results-container mt-5">
-        <div class="row">
-            {% for outfit, index in [(outfit1, 1), (outfit2, 2), (outfit3, 3)] %}
-            <div class="col-md-4">
-                <div class="outfit-card">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">Outfit {{ index }}</h5>
-                    </div>
-                    <div class="card-body">
-                        {% if outfit %}
-                            {% for item in outfit %}
-                            <div class="outfit-item">
-                                {% if item.file_path %}
-                                    <img src="{{ url_for('static', filename=item.file_path.lstrip('/')) }}"
-                                         alt="{{ item.label }}"
-                                         class="img-fluid">
-                                {% else %}
-                                    <div class="image-placeholder">
-                                        <span>{{ item.label }}</span>
+                <!-- City Step -->
+                <div class="step" id="cityStep">
+                    <h2 class="mb-4">Step 2: Select City</h2>
+                    <div class="row">
+                        {% for city in [city1, city2, city3] %}
+                            <div class="col-md-4">
+                                <div class="option-card" data-city="{{ city.city }}">
+                                    <h4>{{ city.city }}</h4>
+                                    <div class="weather-info">
+                                        {% if city.icon %}
+                                            <img src="http://openweathermap.org/img/w/{{ city.icon }}.png"
+                                                 alt="Weather icon"
+                                                 class="weather-icon">
+                                        {% endif %}
+                                        <div>
+                                            <p class="mb-0">{{ city.temperature }}°C</p>
+                                            <p class="text-muted mb-0">{{ city.description }}</p>
+                                        </div>
                                     </div>
-                                {% endif %}
-                                <h6>{{ item.label }}</h6>
-                                <div class="rating mt-2">
-                                    {% set rating = item.nota|default(4) %}
-                                    {% for _ in range(rating) %}⭐{% endfor %}
                                 </div>
                             </div>
-                            {% endfor %}
-                            <form method="POST" class="mt-3">
-                                <input type="hidden" name="options" value="piece{{ index }}">
-                                <button type="submit" class="btn btn-primary w-100">Choose This Outfit</button>
-                            </form>
-                        {% else %}
-                            <p class="text-muted text-center">No items in this outfit</p>
-                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Event Step -->
+                <div class="step" id="eventStep">
+                    <h2 class="mb-4">Step 3: Choose Event</h2>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="option-card" data-event="casual">
+                                <h4>Casual</h4>
+                                <p>Relaxed, everyday look</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="option-card" data-event="work">
+                                <h4>Work</h4>
+                                <p>Professional attire</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="option-card" data-event="event">
+                                <h4>Event</h4>
+                                <p>Special occasion</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="option-card" data-event="travel">
+                                <h4>Travel</h4>
+                                <p>Comfortable journey wear</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            {% endfor %}
-        </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <button id="prevBtn" class="btn btn-secondary" style="display:none;">Previous</button>
+                <button id="nextBtn" class="btn btn-primary">Next Step</button>
+            </div>
+        {% endif %}
+
+
+        {% if show_outfits %}
+
+            <div class="results-container mt-5">
+                <div class="row">
+                    {% for outfit, index in [(outfit1, 1), (outfit2, 2), (outfit3, 3)] %}
+                        <div class="col-md-4">
+                            <div class="outfit-card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Outfit {{ index }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if outfit %}
+                                        {% for item in outfit %}
+                                            <div class="outfit-item">
+                                                {% if item.file_path %}
+                                                    <img src="{{ item.file_path|normalize_path }}" class="d-block w-100 img-fluid" alt="{{ item.label }}">
+                                                {% else %}
+                                                    <div class="image-placeholder">
+                                                        <span>{{ item.label }}</span>
+                                                    </div>
+                                                {% endif %}
+                                                <h6>{{ item.label }}</h6>
+                                                <div class="rating mt-2">
+                                                    {% set rating = item.nota|default(4) %}
+                                                    {% for _ in range(rating) %}⭐{% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                        <form method="POST" class="mt-3">
+                                            <input type="hidden" name="options" value="piece{{ index }}">
+                                            <button type="submit" class="btn btn-primary w-100">Choose This Outfit
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <p class="text-muted text-center">No items in this outfit</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
     </div>
-    {% endif %}
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    class OutfitGenerator {
-        constructor() {
-            this.currentStep = 1;
-            this.weatherSelection = null;
-            this.citySelection = null;
-            this.eventSelection = null;
+    <script>
+        class OutfitGenerator {
+            constructor() {
+                this.currentStep = 1;
+                this.weatherSelection = null;
+                this.citySelection = null;
+                this.eventSelection = null;
 
-            this.initializeEventListeners();
-            this.showStep(this.currentStep);
-        }
-
-        initializeEventListeners() {
-            document.querySelectorAll('.option-card').forEach(card => {
-                card.addEventListener('click', () => this.selectOption(card));
-            });
-
-            document.getElementById('prevBtn').addEventListener('click', () => this.previousStep());
-            document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
-        }
-
-        selectOption(card) {
-            const parentStep = card.closest('.step');
-            parentStep.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-
-            const stepId = parentStep.id;
-            switch(stepId) {
-                case 'weatherStep':
-                    this.weatherSelection = card.dataset.weather;
-                    if (this.weatherSelection === 'skip') {
-                        this.citySelection = 'none';
-                        this.currentStep = 2;
-                        this.showStep(3);
-                    }
-                    break;
-                case 'cityStep':
-                    this.citySelection = card.dataset.city;
-                    break;
-                case 'eventStep':
-                    this.eventSelection = card.dataset.event;
-                    break;
-            }
-        }
-
-        showStep(stepNumber) {
-            document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
-
-            if (this.weatherSelection === 'skip' && stepNumber === 2) {
-                stepNumber = 3;
-            }
-
-            document.querySelector(`#stepsContainer .step:nth-child(${stepNumber})`).classList.add('active');
-
-            const progressBar = document.querySelector('.progress-bar');
-            let progress;
-            if (this.weatherSelection === 'skip') {
-                progress = stepNumber === 1 ? 0 : stepNumber === 3 ? 100 : 50;
-            } else {
-                progress = (stepNumber - 1) * 50;
-            }
-            progressBar.style.width = `${progress}%`;
-
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-
-            prevBtn.style.display = stepNumber > 1 ? 'block' : 'none';
-            nextBtn.textContent = stepNumber === 3 ? 'Generate Outfit' : 'Next Step';
-        }
-
-        nextStep() {
-            if (this.validateStep()) {
-                if (this.currentStep < 3) {
-                    this.currentStep++;
-                    if (this.weatherSelection === 'skip' && this.currentStep === 2) {
-                        this.currentStep = 3;
-                    }
-                    this.showStep(this.currentStep);
-                } else {
-                    this.generateOutfit();
-                }
-            } else {
-                alert('Please select an option before proceeding.');
-            }
-        }
-
-        previousStep() {
-            if (this.currentStep > 1) {
-                if (this.weatherSelection === 'skip' && this.currentStep === 3) {
-                    this.currentStep = 1;
-                } else {
-                    this.currentStep--;
-                }
+                this.initializeEventListeners();
                 this.showStep(this.currentStep);
             }
-        }
 
-        validateStep() {
-            switch(this.currentStep) {
-                case 1: return this.weatherSelection !== null;
-                case 2: return this.weatherSelection === 'skip' || this.citySelection !== null;
-                case 3: return this.eventSelection !== null;
-                default: return false;
+            initializeEventListeners() {
+                document.querySelectorAll('.option-card').forEach(card => {
+                    card.addEventListener('click', () => this.selectOption(card));
+                });
+
+                document.getElementById('prevBtn').addEventListener('click', () => this.previousStep());
+                document.getElementById('nextBtn').addEventListener('click', () => this.nextStep());
+            }
+
+            selectOption(card) {
+                const parentStep = card.closest('.step');
+                parentStep.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+
+                const stepId = parentStep.id;
+                switch (stepId) {
+                    case 'weatherStep':
+                        this.weatherSelection = card.dataset.weather;
+                        if (this.weatherSelection === 'skip') {
+                            this.citySelection = 'none';
+                            this.currentStep = 2;
+                            this.showStep(3);
+                        }
+                        break;
+                    case 'cityStep':
+                        this.citySelection = card.dataset.city;
+                        break;
+                    case 'eventStep':
+                        this.eventSelection = card.dataset.event;
+                        break;
+                }
+            }
+
+            showStep(stepNumber) {
+                document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+
+                if (this.weatherSelection === 'skip' && stepNumber === 2) {
+                    stepNumber = 3;
+                }
+
+                document.querySelector(`#stepsContainer .step:nth-child(${stepNumber})`).classList.add('active');
+
+                const progressBar = document.querySelector('.progress-bar');
+                let progress;
+                if (this.weatherSelection === 'skip') {
+                    progress = stepNumber === 1 ? 0 : stepNumber === 3 ? 100 : 50;
+                } else {
+                    progress = (stepNumber - 1) * 50;
+                }
+                progressBar.style.width = `${progress}%`;
+
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
+
+                prevBtn.style.display = stepNumber > 1 ? 'block' : 'none';
+                nextBtn.textContent = stepNumber === 3 ? 'Generate Outfit' : 'Next Step';
+            }
+
+            nextStep() {
+                if (this.validateStep()) {
+                    if (this.currentStep < 3) {
+                        this.currentStep++;
+                        if (this.weatherSelection === 'skip' && this.currentStep === 2) {
+                            this.currentStep = 3;
+                        }
+                        this.showStep(this.currentStep);
+                    } else {
+                        this.generateOutfit();
+                    }
+                } else {
+                    alert('Please select an option before proceeding.');
+                }
+            }
+
+            previousStep() {
+                if (this.currentStep > 1) {
+                    if (this.weatherSelection === 'skip' && this.currentStep === 3) {
+                        this.currentStep = 1;
+                    } else {
+                        this.currentStep--;
+                    }
+                    this.showStep(this.currentStep);
+                }
+            }
+
+            validateStep() {
+                switch (this.currentStep) {
+                    case 1:
+                        return this.weatherSelection !== null;
+                    case 2:
+                        return this.weatherSelection === 'skip' || this.citySelection !== null;
+                    case 3:
+                        return this.eventSelection !== null;
+                    default:
+                        return false;
+                }
+            }
+
+            generateOutfit() {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/recommendations';
+
+                const inputs = {
+                    'weather': this.weatherSelection === 'include' ? 'yes' : 'no',
+                    'city': this.weatherSelection === 'include' ? this.citySelection : 'none',
+                    'events': this.eventSelection
+                };
+
+                Object.entries(inputs).forEach(([name, value]) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = value;
+                    form.appendChild(input);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
             }
         }
 
-        generateOutfit() {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/outfit/day';
-
-            const inputs = {
-                'weather': this.weatherSelection === 'include' ? 'yes' : 'no',
-                'city': this.weatherSelection === 'include' ? this.citySelection : 'none',
-                'events': this.eventSelection
-            };
-
-            Object.entries(inputs).forEach(([name, value]) => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = name;
-                input.value = value;
-                form.appendChild(input);
-            });
-
-            document.body.appendChild(form);
-            form.submit();
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        new OutfitGenerator();
-    });
-</script>
+        document.addEventListener('DOMContentLoaded', () => {
+            new OutfitGenerator();
+        });
+    </script>
 {% endblock %}
