@@ -1,65 +1,86 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<script src="../static/js/scripts.js"></script>{% extends "base.html" %}
+{% block title %}Your Favorite Outfits - WardrobeApp{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wardrobe-title {
+        color: var(--text-color);
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .carousel-item img {
+        max-height: 500px;
+        object-fit: contain;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .carousel-caption {
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 10px;
+        padding: 10px;
+    }
+
+    .carousel-control-prev, .carousel-control-next {
+        width: 8%;
+    }
+
+    .carousel-control-prev-icon, .carousel-control-next-icon {
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        padding: 15px;
+        width: 50px;
+        height: 50px;
+    }
+
+    .carousel-control-prev:hover .carousel-control-prev-icon,
+    .carousel-control-next:hover .carousel-control-next-icon {
+        background-color: rgba(0, 0, 0, 1);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="container mt-4">
+    <h1 class="wardrobe-title">Your Favorite Outfits</h1>
 
-<html lang="en">
-<style>
-table, th, td {
-  border:1px solid black;
-}
+    <div class="col-md-8 mx-auto">
+        {% set outfit_list = wardrobes | list %}
+        {% if outfit_list|length > 0 %}
+            <div id="outfitCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    {% for doc in outfit_list %}
+                        <button type="button" data-bs-target="#outfitCarousel" data-bs-slide-to="{{ loop.index0 }}" 
+                                {% if loop.first %}class="active"{% endif %}></button>
+                    {% endfor %}
+                </div>
 
+                <div class="carousel-inner">
+                    {% for doc in outfit_list %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            {% for item in doc['outfit'] %}
+                                <img src="{{ item.file_path }}" class="d-block w-100 img-fluid" alt="{{ item.label }}">
+                                <div class="carousel-caption d-none d-md-block">
+                                    <h5>{{ item.label }}</h5>
+                                    <p>{{ item.attribute }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
 
-</style>
-<head>
-
-</head>
-<body>
-<div class="card-wrapper">
-
-  <div class="card">
-        <div class="right">
-           <h2 class="center">ToolBox</h2>
-            <a href ="/dashboard" class="btn btn--secondary">Back to dashboard </a>
-            <a href ="/wardrobe" class="btn btn--secondary">Add to wardrobe </a>
-            <a href ="/outfit/day" class="btn btn--secondary">Generate outfits</a>
-            <a href ="/wardrobe/all" class="btn btn--secondary">View your wardrobe</a>
-      </div>
-  </div>
-
-
-<div class="card_display">
-<h2 class="left" >Your favorite outfits</h2>
-<table class="left">
-	<tr>
-		<th>OutfitNo</th>
-		<th>Label</th>
-		<th>Attribute</th>
-		<th>Picture</th>
-	</tr>
-
-
-	{% for doc in wardrobes %}
-	<tr>
-		<td>{{doc.outfitNo}} </td>
-		{% for item in doc['outfit'] %}
-		<tr>
-				<td>{{ item.label}} </td>
-				<td>{{ item.attribute }} </td>
-				<td> <img src= {{item.file_path}} > </td>
-		</tr>
-		{% endfor %}
-	</tr>
-	{% endfor %}
-</table>
-	   </div>
-
+                <button class="carousel-control-prev" type="button" data-bs-target="#outfitCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#outfitCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                </button>
+            </div>
+        {% else %}
+            <p class="text-center">No favorite outfits yet.</p>
+        {% endif %}
+    </div>
 </div>
-
-
-
-	</body>
-</html>
-
 {% endblock %}

@@ -1,314 +1,217 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>WardrobeApp - Neutral Pastel with Custom Card</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="/static/image/wardrobe1.png" type="image/png">
+{% extends "base.html" %}
 
-  <!-- Bootstrap CSS -->
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
-    rel="stylesheet"
-  >
-  <!-- Bootstrap Icons -->
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.7.2/font/bootstrap-icons.min.css"
-    rel="stylesheet"
-  >
+{% block title %}Dashboard - WardrobeApp{% endblock %}
 
-  <style>
-    /*
-      PALETĂ DE CULORI
-      - Fundal crem, accent bej/roz pal (#C8A68D) pentru carduri
-    */
-    :root {
-      --primary-color: #ffffff;      /* Fundal general crem deschis */
-      --secondary-color: #f3e5e1;    /* Crem pastel pentru zone majore: navbar/sidebar */
-      --accent-color: #c9ada7;       /* Bej/roz pal pentru carduri și hover */
-      --text-color: #333333;         /* Text închis */
-      --sidebar-width: 250px;
-
-      --transition-speed: 0.3s;      /* Pentru efecte de tranziție */
-    }
-
-    /* Dark Mode */
-    body.dark-mode {
-      --primary-color: #2C2C2C;
-      --secondary-color: #3C3C3C;
-      --accent-color: #555555;
-      --text-color: #F1F1F1;
-    }
-
-    /* Reset de bază */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      font-size: 16px;
-      background-color: var(--primary-color);
-      color: var(--text-color);
-      transition: background-color var(--transition-speed), color var(--transition-speed);
-    }
-
-    /* Navbar */
-    .navbar {
-      background-color: var(--secondary-color);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      position: fixed;
-      width: 100%;
-      z-index: 1000;
-      transition: background-color var(--transition-speed);
-    }
-
-    .navbar-brand {
-      font-weight: 600;
-      font-size: 1.2rem;
-    }
-
-    /* Butonul de toggle pentru Dark Mode */
-    .btn-darkmode {
-      border: none;
-      background: transparent;
-      font-size: 1.4rem;
-      color: var(--text-color);
-      transition: color var(--transition-speed);
-    }
-    .btn-darkmode:hover {
-      opacity: 0.7;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      position: fixed;
-      top: 56px; /* Înălțimea navbarului */
-      left: 0;
-      width: var(--sidebar-width);
-      height: calc(100vh - 56px);
-      background-color: var(--secondary-color);
-      padding: 20px;
-      box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-      transition: background-color var(--transition-speed);
-    }
-    .nav-link {
-      display: flex;
-      align-items: center;
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 8px;
-      color: var(--text-color);
-      text-decoration: none;
-      transition: background-color var(--transition-speed), color var(--transition-speed);
-    }
-    .nav-link i {
-      margin-right: 8px;
-      font-size: 1.2rem;
-    }
-    .nav-link:hover {
-      background-color: var(--accent-color);
-      text-decoration: none;
-    }
-
-    /* Conținut principal */
-    .main-content {
-      margin-left: var(--sidebar-width);
-      padding: 80px 20px 20px;
-      transition: margin-left var(--transition-speed);
-    }
-
-    /* Carduri */
-    .card {
-      border: none;
-      border-radius: 15px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      background-color: var(--accent-color);
-      transition: transform 0.2s, background-color var(--transition-speed);
-    }
-    .card:hover {
-      transform: translateY(-5px);
-    }
-    .card-title {
-      font-weight: 600;
-    }
-
-    /* Card de vreme */
+{% block extra_css %}
+<style>
+    /* Additional dashboard-specific styles */
     .weather-card {
-      margin-bottom: 15px;
-      padding: 15px;
-      border-radius: 10px;
-      background-color: var(--accent-color);
-      transition: background-color var(--transition-speed);
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 10px;
+        background-color: var(--accent-color);
+        transition: background-color var(--transition-speed);
     }
 
-    /* Iconița de vreme */
     .weather-icon {
-      width: 50px;
-      height: 50px;
+        width: 50px;
+        height: 50px;
     }
 
-    /* Profil user navbar */
-    .profile-img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-right: 8px;
+    .card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        background-color: var(--accent-color);
+        transition: transform 0.2s, background-color var(--transition-speed);
     }
 
-    /* Alte ajustări la input și butoane */
-    .form-control {
-      border-radius: 8px;
+    .card:hover {
+        transform: translateY(-5px);
     }
+
+    .card-title {
+        font-weight: 600;
+    }
+
     .btn-primary {
-      background-color: #9C7D68; /* O nuanță puțin mai închisă față de accent */
-      border: none;
-      transition: background-color var(--transition-speed);
+        background-color: #9C7D68;
+        border: none;
+        transition: background-color var(--transition-speed);
     }
+
     .btn-primary:hover {
-      background-color: #876955;
+        background-color: #876955;
     }
-  </style>
-</head>
-<body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg py-2">
-    <div class="container-fluid">
-      <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="../static/image/wardrobe1.png" alt="Logo" height="40" class="me-2">
-        WardrobeApp
-      </a>
-      <div class="d-flex align-items-center">
-        <button class="btn-darkmode me-3" onclick="toggleDarkMode()" title="Toggle Dark Mode">
-          <i class="bi bi-moon"></i>
-        </button>
-        <div class="d-flex align-items-center">
-          <img
-            src="https://via.placeholder.com/40"
-            alt="Profile"
-            class="profile-img"
-          >
-          <span>Welcome, User</span>
-        </div>
-      </div>
-    </div>
-  </nav>
+</style>
+{% endblock %}
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="nav flex-column">
-      <a href="/wardrobe" class="nav-link">
-        <i class="bi bi-plus-circle"></i> Add to Wardrobe
-      </a>
-      <a href="/outfit/day" class="nav-link">
-        <i class="bi bi-palette"></i> Generate Outfits
-      </a>
-      <a href="/wardrobe/all" class="nav-link">
-        <i class="bi bi-grid"></i> View Your Wardrobe
-      </a>
-      <a href="/outfits/all" class="nav-link">
-        <i class="bi bi-heart"></i> View Your Favourite Outfits
-      </a>
-      <a href="/calendar" class="nav-link">
-        <i class="bi bi-calendar"></i> Plan Your Outfits
-      </a>
-    </div>
-  </div>
-
-  <!-- Conținut principal -->
-  <div class="main-content">
-    <div class="container-fluid">
-      <div class="row g-4">
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-4">
         <!-- Weather Widget -->
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="card-title mb-4">Weather</h5>
-              <form id="weatherForm" method="POST">
-                <div class="input-group mb-3">
-                  <input
-                    type="text"
-                    class="form-control"
-                    name="city"
-                    placeholder="City Name"
-                  >
-                  <button class="btn btn-primary" type="submit">Add City</button>
-                </div>
-              </form>
-              <div id="weatherData">
-                <!-- Exemplu static -->
-                <div class="weather-card">
-                  <div class="d-flex align-items-center">
-                    <img
-                      src="https://openweathermap.org/img/wn/10d@2x.png"
-                      alt="Weather icon"
-                      class="weather-icon me-3"
-                    >
-                    <div>
-                      <h6 class="mb-1">București</h6>
-                      <div class="text-muted">7.1° C</div>
-                      <small>light rain</small>
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Weather</h5>
+                    <form id="weatherForm" method="POST">
+                        <div class="input-group mb-3">
+                            <input type="text"
+                                   class="form-control"
+                                   name="city"
+                                   id="cityInput"
+                                   placeholder="City Name"
+                                   required>
+                            <button class="btn btn-primary" type="submit">Add City</button>
+                        </div>
+                    </form>
+                    <div id="weatherData">
+                        {% for weather in weather_data %}
+                        <div class="weather-card" data-city="{{ weather.city }}">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png"
+                                         alt="Weather icon"
+                                         class="weather-icon me-3">
+                                    <div>
+                                        <h6 class="mb-1">{{ weather.city }}</h6>
+                                        <div class="text-muted">{{ weather.temperature }}° C</div>
+                                        <small>{{ weather.description }}</small>
+                                    </div>
+                                </div>
+                                <button class="btn btn-link text-danger delete-city"
+                                        data-city="{{ weather.city }}"
+                                        title="Remove city">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
-                  </div>
                 </div>
-                <div class="weather-card">
-                  <div class="d-flex align-items-center">
-                    <img
-                      src="https://openweathermap.org/img/wn/01d@2x.png"
-                      alt="Weather icon"
-                      class="weather-icon me-3"
-                    >
-                    <div>
-                      <h6 class="mb-1">Timișoara</h6>
-                      <div class="text-muted">10.2° C</div>
-                      <small>clear sky</small>
-                    </div>
-                  </div>
-                </div>
-                <!-- end exemplu -->
-              </div>
             </div>
-          </div>
         </div>
-        <!-- Alte carduri, secțiuni etc. -->
-      </div>
+        <!-- Add more dashboard widgets here -->
     </div>
-  </div>
+</div>
 
-  <!-- Bootstrap Bundle with Popper -->
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"
-  ></script>
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="cityToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-warning text-dark">
+            <strong class="me-auto">Notice</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+{% endblock %}
 
-  <!-- Dark Mode Toggle Script -->
-  <script>
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark-mode');
-      const isDark = document.body.classList.contains('dark-mode');
-      localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const weatherForm = document.getElementById('weatherForm');
+    const weatherData = document.getElementById('weatherData');
+    const cityToast = document.getElementById('cityToast');
+    const toastMessage = document.getElementById('toastMessage');
 
-      const moonIcon = document.querySelector('.btn-darkmode i');
-      if (isDark) {
-        moonIcon.classList.remove('bi-moon');
-        moonIcon.classList.add('bi-sun');
-      } else {
-        moonIcon.classList.remove('bi-sun');
-        moonIcon.classList.add('bi-moon');
-      }
+    // Initialize toast
+    const toast = new bootstrap.Toast(cityToast, {
+        delay: 3000
+    });
+
+    // Function to create weather card HTML
+    function createWeatherCard(weather) {
+        return `
+            <div class="weather-card" data-city="${weather.city}">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <img src="https://openweathermap.org/img/wn/${weather.icon}@2x.png"
+                             alt="Weather icon"
+                             class="weather-icon me-3">
+                        <div>
+                            <h6 class="mb-1">${weather.city}</h6>
+                            <div class="text-muted">${weather.temperature}° C</div>
+                            <small>${weather.description}</small>
+                        </div>
+                    </div>
+                    <button class="btn btn-link text-danger delete-city"
+                            data-city="${weather.city}"
+                            title="Remove city">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
-    // Reține setarea Dark Mode
-    document.addEventListener('DOMContentLoaded', function() {
-      if (localStorage.getItem('darkMode') === 'enabled') {
-        document.body.classList.add('dark-mode');
-        const moonIcon = document.querySelector('.btn-darkmode i');
-        moonIcon.classList.remove('bi-moon');
-        moonIcon.classList.add('bi-sun');
-      }
+    // Handle delete city
+    weatherData.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-city');
+        if (!deleteBtn) return;
+
+        const cityName = deleteBtn.dataset.city;
+        const weatherCard = deleteBtn.closest('.weather-card');
+
+        if (confirm(`Are you sure you want to remove ${cityName} from your weather list?`)) {
+            fetch(`/dashboard/delete_city/${encodeURIComponent(cityName)}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    weatherCard.remove();
+                    toastMessage.textContent = data.message;
+                    toast.show();
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                toastMessage.textContent = 'Error removing city. Please try again.';
+                toast.show();
+            });
+        }
     });
-  </script>
-</body>
-</html>
+
+    // Handle form submission
+    weatherForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const cityInput = document.getElementById('cityInput');
+        const formData = new FormData(weatherForm);
+
+        fetch('/dashboard/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
+        .then(data => {
+            data.weather_data.forEach(weather => {
+                const weatherCard = createWeatherCard(weather);
+                weatherData.insertAdjacentHTML('beforeend', weatherCard);
+            });
+            cityInput.value = '';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toastMessage.textContent = error.error === 'duplicate' ? 
+                error.message : 'Error adding city. Please try again.';
+            toast.show();
+        });
+    });
+});
+</script>
+{% endblock %}
