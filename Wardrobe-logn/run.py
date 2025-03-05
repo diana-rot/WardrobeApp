@@ -28,7 +28,8 @@ from sklearn.metrics import confusion_matrix
 import joblib
 
 from flask import send_file
-
+from flask_cors import CORS
+from api import api_bp
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
@@ -1089,11 +1090,6 @@ def customize_avatar():
 
 
 
-
-
-
-
-
 # calendar logic
 
 UPLOAD_FOLDER = 'static/image_users/'
@@ -1132,7 +1128,6 @@ def get_wardrobe_items():
             })
 
     return jsonify(grouped_items)
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
@@ -1286,5 +1281,75 @@ def delete_calendar_outfit():
     return jsonify({"success": False, "message": "Outfit not found!"}), 404
 
 
+#API - MOBILE DEV
+
+def get_local_ip():
+    try:
+        # Create a temporary socket to get local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except Exception:
+        return '127.0.0.1'
+
+
+def ensure_directories():
+    directories = [
+        os.path.join('flaskapp', 'static', 'image_users'),
+        os.path.join('flaskapp', 'static', 'uploads')
+    ]
+    for directory in directories:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+# Debugging route to check connection
+@app.route('/ping')
+def ping():
+    return jsonify({
+        "message": "Server is running",
+        "local_ip": get_local_ip()
+    })
+
+# Add CORS support
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "http://localhost:3000",      # React web
+            "http://10.0.2.2:3000",       # Android emulator
+            "http://127.0.0.1:3000",      # Local development
+            "capacitor://localhost",      # Capacitor
+            "http://localhost",
+            "http://10.0.2.2:5000"        # Your Flask server
+        ]
+    }
+})
+
+# Add a secret key if not already present
+app.config['SECRET_KEY'] = 'your-secret-key-change-this-in-production'
+
+# Register the API blueprint
+app.register_blueprint(api_bp)
+
+
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
+    if not os.path.exists(os.path.join('flaskapp', 'static', 'image_users')):
+        os.makedirs(os.path.join('flaskapp', 'static', 'image_users'))
+
+        ensure_directories()
+
+        # Get local IP
+        local_ip = get_local_ip()
+
+        # Print connection details
+        print(f"Server will run on:")
+        print(f"- http://127.0.0.1:5000")
+        print(f"- http://{local_ip}:5000")
+    app.run(
+        host='0.0.0.0',  # Important for mobile access
+        port=5000,
+        debug=True,
+        use_reloader=False
+    )
+

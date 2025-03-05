@@ -1,221 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}WardrobeApp{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/static/image/wardrobe1.png" type="image/png">
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.7.2/font/bootstrap-icons.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>WardrobeApp</title>
 
-    <style>
-        :root {
-            --primary-color: #ffffff;
-            --secondary-color: #f3e5e1;
-            --accent-color: #c9ada7;
-            --text-color: #333333;
-            --sidebar-width: 250px;
-            --transition-speed: 0.3s;
-        }
-
-        body.dark-mode {
-            --primary-color: #2C2C2C;
-            --secondary-color: #3C3C3C;
-            --accent-color: #555555;
-            --text-color: #F1F1F1;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            transition: background-color var(--transition-speed), color var(--transition-speed);
-        }
-
-        .navbar {
-            background-color: var(--secondary-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: fixed;
-            width: 100%;
-            z-index: 1000;
-            transition: background-color var(--transition-speed);
-        }
-
-        .sidebar {
-            position: fixed;
-            top: 56px;
-            left: 0;
-            width: var(--sidebar-width);
-            height: calc(100vh - 56px);
-            background-color: var(--secondary-color);
-            padding: 20px;
-            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-            transition: background-color var(--transition-speed);
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 8px;
-            color: var(--text-color);
-            text-decoration: none;
-            transition: background-color var(--transition-speed);
-        }
-
-        .nav-link i {
-            margin-right: 8px;
-            font-size: 1.2rem;
-        }
-
-        .nav-link:hover {
-            background-color: var(--accent-color);
-            color: #ffffff;
-        }
-
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 80px 20px 20px;
-            transition: margin-left var(--transition-speed);
-        }
-
-        .profile-img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 8px;
-        }
-
-        .btn-darkmode {
-            border: none;
-            background: transparent;
-            font-size: 1.4rem;
-            color: var(--text-color);
-            transition: color var(--transition-speed);
-        }
-    </style>
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg py-2">
-        <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="/dashboard">
-                <img src="/static/image/wardrobe1.png" alt="Logo" height="40" class="me-2">
-                WardrobeApp
-            </a>
-            <div class="d-flex align-items-center">
-                <button class="btn-darkmode me-3" onclick="toggleDarkMode()" title="Toggle Dark Mode">
-                    <i class="bi bi-moon"></i>
-                </button>
-                <div class="dropdown">
-                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="{{ get_user_profile_picture() }}"
-                             alt="Profile"
-                             class="profile-img">
-                        <span>Welcome, {{ session['user'].get('name', 'User') }}</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/profile">Profile Settings</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/user/signout">Sign Out</a></li>
-                    </ul>
-                </div>
-            </div>
+  <link rel="stylesheet" href="/static/css/normalize.css">
+  <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+ <nav class="navbar navbar-expand-lg navbar-dark navbar-full" style="background-color: #f2e9e4">
+        <div class="container">
+            <a class="navbar-brand" href="#"> <img src="../static/image/wardrobe1.png"  ></a>
         </div>
     </nav>
+</head>
+<body>
 
-    <!-- Sidebar -->
-<!-- Sidebar -->
-<div class="sidebar">
-    <div class="nav flex-column">
-
-
-        {% if request.endpoint != 'add_wardrobe' %}
-        <a href="/wardrobe" class="nav-link">
-            <i class="bi bi-plus-circle"></i> Add to Wardrobe
-        </a>
-        {% endif %}
-
-      {% if request.endpoint != 'view_wardrobe_all' %}
-        <a href="/wardrobe/all" class="nav-link">
-            <i class="bi bi-grid"></i> View Your Wardrobe
-        </a>
-        {% endif %}
-
-        {% if request.endpoint != 'get_outfit' %}
-        <a href="/recommendations" class="nav-link">
-            <i class="bi bi-palette"></i> Generate Outfits
-        </a>
-        {% endif %}
+  {% block content %}
 
 
-        {% if request.endpoint != 'view_outfits_all' %}
-        <a href="/outfits/all" class="nav-link">
-            <i class="bi bi-heart"></i> View Your Favourite Outfits
-        </a>
-        {% endif %}
+    {# Template inserted here #}
+  {% endblock %}
 
-        {% if request.endpoint != 'calendar_view' %}
-        <a href="/calendar" class="nav-link">
-            <i class="bi bi-calendar"></i> Plan Your Outfits
-        </a>
-        {% endif %}
-
-       {% if request.endpoint != 'avatar' %}
-        <a href="/avatar" class="nav-link">
-            <i class="bi bi-person-circle"></i> Avatar
-        </a>
-        {% endif %}
-
-     {% if request.endpoint != 'dashboard' %}
-        <a href="/dashboard" class="nav-link">
-            <i class="bi bi-speedometer2"></i> Dashboard
-        </a>
-        {% endif %}
-
-
-    </div>
-</div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        {% block content %}{% endblock %}
-    </div>
-
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
-
-            const moonIcon = document.querySelector('.btn-darkmode i');
-            if (isDark) {
-                moonIcon.classList.remove('bi-moon');
-                moonIcon.classList.add('bi-sun');
-            } else {
-                moonIcon.classList.remove('bi-sun');
-                moonIcon.classList.add('bi-moon');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            if (localStorage.getItem('darkMode') === 'enabled') {
-                document.body.classList.add('dark-mode');
-                const moonIcon = document.querySelector('.btn-darkmode i');
-                moonIcon.classList.remove('bi-moon');
-                moonIcon.classList.add('bi-sun');
-            }
-        });
-    </script>
-    {% block extra_js %}{% endblock %}
+  <script src="/static/js/jquery.js"></script>
+  <script src="/static/js/scripts.js"></script>
+ <script src="/static/js/main.js"></script>
 </body>
 </html>
