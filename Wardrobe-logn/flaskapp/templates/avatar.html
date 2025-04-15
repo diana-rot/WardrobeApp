@@ -54,45 +54,152 @@
 {% endblock %}
 
 {% block content %}
-<div id="avatar-container"></div>
-
-<div id="customization-panel">
-    <div class="control-group">
-        <label>Gender</label>
-        <select id="gender-select">
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-        </select>
-    </div>
-
-    <div class="control-group">
-        <label>Skin Color</label>
-        <input type="color" id="skin-color" value="{{ user_preferences.skinColor }}">
-    </div>
-
-    <div class="control-group">
-        <label>Hair Color</label>
-        <input type="color" id="hair-color" value="{{ user_preferences.hairColor }}">
-    </div>
-
-    <div class="control-group">
-        <label>Hair Style</label>
-        <select id="hair-style">
-            <option value="default">Default</option>
-            <option value="short">Short</option>
-            <option value="long">Long</option>
-            <option value="ponytail">Ponytail</option>
-            <option value="bun">Bun</option>
-        </select>
-    </div>
-
-    <div class="control-group">
-        <label>Clothes</label>
-        <div id="clothes-list">
-            <!-- Will be populated dynamically -->
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Create Your 3D Avatar</h3>
+                </div>
+                <div class="card-body">
+                    <form id="avatarForm" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="photo">Upload Your Photo</label>
+                            <input type="file" class="form-control-file" id="photo" name="photo" accept="image/*" required>
+                            <small class="form-text text-muted">Please upload a clear, front-facing photo of your face.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Generate Avatar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Your 3D Avatar</h3>
+                </div>
+                <div class="card-body">
+                    <div id="avatarContainer" style="width: 100%; height: 400px;">
+                        <!-- Three.js will render here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Three.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let scene, camera, renderer, avatar;
+
+function initThreeJS() {
+    // Create scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+
+    // Create camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
+
+    // Create renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(document.getElementById('avatarContainer').offsetWidth, 
+                    document.getElementById('avatarContainer').offsetHeight);
+    document.getElementById('avatarContainer').appendChild(renderer.domElement);
+
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(0, 1, 0);
+    scene.add(directionalLight);
+
+    // Start animation loop
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (avatar) {
+        avatar.rotation.y += 0.01;
+    }
+    renderer.render(scene, camera);
+}
+
+function updateAvatar(landmarks) {
+    // Remove existing avatar if any
+    if (avatar) {
+        scene.remove(avatar);
+    }
+
+    // Create geometry for face
+    const geometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const indices = [];
+
+    // Convert landmarks to vertices
+    landmarks.forEach((landmark, index) => {
+        vertices.push(landmark.x * 2 - 1, -landmark.y * 2 + 1, landmark.z);
+        indices.push(index);
+    });
+
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+
+    // Create material
+    const material = new THREE.MeshPhongMaterial({
+        color: 0x808080,
+        wireframe: true
+    });
+
+    // Create mesh
+    avatar = new THREE.Mesh(geometry, material);
+    scene.add(avatar);
+}
+
+// Handle form submission
+document.getElementById('avatarForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const photoInput = document.getElementById('photo');
+    formData.append('photo', photoInput.files[0]);
+
+    try {
+        const response = await fetch('/api/avatar/generate', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            updateAvatar(data.avatarData.landmarks);
+        } else {
+            alert(data.error || 'Failed to generate avatar');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while generating the avatar');
+    }
+});
+
+// Initialize Three.js when page loads
+window.addEventListener('load', initThreeJS);
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    if (camera && renderer) {
+        camera.aspect = document.getElementById('avatarContainer').offsetWidth / 
+                       document.getElementById('avatarContainer').offsetHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(document.getElementById('avatarContainer').offsetWidth,
+                        document.getElementById('avatarContainer').offsetHeight);
+    }
+});
+</script>
 {% endblock %}
 
 {% block extra_js %}

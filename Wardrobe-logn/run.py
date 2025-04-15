@@ -1518,5 +1518,6 @@ def delete_calendar_outfit():
     return jsonify({"success": False, "message": "Outfit not found!"}), 404
 
 
+
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
