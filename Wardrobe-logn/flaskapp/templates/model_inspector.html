@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Inspector</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        #header {
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        #buttonContainer {
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #mainContent {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        #modelContainer {
+            flex: 1;
+            position: relative;
+        }
+        
+        #meshList {
+            width: 250px;
+            background-color: #f8f8f8;
+            border-left: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        
+        .mesh-item {
+            padding: 8px;
+            margin-bottom: 4px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .mesh-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>3D Model Inspector</h1>
+        <p>Click on a mesh name to highlight it in the model.</p>
+    </div>
+    
+    <div id="buttonContainer"></div>
+    
+    <div id="mainContent">
+        <div id="modelContainer"></div>
+        <div id="meshList"></div>
+    </div>
+    
+    <script type="module" src="{{ url_for('static', filename='js/model_inspector.js') }}"></script>
+</body>
+</html> 

@@ -1,110 +1,294 @@
 {% extends "base.html" %}
 
-{% block title %}Avatar Customization - WardrobeApp{% endblock %}
+{% block title %}3D Avatar Creator - WardrobeApp{% endblock %}
 
 {% block extra_css %}
 <style>
     body {
+        margin: 0;
+        padding: 0;
         overflow: hidden;
     }
 
-    #avatar-container {
-        flex: 1;
-        height: calc(100vh - 56px);
-        margin-left: var(--sidebar-width);
+    .main-content {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
     }
 
     #customization-panel {
-        width: 300px;
-        padding: 20px;
+        width: 320px;
         background: white;
-        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
         overflow-y: auto;
-        position: fixed;
-        right: 0;
-        top: 56px;
-        height: calc(100vh - 56px);
+        padding: 20px;
+        z-index: 100;
+        height: 100vh;
+    }
+
+    #avatarContainer {
+        flex: 1;
+        position: relative;
+        background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
     }
 
     .control-group {
         margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
     }
 
-    .control-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: bold;
+    .control-group h3 {
+        margin-top: 0;
+        color: #333;
     }
 
-    select, input[type="color"] {
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    select, input[type="file"], input[type="range"], input[type="color"] {
         width: 100%;
         padding: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
         border: 1px solid #ddd;
         border-radius: 4px;
     }
 
-    .clothes-item {
-        margin-bottom: 10px;
-        padding: 8px;
-        border: 1px solid #eee;
+    .btn-primary {
+        background: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
         border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+
+    .btn-primary:hover {
+        background: #45a049;
+    }
+
+    .btn-secondary {
+        background: #2196F3;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background-color 0.3s;
+    }
+
+    .btn-secondary:hover {
+        background: #0b7dda;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        color: white;
+        z-index: 10;
+    }
+
+    .spinner {
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 5px solid #fff;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .wardrobe-items {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .wardrobe-item {
+        border: 2px solid #eee;
+        border-radius: 5px;
+        padding: 5px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .wardrobe-item:hover {
+        border-color: #4CAF50;
+        transform: translateY(-2px);
+    }
+
+    .wardrobe-item.selected {
+        border-color: #4CAF50;
+        background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    .wardrobe-item img {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 3px;
+    }
+
+    .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    #loading-overlay {
+        display: none;
+    }
+
+    #photo-preview {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+
+    .tab-control {
+        display: flex;
+        margin-bottom: 15px;
+    }
+
+    .tab-button {
+        flex: 1;
+        padding: 8px;
+        text-align: center;
+        background: #f1f1f1;
+        cursor: pointer;
+        border: 1px solid #ddd;
+    }
+
+    .tab-button.active {
+        background: #4CAF50;
+        color: white;
+        border-color: #4CAF50;
+    }
+
+    .tab-button:first-child {
+        border-radius: 4px 0 0 4px;
+    }
+
+    .tab-button:last-child {
+        border-radius: 0 4px 4px 0;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div id="avatar-container"></div>
+<div class="main-content">
+    <!-- Left Panel -->
+    <div id="customization-panel">
+        <div class="control-group">
+            <h3>Avatar Customization</h3>
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" class="form-control">
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="photo">Upload Photo:</label>
+                <input type="file" id="photo" accept="image/*" class="form-control">
+                <div class="help-text">Upload a photo to generate a similar avatar</div>
+            </div>
+            
+            <button id="generateAvatar" class="btn btn-primary">Generate Avatar</button>
+        </div>
 
-<div id="customization-panel">
-    <div class="control-group">
-        <label>Gender</label>
-        <select id="gender-select">
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-        </select>
+        <div class="control-group">
+            <h3>Customize Appearance</h3>
+            <div class="form-group">
+                <label for="skinTone">Skin Tone:</label>
+                <input type="color" id="skinTone" value="#FFE0BD" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="hairStyle">Hair Style:</label>
+                <select id="hairStyle" class="form-control">
+                    <option value="style1">Short</option>
+                    <option value="style2">Medium</option>
+                    <option value="style3">Long</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="hairColor">Hair Color:</label>
+                <input type="color" id="hairColor" value="#000000" class="form-control">
+            </div>
+            
+            <button id="updateAvatar" class="btn btn-primary">Update Avatar</button>
+        </div>
+
+        <div class="control-group">
+            <h3>Try On Clothes</h3>
+            <div class="form-group">
+                <label for="clothingCategory">Category:</label>
+                <select id="clothingCategory" class="form-control">
+                    <option value="tops">Tops</option>
+                    <option value="bottoms">Bottoms</option>
+                    <option value="dresses">Dresses</option>
+                    <option value="outerwear">Outerwear</option>
+                    <option value="shoes">Shoes</option>
+                    <option value="accessories">Accessories</option>
+                </select>
+            </div>
+            <div id="wardrobeItems" class="wardrobe-items">
+                <!-- Wardrobe items will be loaded here -->
+            </div>
+        </div>
     </div>
 
-    <div class="control-group">
-        <label>Skin Color</label>
-        <input type="color" id="skin-color" value="{{ user_preferences.skinColor }}">
-    </div>
-
-    <div class="control-group">
-        <label>Hair Color</label>
-        <input type="color" id="hair-color" value="{{ user_preferences.hairColor }}">
-    </div>
-
-    <div class="control-group">
-        <label>Hair Style</label>
-        <select id="hair-style">
-            <option value="default">Default</option>
-            <option value="short">Short</option>
-            <option value="long">Long</option>
-            <option value="ponytail">Ponytail</option>
-            <option value="bun">Bun</option>
-        </select>
-    </div>
-
-    <div class="control-group">
-        <label>Clothes</label>
-        <div id="clothes-list">
-            <!-- Will be populated dynamically -->
+    <!-- Avatar Container -->
+    <div id="avatarContainer">
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <div id="loading-text">Loading avatar...</div>
+            <div id="loading-progress">0%</div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script async src="https://unpkg.com/es-module-shims@1.7.0/dist/es-module-shims.js"></script>
-<script type="importmap">
-{
-    "imports": {
-        "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/",
-        "three/examples/jsm/": "https://unpkg.com/three@0.157.0/examples/jsm/"
-    }
-}
-</script>
-<script type="module" src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
 {% endblock %}

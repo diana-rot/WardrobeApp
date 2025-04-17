@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}WardrobeApp{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <link rel="icon" href="/static/image/wardrobe1.png" type="image/png">
 
     <!-- Bootstrap CSS -->
@@ -98,6 +98,59 @@
             color: var(--text-color);
             transition: color var(--transition-speed);
         }
+
+        /* Mobile responsive design */
+@media (max-width: 768px) {
+    /* Reset fixed positioning */
+    html, body {
+        height: 100%;
+        overflow-y: auto !important;
+        position: relative;
+    }
+
+    .navbar {
+        position: relative !important;
+        z-index: 1030;
+    }
+
+    .sidebar {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        box-shadow: none;
+        margin-bottom: 15px;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 15px;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Force scrollable containers */
+    .weather-container {
+        width: 100%;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* Fix scrolling on entire document */
+    body > * {
+        position: relative !important;
+    }
+
+    /* Force all fixed elements to be static */
+    .fixed-top, .fixed-bottom, .sticky-top, [style*="position: fixed"], [style*="position:fixed"] {
+        position: relative !important;
+    }
+
+    /* Ensure content doesn't get cut off */
+    .container, .container-fluid {
+        padding-bottom: 50px;
+    }
+}
     </style>
     {% block extra_css %}{% endblock %}
 </head>

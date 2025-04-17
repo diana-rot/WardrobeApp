@@ -1517,6 +1517,351 @@ def delete_calendar_outfit():
         return jsonify({"success": True, "message": "Outfit deleted successfully!"})
     return jsonify({"success": False, "message": "Outfit not found!"}), 404
 
+# # Enhanced Avatar generation imports
+# import mediapipe as mp
+# import cv2
+# import numpy as np
+# from PIL import Image
+# import json
+# import base64
+# from io import BytesIO
+# import colorsys
+# from sklearn.cluster import KMeans
+#
+# # Initialize MediaPipe Face Mesh
+# mp_face_mesh = mp.solutions.face_mesh
+# face_mesh = mp_face_mesh.FaceMesh(
+#     static_image_mode=True,
+#     max_num_faces=1,
+#     min_detection_confidence=0.5,
+#     min_tracking_confidence=0.5
+# )
+#
+# def extract_facial_features(image_path):
+#     """Extract facial features using MediaPipe Face Mesh."""
+#     image = cv2.imread(image_path)
+#     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     results = face_mesh.process(image_rgb)
+#
+#     if not results.multi_face_landmarks:
+#         raise ValueError("No face detected in the image")
+#
+#     landmarks = results.multi_face_landmarks[0]
+#
+#     # Extract key facial features
+#     features = {
+#         'face_width': landmarks.landmark[234].x - landmarks.landmark[454].x,
+#         'face_height': landmarks.landmark[152].y - landmarks.landmark[10].y,
+#         'eye_distance': landmarks.landmark[33].x - landmarks.landmark[263].x,
+#         'nose_length': landmarks.landmark[6].y - landmarks.landmark[94].y,
+#         'mouth_width': landmarks.landmark[61].x - landmarks.landmark[291].x
+#     }
+#
+#     return features
+#
+# def analyze_skin_tone(image_path):
+#     """Analyze skin tone from the uploaded image."""
+#     image = cv2.imread(image_path)
+#     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     results = face_mesh.process(image_rgb)
+#
+#     if not results.multi_face_landmarks:
+#         raise ValueError("No face detected in the image")
+#
+#     # Get face region
+#     landmarks = results.multi_face_landmarks[0]
+#     face_points = np.array([[int(l.x * image.shape[1]), int(l.y * image.shape[0])]
+#                           for l in landmarks.landmark])
+#
+#     # Create mask for face region
+#     mask = np.zeros(image.shape[:2], dtype=np.uint8)
+#     cv2.fillConvexPoly(mask, face_points, 255)
+#
+#     # Get average skin color
+#     face_region = cv2.bitwise_and(image, image, mask=mask)
+#     skin_color = cv2.mean(face_region, mask=mask)[:3]
+#
+#     return [int(c) for c in skin_color]
+#
+# @app.route('/api/avatar/generate', methods=['POST'])
+# @login_required
+# def generate_avatar():
+#     try:
+#         if 'photo' not in request.files:
+#             return jsonify({'error': 'No photo uploaded'}), 400
+#
+#         photo = request.files['photo']
+#         gender = request.form.get('gender', 'female')
+#
+#         if photo.filename == '':
+#             return jsonify({'error': 'No selected file'}), 400
+#
+#         # Save uploaded photo
+#         filename = secure_filename(photo.filename)
+#         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#         photo.save(filepath)
+#
+#         # Extract facial features
+#         features = extract_facial_features(filepath)
+#
+#         # Analyze skin tone
+#         skin_color = analyze_skin_tone(filepath)
+#
+#         # Prepare avatar data
+#         avatar_data = {
+#             'model_path': MODEL_PATHS[gender]['model'],
+#             'textures': MODEL_PATHS[gender]['textures'],
+#             'features': features,
+#             'skin_color': skin_color,
+#             'gender': gender
+#         }
+#
+#         # Save avatar data to user's profile
+#         user_id = session.get('user_id')
+#         if user_id:
+#             db.users.update_one(
+#                 {'_id': ObjectId(user_id)},
+#                 {'$set': {'avatar_data': avatar_data}}
+#             )
+#
+#         return jsonify(avatar_data)
+#
+#     except Exception as e:
+#         app.logger.error(f"Error in generate_avatar: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+# @app.route('/api/avatar/get', methods=['GET'])
+# @login_required
+# def get_user_avatar_data():
+#     """Get user's current avatar data"""
+#     try:
+#         user_id = session['user']['_id']
+#         avatar_doc = db.avatars.find_one({'userId': user_id})
+#
+#         if not avatar_doc:
+#             return jsonify({'error': 'No avatar found'}), 404
+#
+#         # Get the avatar data
+#         avatar_data = avatar_doc.get('avatarData', {})
+#
+#         # Add the model path if not present
+#         if 'model_path' not in avatar_data and 'gender' in avatar_data:
+#             avatar_data['model_path'] = MODEL_PATHS[avatar_data['gender'].lower()]
+#
+#         return jsonify({
+#             'success': True,
+#             'avatarData': avatar_data
+#         })
+#
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+#
+# # New endpoint for trying on clothes
+# @app.route('/api/avatar/try-on', methods=['POST'])
+# @login_required
+# def try_on_clothes():
+#     """Try on clothes from wardrobe on the avatar"""
+#     try:
+#         user_id = session['user']['_id']
+#         item_id = request.json.get('itemId')
+#
+#         if not item_id:
+#             return jsonify({'error': 'No item ID provided'}), 400
+#
+#         # Get the clothing item from the wardrobe
+#         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+#
+#         if not item:
+#             return jsonify({'error': 'Item not found'}), 404
+#
+#         # Get the avatar data
+#         avatar_data = db.avatars.find_one({'userId': user_id})
+#
+#         if not avatar_data:
+#             return jsonify({'error': 'No avatar found. Please create an avatar first.'}), 404
+#
+#         # Return the item data for the avatar to wear
+#         return jsonify({
+#             'success': True,
+#             'item': {
+#                 'id': str(item['_id']),
+#                 'type': item.get('label', '').lower(),
+#                 'color': item.get('color', ''),
+#                 'image_url': normalize_path(item.get('file_path', ''))
+#             }
+#         })
+#
+#     except Exception as e:
+#         print(f"Error in try_on_clothes: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+# @app.route('/model-inspector')
+# @login_required
+# def model_inspector():
+#     return render_template('model_inspector.html')
+#
+#
+# # Update avatar data
+# @app.route('/api/avatar/update', methods=['POST'])
+# @login_required
+# def update_avatar():
+#     try:
+#         user_id = session['user']['_id']
+#         avatar_data = request.json
+#
+#         if not avatar_data:
+#             return jsonify({'error': 'No avatar data provided'}), 400
+#
+#         # Update avatar document
+#         result = db.avatars.update_one(
+#             {'userId': user_id},
+#             {
+#                 '$set': {
+#                     'avatarData': avatar_data,
+#                     'updatedAt': datetime.now()
+#                 }
+#             },
+#             upsert=True
+#         )
+#
+#         return jsonify({
+#             'success': True,
+#             'message': 'Avatar updated successfully'
+#         })
+#
+#     except Exception as e:
+#         print(f"Error updating avatar: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+#
+
+import requests
+import base64
+from io import BytesIO
+from PIL import Image
+
+# Ready Player Me API Key - Replace with your own from RPM partner dashboard
+RPM_API_KEY = "your_rpm_api_key"
+
+
+@app.route('/api/avatar/generate-from-photo', methods=['POST'])
+@login_required
+def generate_avatar_from_photo():
+    try:
+        # Check if photo is in request
+        if 'photo' not in request.files:
+            return jsonify({'success': False, 'error': 'No photo provided'}), 400
+
+        photo = request.files['photo']
+
+        if photo.filename == '':
+            return jsonify({'success': False, 'error': 'Empty file'}), 400
+
+        # Get user ID
+        user_id = session['user']['_id']
+
+        # Save the photo temporarily
+        img = Image.open(photo)
+        img_buffer = BytesIO()
+        img.save(img_buffer, format='JPEG')
+        img_buffer.seek(0)
+
+        # Convert to base64 for the RPM API
+        base64_image = base64.b64encode(img_buffer.read()).decode('utf-8')
+
+        # Create directory for user avatars if it doesn't exist
+        avatar_dir = os.path.join('flaskapp', 'static', 'avatars', str(user_id))
+        os.makedirs(avatar_dir, exist_ok=True)
+
+        # Contact the Ready Player Me API
+        # For testing, we'll use their demo API endpoint
+        # In production, use their direct API with your API key
+        response = requests.post(
+            'https://api.readyplayer.me/v1/avatars',
+            json={
+                'photo': f'data:image/jpeg;base64,{base64_image}',
+                'gender': 'neutral'  # or get from form
+            },
+            headers={
+                'Authorization': f'Bearer {RPM_API_KEY}',
+                'Content-Type': 'application/json'
+            }
+        )
+
+        if response.status_code != 200:
+            # For testing, use their demo web API
+            # In production, this approach would require your own server-side implementation
+            print(f"API error: {response.status_code} - {response.text}")
+
+            # Fallback to a demo avatar URL for testing
+            avatar_url = "https://models.readyplayer.me/64c415db15199e3f53bbc65f.glb"
+        else:
+            # Get the avatar URL from the response
+            response_data = response.json()
+            avatar_url = response_data.get('avatarUrl')
+
+        if not avatar_url:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to generate avatar'
+            }), 500
+
+        # Download the avatar model
+        avatar_response = requests.get(avatar_url)
+        if avatar_response.status_code == 200:
+            # Save the model file
+            avatar_filename = f"avatar-{uuid.uuid4()}.glb"
+            avatar_filepath = os.path.join(avatar_dir, avatar_filename)
+
+            with open(avatar_filepath, 'wb') as f:
+                f.write(avatar_response.content)
+
+            # Save the avatar info to the database
+            db.avatars.update_one(
+                {'userId': user_id},
+                {
+                    '$set': {
+                        'avatarUrl': avatar_url,
+                        'localPath': f'/static/avatars/{user_id}/{avatar_filename}',
+                        'updated_at': datetime.now()
+                    }
+                },
+                upsert=True
+            )
+
+            return jsonify({
+                'success': True,
+                'avatarUrl': avatar_url,
+                'localPath': f'/static/avatars/{user_id}/{avatar_filename}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Failed to download avatar model: {avatar_response.status_code}'
+            }), 500
+
+    except Exception as e:
+        print(f"Error generating avatar: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/avatar/get-rpm-avatar')
+@login_required
+def get_rpm_avatar():
+    user_id = session['user']['_id']
+
+    # Try to find an existing RPM avatar for this user
+    avatar_doc = db.avatars.find_one({'userId': user_id})
+
+    if avatar_doc and 'avatarUrl' in avatar_doc:
+        return jsonify({
+            'success': True,
+            'avatarUrl': avatar_doc['avatarUrl'],
+            'localPath': avatar_doc.get('localPath')
+        })
+
+    return jsonify({'success': False, 'error': 'No avatar found'})
+
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
