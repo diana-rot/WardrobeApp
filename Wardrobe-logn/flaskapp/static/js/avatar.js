@@ -5,7 +5,7 @@ let currentAvatar = null;
 let currentHair = null;
 let currentClothing = {};
 let isLoading = false;
-let loadingOverlay = document.getElementById('loading-overlay');
+let loadingOverlay = null;
 let loadingProgress = document.getElementById('loading-progress');
 
 // Model paths for different genders
@@ -25,6 +25,98 @@ const HAIR_PATHS = {
         style1: '/static/models/avatar/hair/female_short.gltf',
         style2: '/static/models/avatar/hair/female_medium.gltf',
         style3: '/static/models/avatar/hair/female_long.gltf'
+    }
+};
+
+// Add body type presets
+const BODY_TYPE_PRESETS = {
+    female: {
+        hourglass: {
+            shoulder_width: 1.1,
+            body_height: 1.0,
+            hip_width: 1.1,
+            waist_width: 0.8,
+            bust: 1.1,
+            arm_length: 1.0,
+            leg_length: 1.0
+        },
+        pear: {
+            shoulder_width: 0.9,
+            body_height: 1.0,
+            hip_width: 1.2,
+            waist_width: 0.9,
+            bust: 0.9,
+            arm_length: 1.0,
+            leg_length: 1.0
+        },
+        rectangle: {
+            shoulder_width: 1.0,
+            body_height: 1.0,
+            hip_width: 1.0,
+            waist_width: 0.95,
+            bust: 1.0,
+            arm_length: 1.0,
+            leg_length: 1.0
+        },
+        athletic: {
+            shoulder_width: 1.2,
+            body_height: 1.05,
+            hip_width: 1.0,
+            waist_width: 0.9,
+            bust: 1.0,
+            arm_length: 1.1,
+            leg_length: 1.1
+        }
+    },
+    male: {
+        athletic: {
+            shoulder_width: 1.3,
+            body_height: 1.05,
+            hip_width: 1.0,
+            waist_width: 0.9,
+            chest: 1.2,
+            arm_length: 1.1,
+            leg_length: 1.1
+        },
+        slim: {
+            shoulder_width: 1.1,
+            body_height: 1.0,
+            hip_width: 0.9,
+            waist_width: 0.8,
+            chest: 1.0,
+            arm_length: 1.0,
+            leg_length: 1.05
+        },
+        regular: {
+            shoulder_width: 1.2,
+            body_height: 1.0,
+            hip_width: 1.0,
+            waist_width: 1.0,
+            chest: 1.1,
+            arm_length: 1.0,
+            leg_length: 1.0
+        },
+        broad: {
+            shoulder_width: 1.4,
+            body_height: 1.0,
+            hip_width: 1.1,
+            waist_width: 1.1,
+            chest: 1.3,
+            arm_length: 1.0,
+            leg_length: 1.0
+        }
+    }
+};
+
+// Add to the top with other constants
+const MORPH_TARGETS = {
+    body: {
+        'Muscular': 0,
+        'Thin': 1,
+        'Fat': 2,
+        'Belly': 3,
+        'BreastSize': 4,
+        'Height': 5
     }
 };
 
@@ -94,29 +186,29 @@ function init() {
     setupLighting();
     
     // Add ground plane for better context
-    const groundGeometry = new THREE.PlaneGeometry(10, 10);
+        const groundGeometry = new THREE.PlaneGeometry(10, 10);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
         color: 0xcccccc,
         roughness: 0.8,
         metalness: 0.2
     });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
-    ground.receiveShadow = true;
+        ground.receiveShadow = true;
     scene.add(ground);
     
     // Start animation loop
     animate();
-    
+
     // Handle window resize
     window.addEventListener('resize', onWindowResize, false);
-}
+    }
 
 // Set up enhanced lighting
 function setupLighting() {
     // Ambient light for overall illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
     
     // Main directional light (sun)
@@ -184,6 +276,117 @@ function setupEventListeners() {
     if (categorySelect) {
         categorySelect.addEventListener('change', (e) => {
             loadWardrobeItems(e.target.value);
+        });
+    }
+    
+    // Add photo upload handler
+    const photoInput = document.getElementById('photo');
+    if (photoInput) {
+        photoInput.addEventListener('change', handlePhotoUpload);
+    }
+
+    // Set up tab switching
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and panels
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding panel
+            button.classList.add('active');
+            const panelId = `${button.dataset.tab}-panel`;
+            document.getElementById(panelId).classList.add('active');
+        });
+    });
+
+    // Set up measurement sliders
+    setupMeasurementSliders();
+
+    // Add preset card click handlers
+    const presetCards = document.querySelectorAll('.preset-card');
+    presetCards.forEach(card => {
+        card.addEventListener('click', () => {
+            // Remove selected class from all cards
+            presetCards.forEach(c => c.classList.remove('selected'));
+            // Add selected class to clicked card
+            card.classList.add('selected');
+            // Apply the preset
+            applyBodyTypePreset(card.dataset.preset);
+        });
+    });
+}
+
+// Set up measurement sliders and their event handlers
+function setupMeasurementSliders() {
+    const sliders = document.querySelectorAll('.measurement-slider');
+    sliders.forEach(slider => {
+        const valueDisplay = slider.nextElementSibling;
+        
+        // Update value display
+        slider.addEventListener('input', (e) => {
+            valueDisplay.textContent = e.target.value;
+        });
+        
+        // Update avatar when slider changes
+        slider.addEventListener('change', () => {
+            updateAvatarFromControls();
+        });
+    });
+}
+
+// Update avatar based on current control values
+function updateAvatarFromControls() {
+    if (!avatar) return;
+
+    const features = {
+        // Face features
+        face_width: parseFloat(document.getElementById('faceWidth').value),
+        face_height: parseFloat(document.getElementById('faceHeight').value),
+        eye_distance: parseFloat(document.getElementById('eyeDistance').value),
+        nose_length: parseFloat(document.getElementById('noseLength').value),
+        mouth_width: parseFloat(document.getElementById('mouthWidth').value),
+        
+        // Body features
+        body_height: parseFloat(document.getElementById('height').value),
+        shoulder_width: parseFloat(document.getElementById('shoulderWidth').value),
+        hip_width: parseFloat(document.getElementById('hipWidth').value),
+        arm_length: parseFloat(document.getElementById('armLength').value),
+        leg_length: parseFloat(document.getElementById('legLength').value)
+    };
+
+    applyFeatures(avatar, features);
+}
+
+// Update UI controls based on extracted features
+function updateUIFromFeatures(features) {
+    // Update face controls
+    if (features.face) {
+        Object.entries(features.face).forEach(([feature, value]) => {
+            const control = document.getElementById(`face-${feature}`);
+            if (control) {
+                control.value = value;
+                // Update value display if it exists
+                const display = control.nextElementSibling;
+                if (display) {
+                    display.textContent = value.toFixed(2);
+                }
+            }
+        });
+    }
+
+    // Update body controls
+    if (features.body) {
+        Object.entries(features.body).forEach(([feature, value]) => {
+            const control = document.getElementById(`body-${feature}`);
+            if (control) {
+                control.value = value;
+                // Update value display if it exists
+                const display = control.nextElementSibling;
+                if (display) {
+                    display.textContent = value.toFixed(2);
+                }
+            }
         });
     }
 }
@@ -291,7 +494,7 @@ async function updateAvatar(avatarData) {
 
 // Load the avatar model
 async function loadAvatarModel(avatarData) {
-    showLoadingOverlay();
+    showLoading();
     
     try {
         // Clean up existing avatar
@@ -331,6 +534,16 @@ async function loadAvatarModel(avatarData) {
         // Set up the avatar
         avatar = gltf.scene;
         
+        // Check for morph targets
+        avatar.traverse((node) => {
+            if (node.isMesh && node.morphTargetDictionary) {
+                console.log('Found morph targets:', node.morphTargetDictionary);
+                // Store reference to mesh with morph targets
+                node.morphTargetInfluences = node.morphTargetInfluences || [];
+                setupMorphTargetControls(node);
+            }
+        });
+        
         // Scale and position the avatar appropriately
         avatar.scale.set(1, 1, 1);
         avatar.position.set(0, 0, 0);
@@ -343,40 +556,83 @@ async function loadAvatarModel(avatarData) {
         controls.target.set(0, 1, 0);
         controls.update();
 
-        hideLoadingOverlay();
+        hideLoading();
         return true;
     } catch (error) {
         console.error('Error loading avatar model:', error);
-        hideLoadingOverlay();
+        hideLoading();
         createFallbackAvatar();
         return false;
     }
 }
 
-// Apply facial features to the avatar
-function applyFacialFeatures(avatar, features) {
-    // Scale face width and height
-    const scaleX = features.face_width;
-    const scaleY = features.face_height;
-    avatar.scale.set(scaleX, scaleY, scaleX);
+// Apply facial and body features to the avatar
+function applyFeatures(avatar, features) {
+    if (!avatar) return;
 
-    // Adjust eye distance
-    if (avatar.getObjectByName('eyes')) {
-        const eyes = avatar.getObjectByName('eyes');
-        eyes.scale.x = features.eye_distance;
-    }
+    // Store original scale for reference
+    const originalScale = avatar.scale.clone();
 
-    // Adjust nose length
-    if (avatar.getObjectByName('nose')) {
-        const nose = avatar.getObjectByName('nose');
-        nose.scale.y = features.nose_length;
-    }
+    // Apply body features with bone transformations
+    avatar.traverse((child) => {
+        if (child.isMesh) {
+            const name = child.name.toLowerCase();
+            
+            // Body scaling
+            if (name.includes('torso') || name.includes('chest')) {
+                child.scale.x = originalScale.x * (features.shoulder_width || 1.0);
+                child.scale.y = originalScale.y * (features.body_height || 1.0);
+                if (features.waist_width) {
+                    // Apply waist scaling at the bottom of the torso
+                    const waistScale = features.waist_width;
+                    child.geometry.scale(waistScale, 1, waistScale);
+                }
+            }
+            
+            // Hip area
+            if (name.includes('hip')) {
+                child.scale.x = originalScale.x * (features.hip_width || 1.0);
+            }
+            
+            // Arms
+            if (name.includes('arm') || name.includes('shoulder')) {
+                if (name.includes('upper')) {
+                    child.scale.y = originalScale.y * (features.arm_length || 1.0) * 0.5;
+                } else if (name.includes('lower')) {
+                    child.scale.y = originalScale.y * (features.arm_length || 1.0) * 0.5;
+                }
+            }
+            
+            // Legs
+            if (name.includes('leg') || name.includes('thigh')) {
+                if (name.includes('upper')) {
+                    child.scale.y = originalScale.y * (features.leg_length || 1.0) * 0.5;
+                } else if (name.includes('lower')) {
+                    child.scale.y = originalScale.y * (features.leg_length || 1.0) * 0.5;
+                }
+            }
+            
+            // Face features
+            if (name.includes('head') || name.includes('face')) {
+                if (features.face_width) child.scale.x = originalScale.x * features.face_width;
+                if (features.face_height) child.scale.y = originalScale.y * features.face_height;
+            }
+            
+            // Apply specific face feature scaling
+            if (name.includes('eye') && features.eye_distance) {
+                child.scale.x = features.eye_distance;
+            }
+            if (name.includes('nose') && features.nose_length) {
+                child.scale.y = features.nose_length;
+            }
+            if (name.includes('mouth') && features.mouth_width) {
+                child.scale.x = features.mouth_width;
+            }
+        }
+    });
 
-    // Adjust mouth width
-    if (avatar.getObjectByName('mouth')) {
-        const mouth = avatar.getObjectByName('mouth');
-        mouth.scale.x = features.mouth_width;
-    }
+    // Update the scene
+    renderer.render(scene, camera);
 }
 
 // Create realistic skin material
@@ -418,13 +674,19 @@ function createFallbackAvatar() {
 }
 
 // Loading overlay management
-function showLoadingOverlay() {
-    if (loadingOverlay) {
-        loadingOverlay.style.display = 'flex';
+function showLoading() {
+    if (!loadingOverlay) {
+        loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'loading-overlay';
+        const spinner = document.createElement('div');
+        spinner.className = 'loading-spinner';
+        loadingOverlay.appendChild(spinner);
+        document.body.appendChild(loadingOverlay);
     }
+    loadingOverlay.style.display = 'flex';
 }
 
-function hideLoadingOverlay() {
+function hideLoading() {
     if (loadingOverlay) {
         loadingOverlay.style.display = 'none';
     }
@@ -728,77 +990,355 @@ function hexToRgb(hex) {
     return { r, g, b };
 }
 
-// Show loading overlay
-function showLoading(message = 'Loading...') {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    const loadingText = document.getElementById('loading-text');
-    
-    if (loadingOverlay) {
-        loadingOverlay.style.display = 'flex';
-    }
-    
-    if (loadingText) {
-        loadingText.textContent = message;
-    }
-    
-    isLoading = true;
+// Show message to user
+function showMessage(text, type = 'info') {
+    const message = document.createElement('div');
+    message.className = `message ${type}`;
+    message.textContent = text;
+    document.body.appendChild(message);
+
+    setTimeout(() => {
+        message.remove();
+    }, 3000);
 }
 
-// Hide loading overlay
-function hideLoading() {
-    const loadingOverlay = document.getElementById('loading-overlay');
+// Apply body type preset
+function applyBodyTypePreset(presetName) {
+    const gender = document.getElementById('gender').value;
+    const preset = BODY_TYPE_PRESETS[gender][presetName];
     
-    if (loadingOverlay) {
-        loadingOverlay.style.display = 'none';
+    if (!preset) return;
+
+    // Update UI controls with preset values
+    Object.entries(preset).forEach(([key, value]) => {
+        const control = document.getElementById(key);
+        if (control) {
+            control.value = value;
+            control.nextElementSibling.textContent = value;
+        }
+    });
+
+    // Create features object from preset
+    const features = {
+        ...preset,
+        // Keep existing face features
+        face_width: parseFloat(document.getElementById('faceWidth').value),
+        face_height: parseFloat(document.getElementById('faceHeight').value),
+        eye_distance: parseFloat(document.getElementById('eyeDistance').value),
+        nose_length: parseFloat(document.getElementById('noseLength').value),
+        mouth_width: parseFloat(document.getElementById('mouthWidth').value)
+    };
+
+    // Apply features to avatar
+    applyFeatures(avatar, features);
+}
+
+// Add function to set up morph target controls
+function setupMorphTargetControls(mesh) {
+    const morphPanel = document.getElementById('morph-controls');
+    if (!morphPanel) {
+        console.warn('Morph controls panel not found');
+        return;
     }
-    
-    isLoading = false;
-}
 
-// Take a screenshot of the avatar
-function captureAvatarScreenshot() {
-    // Store original camera position
-    const originalPosition = camera.position.clone();
-    const originalTarget = controls.target.clone();
-    
-    // Position camera for a good shot
-    camera.position.set(0, 1.5, 2.5);
-    camera.lookAt(0, 1, 0);
-    controls.update();
-    
-    // Render the scene
-    renderer.render(scene, camera);
-    
-    // Capture the canvas content
-    const dataURL = renderer.domElement.toDataURL('image/jpeg');
-    
-    // Restore camera position
-    camera.position.copy(originalPosition);
-    controls.target.copy(originalTarget);
-    controls.update();
-    
-    return dataURL;
-}
+    // Clear existing controls
+    morphPanel.innerHTML = '<h3>Shape Customization</h3>';
 
-// Save avatar screenshot
-async function saveAvatarScreenshot() {
-    try {
-        const screenshot = captureAvatarScreenshot();
+    // Create sliders for each morph target
+    Object.entries(mesh.morphTargetDictionary).forEach(([name, index]) => {
+        const controlGroup = document.createElement('div');
+        controlGroup.className = 'measurement-group';
         
-        const response = await fetch('/api/avatar/save-image', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ image: screenshot })
+        const label = document.createElement('label');
+        label.textContent = name;
+        
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.className = 'measurement-slider';
+        slider.min = '0';
+        slider.max = '1';
+        slider.step = '0.01';
+        slider.value = mesh.morphTargetInfluences[index] || 0;
+        
+        const value = document.createElement('div');
+        value.className = 'measurement-value';
+        value.textContent = slider.value;
+        
+        slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            mesh.morphTargetInfluences[index] = val;
+            value.textContent = val.toFixed(2);
+            renderer.render(scene, camera);
         });
         
-        const data = await response.json();
-        
-        if (!data.success) {
-            console.error('Error saving avatar screenshot:', data.error);
+        controlGroup.appendChild(label);
+        controlGroup.appendChild(slider);
+        controlGroup.appendChild(value);
+        morphPanel.appendChild(controlGroup);
+    });
+}
+
+// Add function to apply morph target presets
+function applyMorphPreset(presetName) {
+    if (!avatar) return;
+    
+    avatar.traverse((node) => {
+        if (node.isMesh && node.morphTargetDictionary) {
+            // Reset all morph targets
+            node.morphTargetInfluences.fill(0);
+            
+            // Apply preset values
+            switch(presetName) {
+                case 'athletic':
+                    node.morphTargetInfluences[MORPH_TARGETS.body.Muscular] = 0.7;
+                    node.morphTargetInfluences[MORPH_TARGETS.body.Fat] = 0.1;
+                    break;
+                case 'curvy':
+                    node.morphTargetInfluences[MORPH_TARGETS.body.BreastSize] = 0.6;
+                    node.morphTargetInfluences[MORPH_TARGETS.body.Fat] = 0.3;
+                    break;
+                case 'slim':
+                    node.morphTargetInfluences[MORPH_TARGETS.body.Thin] = 0.8;
+                    break;
+                // Add more presets as needed
+            }
+            
+            // Update UI controls
+            updateMorphControlsUI(node);
         }
+    });
+    
+    renderer.render(scene, camera);
+}
+
+// Add function to update morph control UI
+function updateMorphControlsUI(mesh) {
+    const morphPanel = document.getElementById('morph-controls');
+    if (!morphPanel) return;
+    
+    // Update all sliders
+    Object.entries(mesh.morphTargetDictionary).forEach(([name, index]) => {
+        const slider = morphPanel.querySelector(`input[data-morph="${name}"]`);
+        if (slider) {
+            slider.value = mesh.morphTargetInfluences[index];
+            slider.nextElementSibling.textContent = mesh.morphTargetInfluences[index].toFixed(2);
+        }
+    });
+}
+
+async function handlePhotoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        showLoading();
+        const base64Image = await convertToBase64(file);
+        
+        const response = await fetch('/api/extract-features', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image: base64Image })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to extract features');
+        }
+
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        // Apply extracted features to the avatar
+        await applyExtractedFeatures(result.features);
+        
+        // Update UI controls with extracted values
+        updateUIFromFeatures(result.features);
+        
+        showMessage('Features extracted and applied successfully!', 'success');
     } catch (error) {
-        console.error('Error saving avatar screenshot:', error);
+        console.error('Error processing photo:', error);
+        showMessage(error.message || 'Error processing photo', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function convertToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function applyExtractedFeatures(features) {
+    if (!avatar) {
+        console.error('Avatar not loaded');
+        return;
+    }
+
+    console.log('Applying extracted features:', features);
+
+    // Apply face features
+    if (features.face) {
+        await applyFaceFeatures(features.face);
+    }
+
+    // Apply body features
+    if (features.body) {
+        await applyBodyFeatures(features.body);
+    }
+
+    // Trigger a render update
+    renderer.render(scene, camera);
+}
+
+async function applyFaceFeatures(faceFeatures) {
+    if (!faceFeatures) return;
+    console.log('Applying face features:', faceFeatures);
+
+    // Find face-related meshes
+    avatar.traverse((node) => {
+        if (node.isMesh) {
+            const name = node.name.toLowerCase();
+
+            // Apply face width
+            if (name.includes('face') || name.includes('head')) {
+                if (faceFeatures.face_width) {
+                    node.scale.x = faceFeatures.face_width;
+                }
+                if (faceFeatures.face_height) {
+                    node.scale.y = faceFeatures.face_height;
+                }
+            }
+
+            // Apply eye distance
+            if (name.includes('eye_l')) {
+                node.position.x = -faceFeatures.eye_distance / 2;
+            }
+            if (name.includes('eye_r')) {
+                node.position.x = faceFeatures.eye_distance / 2;
+            }
+
+            // Apply nose features
+            if (name.includes('nose')) {
+                node.scale.y = faceFeatures.nose_length;
+            }
+
+            // Apply mouth width
+            if (name.includes('mouth') || name.includes('lips')) {
+                node.scale.x = faceFeatures.mouth_width;
+            }
+
+            // Apply jaw width
+            if (name.includes('jaw')) {
+                node.scale.x = faceFeatures.jaw_width;
+            }
+        }
+    });
+
+    // Update morph targets if available
+    const faceMesh = avatar.getObjectByName('face');
+    if (faceMesh && faceMesh.morphTargetDictionary) {
+        // Map features to morph targets
+        const morphTargetMapping = {
+            'face_width': 'FaceWidth',
+            'face_height': 'FaceHeight',
+            'jaw_width': 'JawWidth',
+            'nose_length': 'NoseLength'
+        };
+
+        for (const [feature, targetName] of Object.entries(morphTargetMapping)) {
+            const targetIndex = faceMesh.morphTargetDictionary[targetName];
+            if (targetIndex !== undefined && faceFeatures[feature]) {
+                faceMesh.morphTargetInfluences[targetIndex] = faceFeatures[feature];
+            }
+        }
+    }
+}
+
+async function applyBodyFeatures(bodyFeatures) {
+    if (!bodyFeatures) return;
+    console.log('Applying body features:', bodyFeatures);
+
+    // Store original proportions
+    const originalScales = new Map();
+    
+    // Find and store original scales of body parts
+    avatar.traverse((node) => {
+        if (node.isMesh) {
+            originalScales.set(node.name, node.scale.clone());
+        }
+    });
+
+    // Apply measurements to the avatar
+    avatar.traverse((node) => {
+        if (node.isMesh) {
+            const name = node.name.toLowerCase();
+            const originalScale = originalScales.get(node.name);
+
+            if (!originalScale) return;
+
+            // Apply shoulder width
+            if (name.includes('shoulder') || name.includes('clavicle')) {
+                node.scale.x = originalScale.x * (bodyFeatures.shoulder_width || 1);
+            }
+
+            // Apply hip width
+            if (name.includes('hip') || name.includes('pelvis')) {
+                node.scale.x = originalScale.x * (bodyFeatures.hip_width || 1);
+            }
+
+            // Apply torso length
+            if (name.includes('spine') || name.includes('torso')) {
+                node.scale.y = originalScale.y * (bodyFeatures.torso_length || 1);
+            }
+
+            // Apply arm length
+            if (name.includes('arm') || name.includes('forearm')) {
+                node.scale.y = originalScale.y * (bodyFeatures.arm_length || 1);
+            }
+
+            // Apply leg length
+            if (name.includes('leg') || name.includes('thigh') || name.includes('calf')) {
+                node.scale.y = originalScale.y * (bodyFeatures.leg_length || 1);
+            }
+
+            // Apply chest width
+            if (name.includes('chest') || name.includes('torso')) {
+                node.scale.x = originalScale.x * (bodyFeatures.chest_width || 1);
+            }
+        }
+    });
+
+    // Apply morph targets if available
+    avatar.traverse((node) => {
+        if (node.isMesh && node.morphTargetDictionary) {
+            // Map features to morph targets
+            const morphTargetMapping = {
+                'shoulder_width': 'ShoulderWidth',
+                'hip_width': 'HipWidth',
+                'torso_length': 'TorsoLength',
+                'chest_width': 'ChestWidth'
+            };
+
+            for (const [feature, targetName] of Object.entries(morphTargetMapping)) {
+                const targetIndex = node.morphTargetDictionary[targetName];
+                if (targetIndex !== undefined && bodyFeatures[feature]) {
+                    node.morphTargetInfluences[targetIndex] = bodyFeatures[feature];
+                }
+            }
+        }
+    });
+
+    // Update skeleton if available
+    const skeleton = avatar.getObjectByName('Armature');
+    if (skeleton) {
+        skeleton.updateMatrixWorld(true);
     }
 }

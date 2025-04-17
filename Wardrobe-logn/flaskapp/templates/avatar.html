@@ -205,6 +205,99 @@
     .tab-content.active {
         display: block;
     }
+
+    .measurement-group {
+        margin-bottom: 15px;
+    }
+    
+    .measurement-slider {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    .measurement-value {
+        font-size: 12px;
+        color: #666;
+        text-align: right;
+    }
+    
+    .tab-panel {
+        display: none;
+    }
+    
+    .tab-panel.active {
+        display: block;
+    }
+
+    .preset-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .preset-card {
+        border: 2px solid #eee;
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .preset-card:hover {
+        border-color: #4CAF50;
+        transform: translateY(-2px);
+    }
+
+    .preset-card.selected {
+        border-color: #4CAF50;
+        background-color: rgba(76, 175, 80, 0.1);
+    }
+
+    .preset-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 5px;
+    }
+
+    .preset-name {
+        font-size: 14px;
+        color: #333;
+    }
+
+    .preset-description {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .shape-presets {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .shape-preset-btn {
+        padding: 8px 16px;
+        border: 2px solid #eee;
+        border-radius: 20px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .shape-preset-btn:hover {
+        border-color: #4CAF50;
+        transform: translateY(-2px);
+    }
+
+    .shape-preset-btn.active {
+        background: #4CAF50;
+        color: white;
+        border-color: #4CAF50;
+    }
 </style>
 {% endblock %}
 
@@ -212,66 +305,157 @@
 <div class="main-content">
     <!-- Left Panel -->
     <div id="customization-panel">
-        <div class="control-group">
-            <h3>Avatar Customization</h3>
-            <div class="form-group">
-                <label for="gender">Gender:</label>
-                <select id="gender" class="form-control">
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="photo">Upload Photo:</label>
-                <input type="file" id="photo" accept="image/*" class="form-control">
-                <div class="help-text">Upload a photo to generate a similar avatar</div>
-            </div>
-            
-            <button id="generateAvatar" class="btn btn-primary">Generate Avatar</button>
+        <!-- Tabs -->
+        <div class="tab-control">
+            <div class="tab-button active" data-tab="face">Face</div>
+            <div class="tab-button" data-tab="body">Body</div>
+            <div class="tab-button" data-tab="shape">Shape</div>
+            <div class="tab-button" data-tab="clothing">Clothing</div>
         </div>
 
-        <div class="control-group">
-            <h3>Customize Appearance</h3>
-            <div class="form-group">
-                <label for="skinTone">Skin Tone:</label>
-                <input type="color" id="skinTone" value="#FFE0BD" class="form-control">
+        <!-- Face Panel -->
+        <div id="face-panel" class="tab-panel active">
+            <div class="control-group">
+                <h3>Face Customization</h3>
+                <div class="form-group">
+                    <label for="photo">Upload Photo:</label>
+                    <input type="file" id="photo" accept="image/*" class="form-control">
+                    <div class="help-text">Upload a photo to generate a similar avatar</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="faceWidth">Face Width:</label>
+                    <input type="range" id="faceWidth" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="faceHeight">Face Height:</label>
+                    <input type="range" id="faceHeight" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="eyeDistance">Eye Distance:</label>
+                    <input type="range" id="eyeDistance" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="noseLength">Nose Length:</label>
+                    <input type="range" id="noseLength" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="mouthWidth">Mouth Width:</label>
+                    <input type="range" id="mouthWidth" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
             </div>
-            
-            <div class="form-group">
-                <label for="hairStyle">Hair Style:</label>
-                <select id="hairStyle" class="form-control">
-                    <option value="style1">Short</option>
-                    <option value="style2">Medium</option>
-                    <option value="style3">Long</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="hairColor">Hair Color:</label>
-                <input type="color" id="hairColor" value="#000000" class="form-control">
-            </div>
-            
-            <button id="updateAvatar" class="btn btn-primary">Update Avatar</button>
         </div>
 
-        <div class="control-group">
-            <h3>Try On Clothes</h3>
-            <div class="form-group">
-                <label for="clothingCategory">Category:</label>
-                <select id="clothingCategory" class="form-control">
-                    <option value="tops">Tops</option>
-                    <option value="bottoms">Bottoms</option>
-                    <option value="dresses">Dresses</option>
-                    <option value="outerwear">Outerwear</option>
-                    <option value="shoes">Shoes</option>
-                    <option value="accessories">Accessories</option>
-                </select>
-            </div>
-            <div id="wardrobeItems" class="wardrobe-items">
-                <!-- Wardrobe items will be loaded here -->
+        <!-- Body Panel -->
+        <div id="body-panel" class="tab-panel">
+            <div class="control-group">
+                <h3>Body Type Presets</h3>
+                <div class="preset-container">
+                    <!-- Female Body Types -->
+                    <div class="preset-card" data-preset="hourglass">
+                        <img src="{{ url_for('static', filename='images/presets/hourglass.svg') }}" class="preset-icon" alt="Hourglass">
+                        <div class="preset-name">Hourglass</div>
+                        <div class="preset-description">Balanced shoulders and hips, defined waist</div>
+                    </div>
+                    <div class="preset-card" data-preset="pear">
+                        <img src="{{ url_for('static', filename='images/presets/pear.svg') }}" class="preset-icon" alt="Pear">
+                        <div class="preset-name">Pear</div>
+                        <div class="preset-description">Wider hips, narrower shoulders</div>
+                    </div>
+                    <div class="preset-card" data-preset="rectangle">
+                        <img src="{{ url_for('static', filename='images/presets/rectangle.svg') }}" class="preset-icon" alt="Rectangle">
+                        <div class="preset-name">Rectangle</div>
+                        <div class="preset-description">Straight figure, similar measurements</div>
+                    </div>
+                    <div class="preset-card" data-preset="athletic">
+                        <img src="{{ url_for('static', filename='images/presets/athletic.svg') }}" class="preset-icon" alt="Athletic">
+                        <div class="preset-name">Athletic</div>
+                        <div class="preset-description">Broader shoulders, muscular build</div>
+                    </div>
+                </div>
+
+                <h3>Fine-tune Measurements</h3>
+                <div class="measurement-group">
+                    <label for="height">Height:</label>
+                    <input type="range" id="height" class="measurement-slider" min="0.5" max="2.0" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="shoulderWidth">Shoulder Width:</label>
+                    <input type="range" id="shoulderWidth" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="hipWidth">Hip Width:</label>
+                    <input type="range" id="hipWidth" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="armLength">Arm Length:</label>
+                    <input type="range" id="armLength" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
+                
+                <div class="measurement-group">
+                    <label for="legLength">Leg Length:</label>
+                    <input type="range" id="legLength" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+                    <div class="measurement-value">1.0</div>
+                </div>
             </div>
         </div>
+
+        <!-- Shape Panel -->
+        <div id="shape-panel" class="tab-panel">
+            <div class="control-group">
+                <h3>Quick Presets</h3>
+                <div class="shape-presets">
+                    <button class="shape-preset-btn" data-preset="athletic">Athletic</button>
+                    <button class="shape-preset-btn" data-preset="curvy">Curvy</button>
+                    <button class="shape-preset-btn" data-preset="slim">Slim</button>
+                    <button class="shape-preset-btn" data-preset="default">Default</button>
+                </div>
+
+                <div id="morph-controls">
+                    <h3>Shape Customization</h3>
+                    <!-- Morph target controls will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Clothing Panel -->
+        <div id="clothing-panel" class="tab-panel">
+            <div class="control-group">
+                <h3>Try On Clothes</h3>
+                <div class="form-group">
+                    <label for="clothingCategory">Category:</label>
+                    <select id="clothingCategory" class="form-control">
+                        <option value="tops">Tops</option>
+                        <option value="bottoms">Bottoms</option>
+                        <option value="dresses">Dresses</option>
+                        <option value="outerwear">Outerwear</option>
+                        <option value="shoes">Shoes</option>
+                        <option value="accessories">Accessories</option>
+                    </select>
+                </div>
+                <div id="wardrobeItems" class="wardrobe-items">
+                    <!-- Wardrobe items will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <button id="updateAvatar" class="btn btn-primary">Update Avatar</button>
     </div>
 
     <!-- Avatar Container -->
@@ -291,4 +475,18 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+
+<script>
+    // Add event listeners for shape presets
+    document.querySelectorAll('.shape-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all preset buttons
+            document.querySelectorAll('.shape-preset-btn').forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+            // Apply the preset
+            applyMorphPreset(btn.dataset.preset);
+        });
+    });
+</script>
 {% endblock %}
