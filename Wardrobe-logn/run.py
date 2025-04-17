@@ -1517,503 +1517,351 @@ def delete_calendar_outfit():
         return jsonify({"success": True, "message": "Outfit deleted successfully!"})
     return jsonify({"success": False, "message": "Outfit not found!"}), 404
 
-# Enhanced Avatar generation imports
-import mediapipe as mp
-import cv2
-import numpy as np
-from PIL import Image
-import json
+# # Enhanced Avatar generation imports
+# import mediapipe as mp
+# import cv2
+# import numpy as np
+# from PIL import Image
+# import json
+# import base64
+# from io import BytesIO
+# import colorsys
+# from sklearn.cluster import KMeans
+#
+# # Initialize MediaPipe Face Mesh
+# mp_face_mesh = mp.solutions.face_mesh
+# face_mesh = mp_face_mesh.FaceMesh(
+#     static_image_mode=True,
+#     max_num_faces=1,
+#     min_detection_confidence=0.5,
+#     min_tracking_confidence=0.5
+# )
+#
+# def extract_facial_features(image_path):
+#     """Extract facial features using MediaPipe Face Mesh."""
+#     image = cv2.imread(image_path)
+#     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     results = face_mesh.process(image_rgb)
+#
+#     if not results.multi_face_landmarks:
+#         raise ValueError("No face detected in the image")
+#
+#     landmarks = results.multi_face_landmarks[0]
+#
+#     # Extract key facial features
+#     features = {
+#         'face_width': landmarks.landmark[234].x - landmarks.landmark[454].x,
+#         'face_height': landmarks.landmark[152].y - landmarks.landmark[10].y,
+#         'eye_distance': landmarks.landmark[33].x - landmarks.landmark[263].x,
+#         'nose_length': landmarks.landmark[6].y - landmarks.landmark[94].y,
+#         'mouth_width': landmarks.landmark[61].x - landmarks.landmark[291].x
+#     }
+#
+#     return features
+#
+# def analyze_skin_tone(image_path):
+#     """Analyze skin tone from the uploaded image."""
+#     image = cv2.imread(image_path)
+#     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     results = face_mesh.process(image_rgb)
+#
+#     if not results.multi_face_landmarks:
+#         raise ValueError("No face detected in the image")
+#
+#     # Get face region
+#     landmarks = results.multi_face_landmarks[0]
+#     face_points = np.array([[int(l.x * image.shape[1]), int(l.y * image.shape[0])]
+#                           for l in landmarks.landmark])
+#
+#     # Create mask for face region
+#     mask = np.zeros(image.shape[:2], dtype=np.uint8)
+#     cv2.fillConvexPoly(mask, face_points, 255)
+#
+#     # Get average skin color
+#     face_region = cv2.bitwise_and(image, image, mask=mask)
+#     skin_color = cv2.mean(face_region, mask=mask)[:3]
+#
+#     return [int(c) for c in skin_color]
+#
+# @app.route('/api/avatar/generate', methods=['POST'])
+# @login_required
+# def generate_avatar():
+#     try:
+#         if 'photo' not in request.files:
+#             return jsonify({'error': 'No photo uploaded'}), 400
+#
+#         photo = request.files['photo']
+#         gender = request.form.get('gender', 'female')
+#
+#         if photo.filename == '':
+#             return jsonify({'error': 'No selected file'}), 400
+#
+#         # Save uploaded photo
+#         filename = secure_filename(photo.filename)
+#         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#         photo.save(filepath)
+#
+#         # Extract facial features
+#         features = extract_facial_features(filepath)
+#
+#         # Analyze skin tone
+#         skin_color = analyze_skin_tone(filepath)
+#
+#         # Prepare avatar data
+#         avatar_data = {
+#             'model_path': MODEL_PATHS[gender]['model'],
+#             'textures': MODEL_PATHS[gender]['textures'],
+#             'features': features,
+#             'skin_color': skin_color,
+#             'gender': gender
+#         }
+#
+#         # Save avatar data to user's profile
+#         user_id = session.get('user_id')
+#         if user_id:
+#             db.users.update_one(
+#                 {'_id': ObjectId(user_id)},
+#                 {'$set': {'avatar_data': avatar_data}}
+#             )
+#
+#         return jsonify(avatar_data)
+#
+#     except Exception as e:
+#         app.logger.error(f"Error in generate_avatar: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+# @app.route('/api/avatar/get', methods=['GET'])
+# @login_required
+# def get_user_avatar_data():
+#     """Get user's current avatar data"""
+#     try:
+#         user_id = session['user']['_id']
+#         avatar_doc = db.avatars.find_one({'userId': user_id})
+#
+#         if not avatar_doc:
+#             return jsonify({'error': 'No avatar found'}), 404
+#
+#         # Get the avatar data
+#         avatar_data = avatar_doc.get('avatarData', {})
+#
+#         # Add the model path if not present
+#         if 'model_path' not in avatar_data and 'gender' in avatar_data:
+#             avatar_data['model_path'] = MODEL_PATHS[avatar_data['gender'].lower()]
+#
+#         return jsonify({
+#             'success': True,
+#             'avatarData': avatar_data
+#         })
+#
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+#
+# # New endpoint for trying on clothes
+# @app.route('/api/avatar/try-on', methods=['POST'])
+# @login_required
+# def try_on_clothes():
+#     """Try on clothes from wardrobe on the avatar"""
+#     try:
+#         user_id = session['user']['_id']
+#         item_id = request.json.get('itemId')
+#
+#         if not item_id:
+#             return jsonify({'error': 'No item ID provided'}), 400
+#
+#         # Get the clothing item from the wardrobe
+#         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+#
+#         if not item:
+#             return jsonify({'error': 'Item not found'}), 404
+#
+#         # Get the avatar data
+#         avatar_data = db.avatars.find_one({'userId': user_id})
+#
+#         if not avatar_data:
+#             return jsonify({'error': 'No avatar found. Please create an avatar first.'}), 404
+#
+#         # Return the item data for the avatar to wear
+#         return jsonify({
+#             'success': True,
+#             'item': {
+#                 'id': str(item['_id']),
+#                 'type': item.get('label', '').lower(),
+#                 'color': item.get('color', ''),
+#                 'image_url': normalize_path(item.get('file_path', ''))
+#             }
+#         })
+#
+#     except Exception as e:
+#         print(f"Error in try_on_clothes: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+# @app.route('/model-inspector')
+# @login_required
+# def model_inspector():
+#     return render_template('model_inspector.html')
+#
+#
+# # Update avatar data
+# @app.route('/api/avatar/update', methods=['POST'])
+# @login_required
+# def update_avatar():
+#     try:
+#         user_id = session['user']['_id']
+#         avatar_data = request.json
+#
+#         if not avatar_data:
+#             return jsonify({'error': 'No avatar data provided'}), 400
+#
+#         # Update avatar document
+#         result = db.avatars.update_one(
+#             {'userId': user_id},
+#             {
+#                 '$set': {
+#                     'avatarData': avatar_data,
+#                     'updatedAt': datetime.now()
+#                 }
+#             },
+#             upsert=True
+#         )
+#
+#         return jsonify({
+#             'success': True,
+#             'message': 'Avatar updated successfully'
+#         })
+#
+#     except Exception as e:
+#         print(f"Error updating avatar: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+#
+
+import requests
 import base64
 from io import BytesIO
-import colorsys
-from sklearn.cluster import KMeans
+from PIL import Image
 
-# Initialize MediaPipe Face Mesh
-mp_face_mesh = mp.solutions.face_mesh
-face_mesh = mp_face_mesh.FaceMesh(
-    static_image_mode=True,
-    max_num_faces=1,
-    min_detection_confidence=0.5,
-    refine_landmarks=True
-)
+# Ready Player Me API Key - Replace with your own from RPM partner dashboard
+RPM_API_KEY = "your_rpm_api_key"
 
-def extract_skin_color(image):
-    """Extract skin color from an image using face detection and color clustering"""
-    try:
-        # Convert image to RGB if it's not already
-        if len(image.shape) == 2:
-            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        elif image.shape[2] == 4:
-            image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
-        
-        # Initialize MediaPipe Face Detection
-        mp_face_detection = mp.solutions.face_detection
-        mp_drawing = mp.solutions.drawing_utils
-        
-        # Process the image with face detection
-        with mp_face_detection.FaceDetection(min_detection_confidence=0.5) as face_detection:
-            # Convert the BGR image to RGB
-            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            
-            # Get image dimensions for proper landmark projection
-            image_height, image_width, _ = image_rgb.shape
-            
-            # Process the image and detect faces
-            results = face_detection.process(image_rgb)
-            
-            if results.detections:
-                # Get the first detected face
-                detection = results.detections[0]
-                
-                # Get bounding box
-                bbox = detection.location_data.relative_bounding_box
-                
-                # Convert relative coordinates to absolute
-                x = int(bbox.xmin * image_width)
-                y = int(bbox.ymin * image_height)
-                w = int(bbox.width * image_width)
-                h = int(bbox.height * image_height)
-                
-                # Ensure coordinates are within image bounds
-                x = max(0, x)
-                y = max(0, y)
-                w = min(image_width - x, w)
-                h = min(image_height - y, h)
-                
-                # Extract face region
-                face_region = image[y:y+h, x:x+w]
-                
-                if face_region.size == 0:
-                    # If face region is empty, use the whole image
-                    face_region = image
-                
-                # Resize for faster processing
-                face_region = cv2.resize(face_region, (100, 100))
-                
-                # Reshape for k-means
-                pixels = face_region.reshape(-1, 3)
-                
-                # Use k-means to find dominant colors
-                kmeans = KMeans(n_clusters=5, n_init=10, random_state=42)
-                kmeans.fit(pixels)
-                
-                # Get the cluster centers
-                colors = kmeans.cluster_centers_
-                
-                # Get the labels for each pixel
-                labels = kmeans.labels_
-                
-                # Count the number of pixels in each cluster
-                counts = np.bincount(labels)
-                
-                # Find the cluster with the most pixels
-                dominant_cluster = np.argmax(counts)
-                
-                # Get the dominant color
-                dominant_color = colors[dominant_cluster]
-                
-                # Normalize to [0, 1] range
-                normalized_color = dominant_color / 255.0
-                
-                return normalized_color.tolist()
-            else:
-                # No face detected, use the whole image
-                # Resize for faster processing
-                resized_image = cv2.resize(image, (100, 100))
-                
-                # Reshape for k-means
-                pixels = resized_image.reshape(-1, 3)
-                
-                # Use k-means to find dominant colors
-                kmeans = KMeans(n_clusters=5, n_init=10, random_state=42)
-                kmeans.fit(pixels)
-                
-                # Get the cluster centers
-                colors = kmeans.cluster_centers_
-                
-                # Get the labels for each pixel
-                labels = kmeans.labels_
-                
-                # Count the number of pixels in each cluster
-                counts = np.bincount(labels)
-                
-                # Find the cluster with the most pixels
-                dominant_cluster = np.argmax(counts)
-                
-                # Get the dominant color
-                dominant_color = colors[dominant_cluster]
-                
-                # Normalize to [0, 1] range
-                normalized_color = dominant_color / 255.0
-                
-                return normalized_color.tolist()
-    except Exception as e:
-        print(f"Error extracting skin color: {str(e)}")
-        # Return a default skin color
-        return [0.8, 0.7, 0.6]
 
-def extract_hair_color(image):
-    """Extract hair color from an image using face detection and color clustering"""
-    try:
-        # Convert image to RGB if it's not already
-        if len(image.shape) == 2:
-            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        elif image.shape[2] == 4:
-            image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
-        
-        # Initialize MediaPipe Face Detection
-        mp_face_detection = mp.solutions.face_detection
-        mp_drawing = mp.solutions.drawing_utils
-        
-        # Process the image with face detection
-        with mp_face_detection.FaceDetection(min_detection_confidence=0.5) as face_detection:
-            # Convert the BGR image to RGB
-            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            
-            # Get image dimensions for proper landmark projection
-            image_height, image_width, _ = image_rgb.shape
-            
-            # Process the image and detect faces
-            results = face_detection.process(image_rgb)
-            
-            if results.detections:
-                # Get the first detected face
-                detection = results.detections[0]
-                
-                # Get bounding box
-                bbox = detection.location_data.relative_bounding_box
-                
-                # Convert relative coordinates to absolute
-                x = int(bbox.xmin * image_width)
-                y = int(bbox.ymin * image_height)
-                w = int(bbox.width * image_width)
-                h = int(bbox.height * image_height)
-                
-                # Ensure coordinates are within image bounds
-                x = max(0, x)
-                y = max(0, y)
-                w = min(image_width - x, w)
-                h = min(image_height - y, h)
-                
-                # Extract face region
-                face_region = image[y:y+h, x:x+w]
-                
-                if face_region.size == 0:
-                    # If face region is empty, use the whole image
-                    face_region = image
-                
-                # Resize for faster processing
-                face_region = cv2.resize(face_region, (100, 100))
-                
-                # Reshape for k-means
-                pixels = face_region.reshape(-1, 3)
-                
-                # Use k-means to find dominant colors
-                kmeans = KMeans(n_clusters=5, n_init=10, random_state=42)
-                kmeans.fit(pixels)
-                
-                # Get the cluster centers
-                colors = kmeans.cluster_centers_
-                
-                # Get the labels for each pixel
-                labels = kmeans.labels_
-                
-                # Count the number of pixels in each cluster
-                counts = np.bincount(labels)
-                
-                # Sort clusters by count (descending)
-                sorted_indices = np.argsort(counts)[::-1]
-                
-                # Get the second most dominant color (assuming first is skin)
-                hair_cluster = sorted_indices[1]
-                
-                # Get the hair color
-                hair_color = colors[hair_cluster]
-                
-                # Normalize to [0, 1] range
-                normalized_color = hair_color / 255.0
-                
-                return normalized_color.tolist()
-            else:
-                # No face detected, use the whole image
-                # Resize for faster processing
-                resized_image = cv2.resize(image, (100, 100))
-                
-                # Reshape for k-means
-                pixels = resized_image.reshape(-1, 3)
-                
-                # Use k-means to find dominant colors
-                kmeans = KMeans(n_clusters=5, n_init=10, random_state=42)
-                kmeans.fit(pixels)
-                
-                # Get the cluster centers
-                colors = kmeans.cluster_centers_
-                
-                # Get the labels for each pixel
-                labels = kmeans.labels_
-                
-                # Count the number of pixels in each cluster
-                counts = np.bincount(labels)
-                
-                # Sort clusters by count (descending)
-                sorted_indices = np.argsort(counts)[::-1]
-                
-                # Get the second most dominant color (assuming first is skin)
-                hair_cluster = sorted_indices[1]
-                
-                # Get the hair color
-                hair_color = colors[hair_cluster]
-                
-                # Normalize to [0, 1] range
-                normalized_color = hair_color / 255.0
-                
-                return normalized_color.tolist()
-    except Exception as e:
-        print(f"Error extracting hair color: {str(e)}")
-        # Return a default hair color
-        return [0.2, 0.1, 0.1]
-
-def process_face_image(image_data):
-    """Process uploaded image to extract face landmarks and generate 3D avatar"""
-    try:
-        # Convert base64 to image
-        if isinstance(image_data, str) and ',' in image_data:
-            image_data = image_data.split(',')[1]
-        image_bytes = base64.b64decode(image_data)
-        image = Image.open(BytesIO(image_bytes))
-        
-        # Convert to RGB for MediaPipe
-        image_rgb = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
-        
-        # Get face landmarks
-        results = face_mesh.process(image_rgb)
-        
-        if not results.multi_face_landmarks:
-            return None, "No face detected in the image"
-            
-        # Extract face landmarks
-        face_landmarks = results.multi_face_landmarks[0]
-        
-        # Extract skin and hair colors
-        skin_color = extract_skin_color(image_rgb)
-        hair_color = extract_hair_color(image_rgb)
-        
-        # Convert landmarks to 3D coordinates
-        landmarks_3d = []
-        for landmark in face_landmarks.landmark:
-            landmarks_3d.append({
-                'x': landmark.x,
-                'y': landmark.y,
-                'z': landmark.z
-            })
-        
-        # Extract texture coordinates for UV mapping
-        texture_coords = []
-        for landmark in face_landmarks.landmark:
-            texture_coords.append({
-                'u': landmark.x,
-                'v': 1 - landmark.y  # Flip V coordinate for texture mapping
-            })
-        
-        # Save the original image for texture mapping
-        image_path = save_avatar_image(image, session['user']['_id'])
-        
-        # Generate avatar data
-        avatar_data = {
-            'landmarks': landmarks_3d,
-            'texture_coords': texture_coords,
-            'skin_color': skin_color,
-            'hair_color': hair_color,
-            'image_path': image_path
-        }
-        
-        return avatar_data, None
-        
-    except Exception as e:
-        print(f"Error in process_face_image: {str(e)}")
-        return None, str(e)
-
-def save_avatar_image(image, user_id):
-    try:
-        # Create directory if it doesn't exist
-        os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'avatars'), exist_ok=True)
-        
-        # Generate filename
-        filename = f'avatar_{user_id}.jpg'
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'avatars', filename)
-        
-        # Convert RGBA to RGB if needed
-        if image.mode == 'RGBA':
-            image = image.convert('RGB')
-            
-        # Save image
-        image.save(filepath)
-        
-        return filename
-    except Exception as e:
-        print(f"Error saving avatar image: {e}")
-        return None
-
-@app.route('/api/avatar/generate', methods=['POST'])
+@app.route('/api/avatar/generate-from-photo', methods=['POST'])
 @login_required
-def generate_avatar():
-    """Generate 3D avatar from uploaded photo"""
+def generate_avatar_from_photo():
     try:
+        # Check if photo is in request
         if 'photo' not in request.files:
-            return jsonify({'error': 'No photo uploaded'}), 400
-            
+            return jsonify({'success': False, 'error': 'No photo provided'}), 400
+
         photo = request.files['photo']
-        if not photo or not allowed_file(photo.filename):
-            return jsonify({'error': 'Invalid file type'}), 400
-            
-        # Read image data
-        image_data = photo.read()
-        image_base64 = base64.b64encode(image_data).decode('utf-8')
-        
-        # Process the image
-        avatar_data, error = process_face_image(image_base64)
-        
-        if error:
-            return jsonify({'error': error}), 400
-            
-        # Get gender from form
-        gender = request.form.get('gender', 'female')
-        
-        # Create avatar data with extracted features
-        avatar_config = {
-            'gender': gender,
-            'skin_color': avatar_data['skin_color'],
-            'hair_color': avatar_data['hair_color'],
-            'model_path': MODEL_PATHS[gender.lower()],
-            'texture_coords': avatar_data['texture_coords'],
-            'landmarks': avatar_data['landmarks']
-        }
-        
-        # Save avatar data to database
+
+        if photo.filename == '':
+            return jsonify({'success': False, 'error': 'Empty file'}), 400
+
+        # Get user ID
         user_id = session['user']['_id']
-        db.avatars.update_one(
-            {'userId': user_id},
-            {
-                '$set': {
-                    'avatarData': avatar_config,
-                    'imageData': avatar_data['image_path'],
-                    'updatedAt': datetime.now()
-                }
+
+        # Save the photo temporarily
+        img = Image.open(photo)
+        img_buffer = BytesIO()
+        img.save(img_buffer, format='JPEG')
+        img_buffer.seek(0)
+
+        # Convert to base64 for the RPM API
+        base64_image = base64.b64encode(img_buffer.read()).decode('utf-8')
+
+        # Create directory for user avatars if it doesn't exist
+        avatar_dir = os.path.join('flaskapp', 'static', 'avatars', str(user_id))
+        os.makedirs(avatar_dir, exist_ok=True)
+
+        # Contact the Ready Player Me API
+        # For testing, we'll use their demo API endpoint
+        # In production, use their direct API with your API key
+        response = requests.post(
+            'https://api.readyplayer.me/v1/avatars',
+            json={
+                'photo': f'data:image/jpeg;base64,{base64_image}',
+                'gender': 'neutral'  # or get from form
             },
-            upsert=True
-        )
-        
-        return jsonify({
-            'success': True,
-            'avatarData': avatar_config
-        })
-        
-    except Exception as e:
-        print(f"Error in generate_avatar: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/avatar/get', methods=['GET'])
-@login_required
-def get_user_avatar_data():
-    """Get user's current avatar data"""
-    try:
-        user_id = session['user']['_id']
-        avatar_doc = db.avatars.find_one({'userId': user_id})
-
-        if not avatar_doc:
-            return jsonify({'error': 'No avatar found'}), 404
-            
-        # Get the avatar data
-        avatar_data = avatar_doc.get('avatarData', {})
-        
-        # Add the model path if not present
-        if 'model_path' not in avatar_data and 'gender' in avatar_data:
-            avatar_data['model_path'] = MODEL_PATHS[avatar_data['gender'].lower()]
-            
-        return jsonify({
-            'success': True,
-            'avatarData': avatar_data
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# New endpoint for trying on clothes
-@app.route('/api/avatar/try-on', methods=['POST'])
-@login_required
-def try_on_clothes():
-    """Try on clothes from wardrobe on the avatar"""
-    try:
-        user_id = session['user']['_id']
-        item_id = request.json.get('itemId')
-        
-        if not item_id:
-            return jsonify({'error': 'No item ID provided'}), 400
-            
-        # Get the clothing item from the wardrobe
-        item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
-        
-        if not item:
-            return jsonify({'error': 'Item not found'}), 404
-            
-        # Get the avatar data
-        avatar_data = db.avatars.find_one({'userId': user_id})
-        
-        if not avatar_data:
-            return jsonify({'error': 'No avatar found. Please create an avatar first.'}), 404
-            
-        # Return the item data for the avatar to wear
-        return jsonify({
-            'success': True,
-            'item': {
-                'id': str(item['_id']),
-                'type': item.get('label', '').lower(),
-                'color': item.get('color', ''),
-                'image_url': normalize_path(item.get('file_path', ''))
+            headers={
+                'Authorization': f'Bearer {RPM_API_KEY}',
+                'Content-Type': 'application/json'
             }
-        })
-        
-    except Exception as e:
-        print(f"Error in try_on_clothes: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/model-inspector')
-@login_required
-def model_inspector():
-    return render_template('model_inspector.html')
-
-
-# Update avatar data
-@app.route('/api/avatar/update', methods=['POST'])
-@login_required
-def update_avatar():
-    try:
-        user_id = session['user']['_id']
-        avatar_data = request.json
-
-        if not avatar_data:
-            return jsonify({'error': 'No avatar data provided'}), 400
-
-        # Update avatar document
-        result = db.avatars.update_one(
-            {'userId': user_id},
-            {
-                '$set': {
-                    'avatarData': avatar_data,
-                    'updatedAt': datetime.now()
-                }
-            },
-            upsert=True
         )
 
-        return jsonify({
-            'success': True,
-            'message': 'Avatar updated successfully'
-        })
+        if response.status_code != 200:
+            # For testing, use their demo web API
+            # In production, this approach would require your own server-side implementation
+            print(f"API error: {response.status_code} - {response.text}")
+
+            # Fallback to a demo avatar URL for testing
+            avatar_url = "https://models.readyplayer.me/64c415db15199e3f53bbc65f.glb"
+        else:
+            # Get the avatar URL from the response
+            response_data = response.json()
+            avatar_url = response_data.get('avatarUrl')
+
+        if not avatar_url:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to generate avatar'
+            }), 500
+
+        # Download the avatar model
+        avatar_response = requests.get(avatar_url)
+        if avatar_response.status_code == 200:
+            # Save the model file
+            avatar_filename = f"avatar-{uuid.uuid4()}.glb"
+            avatar_filepath = os.path.join(avatar_dir, avatar_filename)
+
+            with open(avatar_filepath, 'wb') as f:
+                f.write(avatar_response.content)
+
+            # Save the avatar info to the database
+            db.avatars.update_one(
+                {'userId': user_id},
+                {
+                    '$set': {
+                        'avatarUrl': avatar_url,
+                        'localPath': f'/static/avatars/{user_id}/{avatar_filename}',
+                        'updated_at': datetime.now()
+                    }
+                },
+                upsert=True
+            )
+
+            return jsonify({
+                'success': True,
+                'avatarUrl': avatar_url,
+                'localPath': f'/static/avatars/{user_id}/{avatar_filename}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Failed to download avatar model: {avatar_response.status_code}'
+            }), 500
 
     except Exception as e:
-        print(f"Error updating avatar: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        print(f"Error generating avatar: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/avatar/get-rpm-avatar')
+@login_required
+def get_rpm_avatar():
+    user_id = session['user']['_id']
+
+    # Try to find an existing RPM avatar for this user
+    avatar_doc = db.avatars.find_one({'userId': user_id})
+
+    if avatar_doc and 'avatarUrl' in avatar_doc:
+        return jsonify({
+            'success': True,
+            'avatarUrl': avatar_doc['avatarUrl'],
+            'localPath': avatar_doc.get('localPath')
+        })
+
+    return jsonify({'success': False, 'error': 'No avatar found'})
+
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

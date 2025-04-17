@@ -1,15 +1,17 @@
 // Global variables
-let scene, camera, renderer, controls;
+let scene, camera, renderer, controls, avatar;
 let avatarContainer;
 let currentAvatar = null;
 let currentHair = null;
 let currentClothing = {};
 let isLoading = false;
+let loadingOverlay = document.getElementById('loading-overlay');
+let loadingProgress = document.getElementById('loading-progress');
 
 // Model paths for different genders
 const MODEL_PATHS = {
     male: '/static/models/avatar/male.gltf',
-    female: '/static/models/avatar/female.gltf'
+    female: '/static/models/avatar/female_1.glb'
 };
 
 // Hair style paths
@@ -29,7 +31,7 @@ const HAIR_PATHS = {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Three.js scene
-    initThreeJS();
+    init();
     
     // Set up event listeners
     setupEventListeners();
@@ -37,12 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load wardrobe items
     loadWardrobeItems('tops');
     
-    // Try to load existing avatar
-    loadExistingAvatar();
+    // Load the female avatar by default
+    loadAvatarModel({ gender: 'female' });
 });
 
-// Initialize Three.js scene
-function initThreeJS() {
+// Initialize the 3D scene
+function init() {
     // Get container
     avatarContainer = document.getElementById('avatarContainer');
     
@@ -50,67 +52,95 @@ function initThreeJS() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
     
-    // Create camera
-    camera = new THREE.PerspectiveCamera(
-        45, 
-        avatarContainer.clientWidth / avatarContainer.clientHeight, 
-        0.1, 
-        1000
-    );
-    camera.position.set(0, 1.5, 3);
-    camera.lookAt(0, 1, 0);
+    // Calculate available space for renderer (excluding left menu)
+    const leftMenu = document.querySelector('.customization-panel') || document.querySelector('.left-panel');
+    const menuWidth = leftMenu ? leftMenu.offsetWidth : 300; // Default to 300px if menu not found
+    const availableWidth = window.innerWidth - menuWidth;
     
-    // Create renderer
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(avatarContainer.clientWidth, avatarContainer.clientHeight);
+    // Create camera with better initial position
+    camera = new THREE.PerspectiveCamera(45, availableWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.6, 3);
+    
+    // Create renderer with improved settings
+    renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        alpha: true
+    });
+    renderer.setSize(availableWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    
+    // Position the renderer next to the menu
+    avatarContainer.style.position = 'absolute';
+    avatarContainer.style.left = menuWidth + 'px';
+    avatarContainer.style.top = '0';
     avatarContainer.appendChild(renderer.domElement);
     
-    // Create controls
+    // Add orbit controls with better constraints
     controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 1, 0);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 1.5;
-    controls.maxDistance = 4;
-    controls.maxPolarAngle = Math.PI / 2;
+    controls.minDistance = 2;
+    controls.maxDistance = 10;
+    controls.target.set(0, 1, 0);
+    controls.maxPolarAngle = Math.PI * 0.8;
+    controls.minPolarAngle = Math.PI * 0.2;
     
-    // Add lights
-    setupLights();
+    // Enhanced lighting setup
+    setupLighting();
     
-    // Add grid for reference
-    const gridHelper = new THREE.GridHelper(10, 10);
-    scene.add(gridHelper);
+    // Add ground plane for better context
+    const groundGeometry = new THREE.PlaneGeometry(10, 10);
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xcccccc,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0;
+    ground.receiveShadow = true;
+    scene.add(ground);
     
     // Start animation loop
     animate();
     
     // Handle window resize
-    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('resize', onWindowResize, false);
 }
 
-// Set up lights
-function setupLights() {
-    // Ambient light
+// Set up enhanced lighting
+function setupLighting() {
+    // Ambient light for overall illumination
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
     
-    // Main directional light
-    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    // Main directional light (sun)
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
     mainLight.position.set(5, 5, 5);
     mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 1024;
-    mainLight.shadow.mapSize.height = 1024;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.camera.near = 0.1;
+    mainLight.shadow.camera.far = 20;
+    mainLight.shadow.camera.left = -5;
+    mainLight.shadow.camera.right = 5;
+    mainLight.shadow.camera.top = 5;
+    mainLight.shadow.camera.bottom = -5;
+    mainLight.shadow.bias = -0.0001;
     scene.add(mainLight);
     
-    // Fill light
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
-    fillLight.position.set(-5, 3, -5);
+    // Fill light from the front
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    fillLight.position.set(-5, 3, 5);
     scene.add(fillLight);
     
-    // Rim light for edge definition
-    const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    // Rim light from behind
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.2);
     rimLight.position.set(0, 3, -5);
     scene.add(rimLight);
 }
@@ -124,9 +154,15 @@ function animate() {
 
 // Handle window resize
 function onWindowResize() {
-    camera.aspect = avatarContainer.clientWidth / avatarContainer.clientHeight;
+    const leftMenu = document.querySelector('.customization-panel') || document.querySelector('.left-panel');
+    const menuWidth = leftMenu ? leftMenu.offsetWidth : 300;
+    const availableWidth = window.innerWidth - menuWidth;
+    
+    camera.aspect = availableWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(avatarContainer.clientWidth, avatarContainer.clientHeight);
+    
+    renderer.setSize(availableWidth, window.innerHeight);
+    avatarContainer.style.left = menuWidth + 'px';
 }
 
 // Set up event listeners
@@ -236,28 +272,13 @@ async function updateAvatar(avatarData) {
     
     try {
         // Load the base avatar model
-        const avatarModel = await loadAvatarModel(gender);
-        
-        // Apply skin color
-        if (avatarData.skin_color) {
-            applySkinColor(avatarModel, avatarData.skin_color);
-        }
-        
-        // Load and apply hair style
-        if (avatarData.hair_style) {
-            await loadHairStyle(gender, avatarData.hair_style);
-            
-            // Apply hair color
-            if (avatarData.hair_color && currentHair) {
-                applyHairColor(currentHair, avatarData.hair_color);
-            }
-        }
+        const avatarModel = await loadAvatarModel(avatarData);
         
         // Update UI controls to match avatar
         updateUIControls(avatarData);
         
         // Update camera position to focus on avatar
-        camera.position.set(0, 1.5, 3);
+        camera.position.set(0, 1.6, 2);
         controls.target.set(0, 1, 0);
         controls.update();
         
@@ -268,141 +289,151 @@ async function updateAvatar(avatarData) {
     }
 }
 
-// Load avatar model
-async function loadAvatarModel(gender) {
-    return new Promise((resolve, reject) => {
-        // Get model path
-        const modelPath = MODEL_PATHS[gender.toLowerCase()] || MODEL_PATHS.female;
-        
-        // Create loader
-        const loader = new THREE.GLTFLoader();
-        
-        // Load model
-        loader.load(
-            modelPath,
-            (gltf) => {
-                // Remove current avatar if exists
-                if (currentAvatar) {
-                    scene.remove(currentAvatar);
+// Load the avatar model
+async function loadAvatarModel(avatarData) {
+    showLoadingOverlay();
+    
+    try {
+        // Clean up existing avatar
+        if (avatar) {
+            scene.remove(avatar);
+            avatar.traverse((child) => {
+                if (child.isMesh) {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(material => material.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
                 }
-                
-                // Set new avatar
-                currentAvatar = gltf.scene;
-                
-                // Position and scale avatar
-                currentAvatar.position.set(0, 0, 0);
-                currentAvatar.scale.set(1, 1, 1);
-                
-                // Setup shadows
-                currentAvatar.traverse((node) => {
-                    if (node.isMesh) {
-                        node.castShadow = true;
-                        node.receiveShadow = true;
-                    }
-                });
-                
-                // Add to scene
-                scene.add(currentAvatar);
-                
-                resolve(currentAvatar);
-            },
-            (xhr) => {
-                // Progress
-                console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-            },
-            (error) => {
-                console.error('Error loading avatar model:', error);
-                reject(error);
-            }
-        );
-    });
-}
-
-// Load hair style
-async function loadHairStyle(gender, style) {
-    return new Promise((resolve, reject) => {
-        // Remove current hair if exists
-        if (currentHair) {
-            scene.remove(currentHair);
-            currentHair = null;
+            });
         }
-        
-        // Get path for the requested hair style
-        const genderHairStyles = HAIR_PATHS[gender.toLowerCase()] || HAIR_PATHS.female;
-        const hairPath = genderHairStyles[style] || genderHairStyles.style1;
-        
-        // Create loader
+
+        // Load the model
         const loader = new THREE.GLTFLoader();
+        const modelPath = MODEL_PATHS[avatarData?.gender || 'female'];
+        console.log('Loading model from:', modelPath);
+
+        const gltf = await new Promise((resolve, reject) => {
+            loader.load(
+                modelPath,
+                resolve,
+                (xhr) => {
+                    const progress = Math.floor((xhr.loaded / xhr.total) * 100);
+                    updateLoadingProgress(progress);
+                },
+                reject
+            );
+        });
+
+        // Set up the avatar
+        avatar = gltf.scene;
         
-        // Load hair model
-        loader.load(
-            hairPath,
-            (gltf) => {
-                // Set new hair
-                currentHair = gltf.scene;
-                
-                // Position hair relative to avatar
-                // This might need adjustment based on your models
-                currentHair.position.set(0, 1.65, 0);
-                
-                // Setup shadows
-                currentHair.traverse((node) => {
-                    if (node.isMesh) {
-                        node.castShadow = true;
-                    }
-                });
-                
-                // Add to scene
-                scene.add(currentHair);
-                
-                resolve(currentHair);
-            },
-            (xhr) => {
-                // Progress
-                console.log('Hair: ' + (xhr.loaded / xhr.total * 100) + '% loaded');
-            },
-            (error) => {
-                console.error('Error loading hair model:', error);
-                reject(error);
-            }
-        );
+        // Scale and position the avatar appropriately
+        avatar.scale.set(1, 1, 1);
+        avatar.position.set(0, 0, 0);
+
+        // Add the avatar to the scene
+        scene.add(avatar);
+
+        // Reset camera position for better view
+        camera.position.set(0, 1.6, 2);
+        controls.target.set(0, 1, 0);
+        controls.update();
+
+        hideLoadingOverlay();
+        return true;
+    } catch (error) {
+        console.error('Error loading avatar model:', error);
+        hideLoadingOverlay();
+        createFallbackAvatar();
+        return false;
+    }
+}
+
+// Apply facial features to the avatar
+function applyFacialFeatures(avatar, features) {
+    // Scale face width and height
+    const scaleX = features.face_width;
+    const scaleY = features.face_height;
+    avatar.scale.set(scaleX, scaleY, scaleX);
+
+    // Adjust eye distance
+    if (avatar.getObjectByName('eyes')) {
+        const eyes = avatar.getObjectByName('eyes');
+        eyes.scale.x = features.eye_distance;
+    }
+
+    // Adjust nose length
+    if (avatar.getObjectByName('nose')) {
+        const nose = avatar.getObjectByName('nose');
+        nose.scale.y = features.nose_length;
+    }
+
+    // Adjust mouth width
+    if (avatar.getObjectByName('mouth')) {
+        const mouth = avatar.getObjectByName('mouth');
+        mouth.scale.x = features.mouth_width;
+    }
+}
+
+// Create realistic skin material
+function createSkinMaterial(skinColor) {
+    return new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(skinColor[0]/255, skinColor[1]/255, skinColor[2]/255),
+        roughness: 0.3,
+        metalness: 0.0,
+        clearcoat: 0.1,
+        clearcoatRoughness: 0.3,
+        sheen: 0.4,
+        sheenRoughness: 0.8,
+        transmission: 0.2,
+        thickness: 0.5
     });
 }
 
-// Apply skin color to avatar
-function applySkinColor(avatarModel, skinColor) {
-    if (!avatarModel) return;
-    
-    avatarModel.traverse((node) => {
-        if (node.isMesh) {
-            // Check if this is a skin material by name
-            const name = node.name.toLowerCase();
-            if (name.includes('skin') || name.includes('body') || name.includes('face')) {
-                // Apply color
-                node.material.color.setRGB(skinColor[0], skinColor[1], skinColor[2]);
-                
-                // Improve material properties for more realistic skin
-                node.material.roughness = 0.7;
-                node.material.metalness = 0.0;
-            }
-        }
+// Create realistic hair material
+function createHairMaterial(hairColor) {
+    return new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(hairColor[0], hairColor[1], hairColor[2]),
+        roughness: 0.4,
+        metalness: 0.1,
+        clearcoat: 0.4,
+        clearcoatRoughness: 0.25,
+        sheen: 1.0,
+        sheenRoughness: 0.3,
+        transmission: 0.0
     });
 }
 
-// Apply hair color
-function applyHairColor(hairModel, hairColor) {
-    if (!hairModel) return;
-    
-    hairModel.traverse((node) => {
-        if (node.isMesh) {
-            // Apply color to all hair meshes
-            node.material.color.setRGB(hairColor[0], hairColor[1], hairColor[2]);
-            
-            // Improve material properties for hair
-            node.material.roughness = 0.6;
-            node.material.metalness = 0.1;
-        }
-    });
+// Create a simple fallback avatar
+function createFallbackAvatar() {
+    const geometry = new THREE.CylinderGeometry(0.3, 0.2, 1.8, 32);
+    const material = new THREE.MeshPhongMaterial({ color: 0x808080 });
+    avatar = new THREE.Mesh(geometry, material);
+    avatar.position.set(0, 0.9, 0);
+    scene.add(avatar);
+}
+
+// Loading overlay management
+function showLoadingOverlay() {
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'flex';
+    }
+}
+
+function hideLoadingOverlay() {
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+function updateLoadingProgress(progress) {
+    if (loadingProgress) {
+        loadingProgress.textContent = `Loading: ${progress}%`;
+    }
 }
 
 // Try on clothing
@@ -770,147 +801,4 @@ async function saveAvatarScreenshot() {
     } catch (error) {
         console.error('Error saving avatar screenshot:', error);
     }
-}
-
-// Create a fallback avatar when no model is available
-function createFallbackAvatar(gender = 'female') {
-    // Remove current avatar if exists
-    if (currentAvatar) {
-        scene.remove(currentAvatar);
-    }
-    
-    // Create a group to hold all avatar parts
-    const avatar = new THREE.Group();
-    
-    // Create head (sphere)
-    const headGeometry = new THREE.SphereGeometry(0.25, 32, 32);
-    const headMaterial = new THREE.MeshStandardMaterial({
-        color: 0xFFE0BD,
-        roughness: 0.7,
-        metalness: 0.0
-    });
-    const head = new THREE.Mesh(headGeometry, headMaterial);
-    head.position.y = 1.7;
-    avatar.add(head);
-    
-    // Create eyes
-    const eyeGeometry = new THREE.SphereGeometry(0.03, 16, 16);
-    const eyeMaterial = new THREE.MeshStandardMaterial({
-        color: 0xFFFFFF,
-        roughness: 0.2,
-        metalness: 0.0
-    });
-    
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.08, 1.7, 0.2);
-    avatar.add(leftEye);
-    
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.08, 1.7, 0.2);
-    avatar.add(rightEye);
-    
-    // Create pupils
-    const pupilGeometry = new THREE.SphereGeometry(0.015, 16, 16);
-    const pupilMaterial = new THREE.MeshStandardMaterial({
-        color: 0x000000,
-        roughness: 0.1,
-        metalness: 0.0
-    });
-    
-    const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
-    leftPupil.position.set(-0.08, 1.7, 0.225);
-    avatar.add(leftPupil);
-    
-    const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
-    rightPupil.position.set(0.08, 1.7, 0.225);
-    avatar.add(rightPupil);
-    
-    // Create neck
-    const neckGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.2, 32);
-    const neckMaterial = new THREE.MeshStandardMaterial({
-        color: 0xFFE0BD,
-        roughness: 0.7,
-        metalness: 0.0
-    });
-    const neck = new THREE.Mesh(neckGeometry, neckMaterial);
-    neck.position.y = 1.5;
-    avatar.add(neck);
-    
-    // Create torso
-    const torsoGeometry = new THREE.CylinderGeometry(
-        gender === 'female' ? 0.25 : 0.3, 
-        gender === 'female' ? 0.2 : 0.25, 
-        0.6, 
-        32
-    );
-    const torsoMaterial = new THREE.MeshStandardMaterial({
-        color: 0x3388cc,  // Blue shirt
-        roughness: 0.8,
-        metalness: 0.0
-    });
-    const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
-    torso.position.y = 1.2;
-    avatar.add(torso);
-    
-    // Create legs
-    const legGeometry = new THREE.CylinderGeometry(
-        0.12, 
-        0.1, 
-        0.9, 
-        32
-    );
-    const legMaterial = new THREE.MeshStandardMaterial({
-        color: 0x222222,  // Dark pants
-        roughness: 0.8,
-        metalness: 0.0
-    });
-    
-    const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-    leftLeg.position.set(-0.1, 0.5, 0);
-    avatar.add(leftLeg);
-    
-    const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-    rightLeg.position.set(0.1, 0.5, 0);
-    avatar.add(rightLeg);
-    
-    // Create arms
-    const armGeometry = new THREE.CylinderGeometry(
-        0.07, 
-        0.06, 
-        0.6, 
-        32
-    );
-    const armMaterial = new THREE.MeshStandardMaterial({
-        color: 0xFFE0BD,
-        roughness: 0.7,
-        metalness: 0.0
-    });
-    
-    const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-    leftArm.position.set(-0.35, 1.2, 0);
-    leftArm.rotation.z = -0.2;
-    avatar.add(leftArm);
-    
-    const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-    rightArm.position.set(0.35, 1.2, 0);
-    rightArm.rotation.z = 0.2;
-    avatar.add(rightArm);
-    
-    // Create simple hair
-    const hairGeometry = new THREE.SphereGeometry(0.28, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
-    const hairMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4A3728,  // Brown hair
-        roughness: 0.6,
-        metalness: 0.0
-    });
-    const hair = new THREE.Mesh(hairGeometry, hairMaterial);
-    hair.position.y = 1.75;
-    hair.rotation.x = Math.PI;
-    avatar.add(hair);
-    
-    // Add to scene
-    scene.add(avatar);
-    currentAvatar = avatar;
-    
-    return avatar;
 }
