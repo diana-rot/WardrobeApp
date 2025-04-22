@@ -293,23 +293,32 @@ class RPMAvatarManager {
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
+        // Calculate optimal camera position
         const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = this.camera.fov * (Math.PI / 180);
-        let cameraZ = Math.abs(maxDim / Math.tan(fov / 2)) * 1.2;
+        const fov = 45; // Increased FOV for closer view
+        let cameraZ = Math.abs(maxDim / Math.tan((fov * Math.PI / 180) / 2)) * 1.2; // Reduced distance multiplier
         
+        // Position camera lower and closer
         this.camera.position.set(
-            center.x + cameraZ * 0.3,
-            center.y + size.y / 2.5,
-            center.z + cameraZ
+            center.x + cameraZ * 0.3, // Reduced side offset
+            center.y + size.y * 0.1,  // Lowered camera height from 0.3 to 0.1
+            center.z + cameraZ * 0.8  // Brought camera closer
         );
         
+        // Adjust target to be at the center of the avatar
         this.controls.target.set(
             center.x,
-            center.y + size.y / 2,
+            center.y + (size.y * 0.2), // Lowered target point from 0.4 to 0.2
             center.z
         );
         
+        // Update camera settings
+        this.camera.fov = fov;
         this.camera.updateProjectionMatrix();
+        
+        // Adjust control limits for closer interaction
+        this.controls.minDistance = cameraZ * 0.3;
+        this.controls.maxDistance = cameraZ * 1.5;
         this.controls.update();
     }
     

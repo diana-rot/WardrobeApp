@@ -224,16 +224,23 @@
         height: 200px;
         background: #f5f5f5;
         border-radius: 4px;
-        margin-bottom: 15px;
+        margin: 15px 0;
         display: flex;
         justify-content: center;
         align-items: center;
         overflow: hidden;
+        border: 1px solid #ddd;
     }
 
     .rpm-avatar-preview img {
         max-width: 100%;
         max-height: 100%;
+        object-fit: contain;
+    }
+
+    .rpm-avatar-preview span {
+        color: #666;
+        font-size: 14px;
     }
 
     @media (max-width: 768px) {
@@ -346,14 +353,12 @@
                 <button id="open-rpm-creator" class="btn btn-primary rpm-button">Open RPM Creator</button>
                 <button id="load-saved-rpm" class="btn btn-secondary rpm-button">Load Saved Avatar</button>
                 
-                <div class="form-group">
-                    <label for="rpm-avatar-url">Or enter your RPM avatar URL</label>
-                    <input type="text" id="rpm-avatar-url" class="form-control" placeholder="https://api.readyplayer.me/v1/avatars/...">
-                    <button id="load-rpm-url" class="btn btn-primary" style="margin-top: 10px;">Load Avatar</button>
-                </div>
-
                 <div class="rpm-avatar-preview" id="rpm-avatar-preview">
                     <span>No avatar loaded</span>
+                </div>
+                <div class="rpm-url-input">
+                    <input type="text" id="rpm-avatar-url" class="form-control" placeholder="Enter RPM avatar URL">
+                    <button id="load-rpm-url" class="btn btn-primary mt-2">Load Avatar</button>
                 </div>
             </div>
 
