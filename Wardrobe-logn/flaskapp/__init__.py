@@ -11,6 +11,7 @@ import logging
 import os
 import json
 import gc
+from bson.objectid import ObjectId
 
 # Configure logging with more detailed format
 logging.basicConfig(
@@ -360,3 +361,55 @@ def extract_body_features(landmarks, image_size):
     except Exception as e:
         logger.error(f"Error in body feature extraction: {str(e)}", exc_info=True)
         return {'error': str(e)}
+
+@app.route('/rpm-avatar', methods=['GET'])
+@login_required
+def rpm_avatar():
+    """Route for Ready Player Me avatar creation and management"""
+    return render_template('rpm_avatar.html')
+
+@app.route('/api/rpm/save-avatar', methods=['POST'])
+@login_required
+def save_rpm_avatar():
+    """Save the Ready Player Me avatar URL to the user's profile"""
+    try:
+        data = request.json
+        avatar_url = data.get('avatarUrl')
+        
+        if not avatar_url:
+            return jsonify({'success': False, 'error': 'No avatar URL provided'})
+        
+        # Get user from session
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not logged in'})
+        
+        # Update user's avatar URL in database
+        db.users.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': {'rpm_avatar_url': avatar_url}}
+        )
+        
+        return jsonify({'success': True, 'avatarUrl': avatar_url})
+    except Exception as e:
+        logger.error(f"Error saving RPM avatar: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/rpm/get-avatar', methods=['GET'])
+@login_required
+def get_rpm_avatar():
+    """Get the user's saved Ready Player Me avatar URL"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not logged in'})
+        
+        user = db.users.find_one({'_id': ObjectId(user_id)})
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'})
+        
+        avatar_url = user.get('rpm_avatar_url')
+        return jsonify({'success': True, 'avatarUrl': avatar_url})
+    except Exception as e:
+        logger.error(f"Error getting RPM avatar: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})

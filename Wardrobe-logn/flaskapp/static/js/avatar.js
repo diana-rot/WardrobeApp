@@ -1342,3 +1342,205 @@ async function applyBodyFeatures(bodyFeatures) {
         skeleton.updateMatrixWorld(true);
     }
 }
+
+class AvatarManager {
+    constructor(options) {
+        this.container = options.container;
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.controls = null;
+        this.avatar = null;
+        this.loadingOverlay = this.container.querySelector('.loading-overlay');
+        this.loadingProgress = this.container.querySelector('#loading-progress');
+    }
+
+    init() {
+        // Initialize Three.js scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0xf0f0f0);
+
+        // Setup camera
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+        this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+        this.camera.position.set(0, 1.6, 2);
+        this.camera.lookAt(0, 1.6, 0);
+
+        // Setup renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(width, height);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.shadowMap.enabled = true;
+        this.container.appendChild(this.renderer.domElement);
+
+        // Setup controls
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.target.set(0, 1.6, 0);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+        mainLight.position.set(5, 5, 5);
+        mainLight.castShadow = true;
+        this.scene.add(mainLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-5, 3, -5);
+        this.scene.add(fillLight);
+
+        // Add ground plane
+        const groundGeometry = new THREE.PlaneGeometry(10, 10);
+        const groundMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xcccccc,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add(ground);
+
+        // Handle window resize
+        window.addEventListener('resize', this.onWindowResize.bind(this));
+
+        // Start animation loop
+        this.animate();
+
+        // Setup form submission
+        const form = document.getElementById('avatar-form');
+        form.addEventListener('submit', this.handleFormSubmit.bind(this));
+    }
+
+    onWindowResize() {
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.setSize(width, height);
+    }
+
+    animate() {
+        requestAnimationFrame(this.animate.bind(this));
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    showLoading(message = 'Loading...') {
+        this.loadingOverlay.style.display = 'flex';
+        this.loadingProgress.textContent = message;
+    }
+
+    hideLoading() {
+        this.loadingOverlay.style.display = 'none';
+    }
+
+    async handleFormSubmit(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const photo = formData.get('photo');
+        const gender = formData.get('gender');
+
+        if (!photo) {
+            alert('Please select a photo');
+            return;
+        }
+
+        this.showLoading('Processing photo...');
+
+        try {
+            // First, extract features from the photo
+            const featuresFormData = new FormData();
+            featuresFormData.append('photo', photo);
+
+            const featuresResponse = await fetch('/api/extract-features', {
+                method: 'POST',
+                body: featuresFormData
+            });
+
+            if (!featuresResponse.ok) {
+                throw new Error('Failed to extract features');
+            }
+
+            const features = await featuresResponse.json();
+            console.log('Features extracted:', features);
+
+            // Then generate the avatar with the extracted features
+            const avatarResponse = await fetch('/api/avatar/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    features: features,
+                    gender: gender
+                })
+            });
+
+            if (!avatarResponse.ok) {
+                throw new Error('Failed to generate avatar');
+            }
+
+            const avatarData = await avatarResponse.json();
+            console.log('Avatar generated:', avatarData);
+
+            // Load the generated avatar model
+            await this.loadAvatar(avatarData.modelUrl);
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while processing your photo');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async loadAvatar(url) {
+        this.showLoading('Loading avatar...');
+
+        try {
+            const loader = new THREE.GLTFLoader();
+            const gltf = await loader.loadAsync(url);
+
+            // Remove existing avatar if any
+            if (this.avatar) {
+                this.scene.remove(this.avatar);
+            }
+
+            this.avatar = gltf.scene;
+            this.avatar.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                }
+            });
+
+            // Center the avatar
+            const box = new THREE.Box3().setFromObject(this.avatar);
+            const center = box.getCenter(new THREE.Vector3());
+            this.avatar.position.sub(center);
+
+            // Scale the avatar to a reasonable size
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 1.7 / maxDim;
+            this.avatar.scale.multiplyScalar(scale);
+
+            this.scene.add(this.avatar);
+
+        } catch (error) {
+            console.error('Error loading avatar:', error);
+            alert('Failed to load avatar model');
+        } finally {
+            this.hideLoading();
+        }
+    }
+}

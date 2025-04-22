@@ -1847,7 +1847,7 @@ def generate_avatar_from_photo():
 
 @app.route('/api/avatar/get-rpm-avatar')
 @login_required
-def get_rpm_avatar():
+def get_avatar_rpm():
     user_id = session['user']['_id']
 
     # Try to find an existing RPM avatar for this user

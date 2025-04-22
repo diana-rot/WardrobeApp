@@ -1,118 +1,52 @@
 {% extends "base.html" %}
 
-{% block title %}3D Avatar Creator - WardrobeApp{% endblock %}
+{% block title %}Avatar Creator{% endblock %}
 
 {% block extra_css %}
 <style>
-    body {
+    .avatar-page-content {
+        display: flex;
+        height: calc(100vh - 56px);
         margin: 0;
         padding: 0;
         overflow: hidden;
     }
 
-    .main-content {
-        display: flex;
-        height: 100vh;
-        width: 100vw;
-        position: fixed;
-        top: 0;
-        left: 0;
-    }
-
-    #customization-panel {
+    .customization-panel {
         width: 320px;
-        background: white;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        overflow-y: auto;
+        background: #fff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        z-index: 100;
-        height: 100vh;
+        overflow-y: auto;
+        z-index: 1;
     }
 
-    #avatarContainer {
+    .avatar-container {
         flex: 1;
         position: relative;
-        background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
-    }
-
-    .control-group {
-        margin-bottom: 20px;
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 8px;
-    }
-
-    .control-group h3 {
-        margin-top: 0;
-        color: #333;
-    }
-
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    select, input[type="file"], input[type="range"], input[type="color"] {
-        width: 100%;
-        padding: 8px;
-        margin-bottom: 5px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-
-    .btn-primary {
-        background: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        width: 100%;
-        font-weight: bold;
-        transition: background-color 0.3s;
-    }
-
-    .btn-primary:hover {
-        background: #45a049;
-    }
-
-    .btn-secondary {
-        background: #2196F3;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-top: 10px;
-        transition: background-color 0.3s;
-    }
-
-    .btn-secondary:hover {
-        background: #0b7dda;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
 
     .loading-overlay {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: none;
         justify-content: center;
         align-items: center;
-        flex-direction: column;
-        color: white;
-        z-index: 10;
+        z-index: 2;
     }
 
-    .spinner {
-        border: 5px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top: 5px solid #fff;
+    .loading-spinner {
         width: 50px;
         height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
         animation: spin 1s linear infinite;
-        margin-bottom: 20px;
     }
 
     @keyframes spin {
@@ -120,7 +54,73 @@
         100% { transform: rotate(360deg); }
     }
 
-    .wardrobe-items {
+    .message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 5px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .message.success {
+        background: #2ecc71;
+    }
+
+    .message.error {
+        background: #e74c3c;
+    }
+
+    .message.info {
+        background: #3498db;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #2c3e50;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2980b9;
+    }
+
+    .wardrobe-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
@@ -128,343 +128,113 @@
     }
 
     .wardrobe-item {
-        border: 2px solid #eee;
-        border-radius: 5px;
-        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
         cursor: pointer;
-        text-align: center;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
     }
 
     .wardrobe-item:hover {
-        border-color: #4CAF50;
-        transform: translateY(-2px);
+        border-color: #3498db;
+        background: #f7f9fc;
     }
 
     .wardrobe-item.selected {
-        border-color: #4CAF50;
-        background-color: rgba(76, 175, 80, 0.1);
+        border-color: #3498db;
+        background: #ebf5fb;
     }
 
     .wardrobe-item img {
         width: 100%;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 3px;
+        height: auto;
+        border-radius: 4px;
     }
 
-    .help-text {
-        font-size: 12px;
-        color: #666;
+    .wardrobe-item .item-name {
         margin-top: 5px;
-    }
-
-    #loading-overlay {
-        display: none;
-    }
-
-    #photo-preview {
-        max-width: 100%;
-        max-height: 200px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-    }
-
-    .tab-control {
-        display: flex;
-        margin-bottom: 15px;
-    }
-
-    .tab-button {
-        flex: 1;
-        padding: 8px;
-        text-align: center;
-        background: #f1f1f1;
-        cursor: pointer;
-        border: 1px solid #ddd;
-    }
-
-    .tab-button.active {
-        background: #4CAF50;
-        color: white;
-        border-color: #4CAF50;
-    }
-
-    .tab-button:first-child {
-        border-radius: 4px 0 0 4px;
-    }
-
-    .tab-button:last-child {
-        border-radius: 0 4px 4px 0;
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    .measurement-group {
-        margin-bottom: 15px;
-    }
-    
-    .measurement-slider {
-        width: 100%;
-        margin: 5px 0;
-    }
-    
-    .measurement-value {
         font-size: 12px;
-        color: #666;
-        text-align: right;
-    }
-    
-    .tab-panel {
-        display: none;
-    }
-    
-    .tab-panel.active {
-        display: block;
+        color: #2c3e50;
     }
 
-    .preset-container {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin-bottom: 20px;
+    /* Adjust main content to work with base template */
+    .main-content {
+        margin-left: var(--sidebar-width);
+        padding: 56px 0 0 0 !important;
+        height: 100vh;
+        overflow: hidden;
     }
 
-    .preset-card {
-        border: 2px solid #eee;
-        border-radius: 8px;
-        padding: 10px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+    @media (max-width: 768px) {
+        .main-content {
+            margin-left: 0;
+            padding: 0 !important;
+        }
 
-    .preset-card:hover {
-        border-color: #4CAF50;
-        transform: translateY(-2px);
-    }
+        .avatar-page-content {
+            flex-direction: column;
+            height: auto;
+        }
 
-    .preset-card.selected {
-        border-color: #4CAF50;
-        background-color: rgba(76, 175, 80, 0.1);
-    }
+        .customization-panel {
+            width: 100%;
+            order: 2;
+        }
 
-    .preset-icon {
-        width: 60px;
-        height: 60px;
-        margin-bottom: 5px;
-    }
-
-    .preset-name {
-        font-size: 14px;
-        color: #333;
-    }
-
-    .preset-description {
-        font-size: 12px;
-        color: #666;
-        margin-top: 5px;
-    }
-
-    .shape-presets {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-    }
-
-    .shape-preset-btn {
-        padding: 8px 16px;
-        border: 2px solid #eee;
-        border-radius: 20px;
-        background: white;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .shape-preset-btn:hover {
-        border-color: #4CAF50;
-        transform: translateY(-2px);
-    }
-
-    .shape-preset-btn.active {
-        background: #4CAF50;
-        color: white;
-        border-color: #4CAF50;
+        .avatar-container {
+            height: 50vh;
+            order: 1;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="main-content">
-    <!-- Left Panel -->
-    <div id="customization-panel">
-        <!-- Tabs -->
-        <div class="tab-control">
-            <div class="tab-button active" data-tab="face">Face</div>
-            <div class="tab-button" data-tab="body">Body</div>
-            <div class="tab-button" data-tab="shape">Shape</div>
-            <div class="tab-button" data-tab="clothing">Clothing</div>
-        </div>
-
-        <!-- Face Panel -->
-        <div id="face-panel" class="tab-panel active">
-            <div class="control-group">
-                <h3>Face Customization</h3>
-                <div class="form-group">
-                    <label for="photo">Upload Photo:</label>
-                    <input type="file" id="photo" accept="image/*" class="form-control">
-                    <div class="help-text">Upload a photo to generate a similar avatar</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="faceWidth">Face Width:</label>
-                    <input type="range" id="faceWidth" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="faceHeight">Face Height:</label>
-                    <input type="range" id="faceHeight" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="eyeDistance">Eye Distance:</label>
-                    <input type="range" id="eyeDistance" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="noseLength">Nose Length:</label>
-                    <input type="range" id="noseLength" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="mouthWidth">Mouth Width:</label>
-                    <input type="range" id="mouthWidth" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
+<div class="avatar-page-content">
+    <div class="customization-panel">
+        <h3>Avatar Customization</h3>
+        <form id="avatar-form">
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" class="form-control">
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                </select>
             </div>
-        </div>
 
-        <!-- Body Panel -->
-        <div id="body-panel" class="tab-panel">
-            <div class="control-group">
-                <h3>Body Type Presets</h3>
-                <div class="preset-container">
-                    <!-- Female Body Types -->
-                    <div class="preset-card" data-preset="hourglass">
-                        <img src="{{ url_for('static', filename='images/presets/hourglass.svg') }}" class="preset-icon" alt="Hourglass">
-                        <div class="preset-name">Hourglass</div>
-                        <div class="preset-description">Balanced shoulders and hips, defined waist</div>
-                    </div>
-                    <div class="preset-card" data-preset="pear">
-                        <img src="{{ url_for('static', filename='images/presets/pear.svg') }}" class="preset-icon" alt="Pear">
-                        <div class="preset-name">Pear</div>
-                        <div class="preset-description">Wider hips, narrower shoulders</div>
-                    </div>
-                    <div class="preset-card" data-preset="rectangle">
-                        <img src="{{ url_for('static', filename='images/presets/rectangle.svg') }}" class="preset-icon" alt="Rectangle">
-                        <div class="preset-name">Rectangle</div>
-                        <div class="preset-description">Straight figure, similar measurements</div>
-                    </div>
-                    <div class="preset-card" data-preset="athletic">
-                        <img src="{{ url_for('static', filename='images/presets/athletic.svg') }}" class="preset-icon" alt="Athletic">
-                        <div class="preset-name">Athletic</div>
-                        <div class="preset-description">Broader shoulders, muscular build</div>
-                    </div>
-                </div>
-
-                <h3>Fine-tune Measurements</h3>
-                <div class="measurement-group">
-                    <label for="height">Height:</label>
-                    <input type="range" id="height" class="measurement-slider" min="0.5" max="2.0" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="shoulderWidth">Shoulder Width:</label>
-                    <input type="range" id="shoulderWidth" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="hipWidth">Hip Width:</label>
-                    <input type="range" id="hipWidth" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="armLength">Arm Length:</label>
-                    <input type="range" id="armLength" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
-                
-                <div class="measurement-group">
-                    <label for="legLength">Leg Length:</label>
-                    <input type="range" id="legLength" class="measurement-slider" min="0.5" max="1.5" step="0.1" value="1.0">
-                    <div class="measurement-value">1.0</div>
-                </div>
+            <div class="form-group">
+                <label for="photo">Upload Photo</label>
+                <input type="file" id="photo" name="photo" accept="image/*" class="form-control">
             </div>
-        </div>
 
-        <!-- Shape Panel -->
-        <div id="shape-panel" class="tab-panel">
-            <div class="control-group">
-                <h3>Quick Presets</h3>
-                <div class="shape-presets">
-                    <button class="shape-preset-btn" data-preset="athletic">Athletic</button>
-                    <button class="shape-preset-btn" data-preset="curvy">Curvy</button>
-                    <button class="shape-preset-btn" data-preset="slim">Slim</button>
-                    <button class="shape-preset-btn" data-preset="default">Default</button>
-                </div>
+            <button type="submit" class="btn btn-primary">Generate Avatar</button>
+        </form>
 
-                <div id="morph-controls">
-                    <h3>Shape Customization</h3>
-                    <!-- Morph target controls will be added here dynamically -->
-                </div>
+        <div id="wardrobe-section" style="margin-top: 20px;">
+            <h3>Wardrobe</h3>
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" class="form-control">
+                    <option value="tops">Tops</option>
+                    <option value="bottoms">Bottoms</option>
+                    <option value="dresses">Dresses</option>
+                    <option value="outerwear">Outerwear</option>
+                    <option value="shoes">Shoes</option>
+                    <option value="accessories">Accessories</option>
+                </select>
             </div>
-        </div>
 
-        <!-- Clothing Panel -->
-        <div id="clothing-panel" class="tab-panel">
-            <div class="control-group">
-                <h3>Try On Clothes</h3>
-                <div class="form-group">
-                    <label for="clothingCategory">Category:</label>
-                    <select id="clothingCategory" class="form-control">
-                        <option value="tops">Tops</option>
-                        <option value="bottoms">Bottoms</option>
-                        <option value="dresses">Dresses</option>
-                        <option value="outerwear">Outerwear</option>
-                        <option value="shoes">Shoes</option>
-                        <option value="accessories">Accessories</option>
-                    </select>
-                </div>
-                <div id="wardrobeItems" class="wardrobe-items">
-                    <!-- Wardrobe items will be loaded here -->
-                </div>
+            <div class="wardrobe-grid" id="wardrobe-items">
+                <!-- Wardrobe items will be loaded here -->
             </div>
-        </div>
 
-        <button id="updateAvatar" class="btn btn-primary">Update Avatar</button>
+            <button id="try-on" class="btn btn-primary" style="margin-top: 15px;">Try On Selected Items</button>
+        </div>
     </div>
 
-    <!-- Avatar Container -->
-    <div id="avatarContainer">
-        <!-- Loading Overlay -->
-        <div id="loading-overlay" class="loading-overlay">
-            <div class="spinner"></div>
-            <div id="loading-text">Loading avatar...</div>
-            <div id="loading-progress">0%</div>
+    <div class="avatar-container" id="avatar-container">
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
         </div>
     </div>
 </div>
@@ -475,18 +245,162 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
-
 <script>
-    // Add event listeners for shape presets
-    document.querySelectorAll('.shape-preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Remove active class from all preset buttons
-            document.querySelectorAll('.shape-preset-btn').forEach(b => b.classList.remove('active'));
-            // Add active class to clicked button
-            btn.classList.add('active');
-            // Apply the preset
-            applyMorphPreset(btn.dataset.preset);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the avatar manager
+        const avatarManager = new AvatarManager({
+            container: document.getElementById('avatar-container')
         });
+
+        // Initialize the avatar manager
+        avatarManager.init();
+
+        // Handle form submission
+        const avatarForm = document.getElementById('avatar-form');
+        avatarForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const gender = formData.get('gender');
+            const photo = formData.get('photo');
+            
+            if (!photo) {
+                alert('Please select a photo');
+                return;
+            }
+
+            try {
+                // Show loading
+                avatarManager.showLoading();
+
+                // Extract features from photo
+                const featuresResponse = await fetch('/api/extract-features', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!featuresResponse.ok) {
+                    throw new Error('Failed to extract features');
+                }
+
+                const features = await featuresResponse.json();
+                console.log('Features extracted:', features);
+
+                // Generate avatar with features
+                const avatarResponse = await fetch('/api/avatar/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        features: features,
+                        gender: gender
+                    })
+                });
+
+                if (!avatarResponse.ok) {
+                    throw new Error('Failed to generate avatar');
+                }
+
+                const avatarData = await avatarResponse.json();
+                console.log('Avatar generated:', avatarData);
+
+                // Load the generated avatar
+                await avatarManager.loadAvatar(avatarData.modelUrl);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your photo');
+            } finally {
+                avatarManager.hideLoading();
+            }
+        });
+
+        // Handle wardrobe category change
+        const categorySelect = document.getElementById('category');
+        categorySelect.addEventListener('change', function() {
+            loadWardrobeItems(this.value);
+        });
+
+        // Load initial wardrobe items
+        loadWardrobeItems('tops');
+
+        // Handle try-on button
+        document.getElementById('try-on').addEventListener('click', function() {
+            const selectedItems = document.querySelectorAll('.wardrobe-item.selected');
+            if (selectedItems.length === 0) {
+                alert('Please select items to try on');
+                return;
+            }
+
+            const itemIds = Array.from(selectedItems).map(item => item.dataset.itemId);
+            tryOnClothing(itemIds);
+        });
+
+        // Load wardrobe items
+        async function loadWardrobeItems(category) {
+            const container = document.getElementById('wardrobe-items');
+            container.innerHTML = '<div class="loading">Loading items...</div>';
+
+            try {
+                const response = await fetch(`/api/wardrobe-items?category=${category}`);
+                const data = await response.json();
+
+                container.innerHTML = '';
+                const items = data[category] || [];
+
+                items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'wardrobe-item';
+                    itemElement.dataset.itemId = item._id;
+                    itemElement.innerHTML = `
+                        <img src="${item.file_path}" alt="${item.label}">
+                        <div class="item-name">${item.label}</div>
+                    `;
+
+                    itemElement.addEventListener('click', function() {
+                        this.classList.toggle('selected');
+                    });
+
+                    container.appendChild(itemElement);
+                });
+            } catch (error) {
+                console.error('Error loading wardrobe items:', error);
+                container.innerHTML = '<div class="error">Failed to load items</div>';
+            }
+        }
+
+        // Try on clothing
+        async function tryOnClothing(itemIds) {
+            try {
+                avatarManager.showLoading();
+
+                const response = await fetch('/api/avatar/try-on', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ itemIds })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to try on items');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    // Update avatar with new clothing
+                    await avatarManager.loadAvatar(data.modelUrl);
+                } else {
+                    throw new Error(data.error || 'Failed to try on items');
+                }
+            } catch (error) {
+                console.error('Error trying on clothing:', error);
+                alert('An error occurred while trying on items');
+            } finally {
+                avatarManager.hideLoading();
+            }
+        }
     });
 </script>
 {% endblock %}
