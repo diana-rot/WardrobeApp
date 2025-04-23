@@ -379,18 +379,27 @@ def save_rpm_avatar():
         if not avatar_url:
             return jsonify({'success': False, 'error': 'No avatar URL provided'})
         
-        # Get user from session
+        # Get user ID from session
         user_id = session.get('user_id')
         if not user_id:
-            return jsonify({'success': False, 'error': 'User not logged in'})
+            # Fallback to user object if user_id not directly in session
+            user = session.get('user')
+            if user and '_id' in user:
+                user_id = user['_id']
+            else:
+                return jsonify({'success': False, 'error': 'User not logged in'})
         
         # Update user's avatar URL in database
-        db.users.update_one(
-            {'_id': ObjectId(user_id)},
+        result = db.users.update_one(
+            {'_id': user_id},
             {'$set': {'rpm_avatar_url': avatar_url}}
         )
         
-        return jsonify({'success': True, 'avatarUrl': avatar_url})
+        if result.modified_count > 0:
+            return jsonify({'success': True, 'avatarUrl': avatar_url})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to update avatar'})
+            
     except Exception as e:
         logger.error(f"Error saving RPM avatar: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
@@ -400,16 +409,28 @@ def save_rpm_avatar():
 def get_rpm_avatar():
     """Get the user's saved Ready Player Me avatar URL"""
     try:
+        # Get user ID from session
         user_id = session.get('user_id')
         if not user_id:
-            return jsonify({'success': False, 'error': 'User not logged in'})
+            # Fallback to user object if user_id not directly in session
+            user = session.get('user')
+            if user and '_id' in user:
+                user_id = user['_id']
+            else:
+                return jsonify({'success': False, 'error': 'User not logged in'})
         
-        user = db.users.find_one({'_id': ObjectId(user_id)})
+        # Find user in database
+        user = db.users.find_one({'_id': user_id})
         if not user:
             return jsonify({'success': False, 'error': 'User not found'})
         
+        # Get avatar URL
         avatar_url = user.get('rpm_avatar_url')
-        return jsonify({'success': True, 'avatarUrl': avatar_url})
+        if avatar_url:
+            return jsonify({'success': True, 'avatarUrl': avatar_url})
+        else:
+            return jsonify({'success': False, 'error': 'No avatar found'})
+            
     except Exception as e:
         logger.error(f"Error getting RPM avatar: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})

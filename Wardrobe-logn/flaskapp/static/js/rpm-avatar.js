@@ -184,6 +184,11 @@ class RPMAvatarManager {
     }
     
     async loadAvatar(avatarUrl) {
+        if (!avatarUrl) {
+            console.error('No avatar URL provided');
+            return;
+        }
+
         if (this.isLoading) {
             console.warn('Avatar is already loading');
             return;
@@ -193,67 +198,46 @@ class RPMAvatarManager {
             this.isLoading = true;
             this.showLoadingOverlay('Loading avatar...');
             
+            // Initialize Three.js if not already done
+            this.initThreeJS();
+            
             // Save the avatar URL first
             await this.saveAvatarUrl(avatarUrl);
             
             // Convert avatar URL to GLB if necessary
             const glbUrl = this.getGLBUrlFromAvatarUrl(avatarUrl);
-            console.log('Loading avatar from URL:', glbUrl);
-            
-            // Load the avatar model
-            const loader = new THREE.GLTFLoader();
-            const gltf = await new Promise((resolve, reject) => {
-                loader.load(
-                    glbUrl,
-                    resolve,
-                    (progress) => {
-                        const percent = (progress.loaded / progress.total * 100).toFixed(0);
-                        console.log('Loading progress:', percent + '%');
-                        this.updateLoadingProgress(percent);
-                    },
-                    reject
-                );
-            });
             
             // Remove existing avatar if any
             if (this.avatarModel) {
                 this.scene.remove(this.avatarModel);
-                this.avatarModel.traverse((child) => {
-                    if (child.isMesh) {
-                        if (child.geometry) child.geometry.dispose();
-                        if (child.material) {
-                            if (Array.isArray(child.material)) {
-                                child.material.forEach(material => material.dispose());
-                            } else {
-                                child.material.dispose();
-                            }
-                        }
-                    }
-                });
+                this.avatarModel = null;
             }
+
+            // Load the new avatar
+            const loader = new THREE.GLTFLoader();
+            const gltf = await loader.loadAsync(glbUrl);
             
-            // Add new avatar to scene
             this.avatarModel = gltf.scene;
-            this.avatarModel.scale.set(1, 1, 1);
-            this.avatarModel.position.y = 0;
-            
-            // Enable shadows
-            this.avatarModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
+            this.avatarModel.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
                 }
             });
             
             this.scene.add(this.avatarModel);
-            
-            // Save avatar URL
-            this.avatarUrl = avatarUrl;
-            
-            // Center camera on avatar
             this.centerCameraOnAvatar();
             
-            console.log('Avatar loaded successfully');
+            // Update preview if it exists
+            const preview = document.getElementById('rpm-avatar-preview');
+            if (preview) {
+                preview.innerHTML = `<img src="${avatarUrl}" alt="RPM Avatar">`;
+            }
+
+            // Store the URL
+            this.avatarUrl = avatarUrl;
+            
+            // Call success callback
             this.onAvatarLoaded(this.avatarModel);
             
         } catch (error) {

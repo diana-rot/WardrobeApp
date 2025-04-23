@@ -9,6 +9,7 @@ class User:
     del user['password']
     session['logged_in'] = True
     session['user'] = user
+    session['user_id'] = str(user['_id'])
     print(session['user'])
     return jsonify(user), 200
 

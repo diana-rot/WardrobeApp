@@ -50,46 +50,79 @@
         margin-bottom: 20px;
     }
     
-    .rpm-button {
-        display: block;
+    .avatar-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .avatar-controls button {
         width: 100%;
         padding: 10px;
-        margin-bottom: 10px;
-        background-color: #007bff;
-        color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
-        text-align: center;
+        font-weight: 500;
     }
     
-    .rpm-button:hover {
-        background-color: #0069d9;
+    .avatar-url-input {
+        margin-bottom: 20px;
     }
     
-    .rpm-button.secondary {
-        background-color: #6c757d;
-    }
-    
-    .rpm-button.secondary:hover {
-        background-color: #5a6268;
+    .avatar-url-input input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
     }
     
     .rpm-avatar-preview {
         margin-top: 20px;
-        text-align: center;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background-color: white;
     }
     
     .rpm-avatar-preview img {
-        max-width: 100%;
+        width: 100%;
+        max-width: 250px;
+        height: auto;
         border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
-    .rpm-avatar-preview p {
-        margin-top: 10px;
-        font-size: 14px;
-        color: #6c757d;
+    .rpm-avatar-preview h4 {
+        margin-bottom: 15px;
+        color: #333;
+    }
+    
+    /* Button colors */
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    /* Button hover effects */
+    .btn:hover {
+        opacity: 0.9;
     }
     
     .loading-overlay {
@@ -151,171 +184,165 @@
 {% endblock %}
 
 {% block content %}
-<div class="rpm-container">
-    <div class="rpm-header">
-        <h2>Ready Player Me Avatar Creator</h2>
-        <p>Create and customize your 3D avatar using Ready Player Me</p>
-    </div>
+<div class="container">
+    <h2>Ready Player Me Avatar</h2>
     
-    <div class="rpm-content">
-        <div class="rpm-iframe-container">
-            <iframe id="rpm-iframe" class="rpm-iframe" src="https://demo.readyplayer.me/avatar" allow="camera *; microphone *"></iframe>
-        </div>
-        
-        <div class="rpm-controls">
-            <h3>Avatar Controls</h3>
-            
-            <button id="save-avatar" class="rpm-button">Save Avatar</button>
-            <button id="load-avatar" class="rpm-button secondary">Load Saved Avatar</button>
-            <button id="reset-avatar" class="rpm-button secondary">Reset Avatar</button>
-            
-            <div class="rpm-avatar-preview">
-                <h4>Current Avatar</h4>
-                <div id="avatar-preview-container">
-                    <p>No avatar loaded</p>
-                </div>
-            </div>
+    <div class="avatar-controls">
+        <button id="openRPMButton" class="btn btn-primary" onclick="openRPMCreator()">Open RPM Creator</button>
+        <button id="loadSavedAvatarBtn" class="btn btn-secondary" onclick="loadSavedAvatar()">Load Saved Avatar</button>
+    </div>
+
+    <div class="avatar-input">
+        <input type="text" id="avatarUrlInput" class="form-control" placeholder="Enter Ready Player Me Avatar URL">
+        <div class="button-group">
+            <button id="loadAvatarBtn" class="btn btn-info" onclick="loadAvatar()">Load Avatar</button>
+            <button id="saveAvatarBtn" class="btn btn-success" onclick="saveCurrentAvatar()">Save Avatar</button>
         </div>
     </div>
+
+    <div class="avatar-preview">
+        <h4>Current Avatar</h4>
+        <div id="avatarPreviewContainer">
+            <p>No avatar loaded</p>
+        </div>
+    </div>
+
+    <!-- Hidden iframe for RPM -->
+    <iframe id="rpm-iframe" style="display: none;" allow="camera *; microphone *"></iframe>
 </div>
 
-<div id="loading-overlay" class="loading-overlay" style="display: none;">
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
     <div class="loading-spinner"></div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    let currentAvatarUrl = null;
+
+    // Listen for messages from RPM iframe
+    window.addEventListener('message', function(event) {
+        if (event.origin === 'https://demo.readyplayer.me') {
+            if (event.data.type === 'v1.avatar.exported') {
+                const avatarUrl = event.data.data.url;
+                console.log('New avatar URL:', avatarUrl);
+                currentAvatarUrl = avatarUrl;
+                document.getElementById('avatarUrlInput').value = avatarUrl;
+                updateAvatarPreview(avatarUrl);
+                
+                // Automatically save the new avatar
+                saveCurrentAvatar();
+            }
+        }
+    });
+
+    function openRPMCreator() {
         const iframe = document.getElementById('rpm-iframe');
-        const saveButton = document.getElementById('save-avatar');
-        const loadButton = document.getElementById('load-avatar');
-        const resetButton = document.getElementById('reset-avatar');
-        const avatarPreviewContainer = document.getElementById('avatar-preview-container');
-        const loadingOverlay = document.getElementById('loading-overlay');
+        iframe.src = 'https://demo.readyplayer.me/avatar';
         
-        let currentAvatarUrl = null;
+        // Open in a popup window
+        const width = 800;
+        const height = 800;
+        const left = (window.innerWidth - width) / 2;
+        const top = (window.innerHeight - height) / 2;
         
-        // Listen for messages from the iframe
-        window.addEventListener('message', function(event) {
-            // Verify the origin of the message
-            if (event.origin !== 'https://demo.readyplayer.me') return;
-            
-            // Handle avatar URL from Ready Player Me
-            if (event.data.eventName === 'v1.avatar.exported') {
-                currentAvatarUrl = event.data.avatarUrl;
-                updateAvatarPreview(currentAvatarUrl);
-                showMessage('Avatar exported successfully!', 'success');
-            }
-        });
-        
-        // Save avatar to user profile
-        saveButton.addEventListener('click', async function() {
-            if (!currentAvatarUrl) {
-                showMessage('Please create an avatar first', 'error');
-                return;
-            }
-            
-            try {
-                showLoading();
-                
-                const response = await fetch('/api/rpm/save-avatar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ avatarUrl: currentAvatarUrl })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showMessage('Avatar saved successfully!', 'success');
-                } else {
-                    showMessage(result.error || 'Failed to save avatar', 'error');
-                }
-            } catch (error) {
-                console.error('Error saving avatar:', error);
-                showMessage('Error saving avatar', 'error');
-            } finally {
-                hideLoading();
-            }
-        });
-        
-        // Load saved avatar
-        loadButton.addEventListener('click', async function() {
-            try {
-                showLoading();
-                
-                const response = await fetch('/api/rpm/get-avatar');
-                const result = await response.json();
-                
-                if (result.success && result.avatarUrl) {
-                    currentAvatarUrl = result.avatarUrl;
-                    updateAvatarPreview(currentAvatarUrl);
-                    
-                    // Send message to iframe to load the avatar
-                    iframe.contentWindow.postMessage({
-                        eventName: 'v1.avatar.load',
-                        avatarUrl: currentAvatarUrl
-                    }, '*');
-                    
-                    showMessage('Avatar loaded successfully!', 'success');
-                } else {
-                    showMessage('No saved avatar found', 'error');
-                }
-            } catch (error) {
-                console.error('Error loading avatar:', error);
-                showMessage('Error loading avatar', 'error');
-            } finally {
-                hideLoading();
-            }
-        });
-        
-        // Reset avatar
-        resetButton.addEventListener('click', function() {
-            iframe.src = iframe.src;
-            currentAvatarUrl = null;
-            updateAvatarPreview(null);
-            showMessage('Avatar reset', 'info');
-        });
-        
-        // Update avatar preview
-        function updateAvatarPreview(avatarUrl) {
-            if (avatarUrl) {
-                avatarPreviewContainer.innerHTML = `
-                    <img src="${avatarUrl}" alt="Avatar Preview">
-                    <p>Avatar URL: ${avatarUrl.substring(0, 30)}...</p>
-                `;
+        window.open(
+            'https://demo.readyplayer.me/avatar',
+            'Ready Player Me',
+            `width=${width},height=${height},left=${left},top=${top}`
+        );
+    }
+
+    function loadAvatar() {
+        const avatarUrl = document.getElementById('avatarUrlInput').value;
+        if (!avatarUrl) {
+            alert('Please enter an avatar URL');
+            return;
+        }
+        currentAvatarUrl = avatarUrl;
+        updateAvatarPreview(avatarUrl);
+    }
+
+    function saveCurrentAvatar() {
+        const avatarUrl = currentAvatarUrl || document.getElementById('avatarUrlInput').value;
+        if (!avatarUrl) {
+            alert('Please create or load an avatar first');
+            return;
+        }
+
+        // Disable save button while saving
+        const saveButton = document.getElementById('saveAvatarBtn');
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+
+        fetch('/api/rpm/save-avatar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ avatarUrl: avatarUrl })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Avatar saved successfully!');
+                updateAvatarPreview(avatarUrl);
             } else {
-                avatarPreviewContainer.innerHTML = '<p>No avatar loaded</p>';
+                alert('Failed to save avatar: ' + (data.error || 'Unknown error'));
             }
+        })
+        .catch(error => {
+            alert('Error saving avatar: ' + error.message);
+        })
+        .finally(() => {
+            // Re-enable save button
+            saveButton.disabled = false;
+            saveButton.textContent = 'Save Avatar';
+        });
+    }
+
+    function loadSavedAvatar() {
+        // Disable load button while loading
+        const loadButton = document.getElementById('loadSavedAvatarBtn');
+        loadButton.disabled = true;
+        loadButton.textContent = 'Loading...';
+
+        fetch('/api/rpm/get-avatar')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.avatarUrl) {
+                currentAvatarUrl = data.avatarUrl;
+                document.getElementById('avatarUrlInput').value = data.avatarUrl;
+                updateAvatarPreview(data.avatarUrl);
+            } else {
+                alert('No saved avatar found');
+            }
+        })
+        .catch(error => {
+            alert('Error loading saved avatar: ' + error.message);
+        })
+        .finally(() => {
+            // Re-enable load button
+            loadButton.disabled = false;
+            loadButton.textContent = 'Load Saved Avatar';
+        });
+    }
+
+    function updateAvatarPreview(avatarUrl) {
+        const container = document.getElementById('avatarPreviewContainer');
+        if (avatarUrl) {
+            container.innerHTML = `
+                <img src="${avatarUrl}" alt="Avatar Preview">
+                <p style="word-break: break-all; margin-top: 10px;">URL: ${avatarUrl}</p>
+            `;
+        } else {
+            container.innerHTML = '<p>No avatar loaded</p>';
         }
-        
-        // Show loading overlay
-        function showLoading() {
-            loadingOverlay.style.display = 'flex';
-        }
-        
-        // Hide loading overlay
-        function hideLoading() {
-            loadingOverlay.style.display = 'none';
-        }
-        
-        // Show message
-        function showMessage(text, type = 'info') {
-            const message = document.createElement('div');
-            message.className = `message ${type}`;
-            message.textContent = text;
-            document.body.appendChild(message);
-            
-            setTimeout(() => {
-                message.remove();
-            }, 3000);
-        }
-        
-        // Load saved avatar on page load
-        loadButton.click();
+    }
+
+    // Load saved avatar when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSavedAvatar();
     });
 </script>
 {% endblock %} 
