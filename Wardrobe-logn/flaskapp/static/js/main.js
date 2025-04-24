@@ -9,7 +9,12 @@ $(document).ready(function () {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
             reader.onload = function (e) {
-                $('#imagePreview').css('background-image', 'url(' + e.target.result + ')');
+                $('#imagePreview')
+                    .css('background-image', 'url(' + e.target.result + ')')
+                    .on('error', function() {
+                        $(this).css('background-image', 'none')
+                            .html('<div class="alert alert-warning">Failed to load image</div>');
+                    });
                 $('#imagePreview').hide();
                 $('#imagePreview').fadeIn(650);
             }
@@ -28,7 +33,6 @@ $(document).ready(function () {
     $('#btn-predict').click(function () {
         var form_data = new FormData($('#upload-file')[0]);
 
-
         // Show loading animation
         $(this).hide();
         $('.loader').show();
@@ -43,12 +47,15 @@ $(document).ready(function () {
             processData: false,
             async: true,
             success: function (data) {
-
                 $('.loader').hide();
                 $('#result').fadeIn(600);
                 $('#result').text(data);
-
             },
+            error: function() {
+                $('.loader').hide();
+                $('#result').fadeIn(600);
+                $('#result').html('<div class="alert alert-danger">Error processing image</div>');
+            }
         });
     });
 

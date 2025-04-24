@@ -1,118 +1,93 @@
 {% extends "base.html" %}
 
-{% block title %}3D Avatar Creator - WardrobeApp{% endblock %}
+{% block title %}Avatar Creator{% endblock %}
 
 {% block extra_css %}
 <style>
-    body {
+    .avatar-page-content {
+        display: flex;
+        height: calc(100vh - 56px);
         margin: 0;
         padding: 0;
         overflow: hidden;
     }
 
-    .main-content {
-        display: flex;
-        height: 100vh;
-        width: 100vw;
-        position: fixed;
-        top: 0;
-        left: 0;
-    }
-
-    #customization-panel {
+    .customization-panel {
         width: 320px;
-        background: white;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        overflow-y: auto;
+        background: #fff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        z-index: 100;
-        height: 100vh;
+        overflow-y: auto;
+        z-index: 1;
     }
 
-    #avatarContainer {
+    .avatar-tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .avatar-tab {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .avatar-tab.active {
+        border-bottom-color: #3498db;
+        color: #3498db;
+        font-weight: 500;
+    }
+
+    .avatar-section {
+        display: none;
+    }
+
+    .avatar-section.active {
+        display: block;
+    }
+
+    .wardrobe-section {
+        margin-top: 20px;
+    }
+
+    .wardrobe-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 15px;
+        padding: 10px;
+    }
+
+    .avatar-container {
         flex: 1;
         position: relative;
-        background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
-    }
-
-    .control-group {
-        margin-bottom: 20px;
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 8px;
-    }
-
-    .control-group h3 {
-        margin-top: 0;
-        color: #333;
-    }
-
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    select, input[type="file"], input[type="range"], input[type="color"] {
-        width: 100%;
-        padding: 8px;
-        margin-bottom: 5px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-
-    .btn-primary {
-        background: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        width: 100%;
-        font-weight: bold;
-        transition: background-color 0.3s;
-    }
-
-    .btn-primary:hover {
-        background: #45a049;
-    }
-
-    .btn-secondary {
-        background: #2196F3;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-top: 10px;
-        transition: background-color 0.3s;
-    }
-
-    .btn-secondary:hover {
-        background: #0b7dda;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
 
     .loading-overlay {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: none;
         justify-content: center;
         align-items: center;
-        flex-direction: column;
-        color: white;
-        z-index: 10;
+        z-index: 2;
     }
 
-    .spinner {
-        border: 5px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top: 5px solid #fff;
+    .loading-spinner {
         width: 50px;
         height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
         animation: spin 1s linear infinite;
-        margin-bottom: 20px;
     }
 
     @keyframes spin {
@@ -120,167 +95,318 @@
         100% { transform: rotate(360deg); }
     }
 
-    .wardrobe-items {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin-top: 15px;
+    .message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 5px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .message.success {
+        background: #2ecc71;
+    }
+
+    .message.error {
+        background: #e74c3c;
+    }
+
+    .message.info {
+        background: #3498db;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #2c3e50;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2980b9;
+    }
+
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #7f8c8d;
     }
 
     .wardrobe-item {
-        border: 2px solid #eee;
-        border-radius: 5px;
-        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
         cursor: pointer;
-        text-align: center;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
+        background: #fff;
     }
 
     .wardrobe-item:hover {
-        border-color: #4CAF50;
-        transform: translateY(-2px);
+        border-color: #3498db;
+        background: #f7f9fc;
     }
 
     .wardrobe-item.selected {
-        border-color: #4CAF50;
-        background-color: rgba(76, 175, 80, 0.1);
+        border-color: #3498db;
+        background: #ebf5fb;
+    }
+
+    .wardrobe-item .item-image {
+        width: 100%;
+        height: 120px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #f5f5f5;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .wardrobe-item img {
         width: 100%;
-        height: 80px;
+        height: 100%;
         object-fit: cover;
-        border-radius: 3px;
+        border-radius: 4px;
     }
 
-    .help-text {
+    .error-message {
+        color: #e74c3c;
         font-size: 12px;
-        color: #666;
-        margin-top: 5px;
-    }
-
-    #loading-overlay {
-        display: none;
-    }
-
-    #photo-preview {
-        max-width: 100%;
-        max-height: 200px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-    }
-
-    .tab-control {
-        display: flex;
-        margin-bottom: 15px;
-    }
-
-    .tab-button {
-        flex: 1;
-        padding: 8px;
         text-align: center;
-        background: #f1f1f1;
-        cursor: pointer;
-        border: 1px solid #ddd;
+        padding: 10px;
+        background: #fde8e7;
+        border-radius: 4px;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .tab-button.active {
-        background: #4CAF50;
-        color: white;
-        border-color: #4CAF50;
+    .wardrobe-item .item-name {
+        margin-top: 5px;
+        font-size: 12px;
+        color: #2c3e50;
+        text-align: center;
     }
 
-    .tab-button:first-child {
-        border-radius: 4px 0 0 4px;
+    /* Loading and error states */
+    .loading, .error, .no-items {
+        padding: 20px;
+        text-align: center;
+        color: #666;
+        background: #f5f5f5;
+        border-radius: 4px;
+        margin: 10px 0;
     }
 
-    .tab-button:last-child {
-        border-radius: 0 4px 4px 0;
+    .error {
+        color: #e74c3c;
+        background: #fde8e7;
     }
 
-    .tab-content {
-        display: none;
+    /* Adjust main content to work with base template */
+    .main-content {
+        margin-left: var(--sidebar-width);
+        padding: 56px 0 0 0 !important;
+        height: 100vh;
+        overflow: hidden;
     }
 
-    .tab-content.active {
+    /* RPM specific styles */
+    .rpm-options {
+        margin-top: 15px;
+    }
+
+    .rpm-button {
         display: block;
+        width: 100%;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    /* Remove RPM preview styles */
+    @media (max-width: 768px) {
+        .main-content {
+            margin-left: 0;
+            padding: 0 !important;
+        }
+
+        .avatar-page-content {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .customization-panel {
+            width: 100%;
+            order: 2;
+        }
+
+        .avatar-container {
+            height: 50vh;
+            order: 1;
+        }
+    }
+
+    /* Add progress indicator */
+    .step-progress {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding: 0 10px;
+    }
+
+    .step-indicator {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #ddd;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .step-indicator.active {
+        background: #3498db;
+    }
+
+    .step-indicator.completed {
+        background: #2ecc71;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="main-content">
-    <!-- Left Panel -->
-    <div id="customization-panel">
-        <div class="control-group">
-            <h3>Avatar Customization</h3>
-            <div class="form-group">
-                <label for="gender">Gender:</label>
-                <select id="gender" class="form-control">
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="photo">Upload Photo:</label>
-                <input type="file" id="photo" accept="image/*" class="form-control">
-                <div class="help-text">Upload a photo to generate a similar avatar</div>
-            </div>
-            
-            <button id="generateAvatar" class="btn btn-primary">Generate Avatar</button>
+<div class="avatar-page-content">
+    <div class="customization-panel">
+        <div class="avatar-tabs">
+            <div class="avatar-tab active" data-tab="custom">Custom Avatar</div>
+            <div class="avatar-tab" data-tab="rpm">Ready Player Me</div>
         </div>
 
-        <div class="control-group">
-            <h3>Customize Appearance</h3>
-            <div class="form-group">
-                <label for="skinTone">Skin Tone:</label>
-                <input type="color" id="skinTone" value="#FFE0BD" class="form-control">
+        <!-- Custom Avatar Section -->
+        <div class="avatar-section active" id="custom-avatar-section">
+            <h3>Custom Avatar Creator</h3>
+            <form id="avatar-form">
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" class="form-control">
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="photo">Upload Photo</label>
+                    <input type="file" id="photo" name="photo" accept="image/*" class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Generate Avatar</button>
+            </form>
+
+            <div class="wardrobe-section">
+                <h3>Wardrobe</h3>
+                <div class="form-group">
+                    <label for="category-custom">Category</label>
+                    <select id="category-custom" class="form-control category-select">
+                        <option value="tops">Tops</option>
+                        <option value="bottoms">Bottoms</option>
+                        <option value="dresses">Dresses</option>
+                        <option value="outerwear">Outerwear</option>
+                        <option value="shoes">Shoes</option>
+                        <option value="accessories">Accessories</option>
+                    </select>
+                </div>
+
+                <div class="wardrobe-grid" id="wardrobe-items-custom">
+                    <!-- Wardrobe items will be loaded here -->
+                </div>
+
+                <button id="try-on-custom" class="btn btn-primary try-on-btn" style="margin-top: 15px;">Try On Selected Items</button>
             </div>
-            
-            <div class="form-group">
-                <label for="hairStyle">Hair Style:</label>
-                <select id="hairStyle" class="form-control">
-                    <option value="style1">Short</option>
-                    <option value="style2">Medium</option>
-                    <option value="style3">Long</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="hairColor">Hair Color:</label>
-                <input type="color" id="hairColor" value="#000000" class="form-control">
-            </div>
-            
-            <button id="updateAvatar" class="btn btn-primary">Update Avatar</button>
         </div>
 
-        <div class="control-group">
-            <h3>Try On Clothes</h3>
-            <div class="form-group">
-                <label for="clothingCategory">Category:</label>
-                <select id="clothingCategory" class="form-control">
-                    <option value="tops">Tops</option>
-                    <option value="bottoms">Bottoms</option>
-                    <option value="dresses">Dresses</option>
-                    <option value="outerwear">Outerwear</option>
-                    <option value="shoes">Shoes</option>
-                    <option value="accessories">Accessories</option>
-                </select>
+        <!-- Ready Player Me Section -->
+        <div class="avatar-section" id="rpm-avatar-section">
+            <h3>Ready Player Me Avatar</h3>
+            <div class="rpm-options">
+                <button id="open-rpm-creator" class="btn btn-primary rpm-button">Open RPM Creator</button>
+                <button id="load-saved-rpm" class="btn btn-secondary rpm-button">Load Saved Avatar</button>
+                
+                <div class="rpm-url-input">
+                    <input type="text" id="rpm-avatar-url" class="form-control" placeholder="Enter RPM avatar URL">
+                    <button id="load-rpm-url" class="btn btn-primary mt-2">Load Avatar</button>
+                </div>
             </div>
-            <div id="wardrobeItems" class="wardrobe-items">
-                <!-- Wardrobe items will be loaded here -->
+
+            <div class="wardrobe-section">
+                <h3>Wardrobe</h3>
+                <div class="form-group">
+                    <label for="category-rpm">Category</label>
+                    <select id="category-rpm" class="form-control category-select">
+                        <option value="tops">Tops</option>
+                        <option value="bottoms">Bottoms</option>
+                        <option value="dresses">Dresses</option>
+                        <option value="outerwear">Outerwear</option>
+                        <option value="shoes">Shoes</option>
+                        <option value="accessories">Accessories</option>
+                    </select>
+                </div>
+
+                <div class="wardrobe-grid" id="wardrobe-items-rpm">
+                    <!-- Wardrobe items will be loaded here -->
+                </div>
+
+                <button id="try-on-rpm" class="btn btn-primary try-on-btn" style="margin-top: 15px;">Try On Selected Items</button>
             </div>
         </div>
     </div>
 
-    <!-- Avatar Container -->
-    <div id="avatarContainer">
-        <!-- Loading Overlay -->
-        <div id="loading-overlay" class="loading-overlay">
-            <div class="spinner"></div>
-            <div id="loading-text">Loading avatar...</div>
-            <div id="loading-progress">0%</div>
+    <div class="avatar-container" id="avatar-container">
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
         </div>
     </div>
 </div>
@@ -291,4 +417,258 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rpm-avatar.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the avatar managers
+        const avatarManager = new AvatarManager({
+            container: document.getElementById('avatar-container')
+        });
+
+        const rpmManager = new RPMAvatarManager({
+            container: document.getElementById('avatar-container')
+        });
+
+        // Handle tab switching
+        const tabs = document.querySelectorAll('.avatar-tab');
+        const sections = document.querySelectorAll('.avatar-section');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+                
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show corresponding section
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === `${tabName}-avatar-section`) {
+                        section.classList.add('active');
+                    }
+                });
+
+                // Load wardrobe items for the active section
+                const activeSection = document.querySelector('.avatar-section.active');
+                const categorySelect = activeSection.querySelector('.category-select');
+                if (categorySelect) {
+                    loadWardrobeItems(categorySelect.value, activeSection.querySelector('.wardrobe-grid').id);
+                }
+            });
+        });
+
+        // Handle category changes
+        document.querySelectorAll('.category-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const gridId = this.closest('.avatar-section').querySelector('.wardrobe-grid').id;
+                loadWardrobeItems(this.value, gridId);
+            });
+        });
+
+        // Load wardrobe items function
+        async function loadWardrobeItems(category, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = '<div class="loading">Loading items...</div>';
+
+            try {
+                const response = await fetch(`/api/wardrobe-items?category=${category}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load wardrobe items');
+                }
+
+                const data = await response.json();
+                container.innerHTML = '';
+
+                const items = data[category] || [];
+                
+                if (items.length === 0) {
+                    container.innerHTML = '<div class="error">No items found in this category</div>';
+                    return;
+                }
+
+                items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'wardrobe-item';
+                    itemElement.dataset.itemId = item._id;
+                    
+                    const itemName = item.label || 'Unnamed Item';
+                    
+                    itemElement.innerHTML = `
+                        <div class="item-image">
+                            ${item.file_path ? `
+                                <img src="${item.file_path}" 
+                                     alt="${itemName}"
+                                     onerror="this.parentElement.innerHTML='<div class=\'error-message\'>Image not available</div>'">
+                            ` : `
+                                <div class="error-message">No image available</div>
+                            `}
+                        </div>
+                        <div class="item-name">${itemName}</div>
+                    `;
+
+                    itemElement.addEventListener('click', function() {
+                        container.querySelectorAll('.wardrobe-item').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                    });
+
+                    container.appendChild(itemElement);
+                });
+            } catch (error) {
+                console.error('Error loading wardrobe items:', error);
+                container.innerHTML = '<div class="error">Failed to load items</div>';
+            }
+        }
+
+        // Handle avatar form submission
+        const avatarForm = document.getElementById('avatar-form');
+        avatarForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const gender = formData.get('gender');
+            const photo = formData.get('photo');
+            
+            if (!photo) {
+                alert('Please select a photo');
+                return;
+            }
+
+            try {
+                avatarManager.showLoading();
+
+                const response = await fetch('/api/avatar/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate avatar');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    await avatarManager.loadAvatar(data.modelUrl);
+                    showMessage('Avatar generated successfully', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to generate avatar');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('An error occurred while processing your photo', 'error');
+            } finally {
+                avatarManager.hideLoading();
+            }
+        });
+
+        // Handle RPM creator button
+        document.getElementById('open-rpm-creator').addEventListener('click', function() {
+            window.open('https://demo.readyplayer.me/avatar', '_blank');
+        });
+
+        // Handle load saved RPM avatar
+        document.getElementById('load-saved-rpm').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/rpm/get-avatar');
+                if (!response.ok) {
+                    throw new Error('Failed to load saved avatar');
+                }
+                
+                const data = await response.json();
+                if (data.success && data.avatarUrl) {
+                    document.getElementById('rpm-avatar-url').value = data.avatarUrl;
+                    await rpmManager.loadAvatar(data.avatarUrl);
+                } else {
+                    throw new Error('No saved avatar found');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(error.message, 'error');
+            }
+        });
+
+        // Handle load RPM avatar from URL
+        document.getElementById('load-rpm-url').addEventListener('click', async function() {
+            const avatarUrl = document.getElementById('rpm-avatar-url').value.trim();
+            if (!avatarUrl) {
+                showMessage('Please enter a valid RPM avatar URL', 'error');
+                return;
+            }
+            
+            try {
+                await rpmManager.loadAvatar(avatarUrl);
+                showMessage('Avatar loaded successfully', 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Failed to load avatar: ' + error.message, 'error');
+            }
+        });
+
+        // Try on selected items
+        document.querySelectorAll('.try-on-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const section = this.closest('.avatar-section');
+                const selectedItems = section.querySelectorAll('.wardrobe-item.selected');
+                
+                if (selectedItems.length === 0) {
+                    alert('Please select items to try on');
+                    return;
+                }
+
+                const itemIds = Array.from(selectedItems).map(item => item.dataset.itemId);
+                const manager = section.id.includes('rpm') ? rpmManager : avatarManager;
+
+                try {
+                    manager.showLoading();
+                    const response = await fetch('/api/wardrobe/try-on', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ itemIds })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to try on items');
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        await manager.loadAvatar(data.modelUrl);
+                        showMessage('Items applied successfully', 'success');
+                    } else {
+                        throw new Error(data.error || 'Failed to apply items');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessage('Failed to try on items: ' + error.message, 'error');
+                } finally {
+                    manager.hideLoading();
+                }
+            });
+        });
+
+        // Load initial wardrobe items for both sections
+        loadWardrobeItems('tops', 'wardrobe-items-custom');
+        loadWardrobeItems('tops', 'wardrobe-items-rpm');
+
+        // Show message function
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+    });
+</script>
 {% endblock %}

@@ -211,11 +211,12 @@
                                         {% for item in outfit %}
                                             <div class="outfit-item">
                                                 {% if item.file_path %}
-                                                    <img src="{{ item.file_path|normalize_path }}" class="d-block w-100 img-fluid" alt="{{ item.label }}">
+                                                    <img src="{{ item.file_path|normalize_path }}" 
+                                                         class="d-block w-100 img-fluid" 
+                                                         alt="{{ item.label }}"
+                                                         onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'alert alert-warning\'>Image not available</div>'">
                                                 {% else %}
-                                                    <div class="image-placeholder">
-                                                        <span>{{ item.label }}</span>
-                                                    </div>
+                                                    <div class="alert alert-warning">No image available</div>
                                                 {% endif %}
                                                 <h6>{{ item.label }}</h6>
                                                 <div class="rating mt-2">

@@ -219,9 +219,14 @@
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
                        data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="{{ get_user_profile_picture() }}"
-                             alt="Profile"
-                             class="profile-img">
+                        {% if get_user_profile_picture() %}
+                            <img src="{{ get_user_profile_picture() }}"
+                                 alt="Profile"
+                                 class="profile-img"
+                                 onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML += '<div class=\'profile-img d-flex align-items-center justify-content-center bg-secondary text-white\'>?</div>'">
+                        {% else %}
+                            <div class="profile-img d-flex align-items-center justify-content-center bg-secondary text-white">?</div>
+                        {% endif %}
                         <span>Welcome, {{ session['user'].get('name', 'User') }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -275,10 +280,15 @@
                         <h2 class="text-center mb-4">Profile Settings</h2>
                         <form id="profile-form" enctype="multipart/form-data">
                             <div class="profile-picture-container">
-                                <img src="{{ user.get('profile_picture', '/static/image/default-profile.png') }}"
-                                     alt="Profile Picture"
-                                     class="profile-picture"
-                                     id="profile-picture-preview">
+                                {% if user.get('profile_picture') %}
+                                    <img src="{{ user.get('profile_picture') }}"
+                                         alt="Profile Picture"
+                                         class="profile-picture"
+                                         id="profile-picture-preview"
+                                         onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML += '<div class=\'profile-picture d-flex align-items-center justify-content-center bg-secondary text-white\'>Image not available</div>'">
+                                {% else %}
+                                    <div class="profile-picture d-flex align-items-center justify-content-center bg-secondary text-white">No Profile Picture</div>
+                                {% endif %}
                                 <label for="profile-picture-input" class="profile-picture-overlay">
                                     <i class="bi bi-camera-fill text-white"></i>
                                 </label>
