@@ -189,12 +189,37 @@
         background: #ebf5fb;
     }
 
-    .wardrobe-item img {
+    .wardrobe-item .item-image {
         width: 100%;
         height: 120px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #f5f5f5;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .wardrobe-item img {
+        width: 100%;
+        height: 100%;
         object-fit: cover;
         border-radius: 4px;
-        background: #f5f5f5;
+    }
+
+    .error-message {
+        color: #e74c3c;
+        font-size: 12px;
+        text-align: center;
+        padding: 10px;
+        background: #fde8e7;
+        border-radius: 4px;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .wardrobe-item .item-name {
@@ -204,19 +229,19 @@
         text-align: center;
     }
 
-    .placeholder-box {
-        width: 100%;
-        height: 120px;
-        background: #f5f5f5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Loading and error states */
+    .loading, .error, .no-items {
+        padding: 20px;
         text-align: center;
         color: #666;
-        font-size: 12px;
+        background: #f5f5f5;
         border-radius: 4px;
-        padding: 10px;
-        word-break: break-word;
+        margin: 10px 0;
+    }
+
+    .error {
+        color: #e74c3c;
+        background: #fde8e7;
     }
 
     /* Adjust main content to work with base template */
@@ -239,30 +264,7 @@
         text-align: center;
     }
 
-    .rpm-avatar-preview {
-        width: 100%;
-        height: 200px;
-        background: #f5f5f5;
-        border-radius: 4px;
-        margin: 15px 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-        border: 1px solid #ddd;
-    }
-
-    .rpm-avatar-preview img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-    }
-
-    .rpm-avatar-preview span {
-        color: #666;
-        font-size: 14px;
-    }
-
+    /* Remove RPM preview styles */
     @media (max-width: 768px) {
         .main-content {
             margin-left: 0;
@@ -373,9 +375,6 @@
                 <button id="open-rpm-creator" class="btn btn-primary rpm-button">Open RPM Creator</button>
                 <button id="load-saved-rpm" class="btn btn-secondary rpm-button">Load Saved Avatar</button>
                 
-                <div class="rpm-avatar-preview" id="rpm-avatar-preview">
-                    <span>No avatar loaded</span>
-                </div>
                 <div class="rpm-url-input">
                     <input type="text" id="rpm-avatar-url" class="form-control" placeholder="Enter RPM avatar URL">
                     <button id="load-rpm-url" class="btn btn-primary mt-2">Load Avatar</button>
@@ -495,28 +494,20 @@
                     itemElement.className = 'wardrobe-item';
                     itemElement.dataset.itemId = item._id;
                     
-                    const hasValidImage = item.file_path && 
-                                       item.file_path !== 'null' && 
-                                       !item.file_path.includes('undefined') &&
-                                       !item.file_path.includes('placeholder.png');
-                    
                     const itemName = item.label || 'Unnamed Item';
                     
-                    if (hasValidImage) {
-                        itemElement.innerHTML = `
-                            <div class="item-image">
+                    itemElement.innerHTML = `
+                        <div class="item-image">
+                            ${item.file_path ? `
                                 <img src="${item.file_path}" 
                                      alt="${itemName}"
-                                     onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'placeholder-box\'>${itemName}</div>'">
-                            </div>
-                            <div class="item-name">${itemName}</div>
-                        `;
-                    } else {
-                        itemElement.innerHTML = `
-                            <div class="placeholder-box">${itemName}</div>
-                            <div class="item-name">${itemName}</div>
-                        `;
-                    }
+                                     onerror="this.parentElement.innerHTML='<div class=\'error-message\'>Image not available</div>'">
+                            ` : `
+                                <div class="error-message">No image available</div>
+                            `}
+                        </div>
+                        <div class="item-name">${itemName}</div>
+                    `;
 
                     itemElement.addEventListener('click', function() {
                         container.querySelectorAll('.wardrobe-item').forEach(el => {
@@ -592,10 +583,6 @@
                 if (data.success && data.avatarUrl) {
                     document.getElementById('rpm-avatar-url').value = data.avatarUrl;
                     await rpmManager.loadAvatar(data.avatarUrl);
-                    
-                    // Update preview
-                    const preview = document.getElementById('rpm-avatar-preview');
-                    preview.innerHTML = `<img src="${data.avatarUrl}" alt="RPM Avatar">`;
                 } else {
                     throw new Error('No saved avatar found');
                 }

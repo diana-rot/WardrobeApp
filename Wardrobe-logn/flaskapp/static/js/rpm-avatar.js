@@ -149,12 +149,6 @@ class RPMAvatarManager {
             if (data.avatarUrl) {
                 // Load the saved avatar
                 await this.loadAvatar(data.avatarUrl);
-                
-                // Update preview if it exists
-                const preview = document.getElementById('rpm-avatar-preview');
-                if (preview) {
-                    preview.innerHTML = `<img src="${data.avatarUrl}" alt="RPM Avatar">`;
-                }
             }
         } catch (error) {
             console.warn('No saved avatar found:', error);
@@ -183,66 +177,109 @@ class RPMAvatarManager {
         }
     }
     
+    showLoadingOverlay(message) {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+    }
+    
+    hideLoadingOverlay() {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
+    updateLoadingProgress(percent) {
+        const progress = document.querySelector('.loading-progress');
+        if (progress) {
+            progress.textContent = `Loading: ${percent}%`;
+        }
+    }
+
     async loadAvatar(avatarUrl) {
         if (!avatarUrl) {
-            console.error('No avatar URL provided');
-            return;
+            throw new Error('Avatar URL is required');
         }
 
-        if (this.isLoading) {
-            console.warn('Avatar is already loading');
-            return;
-        }
+        this.isLoading = true;
+        this.showLoadingOverlay('Loading avatar...');
 
         try {
-            this.isLoading = true;
-            this.showLoadingOverlay('Loading avatar...');
-            
-            // Initialize Three.js if not already done
-            this.initThreeJS();
-            
-            // Save the avatar URL first
-            await this.saveAvatarUrl(avatarUrl);
-            
             // Convert avatar URL to GLB if necessary
             const glbUrl = this.getGLBUrlFromAvatarUrl(avatarUrl);
-            
+
             // Remove existing avatar if any
             if (this.avatarModel) {
                 this.scene.remove(this.avatarModel);
+                this.avatarModel.traverse((node) => {
+                    if (node.isMesh) {
+                        if (node.material) {
+                            node.material.dispose();
+                        }
+                        if (node.geometry) {
+                            node.geometry.dispose();
+                        }
+                    }
+                });
                 this.avatarModel = null;
+            }
+
+            // Initialize Three.js scene if not already done
+            if (!this.scene) {
+                this.initThreeJS();
             }
 
             // Load the new avatar
             const loader = new THREE.GLTFLoader();
-            const gltf = await loader.loadAsync(glbUrl);
+            loader.setPath(glbUrl);
+
+            const onProgress = (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    this.updateLoadingProgress(percent);
+                }
+            };
+
+            const gltf = await new Promise((resolve, reject) => {
+                loader.load(
+                    '',
+                    resolve,
+                    onProgress,
+                    reject
+                );
+            });
             
             this.avatarModel = gltf.scene;
             this.avatarModel.traverse((node) => {
                 if (node.isMesh) {
                     node.castShadow = true;
                     node.receiveShadow = true;
+                    // Enable better material quality
+                    if (node.material) {
+                        node.material.envMapIntensity = 1.5;
+                        node.material.needsUpdate = true;
+                    }
                 }
             });
             
             this.scene.add(this.avatarModel);
             this.centerCameraOnAvatar();
             
-            // Update preview if it exists
-            const preview = document.getElementById('rpm-avatar-preview');
-            if (preview) {
-                preview.innerHTML = `<img src="${avatarUrl}" alt="RPM Avatar">`;
-            }
-
             // Store the URL
             this.avatarUrl = avatarUrl;
             
             // Call success callback
-            this.onAvatarLoaded(this.avatarModel);
+            if (this.onAvatarLoaded) {
+                this.onAvatarLoaded(this.avatarModel);
+            }
             
         } catch (error) {
             console.error('Error loading avatar:', error);
-            this.onAvatarError(error);
+            if (this.onAvatarError) {
+                this.onAvatarError(error);
+            }
             throw error;
         } finally {
             this.isLoading = false;
@@ -271,60 +308,21 @@ class RPMAvatarManager {
     }
     
     centerCameraOnAvatar() {
-        if (!this.avatarModel || !this.camera || !this.controls) return;
+        if (!this.avatarModel || !this.camera) return;
+
+        // Set initial camera position - moved even further back (z from 3.5 to 4.5)
+        this.camera.position.set(0, 1.6, 4.5);
+        this.controls.target.set(0, 1.2, 0);
         
-        const box = new THREE.Box3().setFromObject(this.avatarModel);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+        // Set camera limits - adjusted for further viewing
+        this.controls.minDistance = 3.0;  // Increased minimum distance
+        this.controls.maxDistance = 6.0;  // Increased maximum distance
+        this.controls.minPolarAngle = Math.PI / 4;
+        this.controls.maxPolarAngle = Math.PI / 2;
         
-        // Calculate optimal camera position
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = 45; // Increased FOV for closer view
-        let cameraZ = Math.abs(maxDim / Math.tan((fov * Math.PI / 180) / 2)) * 1.2; // Reduced distance multiplier
-        
-        // Position camera lower and closer
-        this.camera.position.set(
-            center.x + cameraZ * 0.3, // Reduced side offset
-            center.y + size.y * 0.1,  // Lowered camera height from 0.3 to 0.1
-            center.z + cameraZ * 0.8  // Brought camera closer
-        );
-        
-        // Adjust target to be at the center of the avatar
-        this.controls.target.set(
-            center.x,
-            center.y + (size.y * 0.2), // Lowered target point from 0.4 to 0.2
-            center.z
-        );
-        
-        // Update camera settings
-        this.camera.fov = fov;
+        // Update camera and controls
         this.camera.updateProjectionMatrix();
-        
-        // Adjust control limits for closer interaction
-        this.controls.minDistance = cameraZ * 0.3;
-        this.controls.maxDistance = cameraZ * 1.5;
         this.controls.update();
-    }
-    
-    showLoadingOverlay(message) {
-        const overlay = document.querySelector('.loading-overlay');
-        if (overlay) {
-            overlay.style.display = 'flex';
-        }
-    }
-    
-    updateLoadingProgress(percent) {
-        const progress = document.querySelector('.loading-progress');
-        if (progress) {
-            progress.textContent = `Loading: ${percent}%`;
-        }
-    }
-    
-    hideLoadingOverlay() {
-        const overlay = document.querySelector('.loading-overlay');
-        if (overlay) {
-            overlay.style.display = 'none';
-        }
     }
 }
 

@@ -83,18 +83,23 @@
         <div class="image-section" style="display:none;">
             <div class="img-preview">
                 <div id="imagePreview">
+                    <div class="alert alert-info">No image selected</div>
                 </div>
             </div>
             <div>
-                <button type="button" class="btn btn-primary btn-lg " id="btn-predict">Predict!</button>
+                <button type="button" class="btn btn-primary btn-lg" id="btn-predict">Predict!</button>
             </div>
         </div>
-        <div class="loader" style="display:none;"></div>
+        <div class="loader" style="display:none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
         <h3 id="result">
-            <span> </span>
+            <span></span>
         </h3>
         <div>
-            <button type="button" class="btn btn-primary btn-lg " id="btn-save">Save</button>
+            <button type="button" class="btn btn-primary btn-lg" id="btn-save">Save</button>
         </div>
 
 

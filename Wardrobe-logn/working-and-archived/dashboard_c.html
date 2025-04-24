@@ -130,8 +130,15 @@
                     <i class="bi bi-moon"></i>
                 </button>
                 <div class="d-flex align-items-center">
-                    <img src="/api/placeholder/40/40" alt="Profile" class="profile-img me-2">
-                    <span>Welcome, User</span>
+                    {% if user and user.profile_picture %}
+                        <img src="{{ user.profile_picture }}" 
+                             alt="Profile" 
+                             class="profile-img me-2"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML += '<div class=\'profile-img me-2 bg-secondary text-white d-flex align-items-center justify-content-center\'>?</div>'">
+                    {% else %}
+                        <div class="profile-img me-2 bg-secondary text-white d-flex align-items-center justify-content-center">?</div>
+                    {% endif %}
+                    <span>Welcome, {{ user.name if user else 'User' }}</span>
                 </div>
             </div>
         </div>

@@ -23,20 +23,6 @@
         overflow: hidden;
     }
     
-    .rpm-iframe-container {
-        flex: 1;
-        position: relative;
-    }
-    
-    .rpm-iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-    
     .rpm-controls {
         width: 300px;
         padding: 20px;
@@ -66,37 +52,21 @@
         font-weight: 500;
     }
     
-    .avatar-url-input {
-        margin-bottom: 20px;
+    .avatar-input {
+        margin: 20px 0;
     }
     
-    .avatar-url-input input {
+    .avatar-input input {
         width: 100%;
         padding: 8px;
         border: 1px solid #ced4da;
         border-radius: 4px;
+        margin-bottom: 10px;
     }
     
-    .rpm-avatar-preview {
-        margin-top: 20px;
-        padding: 15px;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        background-color: white;
-    }
-    
-    .rpm-avatar-preview img {
-        width: 100%;
-        max-width: 250px;
-        height: auto;
-        border-radius: 8px;
-        margin: 10px 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .rpm-avatar-preview h4 {
-        margin-bottom: 15px;
-        color: #333;
+    .button-group {
+        display: flex;
+        gap: 10px;
     }
     
     /* Button colors */
@@ -200,13 +170,6 @@
         </div>
     </div>
 
-    <div class="avatar-preview">
-        <h4>Current Avatar</h4>
-        <div id="avatarPreviewContainer">
-            <p>No avatar loaded</p>
-        </div>
-    </div>
-
     <!-- Hidden iframe for RPM -->
     <iframe id="rpm-iframe" style="display: none;" allow="camera *; microphone *"></iframe>
 </div>
@@ -228,7 +191,6 @@
                 console.log('New avatar URL:', avatarUrl);
                 currentAvatarUrl = avatarUrl;
                 document.getElementById('avatarUrlInput').value = avatarUrl;
-                updateAvatarPreview(avatarUrl);
                 
                 // Automatically save the new avatar
                 saveCurrentAvatar();
@@ -260,7 +222,6 @@
             return;
         }
         currentAvatarUrl = avatarUrl;
-        updateAvatarPreview(avatarUrl);
     }
 
     function saveCurrentAvatar() {
@@ -286,7 +247,6 @@
         .then(data => {
             if (data.success) {
                 alert('Avatar saved successfully!');
-                updateAvatarPreview(avatarUrl);
             } else {
                 alert('Failed to save avatar: ' + (data.error || 'Unknown error'));
             }
@@ -313,7 +273,6 @@
             if (data.success && data.avatarUrl) {
                 currentAvatarUrl = data.avatarUrl;
                 document.getElementById('avatarUrlInput').value = data.avatarUrl;
-                updateAvatarPreview(data.avatarUrl);
             } else {
                 alert('No saved avatar found');
             }
@@ -326,18 +285,6 @@
             loadButton.disabled = false;
             loadButton.textContent = 'Load Saved Avatar';
         });
-    }
-
-    function updateAvatarPreview(avatarUrl) {
-        const container = document.getElementById('avatarPreviewContainer');
-        if (avatarUrl) {
-            container.innerHTML = `
-                <img src="${avatarUrl}" alt="Avatar Preview">
-                <p style="word-break: break-all; margin-top: 10px;">URL: ${avatarUrl}</p>
-            `;
-        } else {
-            container.innerHTML = '<p>No avatar loaded</p>';
-        }
     }
 
     // Load saved avatar when page loads

@@ -36,9 +36,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 @app.template_filter('normalize_path')
 def normalize_path_filter(file_path):
     """Normalizes file paths for template rendering"""
-    if not file_path:
-        return None
-    return file_path.replace('/outfit/', '/').replace('/static/static/', '/static/').lstrip('/')
+    return normalize_path(file_path)
 
 
 client = pymongo.MongoClient('localhost', 27017)
@@ -460,8 +458,10 @@ def profile():
 def get_user_profile_picture():
     if 'user' in session and session['user']:
         user = db.users.find_one({'_id': session['user']['_id']})
-        return user.get('profile_picture', '/static/image/default-profile.png')
-    return '/static/image/default-profile.png'
+        profile_picture = user.get('profile_picture') if user else None
+        if profile_picture:
+            return profile_picture
+    return None  # Return None instead of a default image path
 
 
 # Add this to your template context
@@ -632,10 +632,6 @@ def normalize_path(file_path):
         normalized = 'static/' + normalized[normalized.index('static') + 6:]
 
     return normalized
-def normalize_path(file_path):
-    if not file_path:
-        return None
-    return file_path.replace('/static/static/', '/static/').lstrip('/')
 
 
 @app.route('/recommendations', methods=['GET', 'POST'])

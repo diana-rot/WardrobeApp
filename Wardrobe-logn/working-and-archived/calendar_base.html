@@ -1,225 +1,3 @@
-{#<!DOCTYPE html>#}
-{#<html lang="en">#}
-{#<head>#}
-{#    <meta charset="UTF-8">#}
-{#    <meta name="viewport" content="width=device-width, initial-scale=1.0">#}
-{#    <title>Calendar</title>#}
-{#    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">#}
-{#    <style>#}
-{#        body {#}
-{#            font-family: Arial, sans-serif;#}
-{#            background-color: #f4f4f4;#}
-{#        }#}
-{##}
-{#        .toolbox {#}
-{#            box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.1);#}
-{#            height: 100vh;#}
-{#            padding: 20px;#}
-{#            background-color: #d9c2ba;#}
-{#        }#}
-{##}
-{#        .calendar-container {#}
-{#            padding: 20px;#}
-{#        }#}
-{##}
-{#        .calendar-grid {#}
-{#            display: grid;#}
-{#            grid-template-columns: repeat(7, 1fr);#}
-{#            gap: 10px;#}
-{#            padding: 10px;#}
-{#        }#}
-{##}
-{#        .day-label {#}
-{#            font-weight: bold;#}
-{#            text-align: center;#}
-{#        }#}
-{##}
-{#        .day-cell {#}
-{#            background-color: #fff;#}
-{#            border: 1px solid #ccc;#}
-{#            padding: 10px;#}
-{#            text-align: center;#}
-{#            border-radius: 5px;#}
-{#            box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);#}
-{#            position: relative;#}
-{#        }#}
-{##}
-{#        .day-cell img {#}
-{#            max-width: 100%;#}
-{#            height: auto;#}
-{#            border-radius: 5px;#}
-{#            margin-top: 10px;#}
-{#        }#}
-{##}
-{#        .day-cell button {#}
-{#            margin-top: 10px;#}
-{#        }#}
-{#    </style>#}
-{#</head>#}
-{#<body>#}
-{#    <div class="container-fluid">#}
-{#        <div class="row">#}
-{#            <div class="col-3 toolbox">#}
-{#                <h2 class="text-center">ToolBox</h2>#}
-{#                <div class="d-grid gap-3">#}
-{#                    <button class="btn btn-secondary" onclick="location.href='/dashboard'">Back to Dashboard</button>#}
-{#                    <button class="btn btn-secondary" onclick="openAddOutfitModal()">Add to Calendar</button>#}
-{#                    <button class="btn btn-secondary" onclick="location.href='/avatar'">Go to Avatar</button>#}
-{#                    <button class="btn btn-secondary" onclick="location.href='/favourites'">View Your Favourite Outfits</button>#}
-{#                </div>#}
-{#            </div>#}
-{#            <div class="col-9 calendar-container">#}
-{#                <div class="month-navigation">#}
-{#                    <button class="btn btn-primary" onclick="navigateMonth(-1)">Back</button>#}
-{#                    <h1>{{ month_names[month - 1] }} {{ year }}</h1>#}
-{#                    <button class="btn btn-primary" onclick="navigateMonth(1)">Next</button>#}
-{#                </div>#}
-{#                <div class="calendar-grid">#}
-{#                    <!-- Weekday Labels -->#}
-{#                    <div class="day-label">Mon</div>#}
-{#                    <div class="day-label">Tue</div>#}
-{#                    <div class="day-label">Wed</div>#}
-{#                    <div class="day-label">Thu</div>#}
-{#                    <div class="day-label">Fri</div>#}
-{#                    <div class="day-label">Sat</div>#}
-{#                    <div class="day-label">Sun</div>#}
-{##}
-{#                    <!-- Days of the Month -->#}
-{#                    {% for week in weeks %}#}
-{#                        {% for day in week %}#}
-{#                            <div class="day-cell">#}
-{#                                {% if day > 0 %}#}
-{#                                    <div>{{ day }}</div>#}
-{#                                    {% if day in outfits %}#}
-{#                                        <img src="{{ url_for('uploaded_file', filename=outfits[day].image_path) }}" alt="Outfit" onerror="this.onerror=null; this.src='/static/image/placeholder.png';">#}
-{#                                        <p>{{ outfits[day].description }}</p>#}
-{#                                        <button class="btn btn-danger btn-sm" onclick="deleteOutfit({{ day }})">Delete</button>#}
-{#                                    {% else %}#}
-{#                                        <button class="btn btn-secondary add-outfit-btn" onclick="openAddOutfitModal({{ day }})">Add Outfit</button>#}
-{#                                    {% endif %}#}
-{#                                {% endif %}#}
-{#                            </div>#}
-{#                        {% endfor %}#}
-{#                    {% endfor %}#}
-{#                </div>#}
-{#            </div>#}
-{#        </div>#}
-{#    </div>#}
-{##}
-{#    <!-- Add Outfit Modal -->#}
-{#<!-- Add Outfit Modal -->#}
-{#<div class="modal fade" id="addOutfitModal" tabindex="-1" aria-labelledby="addOutfitModalLabel" aria-hidden="true">#}
-{#    <div class="modal-dialog">#}
-{#        <div class="modal-content">#}
-{#            <div class="modal-header">#}
-{#                <h5 class="modal-title" id="addOutfitModalLabel">Add Outfit for <span id="modalDate"></span></h5>#}
-{#                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>#}
-{#            </div>#}
-{#            <div class="modal-body">#}
-{#                <form id="addOutfitForm">#}
-{#                    <input type="hidden" id="selectedDay">#}
-{#                    <input type="hidden" id="selectedYear"> <!-- Hidden field for year -->#}
-{#                    <input type="hidden" id="selectedMonth"> <!-- Hidden field for month -->#}
-{#                    <div class="mb-3">#}
-{#                        <label for="file" class="form-label">Image</label>#}
-{#                        <input type="file" class="form-control" id="outfitFile" required>#}
-{#                    </div>#}
-{#                    <div class="mb-3">#}
-{#                        <label for="description" class="form-label">Description</label>#}
-{#                        <textarea class="form-control" id="outfitDescription"></textarea>#}
-{#                    </div>#}
-{#                    <button type="submit" class="btn btn-primary">Save</button>#}
-{#                </form>#}
-{#            </div>#}
-{#        </div>#}
-{#    </div>#}
-{#</div>#}
-{##}
-{##}
-{#    <script>#}
-{#        function navigateMonth(direction) {#}
-{#            let newMonth = {{ month }} + direction;#}
-{#            let newYear = {{ year }};#}
-{##}
-{#            if (newMonth < 1) {#}
-{#                newMonth = 12;#}
-{#                newYear -= 1;#}
-{#            } else if (newMonth > 12) {#}
-{#                newMonth = 1;#}
-{#                newYear += 1;#}
-{#            }#}
-{##}
-{#            const url = `/calendar?year=${newYear}&month=${newMonth}`;#}
-{#            window.location.href = url;#}
-{#        }#}
-{##}
-{##}
-{#    function openAddOutfitModal(day) {#}
-{#        const modalDate = document.getElementById('modalDate');#}
-{#        const selectedDay = document.getElementById('selectedDay');#}
-{#        const selectedYear = document.getElementById('selectedYear');#}
-{#        const selectedMonth = document.getElementById('selectedMonth');#}
-{##}
-{#        modalDate.textContent = `Day ${day}`;#}
-{#        selectedDay.value = day;#}
-{#        selectedYear.value = {{ year }};#}
-{#        selectedMonth.value = {{ month }};#}
-{##}
-{#        new bootstrap.Modal(document.getElementById('addOutfitModal')).show();#}
-{#    }#}
-{##}
-{#        document.getElementById('addOutfitForm').addEventListener('submit', function (e) {#}
-{#            e.preventDefault();#}
-{##}
-{#            const formData = new FormData();#}
-{#            formData.append('day', document.getElementById('selectedDay').value);#}
-{#            formData.append('year', document.getElementById('selectedYear').value);  // Add year#}
-{#            formData.append('month', document.getElementById('selectedMonth').value);  // Add month#}
-{#            formData.append('file', document.getElementById('outfitFile').files[0]);#}
-{#            formData.append('description', document.getElementById('outfitDescription').value);#}
-{##}
-{#            fetch('/calendar/add', {#}
-{#                method: 'POST',#}
-{#                body: formData#}
-{#            })#}
-{#            .then(response => response.json())#}
-{#            .then(data => {#}
-{#                if (data.success) {#}
-{#                    location.reload();#}
-{#                } else {#}
-{#                    alert(data.message);#}
-{#                }#}
-{#            })#}
-{#            .catch(error => console.error('Error:', error));#}
-{#        });#}
-{##}
-{##}
-{##}
-{#        function deleteOutfit(day) {#}
-{#            fetch(`/calendar/delete?day=${day}`, { method: 'DELETE' })#}
-{#            .then(response => response.json())#}
-{#            .then(data => {#}
-{#                if (data.success) {#}
-{#                    const dayCell = document.querySelector(`[data-day="${day}"]`);#}
-{#                    if (dayCell) {#}
-{#                        dayCell.querySelector("img")?.remove();#}
-{#                        dayCell.querySelector("p")?.remove();#}
-{#                        dayCell.querySelector(".btn-danger")?.remove();#}
-{#                        dayCell.querySelector(".add-outfit-btn").style.display = "block";#}
-{#                    }#}
-{#                } else {#}
-{#                    alert(data.message);#}
-{#                }#}
-{#            })#}
-{#            .catch(error => console.error('Error:', error));#}
-{#        }#}
-{#    </script>#}
-{##}
-{#    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>#}
-{#</body>#}
-{#</html>#}
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -283,6 +61,38 @@
             align-items: center;
             margin-bottom: 20px;
         }
+
+        .outfit-image-container {
+            width: 100%;
+            height: 120px;
+            margin: 10px 0;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .outfit-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 12px;
+            text-align: center;
+            padding: 10px;
+            background: #fde8e7;
+            border-radius: 5px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -320,7 +130,11 @@
                                 {% if day > 0 %}
                                     <div>{{ day }}</div>
                                     {% if day in outfits %}
-                                        <img src="{{ url_for('uploaded_file', filename=outfits[day].image_path) }}" alt="Outfit" onerror="this.onerror=null; this.src='/static/image/placeholder.png';">
+                                        <div class="outfit-image-container">
+                                            <img src="{{ url_for('uploaded_file', filename=outfits[day].image_path) }}" 
+                                                 alt="Outfit for day {{ day }}"
+                                                 onerror="this.parentElement.innerHTML='<div class=\'error-message\'>No image available</div>'">
+                                        </div>
                                         <p>{{ outfits[day].description }}</p>
                                         <button class="btn btn-danger btn-sm" onclick="deleteOutfit({{ day }})">Delete</button>
                                     {% else %}
