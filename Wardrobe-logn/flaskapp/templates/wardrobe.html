@@ -1,189 +1,477 @@
 {% extends "base.html" %}
 
-{% block title %}Add Clothes to Wardrobe - WardrobeApp{% endblock %}
+{% block title %}Your Wardrobe{% endblock %}
 
 {% block extra_css %}
 <style>
-    .card {
-        background-color: var(--secondary-color);
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
+    .wardrobe-container {
         padding: 20px;
+        display: flex;
+        gap: 20px;
     }
 
-    .card h1, .card h2, .card h3 {
-        color: var(--text-color);
+    .left-panel {
+        flex: 1;
+        min-width: 300px;
     }
 
-    .center {
+    .right-panel {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .avatar-container {
+        width: 100%;
+        height: 500px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .upload-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
         text-align: center;
     }
 
-    .btn-primary {
-        background-color: var(--accent-color);
-        border-color: var(--accent-color);
+    .preview-section {
+        margin-top: 20px;
+        display: none;
     }
 
-    .btn-primary:hover {
-        background-color: #b99593;
-        border-color: #b99593;
-    }
-
-    .btn-secondary {
-        background-color: white;
-        border-color: var(--accent-color);
-        color: var(--accent-color);
-    }
-
-    .btn-secondary:hover {
-        background-color: var(--accent-color);
-        color: white;
+    .preview-image {
+        max-width: 300px;
+        max-height: 300px;
+        margin: 10px 0;
     }
 
     .prediction-result {
         margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
     }
 
     .color-preview {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
         display: inline-block;
-        vertical-align: middle;
+        margin: 5px;
+    }
+
+    .try-on-button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background-color 0.3s;
+    }
+
+    .try-on-button:hover {
+        background-color: #45a049;
+    }
+
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .try-on-options {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .try-on-option {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .try-on-2d {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .try-on-3d {
+        background-color: #2196F3;
+        color: white;
+    }
+
+    .try-on-2d:hover {
+        background-color: #45a049;
+    }
+
+    .try-on-3d:hover {
+        background-color: #1976D2;
+    }
+
+    .avatar-container {
+        width: 100%;
+        height: 500px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .person-upload {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .try-on-result {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    #avatar-3d {
+        width: 100%;
+        height: 100%;
+        display: none;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1 class="center">Add clothes to your wardrobe:</h1>
-    <form id="upload-file" action="/predict" method="post" enctype="multipart/form-data">
-        <label for="imageUpload" class="upload-label btn btn-primary">
-            Choose Image...
-        </label>
-        <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg" style="display: none;">
-    </form>
-    <div class="image-section" style="display:none;">
-        <div class="img-preview">
-            <div id="imagePreview"></div>
+<div class="wardrobe-container">
+    <div class="left-panel">
+        <h1>Add to Your Wardrobe</h1>
+        
+        <div class="upload-section">
+            <form id="upload-form" enctype="multipart/form-data">
+                <input type="file" name="file" id="file-input" accept="image/*" style="display: none;">
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                    Choose Image
+                </button>
+                <p class="mt-2">or drag and drop an image here</p>
+            </form>
         </div>
-        <div class="text-center mt-3">
-            <button type="button" class="btn btn-primary btn-lg" id="btn-predict">Predict and Save</button>
+
+        <div class="preview-section" id="preview-section">
+            <h3>Preview</h3>
+            <img id="preview-image" class="preview-image" src="" alt="Preview">
+            
+            <div class="prediction-result" id="prediction-result">
+                <h4>Analysis Results</h4>
+                <p>Clothing Type: <span id="clothing-type"></span></p>
+                <p>Dominant Color: <span id="dominant-color"></span></p>
+                <div id="color-preview" class="color-preview"></div>
+                <p>Confidence: <span id="confidence"></span>%</p>
+                
+                <div class="try-on-options">
+                    <button class="try-on-option try-on-2d" onclick="tryOn2D()">
+                        Try On 2D
+                    </button>
+                    <button class="try-on-option try-on-3d" onclick="tryOn3D()">
+                        Try On 3D
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <h2>Virtual Try-On</h2>
+        <div id="avatar-container" class="avatar-container">
+            <div id="person-upload" class="person-upload" style="display: none;">
+                <h3>Upload Your Photo</h3>
+                <input type="file" id="person-input" accept="image/*" style="display: none;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('person-input').click()">
+                    Choose Photo
+                </button>
+            </div>
+            <img id="try-on-result" class="try-on-result" style="display: none;" alt="Try-on Result">
+            <div id="avatar-3d"></div>
         </div>
     </div>
 </div>
 
-<div class="card">
-    <h2>The result:</h2>
-    <div class="loader" style="display:none;"></div>
-    <h3 id="result"></h3>
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
-<script src="../static/js/scripts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="{{ url_for('static', filename='js/rpm-avatar.js') }}"></script>
 <script>
-    // Your existing JavaScript code for image upload and prediction
-    document.getElementById('imageUpload').addEventListener('change', function(e) {
-        const imageSection = document.querySelector('.image-section');
-        const previewDiv = document.getElementById('imagePreview');
-        const file = e.target.files[0];
+    let currentClothingId = null;
+    let currentClothingItem = null;
+    let avatarManager = null;
+    let tryOnMode = null;
 
-        if (!file) return;
+    // File upload handling
+    const fileInput = document.getElementById('file-input');
+    const personInput = document.getElementById('person-input');
+    const previewSection = document.getElementById('preview-section');
+    const previewImage = document.getElementById('preview-image');
+    const predictionResult = document.getElementById('prediction-result');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const personUpload = document.getElementById('person-upload');
+    const tryOnResult = document.getElementById('try-on-result');
+    const avatar3D = document.getElementById('avatar-3d');
 
-        imageSection.style.display = 'block';
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.maxWidth = '300px';
-            img.style.height = 'auto';
-            img.style.borderRadius = '8px';
-            img.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-
-            previewDiv.innerHTML = '';
-            previewDiv.appendChild(img);
-        };
-        reader.readAsDataURL(file);
+    // Initialize avatar manager
+    document.addEventListener('DOMContentLoaded', function() {
+        avatarManager = new RPMAvatarManager({
+            container: 'avatar-3d'
+        });
     });
 
-    document.getElementById('btn-predict').addEventListener('click', async function() {
-        const fileInput = document.getElementById('imageUpload');
-        const resultDiv = document.getElementById('result');
-        const loader = document.querySelector('.loader');
+    fileInput.addEventListener('change', handleFileSelect);
+    personInput.addEventListener('change', handlePersonSelect);
 
-        if (!fileInput.files[0]) {
-            alert('Please select an image first');
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewSection.style.display = 'block';
+                predictionResult.style.display = 'none';
+                currentClothingItem = file;
+                predictClothing();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function handlePersonSelect(event) {
+        const file = event.target.files[0];
+        if (file && currentClothingId) {
+            performTryOn2D(file);
+        }
+    }
+
+    // Drag and drop functionality
+    const uploadSection = document.querySelector('.upload-section');
+
+    uploadSection.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadSection.classList.add('drag-over');
+    });
+
+    uploadSection.addEventListener('dragleave', () => {
+        uploadSection.classList.remove('drag-over');
+    });
+
+    uploadSection.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadSection.classList.remove('drag-over');
+        
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelect({ target: { files: [file] } });
+        }
+    });
+
+    // Try on functionality
+    async function tryOn2D() {
+        tryOnMode = '2d';
+        if (!currentClothingItem) {
+            alert('Please select a clothing item first');
             return;
         }
 
-        loader.style.display = 'block';
-        resultDiv.innerHTML = '';
-
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
+        loadingOverlay.style.display = 'flex';
 
         try {
-            const response = await fetch('/wardrobe', {
+            const formData = new FormData();
+            formData.append('file', currentClothingItem);
+
+            const response = await fetch('/try-on', {
                 method: 'POST',
                 body: formData
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error('Failed to process try-on request');
             }
 
             const data = await response.json();
+            currentClothingId = data.clothingId;
+            
+            // Show person upload for 2D try-on
+            personUpload.style.display = 'block';
+            tryOnResult.style.display = 'none';
+            avatar3D.style.display = 'none';
+            
+        } catch (error) {
+            console.error('Error during try-on:', error);
+            alert('Failed to process the try-on request. Please try again.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
 
-            if (data.error) {
-                throw new Error(data.error);
+    async function tryOn3D() {
+        tryOnMode = '3d';
+        if (!currentClothingItem) {
+            alert('Please select a clothing item first');
+            return;
+        }
+
+        loadingOverlay.style.display = 'flex';
+
+        try {
+            // Check if 3D model exists
+            const response = await fetch(`/api/check-3d-model/${currentClothingId}`);
+            const data = await response.json();
+
+            if (!data.exists) {
+                // Generate 3D model
+                const generateResponse = await fetch('/api/generate-3d-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        itemId: currentClothingId,
+                        category: document.getElementById('clothing-type').textContent
+                    })
+                });
+
+                if (!generateResponse.ok) {
+                    throw new Error('Failed to generate 3D model');
+                }
+
+                const modelData = await generateResponse.json();
+                
+                // Apply to avatar
+                await avatarManager.loadClothingModel(modelData.modelUrl, modelData.textureId);
+            } else {
+                // Load existing model
+                await avatarManager.loadClothingModel(data.modelUrl, data.textureId);
             }
 
-            const rgbColor = `rgb(${data.color.rgb.join(', ')})`;
-            const percentage = (data.color.percentage * 100).toFixed(1);
-
-            resultDiv.innerHTML = `
-                <div class="prediction-result p-4 bg-white rounded-lg shadow">
-                    <div class="mb-4">
-                        <h3 class="text-xl font-semibold mb-2">Clothing Type</h3>
-                        <p class="text-lg">${data.prediction}</p>
-                    </div>
-
-                    <div class="mb-4">
-                        <h3 class="text-xl font-semibold mb-2">Dominant Color</h3>
-                        <div class="flex items-center gap-3">
-                            <div class="color-preview" style="
-                                width: 50px;
-                                height: 50px;
-                                background-color: ${rgbColor};
-                                border-radius: 8px;
-                                border: 1px solid #ccc;
-                            "></div>
-                            <div>
-                                <p>RGB: ${data.color.rgb.join(', ')}</p>
-                                <p>Percentage: ${percentage}%</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <button onclick="location.reload()" class="btn btn-secondary">
-                            Add Another Item
-                        </button>
-                    </div>
-                </div>
-            `;
+            // Show 3D avatar
+            personUpload.style.display = 'none';
+            tryOnResult.style.display = 'none';
+            avatar3D.style.display = 'block';
 
         } catch (error) {
-            console.error('Error:', error);
-            resultDiv.innerHTML = `
-                <div class="error-message p-4 bg-red-100 text-red-700 rounded-lg">
-                    ${error.message || 'Error processing image. Please try again.'}
-                </div>
-            `;
+            console.error('Error during 3D try-on:', error);
+            alert('Failed to process the 3D try-on request. Please try again.');
         } finally {
-            loader.style.display = 'none';
+            loadingOverlay.style.display = 'none';
         }
-    });
+    }
+
+    async function performTryOn2D(personImage) {
+        if (!currentClothingId || !personImage) {
+            alert('Please select both a clothing item and a person image');
+            return;
+        }
+
+        loadingOverlay.style.display = 'flex';
+
+        try {
+            const formData = new FormData();
+            formData.append('person_image', personImage);
+
+            const response = await fetch(`/try-on/${currentClothingId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to perform try-on');
+            }
+
+            // Convert the response to a blob and create an object URL
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            
+            // Display the result
+            tryOnResult.src = imageUrl;
+            tryOnResult.style.display = 'block';
+            personUpload.style.display = 'none';
+            avatar3D.style.display = 'none';
+            
+        } catch (error) {
+            console.error('Error during try-on:', error);
+            alert('Failed to perform the try-on. Please try again.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+    // Prediction functionality
+    async function predictClothing() {
+        if (!currentClothingItem) {
+            alert('Please select an image first');
+            return;
+        }
+
+        loadingOverlay.style.display = 'flex';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', currentClothingItem);
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to process prediction');
+            }
+
+            const data = await response.json();
+            
+            document.getElementById('clothing-type').textContent = data.clothing_type;
+            document.getElementById('dominant-color').textContent = data.dominant_color;
+            document.getElementById('confidence').textContent = data.confidence;
+            
+            const colorPreview = document.getElementById('color-preview');
+            colorPreview.style.backgroundColor = data.color_hex;
+            
+            predictionResult.style.display = 'block';
+        } catch (error) {
+            console.error('Error during prediction:', error);
+            alert('Failed to process the image. Please try again.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
 </script>
 {% endblock %}

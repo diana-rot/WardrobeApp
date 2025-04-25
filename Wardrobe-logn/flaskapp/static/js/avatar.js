@@ -892,13 +892,34 @@ async function loadWardrobeItems(category) {
                     }
                 </div>
                 <div class="item-name">${itemName}</div>
+                <div class="item-actions">
+                    <button class="btn btn-sm btn-primary try-on-btn" data-item-id="${item._id}">Try On</button>
+                    <button class="btn btn-sm btn-success generate-3d-btn" data-item-id="${item._id}">Generate 3D</button>
+                </div>
             `;
 
-            itemElement.addEventListener('click', function() {
+            itemElement.addEventListener('click', function(e) {
+                // Don't trigger if clicking on buttons
+                if (e.target.tagName === 'BUTTON') return;
+                
                 container.querySelectorAll('.wardrobe-item').forEach(el => {
                     el.classList.remove('selected');
                 });
                 this.classList.add('selected');
+            });
+            
+            // Add event listener for try-on button
+            const tryOnBtn = itemElement.querySelector('.try-on-btn');
+            tryOnBtn.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                tryOnItem(itemId, category);
+            });
+            
+            // Add event listener for generate 3D button
+            const generate3dBtn = itemElement.querySelector('.generate-3d-btn');
+            generate3dBtn.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                generate3DModel(itemId, category);
             });
 
             container.appendChild(itemElement);
@@ -907,6 +928,215 @@ async function loadWardrobeItems(category) {
         console.error('Error loading wardrobe items:', error);
         container.innerHTML = '<div class="error">Failed to load items</div>';
     }
+}
+
+// Try on a wardrobe item
+async function tryOnItem(itemId, category) {
+    try {
+        showLoading();
+        
+        // Check if 3D model exists
+        const modelResponse = await fetch(`/api/check-3d-model/${itemId}`);
+        const modelData = await modelResponse.json();
+        
+        if (!modelData.exists) {
+            // Generate 3D model if it doesn't exist
+            const generateResponse = await fetch('/api/generate-3d-model', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    itemId: itemId,
+                    category: category
+                })
+            });
+            
+            if (!generateResponse.ok) {
+                throw new Error('Failed to generate 3D model');
+            }
+            
+            const generatedData = await generateResponse.json();
+            await loadClothingModel(generatedData.modelUrl, generatedData.textureId, category);
+        } else {
+            // Load existing model
+            await loadClothingModel(modelData.modelUrl, modelData.textureId, category);
+        }
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Error trying on item:', error);
+        hideLoading();
+        showMessage('Failed to try on item', 'error');
+    }
+}
+
+// Generate 3D model for a wardrobe item
+async function generate3DModel(itemId, category) {
+    try {
+        // Show loading indicator
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.className = 'loading-indicator';
+        loadingIndicator.textContent = 'Generating 3D model...';
+        document.body.appendChild(loadingIndicator);
+        
+        // Call the API to generate the 3D model
+        const response = await fetch('/api/generate-3d-model', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                itemId: itemId,
+                category: category
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to generate 3D model');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('3D model generated successfully! You can now try it on.');
+        } else {
+            throw new Error(result.error || 'Failed to generate 3D model');
+        }
+        
+        // Remove loading indicator
+        document.body.removeChild(loadingIndicator);
+    } catch (error) {
+        console.error('Error generating 3D model:', error);
+        alert('Failed to generate 3D model. Please try again.');
+        
+        // Remove loading indicator
+        const loadingIndicator = document.querySelector('.loading-indicator');
+        if (loadingIndicator) {
+            document.body.removeChild(loadingIndicator);
+        }
+    }
+}
+
+// Load a clothing model
+async function loadClothingModel(modelUrl, textureId, category) {
+    try {
+        showLoading();
+        
+        // Remove any existing clothing of the same category
+        if (currentClothing[category]) {
+            scene.remove(currentClothing[category]);
+            currentClothing[category] = null;
+        }
+        
+        // Load the texture from GridFS
+        let textureLoader = new THREE.TextureLoader();
+        let texture;
+        if (textureId) {
+            texture = await new Promise((resolve, reject) => {
+                textureLoader.load(
+                    `/api/texture/${textureId}`,
+                    resolve,
+                    undefined,
+                    reject
+                );
+            });
+        }
+        
+        // Load the GLTF model
+        const loader = new THREE.GLTFLoader();
+        const gltf = await loader.loadAsync(modelUrl);
+        
+        const clothingMesh = gltf.scene;
+        
+        // Apply texture if available
+        if (texture) {
+            clothingMesh.traverse((node) => {
+                if (node.isMesh) {
+                    node.material.map = texture;
+                    node.material.needsUpdate = true;
+                }
+            });
+        }
+        
+        // Position the clothing based on category
+        switch(category) {
+            case 'tops':
+                clothingMesh.position.y = 1.4;
+                break;
+            case 'bottoms':
+                clothingMesh.position.y = 0.8;
+                break;
+            case 'dresses':
+                clothingMesh.position.y = 1.2;
+                break;
+            case 'outerwear':
+                clothingMesh.position.y = 1.4;
+                break;
+            case 'shoes':
+                clothingMesh.position.y = 0.1;
+                break;
+            case 'accessories':
+                clothingMesh.position.y = 1.6;
+                break;
+        }
+        
+        // Scale the clothing to match avatar size
+        clothingMesh.scale.set(1, 1, 1);
+        
+        // Add shadow casting
+        clothingMesh.traverse((node) => {
+            if (node.isMesh) {
+                node.castShadow = true;
+                node.receiveShadow = true;
+            }
+        });
+        
+        // Add the clothing to the scene
+        scene.add(clothingMesh);
+        currentClothing[category] = clothingMesh;
+        
+        // Update the camera to focus on the new clothing
+        updateCameraFocus();
+        
+        hideLoading();
+        showMessage('Clothing applied successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error loading clothing model:', error);
+        hideLoading();
+        showMessage('Failed to load clothing model', 'error');
+        throw error;
+    }
+}
+
+// Add a function to update camera focus
+function updateCameraFocus() {
+    if (!currentAvatar) return;
+    
+    // Calculate the center point of all clothing items
+    const center = new THREE.Vector3();
+    let count = 0;
+    
+    Object.values(currentClothing).forEach(clothing => {
+        if (clothing) {
+            const box = new THREE.Box3().setFromObject(clothing);
+            center.add(box.getCenter(new THREE.Vector3()));
+            count++;
+        }
+    });
+    
+    if (count > 0) {
+        center.divideScalar(count);
+        controls.target.copy(center);
+    } else {
+        // Default to avatar center if no clothing
+        const avatarBox = new THREE.Box3().setFromObject(currentAvatar);
+        controls.target.copy(avatarBox.getCenter(new THREE.Vector3()));
+    }
+    
+    controls.update();
 }
 
 // Load existing avatar if available
@@ -1553,4 +1783,79 @@ class AvatarManager {
             this.hideLoading();
         }
     }
+}
+
+// Add function to try on selected items
+async function tryOnSelectedItems() {
+    const selectedItems = document.querySelectorAll('.wardrobe-item.selected');
+    
+    if (selectedItems.length === 0) {
+        showMessage('Please select items to try on', 'info');
+        return;
+    }
+    
+    showLoading('Trying on selected items...');
+    
+    try {
+        for (const item of selectedItems) {
+            const itemId = item.dataset.itemId;
+            
+            // Check if item has 3D model
+            const modelCheck = await fetch(`/api/check-3d-model/${itemId}`);
+            const modelData = await modelCheck.json();
+            
+            if (!modelData.exists) {
+                // Generate 3D model if it doesn't exist
+                const generateResponse = await fetch('/api/generate-3d-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        itemId: itemId,
+                        category: item.dataset.category
+                    })
+                });
+                
+                if (!generateResponse.ok) {
+                    throw new Error('Failed to generate 3D model');
+                }
+                
+                const result = await generateResponse.json();
+                if (result.success) {
+                    await loadClothingModel(result.modelUrl, result.textureId, item.dataset.category);
+                }
+            } else {
+                // Load existing 3D model
+                await loadClothingModel(modelData.modelUrl, modelData.textureId, item.dataset.category);
+            }
+        }
+        
+        showMessage('Items applied successfully!', 'success');
+    } catch (error) {
+        console.error('Error trying on items:', error);
+        showMessage('Error applying items. Please try again.', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Add event listener for the "Try On Selected Items" button
+document.getElementById('tryOnSelectedItems')?.addEventListener('click', tryOnSelectedItems);
+
+// Add function to remove clothing
+function removeClothing(category) {
+    if (currentClothing[category]) {
+        scene.remove(currentClothing[category]);
+        currentClothing[category] = null;
+        updateCameraFocus();
+    }
+}
+
+// Add function to clear all clothing
+function clearAllClothing() {
+    Object.keys(currentClothing).forEach(category => {
+        removeClothing(category);
+    });
+    updateCameraFocus();
 }

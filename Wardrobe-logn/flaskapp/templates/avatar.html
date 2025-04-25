@@ -315,6 +315,85 @@
     .step-indicator.completed {
         background: #2ecc71;
     }
+
+    .try-on-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .try-on-preview {
+        width: 100%;
+        height: 300px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 15px;
+        position: relative;
+    }
+
+    .try-on-result {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: none;
+    }
+
+    .upload-section {
+        margin-top: 15px;
+        padding: 15px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .preview-section {
+        margin-top: 15px;
+        display: none;
+    }
+
+    .preview-image {
+        max-width: 100%;
+        max-height: 200px;
+        margin: 10px 0;
+        border-radius: 4px;
+    }
+
+    .try-on-options {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .try-on-button {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.3s;
+    }
+
+    .try-on-2d {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .try-on-3d {
+        background-color: #2196F3;
+        color: white;
+    }
+
+    .try-on-2d:hover {
+        background-color: #45a049;
+    }
+
+    .try-on-3d:hover {
+        background-color: #1976D2;
+    }
 </style>
 {% endblock %}
 
@@ -402,6 +481,52 @@
                 <button id="try-on-rpm" class="btn btn-primary try-on-btn" style="margin-top: 15px;">Try On Selected Items</button>
             </div>
         </div>
+
+        <!-- Try-On Section -->
+        <div class="try-on-section">
+            <h3>Virtual Try-On</h3>
+            
+            <div class="upload-section">
+                <input type="file" id="clothing-input" accept="image/*" style="display: none;">
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('clothing-input').click()">
+                    Choose Clothing Item
+                </button>
+                <p class="mt-2">or drag and drop an image here</p>
+            </div>
+
+            <div class="preview-section" id="preview-section">
+                <h4>Preview</h4>
+                <img id="preview-image" class="preview-image" src="" alt="Preview">
+                
+                <div class="prediction-result" id="prediction-result" style="display: none;">
+                    <h5>Analysis Results</h5>
+                    <p>Clothing Type: <span id="clothing-type"></span></p>
+                    <p>Dominant Color: <span id="dominant-color"></span></p>
+                    <div id="color-preview" class="color-preview"></div>
+                    <p>Confidence: <span id="confidence"></span>%</p>
+                    
+                    <div class="try-on-options">
+                        <button class="try-on-button try-on-2d" onclick="tryOn2D()">
+                            Try On 2D
+                        </button>
+                        <button class="try-on-button try-on-3d" onclick="tryOn3D()">
+                            Try On 3D
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="try-on-preview">
+                <div id="person-upload" style="display: none;">
+                    <h4>Upload Your Photo</h4>
+                    <input type="file" id="person-input" accept="image/*" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('person-input').click()">
+                        Choose Photo
+                    </button>
+                </div>
+                <img id="try-on-result" class="try-on-result" alt="Try-on Result">
+            </div>
+        </div>
     </div>
 
     <div class="avatar-container" id="avatar-container">
@@ -419,256 +544,250 @@
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
 <script src="{{ url_for('static', filename='js/rpm-avatar.js') }}"></script>
 <script>
+    let currentClothingId = null;
+    let currentClothingItem = null;
+    let avatarManager = null;
+    let tryOnMode = null;
+
+    // Initialize managers and UI elements
+    const clothingInput = document.getElementById('clothing-input');
+    const personInput = document.getElementById('person-input');
+    const previewSection = document.getElementById('preview-section');
+    const previewImage = document.getElementById('preview-image');
+    const predictionResult = document.getElementById('prediction-result');
+    const personUpload = document.getElementById('person-upload');
+    const tryOnResult = document.getElementById('try-on-result');
+    const loadingOverlay = document.querySelector('.loading-overlay');
+
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize the avatar managers
-        const avatarManager = new AvatarManager({
+        // Initialize avatar managers
+        avatarManager = new AvatarManager({
             container: document.getElementById('avatar-container')
         });
 
-        const rpmManager = new RPMAvatarManager({
-            container: document.getElementById('avatar-container')
-        });
-
-        // Handle tab switching
-        const tabs = document.querySelectorAll('.avatar-tab');
-        const sections = document.querySelectorAll('.avatar-section');
-        
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const tabName = this.dataset.tab;
-                
-                // Update active tab
-                tabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Show corresponding section
-                sections.forEach(section => {
-                    section.classList.remove('active');
-                    if (section.id === `${tabName}-avatar-section`) {
-                        section.classList.add('active');
-                    }
-                });
-
-                // Load wardrobe items for the active section
-                const activeSection = document.querySelector('.avatar-section.active');
-                const categorySelect = activeSection.querySelector('.category-select');
-                if (categorySelect) {
-                    loadWardrobeItems(categorySelect.value, activeSection.querySelector('.wardrobe-grid').id);
-                }
+        // Initialize RPM manager if needed
+        if (document.getElementById('rpm-avatar-section')) {
+            rpmManager = new RPMAvatarManager({
+                container: 'avatar-container'
             });
-        });
-
-        // Handle category changes
-        document.querySelectorAll('.category-select').forEach(select => {
-            select.addEventListener('change', function() {
-                const gridId = this.closest('.avatar-section').querySelector('.wardrobe-grid').id;
-                loadWardrobeItems(this.value, gridId);
-            });
-        });
-
-        // Load wardrobe items function
-        async function loadWardrobeItems(category, containerId) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-
-            container.innerHTML = '<div class="loading">Loading items...</div>';
-
-            try {
-                const response = await fetch(`/api/wardrobe-items?category=${category}`);
-                if (!response.ok) {
-                    throw new Error('Failed to load wardrobe items');
-                }
-
-                const data = await response.json();
-                container.innerHTML = '';
-
-                const items = data[category] || [];
-                
-                if (items.length === 0) {
-                    container.innerHTML = '<div class="error">No items found in this category</div>';
-                    return;
-                }
-
-                items.forEach(item => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'wardrobe-item';
-                    itemElement.dataset.itemId = item._id;
-                    
-                    const itemName = item.label || 'Unnamed Item';
-                    
-                    itemElement.innerHTML = `
-                        <div class="item-image">
-                            ${item.file_path ? `
-                                <img src="${item.file_path}" 
-                                     alt="${itemName}"
-                                     onerror="this.parentElement.innerHTML='<div class=\'error-message\'>Image not available</div>'">
-                            ` : `
-                                <div class="error-message">No image available</div>
-                            `}
-                        </div>
-                        <div class="item-name">${itemName}</div>
-                    `;
-
-                    itemElement.addEventListener('click', function() {
-                        container.querySelectorAll('.wardrobe-item').forEach(el => {
-                            el.classList.remove('selected');
-                        });
-                        this.classList.add('selected');
-                    });
-
-                    container.appendChild(itemElement);
-                });
-            } catch (error) {
-                console.error('Error loading wardrobe items:', error);
-                container.innerHTML = '<div class="error">Failed to load items</div>';
-            }
         }
 
-        // Handle avatar form submission
-        const avatarForm = document.getElementById('avatar-form');
-        avatarForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const gender = formData.get('gender');
-            const photo = formData.get('photo');
-            
-            if (!photo) {
-                alert('Please select a photo');
-                return;
-            }
-
-            try {
-                avatarManager.showLoading();
-
-                const response = await fetch('/api/avatar/generate', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to generate avatar');
-                }
-
-                const data = await response.json();
-                if (data.success) {
-                    await avatarManager.loadAvatar(data.modelUrl);
-                    showMessage('Avatar generated successfully', 'success');
-                } else {
-                    throw new Error(data.error || 'Failed to generate avatar');
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage('An error occurred while processing your photo', 'error');
-            } finally {
-                avatarManager.hideLoading();
-            }
-        });
-
-        // Handle RPM creator button
-        document.getElementById('open-rpm-creator').addEventListener('click', function() {
-            window.open('https://demo.readyplayer.me/avatar', '_blank');
-        });
-
-        // Handle load saved RPM avatar
-        document.getElementById('load-saved-rpm').addEventListener('click', async function() {
-            try {
-                const response = await fetch('/api/rpm/get-avatar');
-                if (!response.ok) {
-                    throw new Error('Failed to load saved avatar');
-                }
-                
-                const data = await response.json();
-                if (data.success && data.avatarUrl) {
-                    document.getElementById('rpm-avatar-url').value = data.avatarUrl;
-                    await rpmManager.loadAvatar(data.avatarUrl);
-                } else {
-                    throw new Error('No saved avatar found');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage(error.message, 'error');
-            }
-        });
-
-        // Handle load RPM avatar from URL
-        document.getElementById('load-rpm-url').addEventListener('click', async function() {
-            const avatarUrl = document.getElementById('rpm-avatar-url').value.trim();
-            if (!avatarUrl) {
-                showMessage('Please enter a valid RPM avatar URL', 'error');
-                return;
-            }
-            
-            try {
-                await rpmManager.loadAvatar(avatarUrl);
-                showMessage('Avatar loaded successfully', 'success');
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage('Failed to load avatar: ' + error.message, 'error');
-            }
-        });
-
-        // Try on selected items
-        document.querySelectorAll('.try-on-btn').forEach(button => {
-            button.addEventListener('click', async function() {
-                const section = this.closest('.avatar-section');
-                const selectedItems = section.querySelectorAll('.wardrobe-item.selected');
-                
-                if (selectedItems.length === 0) {
-                    alert('Please select items to try on');
-                    return;
-                }
-
-                const itemIds = Array.from(selectedItems).map(item => item.dataset.itemId);
-                const manager = section.id.includes('rpm') ? rpmManager : avatarManager;
-
-                try {
-                    manager.showLoading();
-                    const response = await fetch('/api/wardrobe/try-on', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ itemIds })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Failed to try on items');
-                    }
-
-                    const data = await response.json();
-                    if (data.success) {
-                        await manager.loadAvatar(data.modelUrl);
-                        showMessage('Items applied successfully', 'success');
-                    } else {
-                        throw new Error(data.error || 'Failed to apply items');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showMessage('Failed to try on items: ' + error.message, 'error');
-                } finally {
-                    manager.hideLoading();
-                }
-            });
-        });
-
-        // Load initial wardrobe items for both sections
-        loadWardrobeItems('tops', 'wardrobe-items-custom');
-        loadWardrobeItems('tops', 'wardrobe-items-rpm');
-
-        // Show message function
-        function showMessage(message, type = 'info') {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = message;
-            
-            document.body.appendChild(messageDiv);
-            
-            setTimeout(() => {
-                messageDiv.remove();
-            }, 3000);
-        }
+        // Add event listeners
+        clothingInput.addEventListener('change', handleClothingSelect);
+        personInput.addEventListener('change', handlePersonSelect);
+        setupDragAndDrop();
     });
+
+    function handleClothingSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewSection.style.display = 'block';
+                predictionResult.style.display = 'none';
+                currentClothingItem = file;
+                predictClothing();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function handlePersonSelect(event) {
+        const file = event.target.files[0];
+        if (file && currentClothingId) {
+            performTryOn2D(file);
+        }
+    }
+
+    function setupDragAndDrop() {
+        const uploadSection = document.querySelector('.upload-section');
+
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('drag-over');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('drag-over');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('drag-over');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                clothingInput.files = e.dataTransfer.files;
+                handleClothingSelect({ target: { files: [file] } });
+            }
+        });
+    }
+
+    async function predictClothing() {
+        if (!currentClothingItem) {
+            alert('Please select an image first');
+            return;
+        }
+
+        loadingOverlay.style.display = 'flex';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', currentClothingItem);
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to process prediction');
+            }
+
+            const data = await response.json();
+            
+            document.getElementById('clothing-type').textContent = data.clothing_type;
+            document.getElementById('dominant-color').textContent = data.dominant_color;
+            document.getElementById('confidence').textContent = data.confidence;
+            
+            const colorPreview = document.getElementById('color-preview');
+            colorPreview.style.backgroundColor = data.color_hex;
+            
+            predictionResult.style.display = 'block';
+        } catch (error) {
+            console.error('Error during prediction:', error);
+            alert('Failed to process the image. Please try again.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+    async function tryOn2D() {
+        tryOnMode = '2d';
+        if (!currentClothingItem) {
+            alert('Please select a clothing item first');
+            return;
+        }
+
+        loadingOverlay.style.display = 'flex';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', currentClothingItem);
+
+            const response = await fetch('/try-on', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to process try-on request');
+            }
+
+            const data = await response.json();
+            currentClothingId = data.clothingId;
+            
+            // Show person upload for 2D try-on
+            personUpload.style.display = 'block';
+            tryOnResult.style.display = 'none';
+            
+        } catch (error) {
+            console.error('Error during try-on:', error);
+            alert('Failed to process the try-on request. Please try again.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+    async function tryOn3D() {
+        tryOnMode = '3d';
+        if (!currentClothingItem) {
+            alert('Please select a clothing item first');
+            return;
+        }
+
+        loadingOverlay.style.display = 'flex';
+
+        try {
+            // Check if 3D model exists
+            const response = await fetch(`/api/check-3d-model/${currentClothingId}`);
+            const data = await response.json();
+
+            if (!data.exists) {
+                // Generate 3D model
+                const generateResponse = await fetch('/api/generate-3d-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        itemId: currentClothingId,
+                        category: document.getElementById('clothing-type').textContent
+                    })
+                });
+
+                if (!generateResponse.ok) {
+                    throw new Error('Failed to generate 3D model');
+                }
+
+                const modelData = await generateResponse.json();
+                
+                // Apply to avatar
+                await avatarManager.loadClothingModel(modelData.modelUrl, modelData.textureId);
+            } else {
+                // Load existing model
+                await avatarManager.loadClothingModel(data.modelUrl, data.textureId);
+            }
+
+            // Hide 2D elements
+            personUpload.style.display = 'none';
+            tryOnResult.style.display = 'none';
+
+        } catch (error) {
+            console.error('Error during 3D try-on:', error);
+            alert('Failed to process the 3D try-on request. Please try again.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+    async function performTryOn2D(personImage) {
+        if (!currentClothingId || !personImage) {
+            alert('Please select both a clothing item and a person image');
+            return;
+        }
+
+        loadingOverlay.style.display = 'flex';
+
+        try {
+            const formData = new FormData();
+            formData.append('person_image', personImage);
+
+            const response = await fetch(`/try-on/${currentClothingId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to perform try-on');
+            }
+
+            // Convert the response to a blob and create an object URL
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            
+            // Display the result
+            tryOnResult.src = imageUrl;
+            tryOnResult.style.display = 'block';
+            personUpload.style.display = 'none';
+            
+        } catch (error) {
+            console.error('Error during try-on:', error);
+            alert('Failed to perform the try-on. Please try again.');
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
 </script>
 {% endblock %}

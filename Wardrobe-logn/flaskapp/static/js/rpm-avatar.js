@@ -324,6 +324,125 @@ class RPMAvatarManager {
         this.camera.updateProjectionMatrix();
         this.controls.update();
     }
+
+    // Add try-on related methods to RPMAvatarManager class
+    tryOnWardrobeItem = async function(itemData) {
+        if (!itemData || !itemData.file_path) {
+            throw new Error('Invalid wardrobe item data');
+        }
+
+        try {
+            this.showLoadingOverlay('Preparing item for try-on...');
+
+            // Request 3D model generation from the server
+            const response = await fetch('/api/generate-3d-clothing', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    wardrobe_item_id: itemData._id,
+                    category: itemData.label
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate 3D model');
+            }
+
+            const modelData = await response.json();
+
+            // Load the generated 3D model
+            if (modelData.model_url) {
+                await this.loadClothingModel(modelData.model_url, itemData.label);
+                this.showMessage('Item tried on successfully!', 'success');
+            } else {
+                throw new Error('No model URL received');
+            }
+
+        } catch (error) {
+            console.error('Try-on error:', error);
+            this.showMessage('Failed to try on item: ' + error.message, 'error');
+        } finally {
+            this.hideLoadingOverlay();
+        }
+    };
+
+    loadClothingModel = async function(modelUrl, category) {
+        const loader = new THREE.GLTFLoader();
+        
+        try {
+            const gltf = await new Promise((resolve, reject) => {
+                loader.load(modelUrl, resolve, undefined, reject);
+            });
+
+            // Remove existing clothing of the same category if any
+            this.removeExistingClothing(category);
+
+            // Add the new clothing model
+            const clothingModel = gltf.scene;
+            clothingModel.userData.category = category;
+
+            // Scale and position the clothing
+            this.fitClothingToAvatar(clothingModel);
+
+            // Add to scene
+            this.scene.add(clothingModel);
+            
+            // Store reference to current clothing
+            if (!this.currentClothing) {
+                this.currentClothing = {};
+            }
+            this.currentClothing[category] = clothingModel;
+
+        } catch (error) {
+            console.error('Error loading clothing model:', error);
+            throw error;
+        }
+    };
+
+    removeExistingClothing = function(category) {
+        if (this.currentClothing && this.currentClothing[category]) {
+            const existingClothing = this.currentClothing[category];
+            this.scene.remove(existingClothing);
+            existingClothing.traverse((node) => {
+                if (node.isMesh) {
+                    if (node.geometry) node.geometry.dispose();
+                    if (node.material) {
+                        if (Array.isArray(node.material)) {
+                            node.material.forEach(mat => mat.dispose());
+                        } else {
+                            node.material.dispose();
+                        }
+                    }
+                }
+            });
+            delete this.currentClothing[category];
+        }
+    };
+
+    fitClothingToAvatar = function(clothingModel) {
+        if (!this.avatarModel) {
+            console.warn('No avatar model to fit clothing to');
+            return;
+        }
+
+        // Get avatar dimensions
+        const avatarBox = new THREE.Box3().setFromObject(this.avatarModel);
+        const avatarSize = avatarBox.getSize(new THREE.Vector3());
+        const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+
+        // Get clothing dimensions
+        const clothingBox = new THREE.Box3().setFromObject(clothingModel);
+        const clothingSize = clothingBox.getSize(new THREE.Vector3());
+
+        // Calculate scale to match avatar size
+        const scale = avatarSize.y / clothingSize.y;
+        clothingModel.scale.setScalar(scale);
+
+        // Position clothing on avatar
+        clothingModel.position.copy(avatarCenter);
+    };
 }
 
 // Export the class
