@@ -1859,5 +1859,131 @@ def get_avatar_rpm():
     return jsonify({'success': False, 'error': 'No avatar found'})
 
 
+# @app.route('/api/wardrobe/process-clothing', methods=['POST'])
+# @login_required
+# def process_clothing():
+#     try:
+#         user_id = session['user']['_id']
+#         data = request.json
+#
+#         if not data or not all(key in data for key in ['itemId', 'imageUrl', 'itemType']):
+#             return jsonify({'success': False, 'error': 'Missing required data'}), 400
+#
+#         item_id = data['itemId']
+#         image_url = data['imageUrl']
+#         item_type = data['itemType']
+#
+#         # Get the item from the database
+#         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+#         if not item:
+#             return jsonify({'success': False, 'error': 'Item not found'}), 404
+#
+#         # Fix the path normalization
+#         if image_url.startswith('/'):
+#             # Remove leading slash for joining
+#             image_path = os.path.join('flaskapp', image_url.lstrip('/'))
+#         else:
+#             image_path = os.path.join('flaskapp', image_url)
+#
+#         # Try alternative paths if needed
+#         if not os.path.exists(image_path):
+#             # Try with static directory
+#             image_path = os.path.join('flaskapp', 'static', 'image_users', user_id, os.path.basename(image_url))
+#
+#         if not os.path.exists(image_path):
+#             # One more attempt with different path construction
+#             base_name = os.path.basename(image_url)
+#             if '?' in base_name:
+#                 base_name = base_name.split('?')[0]
+#             image_path = os.path.join('flaskapp', 'static', 'image_users', user_id, base_name)
+#
+#         if not os.path.exists(image_path):
+#             print(f"Image not found at path: {image_path}")
+#             print(f"Original URL: {image_url}")
+#             return jsonify({'success': False, 'error': 'Image file not found'}), 404
+#
+#         # Instead of processing for 3D, just return the 2D image as texture for now
+#         # Avoid calling any module directly
+#         model_data = {
+#             'itemId': str(item['_id']),
+#             'itemType': item_type,
+#             'textureUrl': image_url,  # Use the original image URL as texture
+#             'originalImage': image_url
+#         }
+#
+#         return jsonify({
+#             'success': True,
+#             'modelData': model_data
+#         })
+#
+#     except Exception as e:
+#         print(f"Error processing clothing: {str(e)}")
+#         import traceback
+#         traceback.print_exc()
+#         return jsonify({'success': False, 'error': str(e)}), 500@app.route('/api/wardrobe/process-clothing', methods=['POST'])
+
+
+@app.route('/api/wardrobe/process-clothing', methods=['POST'])
+@login_required
+def process_clothing():
+    try:
+        user_id = session['user']['_id']
+        data = request.json
+
+        # Fix this line - explicit check for each key instead of using all()
+        if not data or 'itemId' not in data or 'imageUrl' not in data or 'itemType' not in data:
+            return jsonify({'success': False, 'error': 'Missing required data'}), 400
+
+        item_id = data['itemId']
+        image_url = data['imageUrl']
+        item_type = data['itemType']
+
+        # Get the item from the database
+        item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+        if not item:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+        # Fix the path normalization
+        if image_url.startswith('/'):
+            # Remove leading slash for joining
+            image_path = os.path.join('flaskapp', image_url.lstrip('/'))
+        else:
+            image_path = os.path.join('flaskapp', image_url)
+
+        print(f"Trying to find image at: {image_path}")
+
+        # Try alternative paths if needed
+        if not os.path.exists(image_path):
+            # Try with static directory
+            image_path = os.path.join('flaskapp', 'static', 'image_users', user_id, os.path.basename(image_url))
+            print(f"Alternative path 1: {image_path}")
+
+        if not os.path.exists(image_path):
+            # One more attempt with different path construction
+            base_name = os.path.basename(image_url)
+            if '?' in base_name:
+                base_name = base_name.split('?')[0]
+            image_path = os.path.join('flaskapp', 'static', 'image_users', user_id, base_name)
+            print(f"Alternative path 2: {image_path}")
+
+        # Return basic model data using the original image URL
+        model_data = {
+            'itemId': str(item['_id']),
+            'itemType': item_type,
+            'textureUrl': image_url,  # Use the original image URL as texture
+            'originalImage': image_url
+        }
+
+        return jsonify({
+            'success': True,
+            'modelData': model_data
+        })
+
+    except Exception as e:
+        print(f"Error processing clothing: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

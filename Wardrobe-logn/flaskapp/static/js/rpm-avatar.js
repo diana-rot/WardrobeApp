@@ -286,7 +286,153 @@ class RPMAvatarManager {
             this.hideLoadingOverlay();
         }
     }
-    
+
+
+    // Add these methods to your RPMAvatarManager class
+
+// Load clothing onto the avatar
+async loadClothing(itemId, imageUrl, itemType) {
+    if (!this.avatarModel) {
+        console.error('No avatar loaded. Please load an avatar first.');
+        return false;
+    }
+
+    try {
+        this.showLoadingOverlay('Processing clothing...');
+
+        // Use the clothing processor to process the 2D image
+        if (!window.clothingProcessor) {
+            window.clothingProcessor = new ClothingProcessor({
+                avatarUrl: this.avatarUrl
+            });
+        }
+
+        // Process the clothing item
+        const modelData = await window.clothingProcessor.processClothingItem(
+            itemId,
+            imageUrl,
+            itemType
+        );
+
+        // Apply the clothing to the avatar
+        await this.applyClothingToAvatar(modelData);
+
+        return true;
+    } catch (error) {
+        console.error('Error loading clothing:', error);
+        return false;
+    } finally {
+        this.hideLoadingOverlay();
+    }
+}
+
+// Apply processed clothing to the avatar
+async applyClothingToAvatar(modelData) {
+    // In a real implementation, this would load the GLB model
+    // and attach it to the avatar
+
+    // For demonstration, create a simple placeholder to show the texture
+    const loader = new THREE.TextureLoader();
+
+    return new Promise((resolve, reject) => {
+        loader.load(
+            modelData.textureUrl,
+            (texture) => {
+                // Create a simple plane with the texture
+                const geometry = new THREE.PlaneGeometry(0.4, 0.6);
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+
+                // Create mesh and position based on item type
+                const mesh = new THREE.Mesh(geometry, material);
+
+                // Position the clothing appropriately
+                switch(modelData.itemType.toLowerCase()) {
+                    case 't-shirt/top':
+                    case 'shirt':
+                    case 'pullover':
+                        mesh.position.set(0, 1.3, 0.1);
+                        break;
+                    case 'trouser':
+                        mesh.position.set(0, 0.8, 0.1);
+                        break;
+                    case 'dress':
+                        mesh.position.set(0, 1.1, 0.1);
+                        mesh.scale.set(1, 1.5, 1);
+                        break;
+                    case 'coat':
+                        mesh.position.set(0, 1.3, 0.15);
+                        mesh.scale.set(1.1, 1, 1);
+                        break;
+                    default:
+                        mesh.position.set(0, 1.2, 0.1);
+                }
+
+                // Add to scene
+                this.scene.add(mesh);
+
+                // Store reference for later removal
+                if (!this.clothingItems) {
+                    this.clothingItems = new Map();
+                }
+                this.clothingItems.set(modelData.itemId, {
+                    mesh: mesh,
+                    type: modelData.itemType
+                });
+
+                resolve(true);
+            },
+            undefined,
+            (error) => {
+                console.error('Error loading texture:', error);
+                reject(error);
+            }
+        );
+    });
+}
+
+// Remove clothing item
+removeClothing(itemId) {
+    if (!this.clothingItems || !this.clothingItems.has(itemId)) {
+        return false;
+    }
+
+    const item = this.clothingItems.get(itemId);
+    if (item.mesh) {
+        this.scene.remove(item.mesh);
+
+        // Clean up resources
+        if (item.mesh.material) {
+            if (item.mesh.material.map) {
+                item.mesh.material.map.dispose();
+            }
+            item.mesh.material.dispose();
+        }
+        if (item.mesh.geometry) {
+            item.mesh.geometry.dispose();
+        }
+    }
+
+    this.clothingItems.delete(itemId);
+    return true;
+}
+
+// Clear all clothing
+clearAllClothing() {
+    if (!this.clothingItems) {
+        return;
+    }
+
+    for (const [itemId, item] of this.clothingItems.entries()) {
+        this.removeClothing(itemId);
+    }
+
+    this.clothingItems.clear();
+}
+
     getGLBUrlFromAvatarUrl(avatarUrl) {
         // If URL is already a GLB, return as is
         if (avatarUrl.endsWith('.glb')) {
@@ -325,6 +471,8 @@ class RPMAvatarManager {
         this.controls.update();
     }
 }
+
+
 
 // Export the class
 window.RPMAvatarManager = RPMAvatarManager; 
