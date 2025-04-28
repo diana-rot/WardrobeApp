@@ -1857,6 +1857,140 @@ def get_avatar_rpm():
         })
 
     return jsonify({'success': False, 'error': 'No avatar found'})
+#
+# @app.route('/api/rpm/save-avatar', methods=['POST'])
+# @login_required
+# def save_rpm_avatar():
+#     """Save Ready Player Me avatar URL to user's profile"""
+#     try:
+#         data = request.json
+#         avatar_url = data.get('avatarUrl')
+#         if not avatar_url:
+#             return jsonify({'success': False, 'error': 'No avatar URL provided'}), 400
+#         user_id = session['user']['_id']
+#         # Update or create avatar document
+#         db.avatars.update_one(
+#             {'userId': user_id},
+#             {
+#                 '$set': {
+#                     'avatarUrl': avatar_url,
+#                     'updatedAt': datetime.now()
+#                 }
+#             },
+#             upsert=True
+#         )
+#         return jsonify({
+#             'success': True,
+#             'message': 'Avatar saved successfully',
+#             'avatarUrl': avatar_url
+#         })
+#     except Exception as e:
+#         print(f"Error in save_rpm_avatar: {str(e)}")
+#         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/wardrobe/generate-3d-model', methods=['POST'])
+@login_required
+def generate_3d_model():
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+        if not item_id:
+            return jsonify({'success': False, 'error': 'Item ID is required'}), 400
+        user_id = session['user']['_id']
+        # Find the wardrobe item
+        item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+        if not item:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+        # Create directory for 3D models if it doesn't exist
+        models_dir = os.path.join('static', 'avatars', str(user_id))
+        os.makedirs(models_dir, exist_ok=True)
+        # Get template based on clothing type
+        clothing_type = item.get('label', '').lower().replace('/', '-')
+        template_path = os.path.join('static', '3d_templates', f"{clothing_type}.glb")
+        # Check if template exists, otherwise use a default template
+        if not os.path.exists(template_path):
+            template_path = os.path.join('static', '3d_templates', "default.glb")
+        # Generate a unique ID for the model
+        model_id = str(uuid.uuid4())
+        glb_filename = f"{clothing_type}_{model_id}.glb"
+        glb_path = os.path.join(models_dir, glb_filename)
+        # In a real implementation, you would generate a custom 3D model here
+        # For this example, we'll copy the template file
+        if os.path.exists(template_path):
+            with open(template_path, 'rb') as src, open(glb_path, 'wb') as dst:
+                dst.write(src.read())
+            # Update the database with 3D model info
+            db.wardrobe.update_one(
+                {'_id': ObjectId(item_id)},
+                {
+                    '$set': {
+                        '3d_model': {
+                            'status': 'ready',
+                            'glb_path': f'/static/avatars/{user_id}/{glb_filename}',
+                            'rpm_asset_id': None,
+                            'last_updated': datetime.now()
+                        }
+                    }
+                }
+            )
+            return jsonify({
+                'success': True,
+                'message': '3D model generated successfully',
+                'glb_path': f'/static/avatars/{user_id}/{glb_filename}'
+            })
+        else:
+            # Update the database with failed status
+            db.wardrobe.update_one(
+                {'_id': ObjectId(item_id)},
+                {
+                    '$set': {
+                        '3d_model': {
+                            'status': 'failed',
+                            'last_updated': datetime.now()
+                        }
+                    }
+                }
+            )
+            return jsonify({
+                'success': False,
+                'error': 'Template not found for this clothing type'
+            }), 500
+    except Exception as e:
+        print(f"Error generating 3D model: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/wardrobe/try-on', methods=['POST'])
+@login_required
+def try_on_clothes():
+    """Try on clothes from wardrobe on the avatar"""
+    try:
+        user_id = session['user']['_id']
+        item_ids = request.json.get('itemIds', [])
+        if not item_ids:
+            return jsonify({'success': False, 'error': 'No items provided'}), 400
+        # Get the items from the wardrobe
+        items = []
+        for item_id in item_ids:
+            item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+            if item:
+                items.append(item)
+        if not items:
+            return jsonify({'success': False, 'error': 'No valid items found'}), 404
+        # Get the user's avatar
+        avatar_doc = db.avatars.find_one({'userId': user_id})
+        if not avatar_doc or 'avatarUrl' not in avatar_doc:
+            return jsonify({'success': False, 'error': 'No avatar found. Please create an avatar first.'}), 404
+        avatar_url = avatar_doc['avatarUrl']
+        # Return local model paths for client-side rendering
+        return jsonify({
+            'success': True,
+            'message': 'Using local avatar with clothing',
+            'modelUrl': avatar_url,
+            'itemPaths': [item['3d_model'].get('glb_path') for item in items if '3d_model' in item and 'glb_path' in item['3d_model']]
+        })
+    except Exception as e:
+        print(f"Error in try_on_clothes: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':
