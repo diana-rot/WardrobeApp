@@ -1,6 +1,8 @@
 from __future__ import division, print_function
 import os
 import gc
+import uuid
+
 import numpy as np
 from flask import render_template, request, session, url_for
 from flaskapp import app, login_required,redirect
@@ -32,7 +34,7 @@ from flask import send_file
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
-# Right after all your imports and before any routes, add:
+
 @app.template_filter('normalize_path')
 def normalize_path_filter(file_path):
     """Normalizes file paths for template rendering"""
@@ -290,7 +292,6 @@ def predict_attribute_model(img_path):
     wd = 5e-7  # weight decay parameter
     opt_func = partial(ranger, wd=wd)
 
-    # Ensure splitter, get_x, and get_y are defined. For now, I'll assume they are as placeholders.
     splitter = RandomSplitter()  # Example splitter
     get_x = lambda x: x[0]  # Example get_x function
     get_y = lambda x: x[1]  # Example get_y function
@@ -1237,6 +1238,8 @@ def view_outfits_all():
 
 
 # avatar logic
+
+
 @app.route('/api/avatar/<gender>', methods=['GET'])
 @login_required
 def get_avatar(gender):
@@ -1731,6 +1734,9 @@ def delete_calendar_outfit():
 #
 #
 
+
+# rpm avatar
+
 import requests
 import base64
 from io import BytesIO
@@ -1984,6 +1990,31 @@ def process_clothing():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/wardrobe/item/<item_id>', methods=['GET'])
+    @login_required
+    def get_wardrobe_item(item_id):
+        try:
+            user_id = session['user']['_id']
+
+            # Find the item in the database
+            item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+
+            if not item:
+                return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+            # Convert ObjectId to string for JSON serialization
+            item['_id'] = str(item['_id'])
+
+            # Normalize file path
+            if 'file_path' in item:
+                item['file_path'] = normalize_path(item['file_path'])
+
+            return jsonify(item)
+
+        except Exception as e:
+            print(f"Error getting wardrobe item: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
