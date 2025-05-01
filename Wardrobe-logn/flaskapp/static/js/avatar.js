@@ -137,42 +137,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize the 3D scene
 function init() {
-    // Get container
-    avatarContainer = document.getElementById('avatarContainer');
-    
+    // Check if container exists and is properly initialized
+    if (!avatarContainer) {
+        console.error('Avatar container not found');
+        return;
+    }
+
     // Create scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
-    
-    // Calculate available space for renderer (excluding left menu)
-    const leftMenu = document.querySelector('.customization-panel') || document.querySelector('.left-panel');
-    const menuWidth = leftMenu ? leftMenu.offsetWidth : 300; // Default to 300px if menu not found
-    const availableWidth = window.innerWidth - menuWidth;
-    
-    // Create camera with better initial position
-    camera = new THREE.PerspectiveCamera(45, availableWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 3);
-    
-    // Create renderer with improved settings
-    renderer = new THREE.WebGLRenderer({ 
-        antialias: true,
-        alpha: true
-    });
-    renderer.setSize(availableWidth, window.innerHeight);
+
+    // Set up camera
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.5, 4);
+
+    // Set up renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
+
+    // Get menu width for positioning
+    const leftMenu = document.querySelector('.customization-panel') || document.querySelector('.left-panel');
+    const menuWidth = leftMenu ? leftMenu.offsetWidth : 0;
     
-    // Position the renderer next to the menu
-    avatarContainer.style.position = 'absolute';
-    avatarContainer.style.left = menuWidth + 'px';
-    avatarContainer.style.top = '0';
-    avatarContainer.appendChild(renderer.domElement);
-    
-    // Add orbit controls with better constraints
+    // Set up container and renderer
+    if (avatarContainer) {
+        avatarContainer.style.position = 'absolute';
+        avatarContainer.style.left = menuWidth + 'px';
+        avatarContainer.style.top = '0';
+        
+        // Set renderer size based on container
+        const width = avatarContainer.clientWidth || window.innerWidth - menuWidth;
+        const height = avatarContainer.clientHeight || window.innerHeight;
+        renderer.setSize(width, height);
+        avatarContainer.appendChild(renderer.domElement);
+    }
+
+    // Add orbit controls
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -181,29 +186,29 @@ function init() {
     controls.target.set(0, 1, 0);
     controls.maxPolarAngle = Math.PI * 0.8;
     controls.minPolarAngle = Math.PI * 0.2;
-    
-    // Enhanced lighting setup
+
+    // Set up lighting
     setupLighting();
-    
-    // Add ground plane for better context
-        const groundGeometry = new THREE.PlaneGeometry(10, 10);
-    const groundMaterial = new THREE.MeshStandardMaterial({ 
+
+    // Add ground plane
+    const groundGeometry = new THREE.PlaneGeometry(10, 10);
+    const groundMaterial = new THREE.MeshStandardMaterial({
         color: 0xcccccc,
         roughness: 0.8,
         metalness: 0.2
     });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
-        ground.receiveShadow = true;
+    ground.receiveShadow = true;
     scene.add(ground);
-    
+
     // Start animation loop
     animate();
 
     // Handle window resize
     window.addEventListener('resize', onWindowResize, false);
-    }
+}
 
 // Set up enhanced lighting
 function setupLighting() {
@@ -1354,37 +1359,53 @@ async function applyBodyFeatures(bodyFeatures) {
 }
 
 class AvatarManager {
-    constructor(options) {
+    constructor(options = {}) {
+        if (!options.container) {
+            console.error('Container element is required for AvatarManager');
+            return;
+        }
+        
         this.container = options.container;
         this.scene = null;
         this.camera = null;
         this.renderer = null;
         this.controls = null;
-        this.avatar = null;
-        this.loadingOverlay = this.container.querySelector('.loading-overlay');
-        this.loadingProgress = this.container.querySelector('#loading-progress');
+        this.avatarModel = null;
+        this.animations = {};
+        this.mixer = null;
+        
+        // Initialize the 3D scene
+        this.init();
+        
+        // Set up event listeners
+        this.setupEventListeners();
     }
 
     init() {
-        // Initialize Three.js scene
+        // Create scene
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xf0f0f0);
 
-        // Setup camera
+        // Set up camera
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
-        this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-        this.camera.position.set(0, 1.6, 2);
-        this.camera.lookAt(0, 1.6, 0);
+        this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        this.camera.position.set(0, 1.5, 4);
 
-        // Setup renderer
+        // Set up renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(width, height);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.0;
+
+        // Add renderer to container
         this.container.appendChild(this.renderer.domElement);
 
-        // Setup controls
+        // Set up controls
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.target.set(0, 1.6, 0);
         this.controls.enableDamping = true;
@@ -1416,7 +1437,7 @@ class AvatarManager {
         this.scene.add(ground);
 
         // Handle window resize
-        window.addEventListener('resize', this.onWindowResize.bind(this));
+        window.addEventListener('resize', () => this.onWindowResize(), false);
 
         // Start animation loop
         this.animate();
@@ -1521,12 +1542,12 @@ class AvatarManager {
             const gltf = await loader.loadAsync(url);
 
             // Remove existing avatar if any
-            if (this.avatar) {
-                this.scene.remove(this.avatar);
+            if (this.avatarModel) {
+                this.scene.remove(this.avatarModel);
             }
 
-            this.avatar = gltf.scene;
-            this.avatar.traverse((node) => {
+            this.avatarModel = gltf.scene;
+            this.avatarModel.traverse((node) => {
                 if (node.isMesh) {
                     node.castShadow = true;
                     node.receiveShadow = true;
@@ -1534,17 +1555,17 @@ class AvatarManager {
             });
 
             // Center the avatar
-            const box = new THREE.Box3().setFromObject(this.avatar);
+            const box = new THREE.Box3().setFromObject(this.avatarModel);
             const center = box.getCenter(new THREE.Vector3());
-            this.avatar.position.sub(center);
+            this.avatarModel.position.sub(center);
 
             // Scale the avatar to a reasonable size
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
             const scale = 1.7 / maxDim;
-            this.avatar.scale.multiplyScalar(scale);
+            this.avatarModel.scale.multiplyScalar(scale);
 
-            this.scene.add(this.avatar);
+            this.scene.add(this.avatarModel);
 
         } catch (error) {
             console.error('Error loading avatar:', error);
@@ -1552,5 +1573,213 @@ class AvatarManager {
         } finally {
             this.hideLoading();
         }
+    }
+
+    setupEventListeners() {
+        // Avatar form submission
+        const avatarForm = document.getElementById('avatar-form');
+        if (avatarForm) {
+            avatarForm.addEventListener('submit', this.handleFormSubmit.bind(this));
+        }
+        
+        // Update avatar button
+        const updateButton = document.getElementById('updateAvatar');
+        if (updateButton) {
+            updateButton.addEventListener('click', this.handleAvatarUpdate.bind(this));
+        }
+        
+        // Clothing category selection
+        const categorySelect = document.getElementById('clothingCategory');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', (e) => {
+                this.loadWardrobeItems(e.target.value);
+            });
+        }
+        
+        // Add photo upload handler
+        const photoInput = document.getElementById('photo');
+        if (photoInput) {
+            photoInput.addEventListener('change', this.handlePhotoUpload.bind(this));
+        }
+
+        // Set up tab switching
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons and panels
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding panel
+                button.classList.add('active');
+                const panelId = `${button.dataset.tab}-panel`;
+                document.getElementById(panelId).classList.add('active');
+            });
+        });
+
+        // Set up measurement sliders
+        this.setupMeasurementSliders();
+
+        // Add preset card click handlers
+        const presetCards = document.querySelectorAll('.preset-card');
+        presetCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove selected class from all cards
+                presetCards.forEach(c => c.classList.remove('selected'));
+                // Add selected class to clicked card
+                card.classList.add('selected');
+                // Apply the preset
+                this.applyBodyTypePreset(card.dataset.preset);
+            });
+        });
+    }
+
+    setupMeasurementSliders() {
+        const sliders = document.querySelectorAll('.measurement-slider');
+        sliders.forEach(slider => {
+            const valueDisplay = slider.nextElementSibling;
+            
+            // Update value display
+            slider.addEventListener('input', (e) => {
+                valueDisplay.textContent = e.target.value;
+            });
+            
+            // Update avatar when slider changes
+            slider.addEventListener('change', () => {
+                this.updateAvatarFromControls();
+            });
+        });
+    }
+
+    updateAvatarFromControls() {
+        if (!this.avatarModel) return;
+
+        const features = {
+            // Face features
+            face_width: parseFloat(document.getElementById('faceWidth').value),
+            face_height: parseFloat(document.getElementById('faceHeight').value),
+            eye_distance: parseFloat(document.getElementById('eyeDistance').value),
+            nose_length: parseFloat(document.getElementById('noseLength').value),
+            mouth_width: parseFloat(document.getElementById('mouthWidth').value),
+            
+            // Body features
+            body_height: parseFloat(document.getElementById('height').value),
+            shoulder_width: parseFloat(document.getElementById('shoulderWidth').value),
+            hip_width: parseFloat(document.getElementById('hipWidth').value),
+            arm_length: parseFloat(document.getElementById('armLength').value),
+            leg_length: parseFloat(document.getElementById('legLength').value)
+        };
+
+        this.applyFeatures(this.avatarModel, features);
+    }
+
+    applyFeatures(avatar, features) {
+        if (!avatar) return;
+
+        // Store original scale for reference
+        const originalScale = avatar.scale.clone();
+
+        // Apply body features with bone transformations
+        avatar.traverse((child) => {
+            if (child.isMesh) {
+                const name = child.name.toLowerCase();
+                
+                // Body scaling
+                if (name.includes('torso') || name.includes('chest')) {
+                    child.scale.x = originalScale.x * (features.shoulder_width || 1.0);
+                    child.scale.y = originalScale.y * (features.body_height || 1.0);
+                    if (features.waist_width) {
+                        // Apply waist scaling at the bottom of the torso
+                        const waistScale = features.waist_width;
+                        child.geometry.scale(waistScale, 1, waistScale);
+                    }
+                }
+                
+                // Hip area
+                if (name.includes('hip')) {
+                    child.scale.x = originalScale.x * (features.hip_width || 1.0);
+                }
+                
+                // Arms
+                if (name.includes('arm') || name.includes('shoulder')) {
+                    if (name.includes('upper')) {
+                        child.scale.y = originalScale.y * (features.arm_length || 1.0) * 0.5;
+                    } else if (name.includes('lower')) {
+                        child.scale.y = originalScale.y * (features.arm_length || 1.0) * 0.5;
+                    }
+                }
+                
+                // Legs
+                if (name.includes('leg') || name.includes('thigh')) {
+                    if (name.includes('upper')) {
+                        child.scale.y = originalScale.y * (features.leg_length || 1.0) * 0.5;
+                    } else if (name.includes('lower')) {
+                        child.scale.y = originalScale.y * (features.leg_length || 1.0) * 0.5;
+                    }
+                }
+                
+                // Face features
+                if (name.includes('head') || name.includes('face')) {
+                    if (features.face_width) child.scale.x = originalScale.x * features.face_width;
+                    if (features.face_height) child.scale.y = originalScale.y * features.face_height;
+                }
+                
+                // Apply specific face feature scaling
+                if (name.includes('eye') && features.eye_distance) {
+                    child.scale.x = features.eye_distance;
+                }
+                if (name.includes('nose') && features.nose_length) {
+                    child.scale.y = features.nose_length;
+                }
+                if (name.includes('mouth') && features.mouth_width) {
+                    child.scale.x = features.mouth_width;
+                }
+            }
+        });
+
+        // Update the scene
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    applyBodyTypePreset(presetName) {
+        const gender = document.getElementById('gender').value;
+        const preset = BODY_TYPE_PRESETS[gender][presetName];
+        
+        if (!preset) return;
+
+        // Update UI controls with preset values
+        Object.entries(preset).forEach(([key, value]) => {
+            const control = document.getElementById(key);
+            if (control) {
+                control.value = value;
+                control.nextElementSibling.textContent = value;
+            }
+        });
+
+        // Create features object from preset
+        const features = {
+            ...preset,
+            // Keep existing face features
+            face_width: parseFloat(document.getElementById('faceWidth').value),
+            face_height: parseFloat(document.getElementById('faceHeight').value),
+            eye_distance: parseFloat(document.getElementById('eyeDistance').value),
+            nose_length: parseFloat(document.getElementById('noseLength').value),
+            mouth_width: parseFloat(document.getElementById('mouthWidth').value)
+        };
+
+        // Apply features to avatar
+        this.applyFeatures(this.avatarModel, features);
+    }
+
+    handleAvatarUpdate() {
+        // Implementation needed
+    }
+
+    handlePhotoUpload(event) {
+        // Implementation needed
+    }
+
+    loadWardrobeItems(category) {
+        // Implementation needed
     }
 }

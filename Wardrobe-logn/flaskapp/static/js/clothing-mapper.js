@@ -1,28 +1,33 @@
 // ClothingMapper.js - Maps clothing types to 3D models
 class ClothingMapper {
     constructor() {
+        console.log('Initializing ClothingMapper');
+        
+        // Define default model path
+        const defaultModel = '/static/models/clothing/top.glb';
+        
         // Map clothing labels to 3D model files
         this.modelMap = {
-            'T-shirt/top': '/static/models/clothing/top.glb',
-            'Shirt': '/static/models/clothing/shirt.glb',
-            'Pullover': '/static/models/clothing/pullover.glb',
-            'Trouser': '/static/models/clothing/pants.glb',
-            'Dress': '/static/models/clothing/dress.glb',
-            'Coat': '/static/models/clothing/coat.glb',
-            'Sandal': '/static/models/clothing/sandal.glb',
-            'Sneaker': '/static/models/clothing/sneaker.glb',
-            'Ankle boot': '/static/models/clothing/ankle_boot.glb',
-            'Bag': '/static/models/clothing/bag.glb'
+            'T-shirt/top': defaultModel,
+            'Shirt': defaultModel,
+            'Pullover': defaultModel,
+            'Trouser': defaultModel,
+            'Dress': defaultModel,
+            'Coat': defaultModel,
+            'Sandal': defaultModel,
+            'Sneaker': defaultModel,
+            'Ankle boot': defaultModel,
+            'Bag': defaultModel
         };
 
         // Define fallback models for each category
         this.fallbackModels = {
-            'tops': '/static/models/clothing/top.glb',
-            'bottoms': '/static/models/clothing/pants.glb',
-            'dresses': '/static/models/clothing/dress.glb',
-            'outerwear': '/static/models/clothing/coat.glb',
-            'shoes': '/static/models/clothing/shoes.glb',
-            'accessories': '/static/models/clothing/bag.glb'
+            'tops': defaultModel,
+            'bottoms': defaultModel,
+            'dresses': defaultModel,
+            'outerwear': defaultModel,
+            'shoes': defaultModel,
+            'accessories': defaultModel
         };
 
         // Define clothing categories
@@ -34,14 +39,44 @@ class ClothingMapper {
             'shoes': ['Sandal', 'Sneaker', 'Ankle boot'],
             'accessories': ['Bag']
         };
+
+        // Store default model for reference
+        this.defaultModel = defaultModel;
+
+        // Verify model exists
+        this.verifyModelExists(defaultModel);
+    }
+
+    // Verify if a model file exists
+    async verifyModelExists(modelPath) {
+        try {
+            const response = await fetch(modelPath, { method: 'HEAD' });
+            if (!response.ok) {
+                console.warn(`Model not found: ${modelPath}`);
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.warn(`Error checking model: ${modelPath}`, error);
+            return false;
+        }
     }
 
     // Get 3D model path for a clothing item
     getModelPath(clothingItem) {
+        console.log('Getting model path for:', clothingItem);
+
+        if (!clothingItem) {
+            console.warn('No clothing item provided');
+            return this.fallbackModels['tops'];
+        }
+
         const label = clothingItem.label || '';
+        console.log(`Looking for model for label: "${label}"`);
 
         // First try exact match
         if (this.modelMap[label]) {
+            console.log(`Found exact model match: ${this.modelMap[label]}`);
             return this.modelMap[label];
         }
 
@@ -63,6 +98,56 @@ class ClothingMapper {
         return 'unknown';
     }
 
+    // Get position and scale adjustments for a clothing type
+    getPositionAndScale(category) {
+        const defaults = {
+            position: { x: 0, y: 1.2, z: 0 },
+            scale: { x: 1, y: 1, z: 1 },
+            rotation: { x: 0, y: 0, z: 0 }
+        };
+
+        switch(category) {
+            case 'tops':
+                return {
+                    position: { x: 0, y: 1.4, z: 0 },
+                    scale: { x: 1, y: 1, z: 1 },
+                    rotation: { x: 0, y: 0, z: 0 }
+                };
+            case 'bottoms':
+                return {
+                    position: { x: 0, y: 0.8, z: 0 },
+                    scale: { x: 1, y: 1, z: 1 },
+                    rotation: { x: 0, y: 0, z: 0 }
+                };
+            case 'dresses':
+                return {
+                    position: { x: 0, y: 1.1, z: 0 },
+                    scale: { x: 1, y: 1, z: 1 },
+                    rotation: { x: 0, y: 0, z: 0 }
+                };
+            case 'outerwear':
+                return {
+                    position: { x: 0, y: 1.3, z: 0.05 },
+                    scale: { x: 1.1, y: 1, z: 1 },
+                    rotation: { x: 0, y: 0, z: 0 }
+                };
+            case 'shoes':
+                return {
+                    position: { x: 0, y: 0.05, z: 0 },
+                    scale: { x: 1, y: 1, z: 1 },
+                    rotation: { x: 0, y: 0, z: 0 }
+                };
+            case 'accessories':
+                return {
+                    position: { x: 0.3, y: 1.0, z: 0.2 },
+                    scale: { x: 0.8, y: 0.8, z: 0.8 },
+                    rotation: { x: 0, y: 0, z: 0 }
+                };
+            default:
+                return defaults;
+        }
+    }
+
     // Get all clothing types
     getAllClothingTypes() {
         return Object.keys(this.modelMap);
@@ -80,4 +165,10 @@ class ClothingMapper {
 }
 
 // Make available globally
-window.ClothingMapper = ClothingMapper;
+if (typeof window !== 'undefined') {
+    window.ClothingMapper = ClothingMapper;
+    console.log('ClothingMapper initialized globally');
+} else {
+    // For non-browser environments
+    module.exports = ClothingMapper;
+}
