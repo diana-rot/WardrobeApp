@@ -1865,70 +1865,6 @@ def get_avatar_rpm():
     return jsonify({'success': False, 'error': 'No avatar found'})
 
 
-# @app.route('/api/wardrobe/process-clothing', methods=['POST'])
-# @login_required
-# def process_clothing():
-#     try:
-#         user_id = session['user']['_id']
-#         data = request.json
-#
-#         if not data or not all(key in data for key in ['itemId', 'imageUrl', 'itemType']):
-#             return jsonify({'success': False, 'error': 'Missing required data'}), 400
-#
-#         item_id = data['itemId']
-#         image_url = data['imageUrl']
-#         item_type = data['itemType']
-#
-#         # Get the item from the database
-#         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
-#         if not item:
-#             return jsonify({'success': False, 'error': 'Item not found'}), 404
-#
-#         # Fix the path normalization
-#         if image_url.startswith('/'):
-#             # Remove leading slash for joining
-#             image_path = os.path.join('flaskapp', image_url.lstrip('/'))
-#         else:
-#             image_path = os.path.join('flaskapp', image_url)
-#
-#         # Try alternative paths if needed
-#         if not os.path.exists(image_path):
-#             # Try with static directory
-#             image_path = os.path.join('flaskapp', 'static', 'image_users', user_id, os.path.basename(image_url))
-#
-#         if not os.path.exists(image_path):
-#             # One more attempt with different path construction
-#             base_name = os.path.basename(image_url)
-#             if '?' in base_name:
-#                 base_name = base_name.split('?')[0]
-#             image_path = os.path.join('flaskapp', 'static', 'image_users', user_id, base_name)
-#
-#         if not os.path.exists(image_path):
-#             print(f"Image not found at path: {image_path}")
-#             print(f"Original URL: {image_url}")
-#             return jsonify({'success': False, 'error': 'Image file not found'}), 404
-#
-#         # Instead of processing for 3D, just return the 2D image as texture for now
-#         # Avoid calling any module directly
-#         model_data = {
-#             'itemId': str(item['_id']),
-#             'itemType': item_type,
-#             'textureUrl': image_url,  # Use the original image URL as texture
-#             'originalImage': image_url
-#         }
-#
-#         return jsonify({
-#             'success': True,
-#             'modelData': model_data
-#         })
-#
-#     except Exception as e:
-#         print(f"Error processing clothing: {str(e)}")
-#         import traceback
-#         traceback.print_exc()
-#         return jsonify({'success': False, 'error': str(e)}), 500@app.route('/api/wardrobe/process-clothing', methods=['POST'])
-
-
 @app.route('/api/wardrobe/process-clothing', methods=['POST'])
 @login_required
 def process_clothing():
@@ -2015,6 +1951,160 @@ def process_clothing():
         except Exception as e:
             print(f"Error getting wardrobe item: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500
+
+# === Ready Player Me (RPM) API Integration ===
+import requests
+
+RPM_API_BASE = "https://api.readyplayer.me/v1"
+RPM_TOKEN = os.environ.get("RPM_API_TOKEN", "YOUR_RPM_API_TOKEN")  # Store securely!
+
+# Helper: Equip an outfit (asset) on an avatar
+def equip_outfit_on_avatar(avatar_id, asset_id):
+    url = f"{RPM_API_BASE}/avatars/{avatar_id}/assets/{asset_id}"
+    headers = {
+        "Authorization": f"Bearer {RPM_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {"type": "outfit"}
+    response = requests.put(url, json=data, headers=headers)
+    return response.json()
+
+# Helper: Get avatar GLB URL (update if RPM changes endpoint)
+def get_avatar_url(avatar_id):
+    return f"https://models.readyplayer.me/{avatar_id}.glb"
+
+# Flask endpoint: Equip a custom outfit on the avatar
+@app.route('/api/rpm/equip_outfit', methods=['POST'])
+@login_required
+def api_rpm_equip_outfit():
+    data = request.get_json()
+    avatar_id = data.get('avatar_id')
+    asset_id = data.get('asset_id')
+    if not avatar_id or not asset_id:
+        return jsonify({'error': 'avatar_id and asset_id required'}), 400
+    result = equip_outfit_on_avatar(avatar_id, asset_id)
+    return jsonify(result)
+
+# Flask endpoint: Get avatar GLB URL (with equipped outfit)
+@app.route('/api/rpm/avatar_url', methods=['GET'])
+@login_required
+def api_rpm_avatar_url():
+    avatar_id = request.args.get('avatar_id')
+    if not avatar_id:
+        return jsonify({'error': 'avatar_id required'}), 400
+    url = get_avatar_url(avatar_id)
+    return jsonify({'avatar_url': url})
+
+@app.route('/api/rpm/current_avatar_id', methods=['GET'])
+@login_required
+def get_current_avatar_id():
+    try:
+        print('[DEBUG] /api/rpm/current_avatar_id called')
+        user_id = session.get('user', {}).get('_id')
+        print(f'[DEBUG] user_id: {user_id}')
+        avatar_doc = db.avatars.find_one({'userId': user_id})
+        print(f'[DEBUG] avatar_doc: {avatar_doc}')
+        if avatar_doc and 'avatarUrl' in avatar_doc:
+            avatar_url = avatar_doc['avatarUrl']
+            avatar_id = avatar_url.split('/')[-1].replace('.glb', '')
+            print(f'[DEBUG] avatar_id: {avatar_id}')
+            return jsonify({'avatarId': avatar_id})
+        print('[DEBUG] No avatar found for user')
+        return jsonify({'error': 'No avatar found'}), 404
+    except Exception as e:
+        print(f'[ERROR] Exception in /api/rpm/current_avatar_id: {e}')
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/rpm/top_asset_id', methods=['GET'])
+@login_required
+def get_top_asset_id():
+    headers = {
+        "Authorization": f"Bearer {RPM_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    response = requests.get(f"{RPM_API_BASE}/assets", headers=headers)
+    if response.status_code != 200:
+        return jsonify({'error': 'Failed to fetch assets'}), 500
+    assets = response.json().get('assets', [])
+    # Print all asset names for debugging
+    print("RPM Assets:")
+    for asset in assets:
+        print(asset.get('name'), asset.get('id'))
+    # Try to find by name containing 'top'
+    for asset in assets:
+        if 'top' in asset.get('name', '').lower():
+            return jsonify({'assetId': asset['id']})
+    return jsonify({'error': 'No assetId found for top.glb'}), 404
+
+@app.route('/api/rpm/save-avatar', methods=['POST'])
+@login_required
+def save_rpm_avatar():
+    try:
+        user_id = session.get('user', {}).get('_id')
+        data = request.get_json()
+        avatar_url = data.get('avatarUrl')
+        if not avatar_url:
+            return jsonify({'error': 'No avatarUrl provided'}), 400
+        db.avatars.update_one(
+            {'userId': user_id},
+            {'$set': {'avatarUrl': avatar_url}},
+            upsert=True
+        )
+        print(f'[DEBUG] Saved avatarUrl for user {user_id}: {avatar_url}')
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f'[ERROR] Exception in /api/rpm/save-avatar: {e}')
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/rpm/upload-top-glb', methods=['POST'])
+def upload_top_glb():
+    import os
+    import requests
+    rpm_token = os.environ.get('RPM_API_TOKEN')
+    rpm_app_id = os.environ.get('RPM_APP_ID')
+    if not rpm_token or not rpm_app_id:
+        return jsonify({'error': 'RPM_API_TOKEN or RPM_APP_ID not set'}), 500
+    glb_path = os.path.join('flaskapp', 'static', 'models', 'clothing', 'top.glb')
+    if not os.path.exists(glb_path):
+        return jsonify({'error': 'top.glb not found'}), 404
+    # 1. Upload to temporary-media
+    headers = {'Authorization': f'Bearer {rpm_token}'}
+    with open(glb_path, 'rb') as f:
+        files = {'file': ('top.glb', f, 'model/gltf-binary')}
+        resp = requests.post('https://api.readyplayer.me/v1/temporary-media', files=files, headers=headers)
+    if resp.status_code != 200:
+        return jsonify({'error': 'Failed to upload to RPM', 'details': resp.text}), 500
+    model_url = resp.json()['data']['url']
+    # 2. Create asset
+    asset_data = {
+        "data": {
+            "name": "top.glb",
+            "type": "top",
+            "modelUrl": model_url,
+            "gender": "female",
+            "status": "published"
+        }
+    }
+    headers['Content-Type'] = 'application/json'
+    resp = requests.post('https://api.readyplayer.me/v1/assets', json=asset_data, headers=headers)
+    if resp.status_code not in (200, 201):
+        return jsonify({'error': 'Failed to create asset', 'details': resp.text}), 500
+    asset_id = resp.json()['data']['id']
+    # 3. Add asset to your application
+    add_data = {
+        "data": {
+            "applicationId": rpm_app_id,
+            "isVisibleInEditor": True
+        }
+    }
+    resp = requests.post(f'https://api.readyplayer.me/v1/assets/{asset_id}/application', json=add_data, headers=headers)
+    if resp.status_code not in (200, 201):
+        return jsonify({'error': 'Failed to add asset to app', 'details': resp.text}), 500
+    return jsonify({'assetId': asset_id, 'message': 'top.glb uploaded and linked to app successfully'})
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

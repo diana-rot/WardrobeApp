@@ -465,3 +465,23 @@ if (typeof window !== 'undefined') {
     window.ClothingRenderer = ClothingRenderer;
     console.log('ClothingRenderer is now available as:', typeof window.ClothingRenderer);
 }
+
+async function equipTopAndReloadAvatar(avatarId, assetId) {
+    // 1. Equip the custom top
+    await fetch('/api/rpm/equip_outfit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({avatar_id: avatarId, asset_id: assetId})
+    });
+
+    // 2. Get the updated avatar URL
+    const res = await fetch(`/api/rpm/avatar_url?avatar_id=${avatarId}`);
+    const data = await res.json();
+
+    // 3. Load the avatar in your viewer (replace with your actual loader)
+    loadAvatarInViewer(data.avatar_url);
+}
+
+// If you have the avatar URL
+const avatarUrl = "https://models.readyplayer.me/64c415db15199e3f53bbc65f.glb";
+const avatarId = avatarUrl.split('/').pop().replace('.glb', '');

@@ -12,6 +12,7 @@ class RPMAvatarManager {
         this.renderer = null;
         this.controls = null;
         this.isLoading = false;
+        this.debug = false;
 
         // Try to load saved avatar on initialization
         this.loadSavedAvatar();
@@ -210,20 +211,41 @@ class RPMAvatarManager {
             // Convert avatar URL to GLB if necessary
             const glbUrl = this.getGLBUrlFromAvatarUrl(avatarUrl);
 
-            // Remove existing avatar if any
-            if (this.avatarModel) {
-                this.scene.remove(this.avatarModel);
-                this.avatarModel.traverse((node) => {
-                    if (node.isMesh) {
-                        if (node.material) {
-                            node.material.dispose();
+            // Remove all previous avatars from the scene (robust cleanup)
+            if (this.scene) {
+                this.scene.children
+                    .filter(obj => obj !== this.currentClothing && (obj.isMesh || obj.type === 'Group'))
+                    .forEach(obj => {
+                        this.scene.remove(obj);
+                        if (obj.traverse) {
+                            obj.traverse((node) => {
+                                if (node.isMesh) {
+                                    if (node.material) node.material.dispose();
+                                    if (node.geometry) node.geometry.dispose();
+                                }
+                            });
                         }
-                        if (node.geometry) {
-                            node.geometry.dispose();
-                        }
-                    }
-                });
+                    });
                 this.avatarModel = null;
+            }
+            // Remove and dispose of all clothing
+            if (this.clothingItems && this.clothingItems.size > 0) {
+                for (const [itemId, item] of this.clothingItems.entries()) {
+                    if (item.mesh) {
+                        this.scene.remove(item.mesh);
+                        item.mesh.traverse((node) => {
+                            if (node.isMesh) {
+                                if (node.material) node.material.dispose();
+                                if (node.geometry) node.geometry.dispose();
+                            }
+                        });
+                    }
+                }
+                this.clothingItems.clear();
+            }
+            if (this.currentClothing) {
+                this.scene.remove(this.currentClothing);
+                this.currentClothing = null;
             }
 
             // Initialize Three.js scene if not already done
@@ -287,151 +309,168 @@ class RPMAvatarManager {
         }
     }
 
-
-    // Add these methods to your RPMAvatarManager class
-
-// Load clothing onto the avatar
-async loadClothing(itemId, imageUrl, itemType) {
-    if (!this.avatarModel) {
-        console.error('No avatar loaded. Please load an avatar first.');
-        return false;
-    }
-
-    try {
-        this.showLoadingOverlay('Processing clothing...');
-
-        // Use the clothing processor to process the 2D image
-        if (!window.clothingProcessor) {
-            window.clothingProcessor = new ClothingProcessor({
-                avatarUrl: this.avatarUrl
-            });
+    // Load clothing onto the avatar
+    async loadClothing(itemId, imageUrl, itemType) {
+        if (!this.avatarModel) {
+            console.error('No avatar loaded. Please load an avatar first.');
+            return false;
         }
 
-        // Process the clothing item
-        const modelData = await window.clothingProcessor.processClothingItem(
-            itemId,
-            imageUrl,
-            itemType
-        );
+        try {
+            console.log('Loading clothing item:', { itemId, imageUrl, itemType });
+            this.showLoadingOverlay('Loading clothing...');
 
-        // Apply the clothing to the avatar
-        await this.applyClothingToAvatar(modelData);
+            // Initialize GLTFLoader if not exists
+            if (!this.gltfLoader) {
+                this.gltfLoader = new THREE.GLTFLoader();
+            }
 
-        return true;
-    } catch (error) {
-        console.error('Error loading clothing:', error);
-        return false;
-    } finally {
-        this.hideLoadingOverlay();
-    }
-}
+            // Load the top.glb model
+            const modelPath = '/static/models/clothing/top.glb';
+            console.log('Loading model from:', modelPath);
 
-// Apply processed clothing to the avatar
-async applyClothingToAvatar(modelData) {
-    // In a real implementation, this would load the GLB model
-    // and attach it to the avatar
-
-    // For demonstration, create a simple placeholder to show the texture
-    const loader = new THREE.TextureLoader();
-
-    return new Promise((resolve, reject) => {
-        loader.load(
-            modelData.textureUrl,
-            (texture) => {
-                // Create a simple plane with the texture
-                const geometry = new THREE.PlaneGeometry(0.4, 0.6);
-                const material = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    transparent: true,
-                    side: THREE.DoubleSide
+            try {
+                const gltf = await new Promise((resolve, reject) => {
+                    this.gltfLoader.load(
+                        modelPath,
+                        resolve,
+                        (xhr) => {
+                            const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                            console.log(`Loading model: ${percent}%`);
+                        },
+                        reject
+                    );
                 });
 
-                // Create mesh and position based on item type
-                const mesh = new THREE.Mesh(geometry, material);
+                console.log('Model loaded successfully:', gltf);
 
-                // Position the clothing appropriately
-                switch(modelData.itemType.toLowerCase()) {
-                    case 't-shirt/top':
-                    case 'shirt':
-                    case 'pullover':
-                        mesh.position.set(0, 1.3, 0.1);
-                        break;
-                    case 'trouser':
-                        mesh.position.set(0, 0.8, 0.1);
-                        break;
-                    case 'dress':
-                        mesh.position.set(0, 1.1, 0.1);
-                        mesh.scale.set(1, 1.5, 1);
-                        break;
-                    case 'coat':
-                        mesh.position.set(0, 1.3, 0.15);
-                        mesh.scale.set(1.1, 1, 1);
-                        break;
-                    default:
-                        mesh.position.set(0, 1.2, 0.1);
+                // Remove existing clothing if any
+                if (this.currentClothing) {
+                    this.scene.remove(this.currentClothing);
+                    this.currentClothing = null;
                 }
 
-                // Add to scene
-                this.scene.add(mesh);
+                const model = gltf.scene;
 
-                // Store reference for later removal
+                // Make sure model and its children are visible and castShadow
+                model.traverse((node) => {
+                    if (node.isMesh) {
+                        node.castShadow = true;
+                        node.receiveShadow = true;
+                        node.visible = true;
+                        
+                        // Ensure material is properly configured
+                        if (node.material) {
+                            node.material.transparent = true;
+                            node.material.needsUpdate = true;
+                            node.material.side = THREE.DoubleSide;
+                        }
+                    }
+                });
+
+                // Calculate bounding box to help with positioning
+                const bbox = new THREE.Box3().setFromObject(model);
+                const size = new THREE.Vector3();
+                bbox.getSize(size);
+                const center = new THREE.Vector3();
+                bbox.getCenter(center);
+
+                // Position relative to avatar's chest area
+                model.position.set(0, 1.4, 0); // Y position at chest level
+                model.scale.set(0.5, 0.5, 0.5); // Start with half scale, adjust as needed
+
+                // Add to scene
+                this.scene.add(model);
+                this.currentClothing = model;
+
+                // Store reference
                 if (!this.clothingItems) {
                     this.clothingItems = new Map();
                 }
-                this.clothingItems.set(modelData.itemId, {
-                    mesh: mesh,
-                    type: modelData.itemType
+                this.clothingItems.set(itemId, {
+                    mesh: model,
+                    type: itemType
                 });
 
-                resolve(true);
-            },
-            undefined,
-            (error) => {
-                console.error('Error loading texture:', error);
-                reject(error);
+                // Log the model's world position for debugging
+                const worldPos = new THREE.Vector3();
+                model.getWorldPosition(worldPos);
+                console.log('Model world position:', worldPos);
+
+                // Add debug helpers
+                if (this.debug) {
+                    // Add bounding box helper
+                    const boxHelper = new THREE.BoxHelper(model, 0xff0000);
+                    this.scene.add(boxHelper);
+
+                    // Add axes helper
+                    const axesHelper = new THREE.AxesHelper(1);
+                    model.add(axesHelper);
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Error loading GLB model:', error);
+                return false;
             }
-        );
-    });
-}
-
-// Remove clothing item
-removeClothing(itemId) {
-    if (!this.clothingItems || !this.clothingItems.has(itemId)) {
-        return false;
-    }
-
-    const item = this.clothingItems.get(itemId);
-    if (item.mesh) {
-        this.scene.remove(item.mesh);
-
-        // Clean up resources
-        if (item.mesh.material) {
-            if (item.mesh.material.map) {
-                item.mesh.material.map.dispose();
-            }
-            item.mesh.material.dispose();
-        }
-        if (item.mesh.geometry) {
-            item.mesh.geometry.dispose();
+        } catch (error) {
+            console.error('Error loading clothing:', error);
+            return false;
+        } finally {
+            this.hideLoadingOverlay();
         }
     }
 
-    this.clothingItems.delete(itemId);
-    return true;
-}
-
-// Clear all clothing
-clearAllClothing() {
-    if (!this.clothingItems) {
-        return;
+    // Add this method to toggle debug visualization
+    toggleDebug() {
+        this.debug = !this.debug;
+        if (this.currentClothing && this.debug) {
+            const boxHelper = new THREE.BoxHelper(this.currentClothing, 0xff0000);
+            this.scene.add(boxHelper);
+            
+            const axesHelper = new THREE.AxesHelper(1);
+            this.currentClothing.add(axesHelper);
+        }
     }
 
-    for (const [itemId, item] of this.clothingItems.entries()) {
-        this.removeClothing(itemId);
+    // Remove clothing item
+    removeClothing(itemId) {
+        if (!this.clothingItems || !this.clothingItems.has(itemId)) {
+            return false;
+        }
+
+        const item = this.clothingItems.get(itemId);
+        if (item.mesh) {
+            this.scene.remove(item.mesh);
+
+            // Clean up resources
+            if (item.mesh.material) {
+                if (item.mesh.material.map) {
+                    item.mesh.material.map.dispose();
+                }
+                item.mesh.material.dispose();
+            }
+            if (item.mesh.geometry) {
+                item.mesh.geometry.dispose();
+            }
+        }
+
+        this.clothingItems.delete(itemId);
+        return true;
     }
 
-    this.clothingItems.clear();
-}
+    // Clear all clothing
+    clearAllClothing() {
+        if (!this.clothingItems) {
+            return;
+        }
+
+        for (const [itemId, item] of this.clothingItems.entries()) {
+            this.removeClothing(itemId);
+        }
+
+        this.clothingItems.clear();
+    }
 
     getGLBUrlFromAvatarUrl(avatarUrl) {
         // If URL is already a GLB, return as is
@@ -471,8 +510,6 @@ clearAllClothing() {
         this.controls.update();
     }
 }
-
-
 
 // Export the class
 window.RPMAvatarManager = RPMAvatarManager; 

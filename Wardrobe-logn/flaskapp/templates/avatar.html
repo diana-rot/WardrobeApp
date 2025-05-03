@@ -548,8 +548,8 @@
             <button class="btn" id="rotate-right-btn" title="Rotate Right">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
-            <button class="btn" id="take-screenshot-btn" title="Take Screenshot">
-                <i class="bi bi-camera"></i>
+            <button class="btn" id="debug-btn" title="Toggle Debug View">
+                <i class="bi bi-bug"></i>
             </button>
         </div>
     </div>
@@ -559,6 +559,7 @@
         <h3>Test GLB Viewer</h3>
         <div id="glb-test-container" class="glb-viewer"></div>
         <button id="load-test-model" class="btn btn-primary">Load top.glb</button>
+        <button id="test-rpm-top-btn" class="btn btn-primary" style="width:100%;margin-top:12px;">Test RPM Top</button>
     </div>
 </div>
 {% endblock %}
@@ -589,178 +590,19 @@
         });
 
         const rpmManager = new RPMAvatarManager({
-            container: document.getElementById('avatar-container')
+            container: document.getElementById('avatar-container'),
+            debug: true // Enable debug mode for better visualization
         });
 
         // Make the RPM manager globally available
         window.rpmManager = rpmManager;
 
-        // Add clothing processing methods to RPMAvatarManager
-        if (!rpmManager.loadClothing) {
-            // Load clothing onto the avatar
-            rpmManager.loadClothing = async function(itemId, imageUrl, itemType) {
-                if (!this.avatarModel) {
-                    console.error('No avatar loaded. Please load an avatar first.');
-                    return false;
-                }
-
-                try {
-                    this.showLoadingOverlay('Processing clothing...');
-
-                    // Process the clothing item
-                    const response = await fetch('/api/wardrobe/process-clothing', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            itemId: itemId,
-                            imageUrl: imageUrl,
-                            itemType: itemType
-                        })
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || `Failed to process ${itemType}`);
-                    }
-
-                    const data = await response.json();
-
-                    if (!data.success) {
-                        throw new Error(data.error || `Failed to process ${itemType}`);
-                    }
-
-                    // Apply the processed model data
-                    await this.applyClothingToAvatar(data.modelData);
-
-                    return true;
-                } catch (error) {
-                    console.error('Error loading clothing:', error);
-                    return false;
-                } finally {
-                    this.hideLoadingOverlay();
-                }
-            };
-
-            // Apply processed clothing to the avatar
-            rpmManager.applyClothingToAvatar = async function(modelData) {
-                // In a real implementation, this would load the GLB model
-                // and attach it to the avatar
-
-                // For demonstration, create a simple placeholder to show the texture
-                const loader = new THREE.TextureLoader();
-
-                return new Promise((resolve, reject) => {
-                    loader.load(
-                        modelData.textureUrl,
-                        (texture) => {
-                            // Create a simple plane with the texture
-                            const geometry = new THREE.PlaneGeometry(0.4, 0.6);
-                            const material = new THREE.MeshBasicMaterial({
-                                map: texture,
-                                transparent: true,
-                                side: THREE.DoubleSide
-                            });
-
-                            // Create mesh and position based on item type
-                            const mesh = new THREE.Mesh(geometry, material);
-
-                            // Position the clothing appropriately
-                            switch(modelData.itemType.toLowerCase()) {
-                                case 't-shirt/top':
-                                case 'shirt':
-                                case 'pullover':
-                                    mesh.position.set(0, 1.3, 0.1);
-                                    break;
-                                case 'trouser':
-                                    mesh.position.set(0, 0.8, 0.1);
-                                    break;
-                                case 'dress':
-                                    mesh.position.set(0, 1.1, 0.1);
-                                    mesh.scale.set(1, 1.5, 1);
-                                    break;
-                                case 'coat':
-                                    mesh.position.set(0, 1.3, 0.15);
-                                    mesh.scale.set(1.1, 1, 1);
-                                    break;
-                                default:
-                                    mesh.position.set(0, 1.2, 0.1);
-                            }
-
-                            // Add to scene
-                            this.scene.add(mesh);
-
-                            // Store reference for later removal
-                            if (!this.clothingItems) {
-                                this.clothingItems = new Map();
-                            }
-                            this.clothingItems.set(modelData.itemId, {
-                                mesh: mesh,
-                                type: modelData.itemType,
-                                data: modelData
-                            });
-
-                            // Update the current outfit list in the UI
-                            updateActiveOutfitList();
-
-                            resolve(true);
-                        },
-                        undefined,
-                        (error) => {
-                            console.error('Error loading texture:', error);
-                            reject(error);
-                        }
-                    );
-                });
-            };
-
-            // Remove clothing item
-            rpmManager.removeClothing = function(itemId) {
-                if (!this.clothingItems || !this.clothingItems.has(itemId)) {
-                    return false;
-                }
-
-                const item = this.clothingItems.get(itemId);
-                if (item.mesh) {
-                    this.scene.remove(item.mesh);
-
-                    // Clean up resources
-                    if (item.mesh.material) {
-                        if (item.mesh.material.map) {
-                            item.mesh.material.map.dispose();
-                        }
-                        item.mesh.material.dispose();
-                    }
-                    if (item.mesh.geometry) {
-                        item.mesh.geometry.dispose();
-                    }
-                }
-
-                this.clothingItems.delete(itemId);
-
-                // Update the current outfit list in the UI
-                updateActiveOutfitList();
-
-                return true;
-            };
-
-            // Clear all clothing
-            rpmManager.clearAllClothing = function() {
-                if (!this.clothingItems) {
-                    return;
-                }
-
-                for (const [itemId, item] of this.clothingItems.entries()) {
-                    this.removeClothing(itemId);
-                }
-
-                this.clothingItems.clear();
-
-                // Update the current outfit list in the UI
-                updateActiveOutfitList();
-            };
-        }
+        // Load the RPM avatar
+        rpmManager.loadSavedAvatar().then(() => {
+            console.log('Avatar loaded, ready for clothing');
+        }).catch(error => {
+            console.error('Error loading avatar:', error);
+        });
 
         // Handle tab switching
         const tabs = document.querySelectorAll('.avatar-tab');
@@ -940,6 +782,7 @@
                 if (data.success && data.avatarUrl) {
                     document.getElementById('rpm-avatar-url').value = data.avatarUrl;
                     await rpmManager.loadAvatar(data.avatarUrl);
+                    await saveRPMAvatarUrlIfPresent(data.avatarUrl);
                 } else {
                     throw new Error('No saved avatar found');
                 }
@@ -959,6 +802,7 @@
 
             try {
                 await rpmManager.loadAvatar(avatarUrl);
+                await saveRPMAvatarUrlIfPresent(avatarUrl);
                 showMessage('Avatar loaded successfully', 'success');
             } catch (error) {
                 console.error('Error:', error);
@@ -966,71 +810,34 @@
             }
         });
 
-        // Try on selected items button
-        document.querySelectorAll('.try-on-btn').forEach(button => {
-            button.addEventListener('click', async function() {
-                const section = this.closest('.avatar-section');
-                const selectedItems = section.querySelectorAll('.wardrobe-item.selected');
+        // Handle try-on button click
+        document.getElementById('try-on-rpm').addEventListener('click', async function() {
+            const selectedItems = document.querySelectorAll('.wardrobe-item.selected');
+            
+            if (selectedItems.length === 0) {
+                alert('Please select items to try on');
+                return;
+            }
 
-                if (selectedItems.length === 0) {
-                    alert('Please select items to try on');
-                    return;
-                }
+            // Clear previous clothing
+            if (rpmManager.currentClothing) {
+                rpmManager.scene.remove(rpmManager.currentClothing);
+                rpmManager.currentClothing = null;
+            }
 
-                const itemIds = Array.from(selectedItems).map(item => item.dataset.itemId);
-                const manager = section.id.includes('rpm') ? rpmManager : avatarManager;
+            // Try on each selected item
+            for (const item of selectedItems) {
+                const itemId = item.dataset.itemId;
+                const itemType = item.dataset.itemType;
+                const imageUrl = item.dataset.imageUrl;
 
                 try {
-                    manager.showLoading();
-
-                    // For RPM with clothing integration
-                    if (section.id.includes('rpm') && manager.loadClothing) {
-                        // Clear previous clothing first
-                        if (manager.clearAllClothing) {
-                            manager.clearAllClothing();
-                        }
-
-                        // Process each item one by one
-                        for (const selectedItem of selectedItems) {
-                            const itemId = selectedItem.dataset.itemId;
-                            const imagePath = selectedItem.querySelector('img')?.src;
-                            const itemName = selectedItem.querySelector('.item-name')?.textContent || 'Item';
-
-                            if (imagePath) {
-                                await manager.loadClothing(itemId, imagePath, itemName);
-                            }
-                        }
-
-                        showMessage('Items applied successfully', 'success');
-                    } else {
-                        // Legacy try-on method using API
-                        const response = await fetch('/api/wardrobe/try-on', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ itemIds })
-                        });
-
-                        if (!response.ok) {
-                            throw new Error('Failed to try on items');
-                        }
-
-                        const data = await response.json();
-                        if (data.success) {
-                            await manager.loadAvatar(data.modelUrl);
-                            showMessage('Items applied successfully', 'success');
-                        } else {
-                            throw new Error(data.error || 'Failed to apply items');
-                        }
-                    }
+                    // Load the clothing item
+                    await rpmManager.loadClothing(itemId, imageUrl, itemType);
                 } catch (error) {
-                    console.error('Error:', error);
-                    showMessage('Failed to try on items: ' + error.message, 'error');
-                } finally {
-                    manager.hideLoadingOverlay();
+                    console.error('Error trying on item:', error);
                 }
-            });
+            }
         });
 
         // Clear outfit buttons
@@ -1109,16 +916,9 @@
             }
         });
 
-        document.getElementById('take-screenshot-btn')?.addEventListener('click', function() {
-            if (rpmManager.renderer) {
-                // Render the current scene
-                rpmManager.renderer.render(rpmManager.scene, rpmManager.camera);
-
-                // Create a download link
-                const link = document.createElement('a');
-                link.download = 'avatar-outfit.png';
-                link.href = rpmManager.renderer.domElement.toDataURL('image/png');
-                link.click();
+        document.getElementById('debug-btn').addEventListener('click', function() {
+            if (window.rpmManager) {
+                window.rpmManager.toggleDebug();
             }
         });
 
@@ -1294,6 +1094,62 @@
                     console.error('Failed to load test model');
                 }
             });
+        }
+
+        // --- Test RPM Top Button Functionality ---
+        async function getCurrentAvatarId() {
+            const res = await fetch('/api/rpm/current_avatar_id');
+            const data = await res.json();
+            if (data.avatarId) return data.avatarId;
+            throw new Error('No avatarId found');
+        }
+
+        async function getTopAssetId() {
+            const res = await fetch('/api/rpm/top_asset_id');
+            const data = await res.json();
+            if (data.assetId) return data.assetId;
+            throw new Error('No assetId found for top.glb');
+        }
+
+        async function equipTopAndReloadAvatar() {
+            try {
+                const avatarId = await getCurrentAvatarId();
+                const assetId = await getTopAssetId();
+                await fetch('/api/rpm/equip_outfit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({avatar_id: avatarId, asset_id: assetId})
+                });
+                const res = await fetch(`/api/rpm/avatar_url?avatar_id=${avatarId}`);
+                const data = await res.json();
+                if (window.rpmManager && window.rpmManager.loadAvatar) {
+                    window.rpmManager.loadAvatar(data.avatar_url);
+                } else if (window.loadAvatarInViewer) {
+                    window.loadAvatarInViewer(data.avatar_url);
+                } else {
+                    alert('Avatar loaded: ' + data.avatar_url);
+                }
+            } catch (err) {
+                alert('Error equipping top: ' + err.message);
+                console.error(err);
+            }
+        }
+
+        document.getElementById('test-rpm-top-btn').addEventListener('click', equipTopAndReloadAvatar);
+
+        // After loading or selecting an RPM avatar, automatically save the avatar URL to the backend if present
+        async function saveRPMAvatarUrlIfPresent(avatarUrl) {
+            if (!avatarUrl) return;
+            try {
+                await fetch('/api/rpm/save-avatar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({avatarUrl})
+                });
+                console.log('[AUTO] RPM avatar URL saved to backend:', avatarUrl);
+            } catch (err) {
+                console.error('[AUTO] Failed to save RPM avatar URL:', err);
+            }
         }
     });
 </script>

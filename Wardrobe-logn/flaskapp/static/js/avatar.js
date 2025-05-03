@@ -849,68 +849,39 @@ async function applyClothing(item) {
 }
 
 // Load wardrobe items
-async function loadWardrobeItems(category) {
-    const container = document.getElementById('wardrobeItems');
-    
-    // Show loading
-    container.innerHTML = '<div class="loading">Loading your wardrobe...</div>';
-    
+async function loadWardrobeItems(category, containerId = 'wardrobe-items') {
     try {
-        const response = await fetch(`/api/wardrobe-items?category=${category}`);
+        const response = await fetch(`/api/wardrobe/items?category=${category}`);
         if (!response.ok) {
             throw new Error('Failed to load wardrobe items');
         }
-        
-        const data = await response.json();
-        
-        // Clear container
+
+        const items = await response.json();
+        const container = document.getElementById(containerId);
         container.innerHTML = '';
-        
-        // Get items for the selected category
-        const items = data[category] || [];
-        
-        if (items.length === 0) {
-            container.innerHTML = '<div class="no-items">No items in this category</div>';
-            return;
-        }
-        
-        // Create item elements
+
         items.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.className = 'wardrobe-item';
             itemElement.dataset.itemId = item._id;
-            
-            const hasValidImage = item.file_path && 
-                               item.file_path !== 'null' && 
-                               !item.file_path.includes('undefined');
-            
-            const itemName = item.label || 'Unnamed Item';
+            itemElement.dataset.itemType = item.type;
+            itemElement.dataset.imageUrl = item.imageUrl;
             
             itemElement.innerHTML = `
-                <div class="item-image">
-                    ${hasValidImage ? 
-                        `<img src="${item.file_path}" 
-                             alt="${itemName}"
-                             onerror="this.parentElement.innerHTML='<div class=\'error-message\'>Image not available</div>'">`
-                        : 
-                        `<div class="error-message">No image available</div>`
-                    }
-                </div>
-                <div class="item-name">${itemName}</div>
+                <img src="${item.imageUrl}" alt="${item.label}">
+                <div class="item-name">${item.label}</div>
+                <div class="item-category">${item.type}</div>
             `;
 
+            // Add click handler for selection
             itemElement.addEventListener('click', function() {
-                container.querySelectorAll('.wardrobe-item').forEach(el => {
-                    el.classList.remove('selected');
-                });
-                this.classList.add('selected');
+                this.classList.toggle('selected');
             });
 
             container.appendChild(itemElement);
         });
     } catch (error) {
         console.error('Error loading wardrobe items:', error);
-        container.innerHTML = '<div class="error">Failed to load items</div>';
     }
 }
 
