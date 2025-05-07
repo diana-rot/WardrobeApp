@@ -614,6 +614,7 @@ def normalize_path(file_path):
     - Duplicate /static/ paths
     - Leading/trailing slashes
     - Multiple combinations of the above
+    Always returns a path starting with '/'.
     """
     if not file_path:
         return None
@@ -631,6 +632,10 @@ def normalize_path(file_path):
     # Special case: ensure static paths start with static/
     if 'static' in normalized and not normalized.startswith('static'):
         normalized = 'static/' + normalized[normalized.index('static') + 6:]
+
+    # Always return with leading slash
+    if not normalized.startswith('/'):
+        normalized = '/' + normalized
 
     return normalized
 
@@ -1216,10 +1221,32 @@ def add_wardrobe():
 @login_required
 def view_wardrobe_all():
     userId = session['user']['_id']
-    print(userId)
     filter = {'userId': userId}
     users_clothes = db.wardrobe.find(filter)
-    return render_template('wardrobe_all2.html', wardrobes=users_clothes)
+
+    categories = {
+        'tops': ['T-shirt/top', 'Shirt', 'Pullover'],
+        'bottoms': ['Trouser'],
+        'dresses': ['Dress'],
+        'outerwear': ['Coat'],
+        'shoes': ['Sandal', 'Sneaker', 'Ankle boot'],
+        'accessories': ['Bag']
+    }
+    grouped_items = {cat: [] for cat in categories.keys()}
+    for item_doc in users_clothes:
+        label = item_doc.get('label', '')
+        category = item_doc.get('category')
+        if not category:
+            category = next((cat for cat, lbls in categories.items() if label in lbls), None)
+        if category:
+            # Use the same logic as calendar: always normalize file_path
+            grouped_items[category].append({
+                'id': str(item_doc['_id']),
+                'label': item_doc['label'],
+                'file_path': normalize_path(item_doc.get('file_path', '')),
+                'color': item_doc.get('color', '')
+            })
+    return render_template('wardrobe_all2.html', wardrobe_items=grouped_items)
 
 
 @app.route('/outfits/all', methods=['GET', 'POST'])
@@ -1353,13 +1380,17 @@ def get_wardrobe_items():
 
     for item_doc in items_cursor:
         label = item_doc.get('label', '')
-        category = next((cat for cat, lbls in categories.items() if label in lbls), None)
+        # Use stored category if present, otherwise infer from label
+        category = item_doc.get('category')
+        if not category:
+            category = next((cat for cat, lbls in categories.items() if label in lbls), None)
         if category:
             grouped_items[category].append({
                 '_id': str(item_doc['_id']),
                 'label': label,
                 'file_path': normalize_path(item_doc.get('file_path', '')),
-                'color': item_doc.get('color', '')
+                'color': item_doc.get('color', ''),
+                'category': category
             })
 
     return jsonify(grouped_items)

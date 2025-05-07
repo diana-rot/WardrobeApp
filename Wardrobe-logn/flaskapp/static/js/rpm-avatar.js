@@ -379,8 +379,14 @@ class RPMAvatarManager {
                 model.position.set(0, 1.4, 0); // Y position at chest level
                 model.scale.set(0.5, 0.5, 0.5); // Start with half scale, adjust as needed
 
-                // Add to scene
-                this.scene.add(model);
+                // Add to avatar if loaded, otherwise to scene
+                if (this.avatarModel) {
+                    this.avatarModel.add(model);
+                    console.log('[DEBUG] top.glb added as child of avatarModel');
+                } else {
+                    this.scene.add(model);
+                    console.warn('[DEBUG] avatarModel not present, added top.glb to scene');
+                }
                 this.currentClothing = model;
 
                 // Store reference
@@ -392,10 +398,10 @@ class RPMAvatarManager {
                     type: itemType
                 });
 
-                // Log the model's world position for debugging
-                const worldPos = new THREE.Vector3();
-                model.getWorldPosition(worldPos);
-                console.log('Model world position:', worldPos);
+                // Log model position, scale, and parent
+                console.log('[DEBUG] top.glb position:', model.position);
+                console.log('[DEBUG] top.glb scale:', model.scale);
+                console.log('[DEBUG] top.glb parent:', model.parent);
 
                 // Add debug helpers
                 if (this.debug) {

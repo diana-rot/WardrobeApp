@@ -78,6 +78,7 @@ class Wardrobe:
         "_id": uuid.uuid4().hex,
         "label": request.form.get('label'),
         "color": request.form.get('color'),
+        "category": request.form.get('category'),
         "userId":  session['user']['_id']
       }
 

@@ -1096,46 +1096,32 @@
             });
         }
 
-        // --- Test RPM Top Button Functionality ---
-        async function getCurrentAvatarId() {
-            const res = await fetch('/api/rpm/current_avatar_id');
-            const data = await res.json();
-            if (data.avatarId) return data.avatarId;
-            throw new Error('No avatarId found');
-        }
-
-        async function getTopAssetId() {
-            const res = await fetch('/api/rpm/top_asset_id');
-            const data = await res.json();
-            if (data.assetId) return data.assetId;
-            throw new Error('No assetId found for top.glb');
-        }
-
-        async function equipTopAndReloadAvatar() {
-            try {
-                const avatarId = await getCurrentAvatarId();
-                const assetId = await getTopAssetId();
-                await fetch('/api/rpm/equip_outfit', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({avatar_id: avatarId, asset_id: assetId})
-                });
-                const res = await fetch(`/api/rpm/avatar_url?avatar_id=${avatarId}`);
-                const data = await res.json();
-                if (window.rpmManager && window.rpmManager.loadAvatar) {
-                    window.rpmManager.loadAvatar(data.avatar_url);
-                } else if (window.loadAvatarInViewer) {
-                    window.loadAvatarInViewer(data.avatar_url);
+        // Remove the old equipTopAndReloadAvatar handler for 'test-rpm-top-btn'
+        // and ensure only the local loadClothing handler is present
+        const testTopBtn = document.getElementById('test-rpm-top-btn');
+        if (testTopBtn) {
+            testTopBtn.replaceWith(testTopBtn.cloneNode(true)); // Remove all old listeners
+            document.getElementById('test-rpm-top-btn').addEventListener('click', async function() {
+                console.log('[DEBUG] Test RPM Top button clicked');
+                if (window.rpmManager && window.rpmManager.loadClothing) {
+                    try {
+                        console.log('[DEBUG] Calling loadClothing for top.glb');
+                        await window.rpmManager.loadClothing('top', '/static/models/clothing/top.glb', 'top');
+                        console.log('[DEBUG] loadClothing completed');
+                        if (window.rpmManager.currentClothing) {
+                            console.log('[DEBUG] currentClothing:', window.rpmManager.currentClothing);
+                        } else {
+                            console.warn('[DEBUG] No currentClothing after loadClothing');
+                        }
+                    } catch (err) {
+                        console.error('[DEBUG] Error loading top.glb:', err);
+                    }
                 } else {
-                    alert('Avatar loaded: ' + data.avatar_url);
+                    alert('RPM Avatar Manager not ready!');
+                    console.error('[DEBUG] RPM Avatar Manager not ready!');
                 }
-            } catch (err) {
-                alert('Error equipping top: ' + err.message);
-                console.error(err);
-            }
+            });
         }
-
-        document.getElementById('test-rpm-top-btn').addEventListener('click', equipTopAndReloadAvatar);
 
         // After loading or selecting an RPM avatar, automatically save the avatar URL to the backend if present
         async function saveRPMAvatarUrlIfPresent(avatarUrl) {

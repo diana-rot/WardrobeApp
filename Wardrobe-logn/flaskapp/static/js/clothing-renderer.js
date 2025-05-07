@@ -129,7 +129,7 @@ class ClothingRenderer {
 
         // Add directional light
         const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-        dirLight.position.set(5, 5, 5);
+        dirLight.position.set(5, 5, 5)
         dirLight.castShadow = true;
         
         // Configure shadow properties
@@ -206,10 +206,10 @@ class ClothingRenderer {
                 });
             }
 
-            // Add to scene
-            console.log('Adding mesh to scene...');
-            this.avatarManager.scene.add(mesh);
-            console.log('Mesh added to scene');
+            // Add to avatar model instead of scene
+            console.log('Adding mesh to avatar model...');
+            this.avatarManager.avatarModel.add(mesh);
+            console.log('Mesh added to avatar model');
 
             // Store reference
             this.clothingItems.set(category, {
@@ -254,9 +254,9 @@ class ClothingRenderer {
                             console.log('Model structure:', this.logModelStructure(gltf.scene));
                             const model = gltf.scene;
                             
-                            // Apply transformations
-                            model.scale.set(1, 1, 1);
-                            model.position.set(0, 1.4, 0);
+                            // Adjust position and scale to fit avatar
+                            model.position.set(0, 0, 0); // Place directly on avatar
+                            model.scale.set(1, 1, 1);    // Use original scale
                             model.rotation.set(0, Math.PI, 0);
                             
                             // Make sure materials are visible
