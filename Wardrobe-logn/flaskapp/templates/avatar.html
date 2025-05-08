@@ -430,6 +430,36 @@
         border-radius: 8px;
         margin-bottom: 15px;
     }
+
+    .preview-panel {
+        width: 300px;
+        background: #fff;
+        padding: 20px;
+        border-left: 1px solid #ddd;
+    }
+
+    .preview-container {
+        width: 100%;
+        height: 300px;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .avatar-preview {
+        width: 100%;
+        height: 100%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .preview-placeholder {
+        text-align: center;
+        color: #666;
+        padding: 20px;
+    }
 </style>
 {% endblock %}
 
@@ -460,6 +490,10 @@
 
                 <button type="submit" class="btn btn-primary">Generate Avatar</button>
             </form>
+            
+            <button id="load-female-model" class="btn btn-success mt-3">Load Female Model</button>
+            <button id="test-custom-top" class="btn btn-primary mt-3">Test Custom Top</button>
+            <button id="load-top-glb" class="btn btn-info mt-3">Load Top.glb</button>
 
             <div class="wardrobe-section">
                 <h3>Wardrobe</h3>
@@ -492,7 +526,7 @@
             <div class="rpm-options">
                 <button id="open-rpm-creator" class="btn btn-primary rpm-button">Open RPM Creator</button>
                 <button id="load-saved-rpm" class="btn btn-secondary rpm-button">Load Saved Avatar</button>
-
+                <button id="load-top-rpm" class="btn btn-info rpm-button mt-3">Load Top RPM</button>
                 <div class="rpm-url-input">
                     <input type="text" id="rpm-avatar-url" class="form-control" placeholder="Enter RPM avatar URL">
                     <button id="load-rpm-url" class="btn btn-primary mt-2">Load Avatar</button>
@@ -554,7 +588,21 @@
         </div>
     </div>
 
-    <!-- Test GLB viewer -->
+    <!-- Preview Panel on Right Side -->
+    <div class="preview-panel">
+        <h3>Avatar Preview</h3>
+        <div id="avatar-preview-container" class="preview-container">
+            <div id="custom-avatar-preview" class="avatar-preview">
+                <div class="preview-placeholder">
+                    <i class="bi bi-person-fill"></i>
+                    <p>Avatar preview</p>
+                </div>
+            </div>
+        </div>
+        <button id="refresh-preview-btn" class="btn btn-secondary mt-2">Refresh Preview</button>
+    </div>
+
+    <!-- Test GLB viewer (always visible) -->
     <div class="test-viewer-panel">
         <h3>Test GLB Viewer</h3>
         <div id="glb-test-container" class="glb-viewer"></div>
@@ -604,18 +652,20 @@
             console.error('Error loading avatar:', error);
         });
 
+        // Store the current active tab
+        let currentActiveTab = 'rpm'; // Default to RPM tab
+
         // Handle tab switching
         const tabs = document.querySelectorAll('.avatar-tab');
         const sections = document.querySelectorAll('.avatar-section');
-
         tabs.forEach(tab => {
             tab.addEventListener('click', function() {
                 const tabName = this.dataset.tab;
-
+                // Store the current active tab
+                currentActiveTab = tabName;
                 // Update active tab
                 tabs.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
-
                 // Show corresponding section
                 sections.forEach(section => {
                     section.classList.remove('active');
@@ -623,7 +673,22 @@
                         section.classList.add('active');
                     }
                 });
-
+                // Toggle avatar visibility based on selected tab
+                if (tabName === 'rpm') {
+                    if (window.rpmManager && window.rpmManager.avatarModel) {
+                        window.rpmManager.avatarModel.visible = true;
+                    }
+                    if (window.avatar) {
+                        window.avatar.visible = false;
+                    }
+                } else if (tabName === 'custom') {
+                    if (window.rpmManager && window.rpmManager.avatarModel) {
+                        window.rpmManager.avatarModel.visible = false;
+                    }
+                    if (window.avatar) {
+                        window.avatar.visible = true;
+                    }
+                }
                 // Load wardrobe items for the active section
                 const activeSection = document.querySelector('.avatar-section.active');
                 const categorySelect = activeSection.querySelector('.category-select');
@@ -762,6 +827,29 @@
                 showMessage('An error occurred while processing your photo', 'error');
             } finally {
                 avatarManager.hideLoading();
+            }
+        });
+
+        // Handle load female model button click
+        document.getElementById('load-female-model').addEventListener('click', async function() {
+            try {
+                showLoading('Loading female model...');
+                await loadAvatarModel({ gender: 'female' });
+                // If the current tab is custom, make sure the custom avatar is visible
+                if (currentActiveTab === 'custom') {
+                    if (window.avatar) {
+                        window.avatar.visible = true;
+                    }
+                    if (window.rpmManager && window.rpmManager.avatarModel) {
+                        window.rpmManager.avatarModel.visible = false;
+                    }
+                }
+                showMessage('Female model loaded successfully', 'success');
+            } catch (error) {
+                console.error('Error loading female model:', error);
+                showMessage('Failed to load female model', 'error');
+            } finally {
+                hideLoading();
             }
         });
 
@@ -1136,6 +1224,113 @@
             } catch (err) {
                 console.error('[AUTO] Failed to save RPM avatar URL:', err);
             }
+        }
+
+        // Add event listener for test custom top button
+        document.getElementById('test-custom-top').addEventListener('click', async function() {
+            console.log('[DEBUG] Test Custom Top button clicked');
+            try {
+                showLoading('Loading custom top...');
+                // Make sure the custom avatar is loaded
+                if (!window.avatar) {
+                    console.log('[DEBUG] No custom avatar found, loading female model first');
+                    await loadAvatarModel({ gender: 'female' });
+                }
+                // Test applying a clothing item to the custom avatar
+                console.log('[DEBUG] Applying top.glb to custom avatar');
+                const testItem = {
+                    id: 'test-top',
+                    type: 'top',
+                    color: '#3498db',
+                    label: 'Test Top'
+                };
+                await applyClothing(testItem);
+                showMessage('Custom top applied to avatar', 'success');
+            } catch (error) {
+                console.error('[DEBUG] Error testing custom top:', error);
+                showMessage('Failed to apply custom top', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Handle Load Top RPM button click
+        const loadTopRpmBtn = document.getElementById('load-top-rpm');
+        if (loadTopRpmBtn) {
+            loadTopRpmBtn.addEventListener('click', async function() {
+                console.log('[DEBUG] Load Top RPM button clicked');
+                try {
+                    const loadingElement = document.querySelector('.loading-overlay');
+                    if (loadingElement) loadingElement.style.display = 'flex';
+                    if (!window.rpmManager) throw new Error('RPM Avatar Manager not ready');
+                    if (!window.rpmManager.avatarModel) {
+                        console.log('[DEBUG] No RPM avatar found, loading saved avatar first');
+                        await window.rpmManager.loadSavedAvatar();
+                    }
+                    const topModelPath = '/static/models/clothing/top.glb';
+                    console.log('[DEBUG] Loading top.glb for RPM avatar from:', topModelPath);
+                    await window.rpmManager.loadClothing('top', topModelPath, 'Top');
+                    if (typeof showMessage === 'function') showMessage('Top.glb loaded on RPM avatar', 'success');
+                } catch (error) {
+                    console.error('[DEBUG] Error loading top on RPM avatar:', error);
+                    if (typeof showMessage === 'function') showMessage('Failed to load top: ' + error.message, 'error');
+                } finally {
+                    const loadingElement = document.querySelector('.loading-overlay');
+                    if (loadingElement) loadingElement.style.display = 'none';
+                }
+            });
+        }
+
+        // Handle Load Top.glb button click for custom avatar
+        const loadTopGlbBtn = document.getElementById('load-top-glb');
+        if (loadTopGlbBtn) {
+            loadTopGlbBtn.addEventListener('click', async function() {
+                console.log('[DEBUG] Load Top.glb button clicked');
+                try {
+                    const loadingElement = document.querySelector('.loading-overlay');
+                    if (loadingElement) loadingElement.style.display = 'flex';
+                    if (!avatar) {
+                        console.log('[DEBUG] No avatar found, loading female model first');
+                        await loadAvatarModel({ gender: 'female' });
+                    }
+                    const topModelPath = '/static/models/clothing/top.glb';
+                    console.log('[DEBUG] Loading top.glb from:', topModelPath);
+                    const loader = new THREE.GLTFLoader();
+                    const gltf = await new Promise((resolve, reject) => {
+                        loader.load(
+                            topModelPath,
+                            resolve,
+                            (xhr) => {
+                                const progress = Math.floor((xhr.loaded / xhr.total) * 100);
+                                console.log(`Loading top.glb: ${progress}%`);
+                            },
+                            reject
+                        );
+                    });
+                    if (currentClothing['top'] && scene) {
+                        scene.remove(currentClothing['top']);
+                        currentClothing['top'] = null;
+                    }
+                    const topModel = gltf.scene;
+                    topModel.position.set(0, 0.3, 0);
+                    topModel.scale.set(0.8, 0.8, 0.8);
+                    topModel.traverse((node) => {
+                        if (node.isMesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                        }
+                    });
+                    scene.add(topModel);
+                    currentClothing['top'] = topModel;
+                    if (typeof showMessage === 'function') showMessage('Top.glb loaded successfully', 'success');
+                } catch (error) {
+                    console.error('[DEBUG] Error loading top.glb:', error);
+                    if (typeof showMessage === 'function') showMessage('Failed to load top.glb: ' + error.message, 'error');
+                } finally {
+                    const loadingElement = document.querySelector('.loading-overlay');
+                    if (loadingElement) loadingElement.style.display = 'none';
+                }
+            });
         }
     });
 </script>

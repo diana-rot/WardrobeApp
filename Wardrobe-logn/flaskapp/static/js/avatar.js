@@ -11,7 +11,7 @@ let loadingProgress = document.getElementById('loading-progress');
 // Model paths for different genders
 const MODEL_PATHS = {
     male: '/static/models/avatar/male.gltf',
-    female: '/static/models/avatar/female_1.glb'
+    female: '/static/models/avatar/female.glb'
 };
 
 // Hair style paths
@@ -133,10 +133,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load the female avatar by default
     loadAvatarModel({ gender: 'female' });
+
+    const refreshBtn = document.getElementById('refresh-preview-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            updateAvatarPreview();
+            if (typeof showMessage === 'function') showMessage('Preview refreshed', 'info');
+        });
+    }
 });
 
 // Initialize the 3D scene
 function init() {
+    // Get the avatar container if it's not already defined
+    avatarContainer = document.getElementById('avatar-container');
     // Check if container exists and is properly initialized
     if (!avatarContainer) {
         console.error('Avatar container not found');
@@ -147,9 +157,9 @@ function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
 
-    // Set up camera
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.5, 4);
+    // Set up camera with closer position
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0.8, 3.0);
 
     // Set up renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -177,12 +187,12 @@ function init() {
         avatarContainer.appendChild(renderer.domElement);
     }
 
-    // Add orbit controls
+    // Adjust orbit controls for closer viewing
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.minDistance = 2;
-    controls.maxDistance = 10;
+    controls.maxDistance = 6;
     controls.target.set(0, 1, 0);
     controls.maxPolarAngle = Math.PI * 0.8;
     controls.minPolarAngle = Math.PI * 0.2;
@@ -485,10 +495,13 @@ async function updateAvatar(avatarData) {
         // Update UI controls to match avatar
         updateUIControls(avatarData);
         
-        // Update camera position to focus on avatar
-        camera.position.set(0, 1.6, 2);
-        controls.target.set(0, 1, 0);
+        // Reset camera position for closer view
+        camera.position.set(0, 1.4, 2.2);
+        controls.target.set(0, 0.8, 0);
         controls.update();
+        
+        // Update the preview
+        updateAvatarPreview();
         
         return avatarModel;
     } catch (error) {
@@ -500,7 +513,6 @@ async function updateAvatar(avatarData) {
 // Load the avatar model
 async function loadAvatarModel(avatarData) {
     showLoading();
-    
     try {
         // Clean up existing avatar
         if (avatar) {
@@ -518,12 +530,10 @@ async function loadAvatarModel(avatarData) {
                 }
             });
         }
-
-        // Load the model
-        const loader = new THREE.GLTFLoader();
-        const modelPath = MODEL_PATHS[avatarData?.gender || 'female'];
+        // Always load the female.glb model
+        const modelPath = '/static/models/avatar/female.glb';
         console.log('Loading model from:', modelPath);
-
+        const loader = new THREE.GLTFLoader();
         const gltf = await new Promise((resolve, reject) => {
             loader.load(
                 modelPath,
@@ -535,38 +545,20 @@ async function loadAvatarModel(avatarData) {
                 reject
             );
         });
-
         // Set up the avatar
         avatar = gltf.scene;
-        
-        // Check for morph targets
-        avatar.traverse((node) => {
-            if (node.isMesh && node.morphTargetDictionary) {
-                console.log('Found morph targets:', node.morphTargetDictionary);
-                // Store reference to mesh with morph targets
-                node.morphTargetInfluences = node.morphTargetInfluences || [];
-                setupMorphTargetControls(node);
-            }
-        });
-        
-        // Scale and position the avatar appropriately
         avatar.scale.set(1, 1, 1);
         avatar.position.set(0, 0, 0);
-
-        // Add the avatar to the scene
         scene.add(avatar);
-
-        // Reset camera position for better view
-        camera.position.set(0, 1.6, 2);
-        controls.target.set(0, 1, 0);
+        camera.position.set(0, 1.4, 2.2);
+        controls.target.set(0, 0.8, 0);
         controls.update();
-
         hideLoading();
         return true;
     } catch (error) {
         console.error('Error loading avatar model:', error);
         hideLoading();
-        createFallbackAvatar();
+        // Do NOT create a fallback avatar - this prevents the placeholder figurine
         return false;
     }
 }
@@ -669,13 +661,10 @@ function createHairMaterial(hairColor) {
     });
 }
 
-// Create a simple fallback avatar
+// Create a simple fallback avatar - modified to do nothing
 function createFallbackAvatar() {
-    const geometry = new THREE.CylinderGeometry(0.3, 0.2, 1.8, 32);
-    const material = new THREE.MeshPhongMaterial({ color: 0x808080 });
-    avatar = new THREE.Mesh(geometry, material);
-    avatar.position.set(0, 0.9, 0);
-    scene.add(avatar);
+    console.log('Avatar model failed to load, not creating fallback');
+    // Do nothing - we don't want the placeholder figurine
 }
 
 // Loading overlay management
@@ -761,7 +750,7 @@ async function applyClothing(item) {
             const shirtGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.5, 16);
             const shirtMat = new THREE.MeshStandardMaterial({ color: colorValue });
             clothingMesh = new THREE.Mesh(shirtGeo, shirtMat);
-            clothingMesh.position.set(0, 1.2, 0);
+            clothingMesh.position.set(0, 0.8, 0);
             break;
             
         case 'bottom':
@@ -769,7 +758,7 @@ async function applyClothing(item) {
             const pantsGeo = new THREE.CylinderGeometry(0.25, 0.2, 0.8, 16);
             const pantsMat = new THREE.MeshStandardMaterial({ color: colorValue });
             clothingMesh = new THREE.Mesh(pantsGeo, pantsMat);
-            clothingMesh.position.set(0, 0.6, 0);
+            clothingMesh.position.set(0, 0.3, 0);
             break;
             
         case 'dress':
@@ -777,7 +766,7 @@ async function applyClothing(item) {
             const dressGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 16);
             const dressMat = new THREE.MeshStandardMaterial({ color: colorValue });
             clothingMesh = new THREE.Mesh(dressGeo, dressMat);
-            clothingMesh.position.set(0, 0.8, 0);
+            clothingMesh.position.set(0, 0.5, 0);
             break;
             
         case 'outerwear':
@@ -785,7 +774,7 @@ async function applyClothing(item) {
             const jacketGeo = new THREE.CylinderGeometry(0.35, 0.3, 0.6, 16);
             const jacketMat = new THREE.MeshStandardMaterial({ color: colorValue });
             clothingMesh = new THREE.Mesh(jacketGeo, jacketMat);
-            clothingMesh.position.set(0, 1.2, 0);
+            clothingMesh.position.set(0, 0.8, 0);
             break;
             
         case 'shoes':
@@ -819,7 +808,7 @@ async function applyClothing(item) {
             const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
             const mat = new THREE.MeshStandardMaterial({ color: colorValue });
             clothingMesh = new THREE.Mesh(geo, mat);
-            clothingMesh.position.set(0, 1.2, 0);
+            clothingMesh.position.set(0, 0.6, 0);
     }
     
     // Add shadow casting
@@ -844,6 +833,9 @@ async function applyClothing(item) {
             type: item.type
         };
     }
+    
+    // Update the preview
+    updateAvatarPreview();
     
     return clothingMesh;
 }
@@ -1357,11 +1349,11 @@ class AvatarManager {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xf0f0f0);
 
-        // Set up camera
+        // Set up camera with closer position
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
-        this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-        this.camera.position.set(0, 1.5, 4);
+        this.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+        this.camera.position.set(0, 0.8, 3.0);
 
         // Set up renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -1388,7 +1380,6 @@ class AvatarManager {
 
         const mainLight = new THREE.DirectionalLight(0xffffff, 1);
         mainLight.position.set(5, 5, 5);
-        mainLight.castShadow = true;
         this.scene.add(mainLight);
 
         const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
@@ -1537,6 +1528,9 @@ class AvatarManager {
             this.avatarModel.scale.multiplyScalar(scale);
 
             this.scene.add(this.avatarModel);
+
+            // Update the preview
+            this.updateAvatarPreview();
 
         } catch (error) {
             console.error('Error loading avatar:', error);
@@ -1753,4 +1747,198 @@ class AvatarManager {
     loadWardrobeItems(category) {
         // Implementation needed
     }
+
+    updateAvatarPreview() {
+        const previewContainer = document.getElementById('custom-avatar-preview');
+        if (!previewContainer || !this.renderer || !this.scene || !this.camera) {
+            console.warn('Cannot update preview: missing elements');
+            return;
+        }
+        while (previewContainer.firstChild) {
+            previewContainer.removeChild(previewContainer.firstChild);
+        }
+        try {
+            const previewRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            previewRenderer.setSize(previewContainer.clientWidth, previewContainer.clientHeight);
+            previewRenderer.setPixelRatio(window.devicePixelRatio);
+            previewRenderer.outputEncoding = THREE.sRGBEncoding;
+            previewContainer.appendChild(previewRenderer.domElement);
+            const previewCamera = new THREE.PerspectiveCamera(
+                40,
+                previewContainer.clientWidth / previewContainer.clientHeight,
+                0.1,
+                1000
+            );
+            previewCamera.position.set(1.2, 1.5, 3);
+            const previewScene = new THREE.Scene();
+            previewScene.background = new THREE.Color(0xf5f5f5);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            previewScene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 2, 1);
+            previewScene.add(directionalLight);
+            if (this.avatarModel) {
+                const avatarClone = this.avatarModel.clone();
+                avatarClone.scale.set(0.9, 0.9, 0.9);
+                previewScene.add(avatarClone);
+                for (const type in currentClothing) {
+                    if (currentClothing[type]) {
+                        const clothingClone = currentClothing[type].clone();
+                        previewScene.add(clothingClone);
+                    }
+                }
+            } else {
+                const geometry = new THREE.BoxGeometry(0.5, 1.7, 0.3);
+                const material = new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true });
+                const placeholder = new THREE.Mesh(geometry, material);
+                placeholder.position.y = 0.85;
+                previewScene.add(placeholder);
+            }
+            previewCamera.lookAt(0, 1, 0);
+            function animatePreview() {
+                if (!previewContainer.isConnected) return;
+                requestAnimationFrame(animatePreview);
+                previewCamera.position.x = Math.sin(Date.now() * 0.0005) * 2;
+                previewCamera.position.z = Math.cos(Date.now() * 0.0005) * 2;
+                previewCamera.lookAt(0, 1, 0);
+                previewRenderer.render(previewScene, previewCamera);
+            }
+            animatePreview();
+            console.log('Avatar preview updated');
+        } catch (error) {
+            console.error('Error updating avatar preview:', error);
+            previewContainer.innerHTML = '<div class="preview-placeholder"><i class="bi bi-exclamation-triangle"></i><p>Preview failed to load</p></div>';
+        }
+    }
+}
+
+// Helper function to position clothing on avatar
+function positionClothingOnAvatar(clothingModel, type) {
+    if (!clothingModel) return;
+    clothingModel.scale.set(1, 1, 1);
+    switch (type.toLowerCase()) {
+        case 'top':
+            clothingModel.position.set(0, 0.8, 0);
+            break;
+        case 'bottom':
+            clothingModel.position.set(0, 0.3, 0);
+            break;
+        case 'dress':
+            clothingModel.position.set(0, 0.5, 0);
+            break;
+        default:
+            clothingModel.position.set(0, 0.6, 0);
+    }
+}
+
+// Update Test Custom Top button handler
+const testCustomTopBtn = document.getElementById('test-custom-top-btn');
+if (testCustomTopBtn) {
+    testCustomTopBtn.addEventListener('click', async function() {
+        console.log('[DEBUG] Test Custom Top button clicked');
+        try {
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) loadingElement.style.display = 'flex';
+            if (!avatar) {
+                console.log('[DEBUG] No avatar found, loading female model first');
+                await loadAvatarModel({ gender: 'female' });
+            }
+            const topModelPath = '/static/models/clothing/top.glb';
+            console.log('[DEBUG] Loading top model from:', topModelPath);
+            const loader = new THREE.GLTFLoader();
+            const gltf = await new Promise((resolve, reject) => {
+                loader.load(
+                    topModelPath,
+                    resolve,
+                    (xhr) => {
+                        const progress = Math.floor((xhr.loaded / xhr.total) * 100);
+                        console.log(`Loading top model: ${progress}%`);
+                    },
+                    reject
+                );
+            });
+            if (currentClothing['top'] && scene) {
+                scene.remove(currentClothing['top']);
+                currentClothing['top'] = null;
+            }
+            const topModel = gltf.scene;
+            // Fix top positioning and scaling to match avatar
+            topModel.scale.set(0.8, 0.8, 0.8); // Scale down the top
+            topModel.position.set(0, 0.8, 0); // Position it at chest level
+            topModel.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                    if (node.material) {
+                        node.material.metalness = 0.2;
+                        node.material.roughness = 0.8;
+                        node.material.needsUpdate = true;
+                    }
+                }
+            });
+            scene.add(topModel);
+            currentClothing['top'] = topModel;
+            console.log('[DEBUG] Top model added to scene');
+            updateAvatarPreview();
+            if (typeof showMessage === 'function') showMessage('Top applied successfully', 'success');
+        } catch (error) {
+            console.error('[DEBUG] Error applying top:', error);
+            try {
+                const cylinderGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.4, 16);
+                const cylinderMat = new THREE.MeshStandardMaterial({ color: 0x3498db });
+                const cylinderMesh = new THREE.Mesh(cylinderGeo, cylinderMat);
+                cylinderMesh.position.set(0, 0.8, 0);
+                scene.add(cylinderMesh);
+                if (currentClothing['top'] && scene) {
+                    scene.remove(currentClothing['top']);
+                }
+                currentClothing['top'] = cylinderMesh;
+                updateAvatarPreview();
+                if (typeof showMessage === 'function') showMessage('Applied basic top (fallback)', 'warning');
+            } catch (fallbackError) {
+                console.error('[DEBUG] Fallback method failed:', fallbackError);
+                if (typeof showMessage === 'function') showMessage('Failed to apply top', 'error');
+            }
+        } finally {
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) loadingElement.style.display = 'none';
+        }
+    });
+}
+
+// Handle load female model button click
+const loadFemaleModelBtn = document.getElementById('load-female-model');
+if (loadFemaleModelBtn) {
+    loadFemaleModelBtn.addEventListener('click', async function() {
+        try {
+            // Show loading indicator
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) {
+                loadingElement.style.display = 'flex';
+            }
+            // Make sure avatarContainer is defined
+            avatarContainer = document.getElementById('avatar-container');
+            if (!avatarContainer) {
+                console.error('Avatar container not found');
+                throw new Error('Avatar container not found');
+            }
+            // Initialize scene if needed
+            if (!scene) {
+                init();
+            }
+            // Load the female model - directly use loadAvatarModel
+            console.log('Loading female avatar model');
+            await loadAvatarModel({ gender: 'female' });
+            if (typeof showMessage === 'function') showMessage('Female model loaded successfully', 'success');
+        } catch (error) {
+            console.error('Error loading female model:', error);
+            if (typeof showMessage === 'function') showMessage('Failed to load female model: ' + error.message, 'error');
+        } finally {
+            // Hide loading indicator
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+        }
+    });
 }
