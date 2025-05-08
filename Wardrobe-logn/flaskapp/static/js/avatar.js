@@ -157,9 +157,9 @@ function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
 
-    // Set up camera with closer position
-    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0.8, 3.0);
+    // Set up camera with further position
+    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.5, 4.0);
 
     // Set up renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -495,9 +495,9 @@ async function updateAvatar(avatarData) {
         // Update UI controls to match avatar
         updateUIControls(avatarData);
         
-        // Reset camera position for closer view
-        camera.position.set(0, 1.4, 2.2);
-        controls.target.set(0, 0.8, 0);
+        // Reset camera position for further view
+        camera.position.set(0, 1.5, 4.0);
+        controls.target.set(0, 0.9, 0);
         controls.update();
         
         // Update the preview
@@ -547,11 +547,11 @@ async function loadAvatarModel(avatarData) {
         });
         // Set up the avatar
         avatar = gltf.scene;
-        avatar.scale.set(1, 1, 1);
-        avatar.position.set(0, 0, 0);
+        avatar.scale.set(1.1, 1.1, 1.1);  // Make avatar slightly bigger
+        avatar.position.set(0, 0, 0);  // Keep position at origin
         scene.add(avatar);
-        camera.position.set(0, 1.4, 2.2);
-        controls.target.set(0, 0.8, 0);
+        camera.position.set(0, 1.5, 4.0);
+        controls.target.set(0, 0.9, 0);
         controls.update();
         hideLoading();
         return true;
@@ -661,10 +661,28 @@ function createHairMaterial(hairColor) {
     });
 }
 
-// Create a simple fallback avatar - modified to do nothing
+// Create a simple fallback avatar
 function createFallbackAvatar() {
-    console.log('Avatar model failed to load, not creating fallback');
-    // Do nothing - we don't want the placeholder figurine
+    const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.25, 1.2, 16);
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xddccbb });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.set(0, 0.6, 0);
+    
+    const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+    const headMaterial = new THREE.MeshStandardMaterial({ color: 0xddccbb });
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.set(0, 1.3, 0);
+    
+    const fallbackAvatar = new THREE.Group();
+    fallbackAvatar.add(body);
+    fallbackAvatar.add(head);
+    
+    scene.add(fallbackAvatar);
+    avatar = fallbackAvatar;
+    
+    camera.position.set(0, 1.5, 4.0);
+    controls.target.set(0, 0.9, 0);
+    controls.update();
 }
 
 // Loading overlay management
@@ -1349,11 +1367,11 @@ class AvatarManager {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xf0f0f0);
 
-        // Set up camera with closer position
+        // Set up camera with further position
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
-        this.camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-        this.camera.position.set(0, 0.8, 3.0);
+        this.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+        this.camera.position.set(0, 1.5, 4.0);
 
         // Set up renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -1929,6 +1947,9 @@ if (loadFemaleModelBtn) {
             // Load the female model - directly use loadAvatarModel
             console.log('Loading female avatar model');
             await loadAvatarModel({ gender: 'female' });
+            camera.position.set(0, 1.5, 4.0);
+            controls.target.set(0, 0.9, 0);
+            controls.update();
             if (typeof showMessage === 'function') showMessage('Female model loaded successfully', 'success');
         } catch (error) {
             console.error('Error loading female model:', error);
