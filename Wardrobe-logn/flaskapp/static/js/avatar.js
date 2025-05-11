@@ -159,7 +159,7 @@ function init() {
 
     // Set up camera with further position
     camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.5, 4.0);
+    camera.position.set(0, 0, 0.0);
 
     // Set up renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -743,119 +743,61 @@ async function tryOnClothing(itemId) {
 
 // Apply clothing to avatar
 async function applyClothing(item) {
-    // This is a simplified version - in a real implementation, 
-    // you would load 3D models for each clothing item
-    
-    // For now, we'll create a simple placeholder representation
-    const type = item.type || 'unknown';
-    
-    // Remove existing clothing of the same type
-    if (currentClothing[type]) {
-        scene.remove(currentClothing[type]);
-        currentClothing[type] = null;
+    console.log('[DEBUG] Applying clothing item:', item);
+    const category = getCustomClothingCategory(item.type);
+    console.log('[DEBUG] Clothing category:', category);
+
+    // Remove existing clothing of the same category
+    if (currentClothing[category]) {
+        console.log('[DEBUG] Removing existing clothing of category:', category);
+        scene.remove(currentClothing[category]);
+        currentClothing[category] = null;
     }
-    
-    // Parse color
-    const color = item.color || '#FFFFFF';
-    const colorValue = new THREE.Color(color);
-    
-    // Create a clothing item based on type
-    let clothingMesh;
-    
-    switch (type) {
-        case 'top':
-            // Create a simple shirt shape
-            const shirtGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.5, 16);
-            const shirtMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(shirtGeo, shirtMat);
-            clothingMesh.position.set(0, 0.8, 0);
-            break;
-            
-        case 'bottom':
-            // Create simple pants
-            const pantsGeo = new THREE.CylinderGeometry(0.25, 0.2, 0.8, 16);
-            const pantsMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(pantsGeo, pantsMat);
-            clothingMesh.position.set(0, 0.3, 0);
-            break;
-            
-        case 'dress':
-            // Create a simple dress shape
-            const dressGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 16);
-            const dressMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(dressGeo, dressMat);
-            clothingMesh.position.set(0, 0.5, 0);
-            break;
-            
-        case 'outerwear':
-            // Create a simple jacket shape
-            const jacketGeo = new THREE.CylinderGeometry(0.35, 0.3, 0.6, 16);
-            const jacketMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(jacketGeo, jacketMat);
-            clothingMesh.position.set(0, 0.8, 0);
-            break;
-            
-        case 'shoes':
-            // Create simple shoes
-            const shoeGeo = new THREE.BoxGeometry(0.2, 0.1, 0.3);
-            const shoeMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            
-            // Create left and right shoes
-            const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
-            leftShoe.position.set(-0.15, 0.05, 0);
-            
-            const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
-            rightShoe.position.set(0.15, 0.05, 0);
-            
-            // Create a group to hold both shoes
-            clothingMesh = new THREE.Group();
-            clothingMesh.add(leftShoe);
-            clothingMesh.add(rightShoe);
-            break;
-            
-        case 'accessory':
-            // Create a simple accessory (like a hat)
-            const hatGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
-            const hatMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(hatGeo, hatMat);
-            clothingMesh.position.set(0, 1.9, 0);
-            break;
-            
-        default:
-            // Generic placeholder
-            const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-            const mat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(geo, mat);
-            clothingMesh.position.set(0, 0.6, 0);
-    }
-    
-    // Add shadow casting
-    if (clothingMesh) {
-        clothingMesh.traverse((node) => {
-            if (node.isMesh) {
-                node.castShadow = true;
-                node.receiveShadow = true;
+
+    const modelPath = getCustomModelPath(item.type);
+    console.log('[DEBUG] Loading model from path:', modelPath);
+
+    try {
+        const gltf = await gltfLoader.loadAsync(modelPath);
+        console.log('[DEBUG] Model loaded successfully');
+
+        const model = gltf.scene;
+        const adjustments = CUSTOM_POSITION_ADJUSTMENTS[category] || { y: 0, scale: 1 };
+
+        // Apply position and scale
+        model.position.set(0, adjustments.y, 0);
+        model.scale.set(adjustments.scale, adjustments.scale, adjustments.scale);
+        
+        // Apply rotation if specified
+        if (adjustments.rotation) {
+            model.rotation.set(
+                adjustments.rotation.x,
+                adjustments.rotation.y,
+                adjustments.rotation.z
+            );
+        }
+
+        // Enable shadows
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
             }
         });
-        
-        // Add to scene
-        scene.add(clothingMesh);
-        
-        // Store for later reference
-        currentClothing[type] = clothingMesh;
-        
-        // Attach item data for reference
-        clothingMesh.userData = {
-            itemId: item.id,
-            label: item.label,
-            type: item.type
-        };
+
+        scene.add(model);
+        currentClothing[category] = model;
+        console.log('[DEBUG] Clothing applied successfully');
+    } catch (error) {
+        console.error('[DEBUG] Error loading model:', error);
+        // Fallback to basic shape if model loading fails
+        const fallbackMesh = createFallbackClothing(item);
+        if (fallbackMesh) {
+            scene.add(fallbackMesh);
+            currentClothing[category] = fallbackMesh;
+            console.log('[DEBUG] Fallback clothing applied');
+        }
     }
-    
-    // Update the preview
-    updateAvatarPreview();
-    
-    return clothingMesh;
 }
 
 // Load wardrobe items
@@ -870,28 +812,67 @@ async function loadWardrobeItems(category, containerId = 'wardrobe-items') {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
 
+        if (!items || items.length === 0) {
+            container.innerHTML = '<div class="error">No items found in this category</div>';
+            return;
+        }
+
         items.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.className = 'wardrobe-item';
             itemElement.dataset.itemId = item._id;
-            itemElement.dataset.itemType = item.type;
-            itemElement.dataset.imageUrl = item.imageUrl;
+            itemElement.dataset.itemType = item.type || item.category;
+            itemElement.dataset.category = category;
+            itemElement.dataset.imageUrl = item.file_path || item.imageUrl;
             
             itemElement.innerHTML = `
-                <img src="${item.imageUrl}" alt="${item.label}">
+                <img src="${item.file_path || item.imageUrl}" alt="${item.label}" onerror="this.onerror=null;this.src='/static/image/no-image.png';">
                 <div class="item-name">${item.label}</div>
-                <div class="item-category">${item.type}</div>
+                <div class="item-category">${item.type || item.category}</div>
             `;
 
             // Add click handler for selection
-            itemElement.addEventListener('click', function() {
+            itemElement.addEventListener('click', async function() {
+                // Toggle selection state
                 this.classList.toggle('selected');
+                
+                // Get the active tab
+                const customTab = document.getElementById('custom-avatar-tab');
+                const rpmTab = document.getElementById('rpm-avatar-tab');
+                
+                if (this.classList.contains('selected')) {
+                    // Item was selected - apply clothing
+                    if (customTab && customTab.classList.contains('active')) {
+                        console.log('[DEBUG] Custom avatar tab is active. Applying clothing to custom avatar.');
+                        await avatarManager.loadClothing(item._id, item.type || item.category);
+                        avatarManager.updateAvatarPreview && avatarManager.updateAvatarPreview();
+                        if (typeof showMessage === 'function') showMessage(item.type + ' applied to custom avatar', 'success');
+                    } else if (rpmTab && rpmTab.classList.contains('active')) {
+                        console.log('[DEBUG] RPM avatar tab is active. Applying clothing to RPM avatar.');
+                        await rpmManager.loadClothing(item._id, item.type || item.category);
+                        if (typeof showMessage === 'function') showMessage(item.type + ' applied to RPM avatar', 'success');
+                    }
+                } else {
+                    // Item was deselected - remove clothing
+                    if (customTab && customTab.classList.contains('active')) {
+                        console.log('[DEBUG] Custom avatar tab is active. Removing clothing from custom avatar.');
+                        avatarManager.removeClothing(item._id);
+                        avatarManager.updateAvatarPreview && avatarManager.updateAvatarPreview();
+                    } else if (rpmTab && rpmTab.classList.contains('active')) {
+                        console.log('[DEBUG] RPM avatar tab is active. Removing clothing from RPM avatar.');
+                        rpmManager.removeClothing(item._id);
+                    }
+                }
             });
 
             container.appendChild(itemElement);
         });
     } catch (error) {
         console.error('Error loading wardrobe items:', error);
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = '<div class="error">Failed to load items</div>';
+        }
     }
 }
 
@@ -1345,7 +1326,6 @@ class AvatarManager {
             console.error('Container element is required for AvatarManager');
             return;
         }
-        
         this.container = options.container;
         this.scene = null;
         this.camera = null;
@@ -1354,10 +1334,59 @@ class AvatarManager {
         this.avatarModel = null;
         this.animations = {};
         this.mixer = null;
-        
+        // Add clothing management
+        this.clothingItems = new Map();
+        this.gltfLoader = new THREE.GLTFLoader();
+        this.positionAdjustments = {
+            'tops': { y: 1.4, scale: 0.5 },
+            'bottoms': { y: 0.6, scale: 0.5 },
+            'dresses': { y: 1.0, scale: 0.6 },
+            'skirts': { y: 0.7, scale: 0.5 },
+            'outerwear': { y: 1.3, scale: 0.55 },
+            'shoes': { y: 0.1, scale: 0.4 },
+            'accessories': { y: 1.5, scale: 0.4 }
+        };
+        this.categoryMapping = {
+            'tops': ['T-shirt/top', 'Shirt', 'Pullover', 'Top', 'tshirt'],
+            'bottoms': ['Trouser', 'Pants', 'pants', 'Jeans', 'jeans'],
+            'dresses': ['Dress', 'dress'],
+            'skirts': ['Skirt', 'skirt', 'maxi_skirt'],
+            'outerwear': ['Jacket', 'Coat'],
+            'shoes': ['Sandal', 'Sneaker', 'Ankle boot'],
+            'accessories': ['Bag']
+        };
+        this.modelMapping = {
+            // Tops
+            'T-shirt/top': '/static/models/clothing/top.glb',
+            'Shirt': '/static/models/clothing/top.glb',
+            'Pullover': '/static/models/clothing/top.glb',
+            'Top': '/static/models/clothing/top.glb',
+            'tshirt': '/static/models/clothing/top.glb',
+            // Bottoms
+            'Trouser': '/static/models/clothing/pants.glb',
+            'Pants': '/static/models/clothing/pants.glb',
+            'pants': '/static/models/clothing/pants.glb',
+            'Jeans': '/static/models/clothing/jeans.glb',
+            'jeans': '/static/models/clothing/jeans.glb',
+            // Dresses
+            'Dress': '/static/models/clothing/dress.glb',
+            'dress': '/static/models/clothing/dress.glb',
+            // Skirts
+            'Skirt': '/static/models/clothing/skirt.glb',
+            'skirt': '/static/models/clothing/skirt.glb',
+            'maxi_skirt': '/static/models/clothing/maxi_skirt.glb',
+            // Outerwear
+            'Jacket': '/static/models/clothing/jacket.glb',
+            'Coat': '/static/models/clothing/coat.glb',
+            // Shoes
+            'Sandal': '/static/models/clothing/sandal.glb',
+            'Sneaker': '/static/models/clothing/sneaker.glb',
+            'Ankle boot': '/static/models/clothing/ankle_boot.glb',
+            // Accessories
+            'Bag': '/static/models/clothing/bag.glb'
+        };
         // Initialize the 3D scene
         this.init();
-        
         // Set up event listeners
         this.setupEventListeners();
     }
@@ -1834,21 +1863,15 @@ class AvatarManager {
             console.warn('[DEBUG] No clothingItems map found.');
             return;
         }
-
         console.log('[DEBUG] Clearing all clothing items...');
         for (const [itemId, item] of this.clothingItems.entries()) {
             if (item.mesh) {
-                console.log(`[DEBUG] Removing mesh for itemId: ${itemId}`, item.mesh);
-
-                // Remove from any parent
                 if (item.mesh.parent) {
                     item.mesh.parent.remove(item.mesh);
                     console.log(`[DEBUG] Removed mesh from parent for itemId: ${itemId}`);
                 } else {
                     console.warn(`[DEBUG] Mesh for itemId: ${itemId} had no parent`);
                 }
-
-                // Dispose geometry and material
                 item.mesh.traverse((node) => {
                     if (node.isMesh) {
                         if (node.geometry) {
@@ -1873,19 +1896,177 @@ class AvatarManager {
                 console.warn(`[DEBUG] No mesh found for itemId: ${itemId}`);
             }
         }
-
         this.clothingItems.clear();
         console.log('[DEBUG] clothingItems map cleared.');
-
-        // Deselect all wardrobe items in the UI
         document.querySelectorAll('.wardrobe-item.selected').forEach(item => item.classList.remove('selected'));
         console.log('[DEBUG] Deselected all wardrobe items in UI.');
-
-        // Force a render update
         if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
             console.log('[DEBUG] Forced scene render after clearing clothing.');
         }
+    }
+
+    async loadClothing(itemId, itemType) {
+        if (!this.avatarModel) {
+            console.error('No avatar loaded. Please load an avatar first.');
+            return false;
+        }
+        if (!this.gltfLoader) {
+            this.gltfLoader = new THREE.GLTFLoader();
+        }
+        if (!this.positionAdjustments) {
+            this.positionAdjustments = {
+                'tops': { y: 1.4, scale: 0.5 },
+                'bottoms': { y: 0.6, scale: 0.5 },
+                'dresses': { y: 1.0, scale: 0.6 },
+                'skirts': { y: 0.7, scale: 0.5 },
+                'outerwear': { y: 1.3, scale: 0.55 },
+                'shoes': { y: 0.1, scale: 0.4 },
+                'accessories': { y: 1.5, scale: 0.4 }
+            };
+        }
+        try {
+            console.log('--- [Wardrobe Debug] ---');
+            console.log('Loading clothing item:', { itemId, itemType });
+            const category = this.getClothingCategory(itemType);
+            console.log(`Mapped itemType "${itemType}" to category: "${category}"`);
+            await this.removeClothingByCategory(category);
+            const modelPath = this.getModelPath(itemType);
+            console.log(`Model path for "${itemType}": ${modelPath}`);
+            const gltf = await new Promise((resolve, reject) => {
+                this.gltfLoader.load(
+                    modelPath,
+                    resolve,
+                    (xhr) => {
+                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                        console.log(`[${itemType}] Loading model: ${percent}%`);
+                    },
+                    reject
+                );
+            });
+            let model = gltf.scene;
+            if (!model.position || !model.scale) {
+                model = model.children.find(child => child.position && child.scale) || model;
+            }
+            const adjustment = this.positionAdjustments[category] || { y: 1.2, scale: 0.5 };
+            console.log(`Position/scale for category "${category}":`, adjustment);
+            if (model && model.position && model.scale) {
+                model.position.set(0, adjustment.y, 0);
+                model.scale.set(adjustment.scale, adjustment.scale, adjustment.scale);
+            } else {
+                console.error('Model is missing position or scale property:', model);
+                return false;
+            }
+            this.avatarModel.add(model);
+            console.log(`[DEBUG] ${itemType} added as child of avatarModel`);
+            this.clothingItems.set(itemId, {
+                mesh: model,
+                type: itemType,
+                category: category
+            });
+            return true;
+        } catch (error) {
+            console.error('Error loading clothing:', error);
+            return false;
+        }
+    }
+
+    toggleDebug() {
+        this.debug = !this.debug;
+        if (this.currentClothing && this.debug) {
+            const boxHelper = new THREE.BoxHelper(this.currentClothing, 0xff0000);
+            this.scene.add(boxHelper);
+            const axesHelper = new THREE.AxesHelper(1);
+            this.currentClothing.add(axesHelper);
+        }
+    }
+
+    removeClothing(itemId) {
+        if (!this.clothingItems || !this.clothingItems.has(itemId)) {
+            return false;
+        }
+        const item = this.clothingItems.get(itemId);
+        if (item.mesh) {
+            if (item.mesh.parent) {
+                item.mesh.parent.remove(item.mesh);
+                console.log(`[DEBUG] Removed mesh from parent for itemId: ${itemId}`);
+            } else {
+                console.warn(`[DEBUG] Mesh for itemId: ${itemId} had no parent`);
+            }
+            item.mesh.traverse((node) => {
+                if (node.isMesh) {
+                    if (node.geometry) {
+                        node.geometry.dispose();
+                        console.log(`[DEBUG] Disposed geometry for itemId: ${itemId}`);
+                    }
+                    if (node.material) {
+                        if (Array.isArray(node.material)) {
+                            node.material.forEach(mat => {
+                                if (mat.map) mat.map.dispose();
+                                mat.dispose();
+                            });
+                        } else {
+                            if (node.material.map) node.material.map.dispose();
+                            node.material.dispose();
+                        }
+                        console.log(`[DEBUG] Disposed material for itemId: ${itemId}`);
+                    }
+                }
+            });
+        } else {
+            console.warn(`[DEBUG] No mesh found for itemId: ${itemId}`);
+        }
+        this.clothingItems.delete(itemId);
+        return true;
+    }
+
+    removeClothingByCategory(category) {
+        if (!this.clothingItems) return;
+        const itemsToRemove = [];
+        for (const [itemId, item] of this.clothingItems.entries()) {
+            if (item.category === category) {
+                itemsToRemove.push(itemId);
+            }
+        }
+        for (const itemId of itemsToRemove) {
+            this.removeClothing(itemId);
+        }
+    }
+
+    getClothingCategory(itemType) {
+        if (!itemType) return 'tops';
+        const lowerItemType = itemType.toLowerCase();
+        for (const [category, types] of Object.entries(this.categoryMapping)) {
+            for (const type of types) {
+                if (type.toLowerCase() === lowerItemType || lowerItemType.includes(type.toLowerCase())) {
+                    return category;
+                }
+            }
+        }
+        return 'tops';
+    }
+
+    getModelPath(itemType) {
+        if (!itemType) return '/static/models/clothing/top.glb'; // Default
+        // First try exact match
+        if (this.modelMapping[itemType]) {
+            return this.modelMapping[itemType];
+        }
+        // Try case-insensitive match
+        const lowerItemType = itemType.toLowerCase();
+        for (const [type, path] of Object.entries(this.modelMapping)) {
+            if (type.toLowerCase() === lowerItemType) {
+                return path;
+            }
+        }
+        // Try partial match
+        for (const [type, path] of Object.entries(this.modelMapping)) {
+            if (lowerItemType.includes(type.toLowerCase()) || type.toLowerCase().includes(lowerItemType)) {
+                return path;
+            }
+        }
+        // Default to top.glb
+        return '/static/models/clothing/top.glb';
     }
 }
 
@@ -2006,7 +2187,7 @@ if (loadFemaleModelBtn) {
             // Load the female model - directly use loadAvatarModel
             console.log('Loading female avatar model');
             await loadAvatarModel({ gender: 'female' });
-            camera.position.set(0, 1.5, 4.0);
+            camera.position.set(0, 0.9, 0.0);
             controls.target.set(0, 0.9, 0);
             controls.update();
             if (typeof showMessage === 'function') showMessage('Female model loaded successfully', 'success');
@@ -2021,4 +2202,249 @@ if (loadFemaleModelBtn) {
             }
         }
     });
+}
+
+// Shared wardrobe item click handler for both avatars
+const wardrobeContainer = document.getElementById('wardrobe-items');
+if (wardrobeContainer) {
+    wardrobeContainer.addEventListener('click', async function(event) {
+        console.log('[DEBUG] Wardrobe click handler triggered');
+        const itemElement = event.target.closest('.wardrobe-item');
+        if (!itemElement) {
+            console.log('[DEBUG] Clicked element is not a wardrobe item.');
+            return;
+        }
+
+        const itemId = itemElement.dataset.itemId;
+        const itemType = itemElement.dataset.itemType;
+        if (!itemId || !itemType) {
+            console.log('[DEBUG] Wardrobe item missing data attributes:', itemElement);
+            return;
+        }
+
+        try {
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) loadingElement.style.display = 'flex';
+
+            // Get the active tab
+            const customTab = document.getElementById('custom-avatar-tab');
+            const rpmTab = document.getElementById('rpm-avatar-tab');
+
+            console.log('[DEBUG] Active tabs:', {
+                customTabActive: customTab?.classList.contains('active'),
+                rpmTabActive: rpmTab?.classList.contains('active')
+            });
+
+            // Toggle selection state
+            itemElement.classList.toggle('selected');
+
+            if (itemElement.classList.contains('selected')) {
+                // Item was selected - apply clothing
+                if (customTab && customTab.classList.contains('active')) {
+                    console.log('[DEBUG] Custom avatar tab is active. Applying clothing to custom avatar.');
+                    // Use the custom avatar's applyClothing function
+                    await applyClothing({
+                        id: itemId,
+                        type: itemType,
+                        label: itemElement.querySelector('.item-name')?.textContent || itemType
+                    });
+                    updateAvatarPreview();
+                    if (typeof showMessage === 'function') {
+                        showMessage(`${itemType} applied to custom avatar`, 'success');
+                    }
+                } else if (rpmTab && rpmTab.classList.contains('active')) {
+                    console.log('[DEBUG] RPM avatar tab is active. Applying clothing to RPM avatar.');
+                    await rpmManager.loadClothing(itemId, itemType);
+                    if (typeof showMessage === 'function') {
+                        showMessage(`${itemType} applied to RPM avatar`, 'success');
+                    }
+                }
+            } else {
+                // Item was deselected - remove clothing
+                if (customTab && customTab.classList.contains('active')) {
+                    console.log('[DEBUG] Custom avatar tab is active. Removing clothing from custom avatar.');
+                    const category = getCustomClothingCategory(itemType);
+                    if (currentClothing[category]) {
+                        scene.remove(currentClothing[category]);
+                        currentClothing[category] = null;
+                        updateAvatarPreview();
+                    }
+                } else if (rpmTab && rpmTab.classList.contains('active')) {
+                    console.log('[DEBUG] RPM avatar tab is active. Removing clothing from RPM avatar.');
+                    rpmManager.removeClothing(itemId);
+                }
+            }
+        } catch (error) {
+            console.error('[DEBUG] Error applying clothing:', error);
+            if (typeof showMessage === 'function') {
+                showMessage('Failed to apply clothing: ' + error.message, 'error');
+            }
+        } finally {
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) loadingElement.style.display = 'none';
+        }
+    });
+}
+
+// Update model mapping to match actual file names
+const CUSTOM_MODEL_MAPPING = {
+    // Tops
+    'T-shirt/top': '/static/models/clothing/tshirt.glb',
+    'Shirt': '/static/models/clothing/top.glb',
+    'Pullover': '/static/models/clothing/top_custom.glb',
+    'Top': '/static/models/clothing/newtop.glb',
+    'tshirt': '/static/models/clothing/tshirt.glb',
+    // Bottoms
+    'Trouser': '/static/models/clothing/pants.glb',
+    'Pants': '/static/models/clothing/pants.glb',
+    'pants': '/static/models/clothing/pants.glb',
+    'Jeans': '/static/models/clothing/jeans.glb',
+    'jeans': '/static/models/clothing/jeans.glb',
+    // Dresses
+    'Dress': '/static/models/clothing/dress.glb',
+    'dress': '/static/models/clothing/dress.glb',
+    // Skirts
+    'Skirt': '/static/models/clothing/skirt.glb',
+    'skirt': '/static/models/clothing/skirt.glb',
+    'maxi_skirt': '/static/models/clothing/maxi_skirt.glb'
+};
+
+// Update position adjustments for better placement
+const CUSTOM_POSITION_ADJUSTMENTS = {
+    'tops': { y: 1.4, scale: 0.5, rotation: { x: 0, y: 0, z: 0 } },
+    'bottoms': { y: 0.6, scale: 0.5, rotation: { x: 0, y: 0, z: 0 } },
+    'dresses': { y: 1.0, scale: 0.5, rotation: { x: 0, y: 0, z: 0 } },
+    'skirts': { y: 0.8, scale: 0.5, rotation: { x: 0, y: 0, z: 0 } }
+};
+
+// Helper function to get model path for custom avatar
+function getCustomModelPath(itemType) {
+    if (!itemType) return '/static/models/clothing/top.glb'; // Default
+    // First try exact match
+    if (CUSTOM_MODEL_MAPPING[itemType]) {
+        return CUSTOM_MODEL_MAPPING[itemType];
+    }
+    // Try case-insensitive match
+    const lowerItemType = itemType.toLowerCase();
+    for (const [type, path] of Object.entries(CUSTOM_MODEL_MAPPING)) {
+        if (type.toLowerCase() === lowerItemType) {
+            return path;
+        }
+    }
+    // Try partial match
+    for (const [type, path] of Object.entries(CUSTOM_MODEL_MAPPING)) {
+        if (lowerItemType.includes(type.toLowerCase()) || type.toLowerCase().includes(lowerItemType)) {
+            return path;
+        }
+    }
+    // Default to top.glb
+    return '/static/models/clothing/top.glb';
+}
+
+// Helper function to get category for custom avatar
+function getCustomClothingCategory(itemType) {
+    if (!itemType) return 'tops';
+    const lowerItemType = itemType.toLowerCase();
+    for (const [category, types] of Object.entries(CUSTOM_CATEGORY_MAPPING)) {
+        for (const type of types) {
+            if (type.toLowerCase() === lowerItemType || lowerItemType.includes(type.toLowerCase())) {
+                return category;
+            }
+        }
+    }
+    return 'tops';
+}
+
+// Fallback function to create basic shapes if model loading fails
+function createFallbackClothing(item) {
+    const type = item.type || 'unknown';
+    const color = item.color || '#FFFFFF';
+    const colorValue = new THREE.Color(color);
+    
+    let clothingMesh;
+    
+    switch (type) {
+        case 'top':
+            const shirtGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.5, 16);
+            const shirtMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(shirtGeo, shirtMat);
+            clothingMesh.position.set(0, 0.8, 0);
+            break;
+            
+        case 'bottom':
+            const pantsGeo = new THREE.CylinderGeometry(0.25, 0.2, 0.8, 16);
+            const pantsMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(pantsGeo, pantsMat);
+            clothingMesh.position.set(0, 0.3, 0);
+            break;
+            
+        case 'dress':
+            // Create a simple dress shape
+            const dressGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 16);
+            const dressMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(dressGeo, dressMat);
+            clothingMesh.position.set(0, 0.5, 0);
+            break;
+            
+        case 'outerwear':
+            // Create a simple jacket shape
+            const jacketGeo = new THREE.CylinderGeometry(0.35, 0.3, 0.6, 16);
+            const jacketMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(jacketGeo, jacketMat);
+            clothingMesh.position.set(0, 0.8, 0);
+            break;
+            
+        case 'shoes':
+            // Create simple shoes
+            const shoeGeo = new THREE.BoxGeometry(0.2, 0.1, 0.3);
+            const shoeMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            
+            // Create left and right shoes
+            const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
+            leftShoe.position.set(-0.15, 0.05, 0);
+            
+            const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
+            rightShoe.position.set(0.15, 0.05, 0);
+            
+            // Create a group to hold both shoes
+            clothingMesh = new THREE.Group();
+            clothingMesh.add(leftShoe);
+            clothingMesh.add(rightShoe);
+            break;
+            
+        case 'accessory':
+            // Create a simple accessory (like a hat)
+            const hatGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
+            const hatMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(hatGeo, hatMat);
+            clothingMesh.position.set(0, 1.9, 0);
+            break;
+            
+        default:
+            // Generic placeholder
+            const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            const mat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(geo, mat);
+            clothingMesh.position.set(0, 0.6, 0);
+    }
+    
+    if (clothingMesh) {
+        clothingMesh.traverse((node) => {
+            if (node.isMesh) {
+                node.castShadow = true;
+                node.receiveShadow = true;
+            }
+        });
+        
+        scene.add(clothingMesh);
+        currentClothing[type] = clothingMesh;
+        clothingMesh.userData = {
+            itemId: item.id,
+            label: item.label,
+            type: item.type
+        };
+    }
+    
+    updateAvatarPreview();
+    return clothingMesh;
 }
