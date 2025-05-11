@@ -35,7 +35,7 @@ class RPMAvatarManager {
             0.1,
             1000
         );
-        this.camera.position.set(0, 1.6, 2.5);
+        this.camera.position.set(0, -2.0, 2.5);
 
         // Create renderer
         this.renderer = new THREE.WebGLRenderer({ 
@@ -61,7 +61,7 @@ class RPMAvatarManager {
         this.controls.maxDistance = 4;
         this.controls.minPolarAngle = Math.PI / 4;
         this.controls.maxPolarAngle = Math.PI / 2;
-        this.controls.target.set(0, 1.2, 0);
+        this.controls.target.set(0, -2.0, 0);
         
         // Setup lighting
         this.setupLighting();
@@ -274,6 +274,9 @@ class RPMAvatarManager {
             });
             
             this.avatarModel = gltf.scene;
+            // Scale the avatar to make it a little bigger
+            this.avatarModel.scale.set(0.4, 0.4, 0.4); // Set scale to 40% of original size
+            
             this.avatarModel.traverse((node) => {
                 if (node.isMesh) {
                     node.castShadow = true;
@@ -501,13 +504,13 @@ class RPMAvatarManager {
     centerCameraOnAvatar() {
         if (!this.avatarModel || !this.camera) return;
 
-        // Set initial camera position - moved even further back (z from 3.5 to 4.5)
-        this.camera.position.set(0, 1.6, 4.5);
-        this.controls.target.set(0, 1.2, 0);
+        // Set initial camera position
+        this.camera.position.set(0, 0, 0.5);
+        this.controls.target.set(0,0, 0);
         
-        // Set camera limits - adjusted for further viewing
-        this.controls.minDistance = 3.0;  // Increased minimum distance
-        this.controls.maxDistance = 6.0;  // Increased maximum distance
+        // Set camera limits
+        this.controls.minDistance = 3.0;
+        this.controls.maxDistance = 6.0;
         this.controls.minPolarAngle = Math.PI / 4;
         this.controls.maxPolarAngle = Math.PI / 2;
         
