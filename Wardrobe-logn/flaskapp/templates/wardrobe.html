@@ -49,34 +49,397 @@
         display: inline-block;
         vertical-align: middle;
     }
+
+    /* Material Viewer Styles */
+    #canvas-container {
+        width: 100%;
+        height: 400px;
+        background-color: #f5f5f5;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .viewer-controls {
+        background-color: var(--secondary-color, #f8f8f8);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .material-preview {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .material-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-right: 15px;
+        border: 1px solid #ddd;
+    }
+
+    .material-info {
+        flex: 1;
+    }
+
+    .material-name {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .material-type {
+        font-style: italic;
+        color: #666;
+    }
+
+    .pattern-preview {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+    }
+
+    .pattern-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        background-color: var(--accent-color, #b99593);
+        color: white;
+        border-radius: 12px;
+        font-size: 12px;
+        margin-right: 5px;
+    }
+
+    .material-settings {
+        margin-top: 15px;
+    }
+
+    .setting-group {
+        margin-bottom: 12px;
+    }
+
+    .setting-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .slider-container {
+        display: flex;
+        align-items: center;
+    }
+
+    .slider {
+        flex: 1;
+        margin-right: 10px;
+    }
+
+    .slider-value {
+        width: 40px;
+        text-align: right;
+    }
+
+    #loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255,255,255,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+    }
+
+    .spinner {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--accent-color, #b99593);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .tab-nav {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 15px;
+    }
+
+    .tab-button {
+        background: none;
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #666;
+        border-bottom: 3px solid transparent;
+    }
+
+    .tab-button.active {
+        color: var(--accent-color, #b99593);
+        border-bottom: 3px solid var(--accent-color, #b99593);
+    }
+
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    /* Toggle for upload/view modes */
+    .mode-toggle {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .mode-toggle .btn {
+        border-radius: 0;
+    }
+
+    .mode-toggle .btn:first-child {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+    }
+
+    .mode-toggle .btn:last-child {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+    }
+
+    /* Container modes */
+    .upload-container, .viewer-container {
+        display: none;
+    }
+
+    .upload-container.active, .viewer-container.active {
+        display: block;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1 class="center">Add clothes to your wardrobe:</h1>
-    <form id="upload-file" action="/predict" method="post" enctype="multipart/form-data">
-        <label for="imageUpload" class="upload-label btn btn-primary">
-            Choose Image...
-        </label>
-        <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg" style="display: none;">
-    </form>
-    <div class="image-section" style="display:none;">
-        <div class="img-preview">
-            <div id="imagePreview"></div>
+<div class="container">
+    <div class="mode-toggle">
+        <button class="btn btn-primary active" id="upload-mode-btn">Upload Clothes</button>
+        <button class="btn btn-secondary" id="view-mode-btn">Material Viewer</button>
+    </div>
+
+    <!-- Upload Mode Content -->
+    <div class="upload-container active">
+        <div class="card">
+            <h1 class="center">Add clothes to your wardrobe:</h1>
+            <form id="upload-file" action="/predict" method="post" enctype="multipart/form-data">
+                <label for="imageUpload" class="upload-label btn btn-primary">
+                    Choose Image...
+                </label>
+                <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg" style="display: none;">
+            </form>
+            <div class="image-section" style="display:none;">
+                <div class="img-preview">
+                    <div id="imagePreview"></div>
+                </div>
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-primary btn-lg" id="btn-predict">Predict and Save</button>
+                </div>
+            </div>
         </div>
-        <div class="text-center mt-3">
-            <button type="button" class="btn btn-primary btn-lg" id="btn-predict">Predict and Save</button>
+
+        <div class="card">
+            <h2>The result:</h2>
+            <div class="loader" style="display:none;"></div>
+            <h3 id="result"></h3>
+        </div>
+    </div>
+
+    <!-- Material Viewer Mode Content -->
+    <div class="viewer-container">
+        <div class="card">
+            <h1 class="center">Material Viewer</h1>
+            <p class="center">View your wardrobe items as 3D materials with pattern and texture preservation</p>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div id="canvas-container">
+                        <div id="loading-overlay">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="viewer-controls">
+                        <h3>Select Material</h3>
+
+                        <div class="form-group mb-3">
+                            <label for="item-select">Choose a wardrobe item:</label>
+                            <select id="item-select" class="form-control">
+                                <option value="">-- Select an item --</option>
+                                {% for item in items %}
+                                    <option value="{{ item._id }}">{{ item.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div id="material-preview" class="material-preview" style="display: none;">
+                            <!-- Material preview will be populated here -->
+                        </div>
+
+                        <div class="tab-nav">
+                            <button class="tab-button active" data-tab="material-tab">Material</button>
+                            <button class="tab-button" data-tab="pattern-tab">Pattern</button>
+                            <button class="tab-button" data-tab="model-tab">3D Model</button>
+                        </div>
+
+                        <div id="material-tab" class="tab-panel active">
+                            <div class="material-settings">
+                                <div class="setting-group">
+                                    <label class="setting-label">Roughness: <span id="roughness-value" class="slider-value">0.5</span></label>
+                                    <div class="slider-container">
+                                        <input type="range" id="roughness-slider" class="slider" min="0" max="1" step="0.01" value="0.5">
+                                    </div>
+                                </div>
+
+                                <div class="setting-group">
+                                    <label class="setting-label">Metalness: <span id="metalness-value" class="slider-value">0.1</span></label>
+                                    <div class="slider-container">
+                                        <input type="range" id="metalness-slider" class="slider" min="0" max="1" step="0.01" value="0.1">
+                                    </div>
+                                </div>
+
+                                <div class="setting-group">
+                                    <label class="setting-label">Color Intensity: <span id="color-intensity-value" class="slider-value">1.0</span></label>
+                                    <div class="slider-container">
+                                        <input type="range" id="color-intensity-slider" class="slider" min="0" max="2" step="0.01" value="1.0">
+                                    </div>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="use-color-checkbox" checked>
+                                    <label class="form-check-label" for="use-color-checkbox">
+                                        Apply material color (uncheck for exact texture colors)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="pattern-tab" class="tab-panel">
+                            <div class="material-settings">
+                                <div class="setting-group">
+                                    <label class="setting-label">Pattern Scale: <span id="pattern-scale-value" class="slider-value">1.0</span></label>
+                                    <div class="slider-container">
+                                        <input type="range" id="pattern-scale-slider" class="slider" min="0.1" max="5" step="0.1" value="1.0">
+                                    </div>
+                                </div>
+
+                                <div class="setting-group">
+                                    <label class="setting-label">Pattern Rotation: <span id="pattern-rotation-value" class="slider-value">0°</span></label>
+                                    <div class="slider-container">
+                                        <input type="range" id="pattern-rotation-slider" class="slider" min="0" max="360" step="1" value="0">
+                                    </div>
+                                </div>
+
+                                <div class="setting-group">
+                                    <label class="setting-label">Normal Map Strength: <span id="normal-strength-value" class="slider-value">1.0</span></label>
+                                    <div class="slider-container">
+                                        <input type="range" id="normal-strength-slider" class="slider" min="0" max="3" step="0.1" value="1.0">
+                                    </div>
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="use-normal-map-checkbox" checked>
+                                    <label class="form-check-label" for="use-normal-map-checkbox">
+                                        Use normal map (texture relief)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="model-tab" class="tab-panel">
+                            <div class="material-settings">
+                                <div class="form-group mb-3">
+                                    <label for="model-select">Choose a 3D model:</label>
+                                    <select id="model-select" class="form-control">
+                                        <option value="sphere">Sphere</option>
+                                        <option value="cube">Cube</option>
+                                        <option value="torus">Torus</option>
+                                        <option value="cylinder">Cylinder</option>
+                                        <option value="tshirt" selected>T-shirt</option>
+                                        <option value="dress">Dress</option>
+                                        <option value="pants">Pants</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="model-upload">Or upload your own GLB model:</label>
+                                    <input type="file" id="model-upload" class="form-control" accept=".glb,.gltf">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="update-material-btn" class="btn btn-primary mt-3">Update Material</button>
+
+                        <!-- Real Clothing Visualization Section -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h3 class="mb-0">Real Clothing Visualization</h3>
+                            </div>
+                            <div class="card-body">
+                                <p>Upload a real clothing image to apply it directly to the 3D model</p>
+
+                                <div class="mb-3">
+                                    <label for="real-clothing-upload" class="form-label">Upload clothing image:</label>
+                                    <input type="file" id="real-clothing-upload" class="form-control" accept=".jpg,.jpeg,.png">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="clothing-type-select" class="form-label">Clothing Type:</label>
+                                    <select id="clothing-type-select" class="form-control">
+                                        <option value="T-shirt/top">T-shirt/Top</option>
+                                        <option value="Trouser">Trouser</option>
+                                        <option value="Pullover">Pullover</option>
+                                        <option value="Dress">Dress</option>
+                                        <option value="Coat">Coat</option>
+                                        <option value="Sandal">Sandal</option>
+                                        <option value="Shirt">Shirt</option>
+                                        <option value="Sneaker">Sneaker</option>
+                                        <option value="Bag">Bag</option>
+                                        <option value="Ankle boot">Ankle boot</option>
+                                    </select>
+                                </div>
+
+                                <button id="apply-real-clothing-btn" class="btn btn-primary">
+                                    Apply to 3D Model
+                                </button>
+
+                                <div id="texture-processing-status" class="mt-3" style="display: none;">
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                             role="progressbar"
+                                             style="width: 100%">
+                                            Processing image...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<div class="card">
-    <h2>The result:</h2>
-    <div class="loader" style="display:none;"></div>
-    <h3 id="result"></h3>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -142,6 +505,36 @@
             const rgbColor = `rgb(${data.color.rgb.join(', ')})`;
             const percentage = (data.color.percentage * 100).toFixed(1);
 
+            // Create HTML for material properties if available
+            let materialHTML = '';
+            if (data.material_properties) {
+                const mp = data.material_properties;
+                const hasPattern = mp.pattern_info && mp.pattern_info.has_pattern;
+
+                materialHTML = `
+                    <div class="mb-4">
+                        <h3 class="text-xl font-semibold mb-2">Material Analysis</h3>
+                        <p><strong>Material Type:</strong> ${mp.estimated_material}</p>
+                        <p><strong>Texture Complexity:</strong> ${mp.texture_variance.toFixed(2)}</p>
+                        <p><strong>Edge Density:</strong> ${mp.edge_density.toFixed(4)}</p>
+                        ${hasPattern ? `
+                        <div class="pattern-info mt-2">
+                            <p><strong>Pattern Type:</strong> ${mp.pattern_info.pattern_type}</p>
+                            <p><strong>Pattern Scale:</strong> ${mp.pattern_info.pattern_scale}</p>
+                            <p><strong>Pattern Strength:</strong> ${(mp.pattern_info.pattern_strength * 100).toFixed(1)}%</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            // Create "View in 3D" button for the material viewer
+            const viewIn3dButton = `
+                <button id="view-in-3d-btn" class="btn btn-secondary mt-3">
+                    View Material in 3D
+                </button>
+            `;
+
             resultDiv.innerHTML = `
                 <div class="prediction-result p-4 bg-white rounded-lg shadow">
                     <div class="mb-4">
@@ -166,13 +559,28 @@
                         </div>
                     </div>
 
-                    <div class="mt-4">
+                    ${materialHTML}
+
+                    <div class="mt-4 d-flex justify-content-between">
                         <button onclick="location.reload()" class="btn btn-secondary">
                             Add Another Item
                         </button>
+                        ${viewIn3dButton}
                     </div>
                 </div>
             `;
+
+            // Add event listener for the "View in 3D" button
+            document.getElementById('view-in-3d-btn')?.addEventListener('click', function() {
+                // Switch to material viewer mode
+                document.getElementById('view-mode-btn').click();
+
+                // If we have a newly created item, select it (assuming the latest item is at the end)
+                // You would need to refresh the item list or manually add the new item to the dropdown
+                setTimeout(() => {
+                    loadLatestItem();
+                }, 500);
+            });
 
         } catch (error) {
             console.error('Error:', error);
@@ -185,5 +593,967 @@
             loader.style.display = 'none';
         }
     });
+
+    // Mode toggle functionality
+    document.getElementById('upload-mode-btn').addEventListener('click', function() {
+        this.classList.add('btn-primary');
+        this.classList.remove('btn-secondary');
+        document.getElementById('view-mode-btn').classList.add('btn-secondary');
+        document.getElementById('view-mode-btn').classList.remove('btn-primary');
+
+        document.querySelector('.upload-container').classList.add('active');
+        document.querySelector('.viewer-container').classList.remove('active');
+    });
+
+    document.getElementById('view-mode-btn').addEventListener('click', function() {
+        this.classList.add('btn-primary');
+        this.classList.remove('btn-secondary');
+        document.getElementById('upload-mode-btn').classList.add('btn-secondary');
+        document.getElementById('upload-mode-btn').classList.remove('btn-primary');
+
+        document.querySelector('.viewer-container').classList.add('active');
+        document.querySelector('.upload-container').classList.remove('active');
+
+        // Initialize the 3D viewer if not already initialized
+        if (window.threejsViewerInitialized !== true) {
+            initMaterialViewer();
+        }
+    });
+
+    // Function to load the latest item in the material viewer
+    async function loadLatestItem() {
+        // Get the last item in the dropdown
+        const itemSelect = document.getElementById('item-select');
+        const lastOption = itemSelect.options[itemSelect.options.length - 1];
+
+        if (lastOption && lastOption.value) {
+            itemSelect.value = lastOption.value;
+            // Trigger change event
+            const event = new Event('change');
+            itemSelect.dispatchEvent(event);
+        }
+    }
+
+    // Tab navigation
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons and panels
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            // Add active class to clicked button
+            this.classList.add('active');
+
+            // Show corresponding panel
+            const tabId = this.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Material Viewer initialization and functionality
+    function initMaterialViewer() {
+        // Import Three.js libraries if not already loaded
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js')
+            .then(() => loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js'))
+            .then(() => loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js'))
+            .then(() => {
+                setupThreeJsViewer();
+                window.threejsViewerInitialized = true;
+            })
+            .catch(error => console.error('Error loading scripts:', error));
+    }
+
+    // Helper function to load scripts dynamically
+    function loadScript(url) {
+        return new Promise((resolve, reject) => {
+            // Check if script is already loaded
+            if (document.querySelector(`script[src="${url}"]`)) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    // Three.js viewer setup
+    function setupThreeJsViewer() {
+        // Initialize Three.js components
+        let scene, camera, renderer, controls, model;
+        let currentMaterial = null;
+        let currentMaterialProperties = null;
+        let currentTexturePath = null;
+        let currentNormalMapPath = null;
+
+        // Make scene and model available globally for other functions
+        window.scene = scene;
+        window.model = model;
+
+        // DOM elements
+        const canvasContainer = document.getElementById('canvas-container');
+        const itemSelect = document.getElementById('item-select');
+        const modelSelect = document.getElementById('model-select');
+        const modelUpload = document.getElementById('model-upload');
+        const updateMaterialBtn = document.getElementById('update-material-btn');
+        const materialPreview = document.getElementById('material-preview');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        // Material setting sliders
+        const roughnessSlider = document.getElementById('roughness-slider');
+        const metalnessSlider = document.getElementById('metalness-slider');
+        const colorIntensitySlider = document.getElementById('color-intensity-slider');
+        const patternScaleSlider = document.getElementById('pattern-scale-slider');
+        const patternRotationSlider = document.getElementById('pattern-rotation-slider');
+        const normalStrengthSlider = document.getElementById('normal-strength-slider');
+
+        const roughnessValue = document.getElementById('roughness-value');
+        const metalnessValue = document.getElementById('metalness-value');
+        const colorIntensityValue = document.getElementById('color-intensity-value');
+        const patternScaleValue = document.getElementById('pattern-scale-value');
+        const patternRotationValue = document.getElementById('pattern-rotation-value');
+        const normalStrengthValue = document.getElementById('normal-strength-value');
+
+        const useColorCheckbox = document.getElementById('use-color-checkbox');
+        const useNormalMapCheckbox = document.getElementById('use-normal-map-checkbox');
+
+        // Create scene
+        function initScene() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+
+            // Make scene available globally
+            window.scene = scene;
+
+            // Setup camera
+            camera = new THREE.PerspectiveCamera(
+                50,
+                canvasContainer.clientWidth / canvasContainer.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.z = 3;
+            camera.position.y = 1;
+
+            // Setup renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            canvasContainer.appendChild(renderer.domElement);
+
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight1.position.set(1, 2, 3);
+            dirLight1.castShadow = true;
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight2.position.set(-1, 1, -2);
+            scene.add(dirLight2);
+
+            // Add a basic platform
+            const platform = new THREE.Mesh(
+                new THREE.CylinderGeometry(1, 1, 0.1, 32),
+                new THREE.MeshStandardMaterial({ color: 0xeeeeee })
+            );
+            platform.position.y = -1;
+            platform.receiveShadow = true;
+            scene.add(platform);
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+
+            // Load default model
+            loadModelByType('tshirt');
+
+            // Start animation loop
+            animate();
+
+            // Hide loading overlay
+            hideLoading();
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update();
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+
+            camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        }
+
+        // Load a model by type
+        function loadModelByType(modelType) {
+            showLoading();
+
+            // Clear previous model if exists
+            if (model) {
+                scene.remove(model);
+            }
+
+            // Map model types to file paths
+            const modelPaths = {
+                'sphere': createPrimitive('sphere'),
+                'cube': createPrimitive('cube'),
+                'torus': createPrimitive('torus'),
+                'cylinder': createPrimitive('cylinder'),
+               'tshirt': '/static/models/clothing/tshirt.glb',
+                'dress': '/static/models/clothing/dress.glb',
+                'pants': '/static/models/clothing/trouser.glb'
+            };
+
+            // Check if it's a primitive
+            if (['sphere', 'cube', 'torus', 'cylinder'].includes(modelType)) {
+                model = modelPaths[modelType];
+                scene.add(model);
+
+                // Make model available globally
+                window.model = model;
+
+                // Apply material if available
+                if (currentMaterial) {
+                    model.traverse(function(child) {
+                        if (child.isMesh) {
+                            child.material = currentMaterial;
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                }
+
+                hideLoading();
+                return;
+            }
+
+            // Otherwise load a GLB model
+            const modelPath = modelPaths[modelType] || modelPaths['tshirt'];
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                modelPath,
+                function(gltf) {
+                    model = gltf.scene;
+
+                    // Make model available globally
+                    window.model = model;
+
+                    model.traverse(function(child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+
+                            // Apply material if available
+                            if (currentMaterial) {
+                                child.material = currentMaterial;
+                            }
+                        }
+                    });
+
+                    // Center and scale the model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 2 / maxDim;
+                    model.scale.set(scale, scale, scale);
+
+                    model.position.x = -center.x * scale;
+                    model.position.y = -center.y * scale;
+                    model.position.z = -center.z * scale;
+
+                    scene.add(model);
+                    hideLoading();
+                },
+                undefined,
+                function(error) {
+                    console.error('Error loading model:', error);
+                    hideLoading();
+
+                    // Fall back to a sphere if model fails to load
+                    model = createPrimitive('sphere');
+
+                    // Make model available globally
+                    window.model = model;
+
+                    scene.add(model);
+
+                    // Apply material if available
+                    if (currentMaterial) {
+                        model.traverse(function(child) {
+                            if (child.isMesh) {
+                                child.material = currentMaterial;
+                            }
+                        });
+                    }
+                }
+            );
+        }
+
+        // Create primitive shapes
+        function createPrimitive(type) {
+            let geometry;
+
+            switch(type) {
+                case 'sphere':
+                    geometry = new THREE.SphereGeometry(1, 32, 32);
+                    break;
+                case 'cube':
+                    geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+                    break;
+                case 'torus':
+                    geometry = new THREE.TorusGeometry(0.8, 0.3, 16, 100);
+                    break;
+                case 'cylinder':
+                    geometry = new THREE.CylinderGeometry(0.8, 0.8, 2, 32);
+                    break;
+                default:
+                    geometry = new THREE.SphereGeometry(1, 32, 32);
+            }
+
+            const material = currentMaterial || new THREE.MeshStandardMaterial({
+                color: 0xcccccc,
+                roughness: 0.7,
+                metalness: 0.1
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            return mesh;
+        }
+
+        // Apply material to the model
+        function applyMaterialToModel(materialProperties, texturePath, normalMapPath = null) {
+            if (!model) return;
+
+            // Get settings from UI
+            const roughness = parseFloat(roughnessSlider.value);
+            const metalness = parseFloat(metalnessSlider.value);
+            const colorIntensity = parseFloat(colorIntensitySlider.value);
+            const patternScale = parseFloat(patternScaleSlider.value);
+            const patternRotation = parseFloat(patternRotationSlider.value) * (Math.PI / 180);
+            const normalStrength = parseFloat(normalStrengthSlider.value);
+            const useColor = useColorCheckbox.checked;
+            const useNormalMap = useNormalMapCheckbox.checked && normalMapPath;
+
+            // Create a texture loader
+            const textureLoader = new THREE.TextureLoader();
+
+            // Load the texture from the path
+            textureLoader.load(
+                texturePath,
+                function(texture) {
+                    // Apply texture filtering for better quality
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+
+                    // Apply pattern scale and rotation
+                    texture.repeat.set(patternScale, patternScale);
+                    texture.rotation = patternRotation;
+                    texture.wrapS = THREE.RepeatWrapping;
+                    texture.wrapT = THREE.RepeatWrapping;
+
+                    // Extract material properties
+                    const primaryColor = materialProperties.primary_color_rgb;
+                    const textureVariance = materialProperties.texture_variance;
+                    const materialType = materialProperties.estimated_material;
+                    const patternInfo = materialProperties.pattern_info || {};
+
+                    // Create material options
+                    const materialOptions = {
+                        map: texture,
+                        roughness: roughness,
+                        metalness: metalness
+                    };
+
+                    // Add normal map if available
+                    if (useNormalMap && normalMapPath) {
+                        textureLoader.load(
+                            normalMapPath,
+                            function(normalMap) {
+                                normalMap.wrapS = THREE.RepeatWrapping;
+                                normalMap.wrapT = THREE.RepeatWrapping;
+                                normalMap.repeat.set(patternScale, patternScale);
+                                normalMap.rotation = patternRotation;
+
+                                materialOptions.normalMap = normalMap;
+                                materialOptions.normalScale = new THREE.Vector2(normalStrength, normalStrength);
+
+                                createAndApplyFinalMaterial();
+                            },
+                            undefined,
+                            function() {
+                                // Normal map failed to load
+                                createAndApplyFinalMaterial();
+                            }
+                        );
+                    } else {
+                        createAndApplyFinalMaterial();
+                    }
+
+                    function createAndApplyFinalMaterial() {
+                        // Apply color tint if enabled
+                        if (useColor) {
+                            const color = new THREE.Color(
+                                primaryColor[0]/255,
+                                primaryColor[1]/255,
+                                primaryColor[2]/255
+                            );
+
+                            // Adjust color based on intensity
+                            if (colorIntensity !== 1.0) {
+                                // Calculate in HSL space to preserve hue
+                                const hsl = {};
+                                color.getHSL(hsl);
+
+                                // Adjust lightness but preserve hue
+                                hsl.l = Math.min(1, hsl.l * colorIntensity);
+                                color.setHSL(hsl.h, hsl.s, hsl.l);
+                            }
+
+                            materialOptions.color = color;
+                        } else {
+                            materialOptions.color = new THREE.Color(0xffffff);
+                        }
+
+                        // Create appropriate material based on estimated type
+                        let material;
+
+                        // Adjust material based on pattern and material type
+                        if (patternInfo.has_pattern && patternInfo.pattern_strength > 0.3) {
+                            // For patterned materials
+                            if (patternInfo.pattern_type.includes('stripe') ||
+                                patternInfo.pattern_type === 'check') {
+                                // For geometric patterns, keep sharp
+                                material = new THREE.MeshStandardMaterial({
+                                    ...materialOptions,
+                                    roughness: Math.min(0.7, roughness + 0.1)
+                                });
+                            } else if (patternInfo.pattern_type === 'irregular') {
+                                // For organic patterns like floral
+                                material = new THREE.MeshStandardMaterial({
+                                    ...materialOptions,
+                                    roughness: Math.min(0.8, roughness + 0.2)
+                                });
+                            } else {
+                                material = new THREE.MeshStandardMaterial(materialOptions);
+                            }
+                        } else {
+                            // For non-patterned materials
+                            switch(materialType) {
+                                case 'smooth':
+                                    // For leather, silk, etc. - shiny with medium roughness
+                                    material = new THREE.MeshStandardMaterial({
+                                        ...materialOptions,
+                                        roughness: Math.max(0.1, roughness - 0.2),
+                                        metalness: Math.min(0.3, metalness + 0.1)
+                                    });
+                                    break;
+
+                                case 'textured':
+                                    // For denim, canvas, etc. - rough with some texture
+                                    material = new THREE.MeshStandardMaterial({
+                                        ...materialOptions,
+                                        roughness: Math.min(0.9, roughness + 0.1)
+                                    });
+                                    break;
+
+                                case 'rough_textured':
+                                    // For heavily textured fabrics
+                                    material = new THREE.MeshStandardMaterial({
+                                        ...materialOptions,
+                                        roughness: Math.min(1.0, roughness + 0.2),
+                                        metalness: Math.max(0, metalness - 0.05)
+                                    });
+                                    break;
+
+                                default:
+                                    // Default material
+                                    material = new THREE.MeshStandardMaterial(materialOptions);
+                            }
+                        }
+
+                        // Store the current material
+                        currentMaterial = material;
+
+                        // Apply the material to all meshes in the model
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.material = material;
+
+                                // Enable shadows
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
+                    }
+                },
+                undefined,
+                function(error) {
+                    console.error('Error loading texture:', error);
+
+                    // Create a basic material as fallback
+                    currentMaterial = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(
+                            primaryColor[0]/255,
+                            primaryColor[1]/255,
+                            primaryColor[2]/255
+                        ),
+                        roughness: roughness,
+                        metalness: metalness
+                    });
+
+                    // Apply the material to the model
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = currentMaterial;
+                        }
+                    });
+                }
+            );
+        }
+
+        // Display material information
+        function displayMaterialInfo(data) {
+            const { materialProperties, label, texturePath } = data;
+
+            // Create HTML for the material preview
+            let html = `
+                <div class="material-image-container">
+                    <img src="${texturePath}" class="material-image" alt="${label}">
+                </div>
+                <div class="material-info">
+                    <div class="material-name">${label}</div>
+                    <div class="material-type">${materialProperties.estimated_material}</div>
+                    <div class="color-display">
+                        <span class="color-preview" style="background-color: rgb(${materialProperties.primary_color_rgb.join(',')});"></span>
+                    </div>
+            `;
+
+            // Add pattern info if available
+            if (materialProperties.pattern_info && materialProperties.pattern_info.has_pattern) {
+                const patternInfo = materialProperties.pattern_info;
+
+                html += `
+                    <div class="pattern-preview">
+                        <span class="pattern-badge">${patternInfo.pattern_type}</span>
+                        <span class="pattern-badge">${patternInfo.pattern_scale}</span>
+                        ${patternInfo.is_directional ? '<span class="pattern-badge">directional</span>' : ''}
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+
+            // Update the material preview
+            materialPreview.innerHTML = html;
+            materialPreview.style.display = 'flex';
+
+            // Set slider values based on material properties
+            let roughnessDefault, metalnessDefault;
+
+            // Set appropriate default values based on material type
+            switch(materialProperties.estimated_material) {
+                case 'smooth':
+                    roughnessDefault = 0.3;
+                    metalnessDefault = 0.2;
+                    break;
+                case 'textured':
+                    roughnessDefault = 0.7;
+                    metalnessDefault = 0.1;
+                    break;
+                case 'rough_textured':
+                    roughnessDefault = 0.8;
+                    metalnessDefault = 0.05;
+                    break;
+                case 'woven_patterned':
+                    roughnessDefault = 0.6;
+                    metalnessDefault = 0.0;
+                    break;
+                case 'printed':
+                    roughnessDefault = 0.5;
+                    metalnessDefault = 0.0;
+                    break;
+                default:
+                    roughnessDefault = 0.5;
+                    metalnessDefault = 0.1;
+            }
+
+            // Update sliders
+            roughnessSlider.value = roughnessDefault;
+            roughnessValue.textContent = roughnessDefault.toFixed(1);
+
+            metalnessSlider.value = metalnessDefault;
+            metalnessValue.textContent = metalnessDefault.toFixed(1);
+
+            // Update pattern sliders
+            if (materialProperties.pattern_info && materialProperties.pattern_info.has_pattern) {
+                const patternInfo = materialProperties.pattern_info;
+
+                // Pattern scale based on detected scale
+                let scaleDefault = 1.0;
+                if (patternInfo.pattern_scale === 'fine') {
+                    scaleDefault = 2.0;
+                } else if (patternInfo.pattern_scale === 'large') {
+                    scaleDefault = 0.5;
+                }
+
+                patternScaleSlider.value = scaleDefault;
+                patternScaleValue.textContent = scaleDefault.toFixed(1);
+            }
+        }
+
+        // Load uploaded GLB model
+        function loadUploadedModel(file) {
+            showLoading();
+
+            // Clear previous model if exists
+            if (model) {
+                scene.remove(model);
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const loader = new THREE.GLTFLoader();
+                loader.parse(
+                    event.target.result,
+                    '',
+                    function(gltf) {
+                        model = gltf.scene;
+
+                        // Make model available globally
+                        window.model = model;
+
+                        model.traverse(function(child) {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+
+                                // Apply material if available
+                                if (currentMaterial) {
+                                    child.material = currentMaterial;
+                                }
+                            }
+                        });
+
+                        // Center and scale the model
+                        const box = new THREE.Box3().setFromObject(model);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
+
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scale = 2 / maxDim;
+                        model.scale.set(scale, scale, scale);
+
+                        model.position.x = -center.x * scale;
+                        model.position.y = -center.y * scale;
+                        model.position.z = -center.z * scale;
+
+                        scene.add(model);
+                        hideLoading();
+                    },
+                    function(error) {
+                        console.error('Error parsing GLB file:', error);
+                        hideLoading();
+                        alert('Error loading model: ' + error.message);
+                    }
+                );
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Show loading overlay
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        // Hide loading overlay
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        // Initialize Three.js scene
+        initScene();
+
+        // Event Listeners
+
+        // Item selection
+        itemSelect.addEventListener('change', async function() {
+            const itemId = this.value;
+
+            if (!itemId) {
+                materialPreview.style.display = 'none';
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // Fetch material properties
+                const response = await fetch(`/api/wardrobe/material/${itemId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch material data');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Unknown error');
+                }
+
+                // Store current material properties
+                currentMaterialProperties = data.materialProperties;
+                currentTexturePath = data.texturePath;
+                currentNormalMapPath = data.normalMapPath;
+
+                // Display material properties
+                displayMaterialInfo({
+                    materialProperties: data.materialProperties,
+                    label: data.label,
+                    texturePath: data.texturePath
+                });
+
+                // Apply material to the model
+                applyMaterialToModel(
+                    data.materialProperties,
+                    data.texturePath,
+                    data.normalMapPath
+                );
+
+            } catch (error) {
+                console.error('Error selecting item:', error);
+                materialPreview.innerHTML = '<div class="error">Error loading material data</div>';
+                materialPreview.style.display = 'block';
+                hideLoading();
+            }
+        });
+
+        // Model selection
+        modelSelect.addEventListener('change', function() {
+            loadModelByType(this.value);
+        });
+
+        // Model upload
+        modelUpload.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                loadUploadedModel(file);
+            }
+        });
+
+        // Update material button
+        updateMaterialBtn.addEventListener('click', function() {
+            if (!currentMaterialProperties || !currentTexturePath) {
+                alert('Please select a wardrobe item first');
+                return;
+            }
+
+            applyMaterialToModel(
+                currentMaterialProperties,
+                currentTexturePath,
+                currentNormalMapPath
+            );
+        });
+
+        // Slider event listeners
+        roughnessSlider.addEventListener('input', function() {
+            roughnessValue.textContent = parseFloat(this.value).toFixed(1);
+        });
+
+        metalnessSlider.addEventListener('input', function() {
+            metalnessValue.textContent = parseFloat(this.value).toFixed(1);
+        });
+
+        colorIntensitySlider.addEventListener('input', function() {
+            colorIntensityValue.textContent = parseFloat(this.value).toFixed(1);
+        });
+
+        patternScaleSlider.addEventListener('input', function() {
+            patternScaleValue.textContent = parseFloat(this.value).toFixed(1);
+        });
+
+        patternRotationSlider.addEventListener('input', function() {
+            patternRotationValue.textContent = `${parseInt(this.value)}°`;
+        });
+
+        normalStrengthSlider.addEventListener('input', function() {
+            normalStrengthValue.textContent = parseFloat(this.value).toFixed(1);
+        });
+    }
+
+    // Function to load model with processed textures for Real Clothing Visualization
+    function loadModelWithTexture(modelPath, textureUrl, normalMapUrl) {
+        // Make sure Three.js is initialized
+        if (!window.THREE) {
+            console.error('Three.js not initialized yet');
+            alert('Please wait for the 3D viewer to initialize');
+            return;
+        }
+
+        console.log('Loading model with textures:', modelPath, textureUrl, normalMapUrl);
+        showLoading();
+
+        // Load the model
+        const modelType = modelPath.includes('tshirt') ? 'tshirt' :
+                        modelPath.includes('dress') ? 'dress' :
+                        modelPath.includes('pants') || modelPath.includes('trouser') ? 'pants' : 'tshirt';
+
+        // Update the model selector
+        const modelSelect = document.getElementById('model-select');
+        if (modelSelect && modelSelect.value !== modelType) {
+            modelSelect.value = modelType;
+        }
+
+        // Create texture loader
+        const textureLoader = new THREE.TextureLoader();
+
+        // Load diffuse texture
+        textureLoader.load(textureUrl, (diffuseMap) => {
+            console.log('Diffuse texture loaded');
+
+            // Set texture parameters
+            diffuseMap.wrapS = THREE.RepeatWrapping;
+            diffuseMap.wrapT = THREE.RepeatWrapping;
+
+            // Default material options
+            const materialOptions = {
+                map: diffuseMap,
+                roughness: parseFloat(document.getElementById('roughness-slider').value) || 0.5,
+                metalness: parseFloat(document.getElementById('metalness-slider').value) || 0.1
+            };
+
+            // Load normal map if available
+            const loadNormalAndCreateMaterial = () => {
+                if (normalMapUrl) {
+                    textureLoader.load(normalMapUrl, (normalMap) => {
+                        console.log('Normal map loaded');
+
+                        // Set normal map parameters
+                        normalMap.wrapS = THREE.RepeatWrapping;
+                        normalMap.wrapT = THREE.RepeatWrapping;
+
+                        // Add normal map to material options
+                        materialOptions.normalMap = normalMap;
+                        materialOptions.normalScale = new THREE.Vector2(1, 1);
+
+                        createMaterialAndLoadModel(materialOptions);
+                    },
+                    undefined,
+                    (error) => {
+                        console.error('Error loading normal map:', error);
+                        createMaterialAndLoadModel(materialOptions);
+                    });
+                } else {
+                    createMaterialAndLoadModel(materialOptions);
+                }
+            };
+
+            // Create material and load model
+            const createMaterialAndLoadModel = (options) => {
+                // Create material
+                const material = new THREE.MeshStandardMaterial(options);
+
+                // Store current material
+                window.currentMaterial = material;
+
+                // Load the appropriate model
+                loadModelByType(modelType);
+            };
+
+            // Start the process
+            loadNormalAndCreateMaterial();
+
+        }, undefined, (error) => {
+            console.error('Error loading texture:', error);
+            hideLoading();
+            alert('Error loading texture: ' + error.message);
+        });
+    }
+
+    // Connect Real Clothing Visualization UI to functionality
+    document.addEventListener('DOMContentLoaded', () => {
+        const applyBtn = document.getElementById('apply-real-clothing-btn');
+        const status = document.getElementById('texture-processing-status');
+
+        if (applyBtn) {
+            applyBtn.addEventListener('click', () => {
+                const fileInput = document.getElementById('real-clothing-upload');
+                if (!fileInput || !fileInput.files.length) {
+                    alert('Please select an image first');
+                    return;
+                }
+
+                const clothingType = document.getElementById('clothing-type-select').value || 'T-shirt/top';
+
+                // Show processing status
+                if (status) status.style.display = 'block';
+
+                // Create FormData and send to server
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('clothing_type', clothingType);
+
+                fetch('/api/process-clothing-texture', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (status) status.style.display = 'none';
+
+                    if (data.success) {
+                        // Call the function to load the model with texture
+                        loadModelWithTexture(data.model_path, data.texture_url, data.normal_map_url);
+                    } else {
+                        alert('Error: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    if (status) status.style.display = 'none';
+                    console.error('Error:', error);
+                    alert('Error processing image: ' + error.message);
+                });
+            });
+        }
+    });
+
+    // Helper functions needed for loadModelWithTexture
+    function showLoading() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
+    }
 </script>
 {% endblock %}
