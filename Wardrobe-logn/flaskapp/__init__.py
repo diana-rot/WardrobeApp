@@ -368,42 +368,6 @@ def rpm_avatar():
     """Route for Ready Player Me avatar creation and management"""
     return render_template('rpm_avatar.html')
 
-@app.route('/api/rpm/save-avatar', methods=['POST'])
-@login_required
-def save_rpm_avatar():
-    """Save the Ready Player Me avatar URL to the user's profile"""
-    try:
-        data = request.json
-        avatar_url = data.get('avatarUrl')
-        
-        if not avatar_url:
-            return jsonify({'success': False, 'error': 'No avatar URL provided'})
-        
-        # Get user ID from session
-        user_id = session.get('user_id')
-        if not user_id:
-            # Fallback to user object if user_id not directly in session
-            user = session.get('user')
-            if user and '_id' in user:
-                user_id = user['_id']
-            else:
-                return jsonify({'success': False, 'error': 'User not logged in'})
-        
-        # Update user's avatar URL in database
-        result = db.users.update_one(
-            {'_id': user_id},
-            {'$set': {'rpm_avatar_url': avatar_url}}
-        )
-        
-        if result.modified_count > 0:
-            return jsonify({'success': True, 'avatarUrl': avatar_url})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to update avatar'})
-            
-    except Exception as e:
-        logger.error(f"Error saving RPM avatar: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
-
 @app.route('/api/rpm/get-avatar', methods=['GET'])
 @login_required
 def get_rpm_avatar():

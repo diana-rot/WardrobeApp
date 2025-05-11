@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "makehuman-data": "^0.0.2",
+    "makehuman-js": "^0.1.3"
+  }
+}

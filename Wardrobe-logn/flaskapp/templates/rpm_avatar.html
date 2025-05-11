@@ -180,7 +180,193 @@
 {% endblock %}
 
 {% block extra_js %}
+{% block extra_js %}
+<!-- Three.js and related libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<!-- Your existing scripts -->
+<script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rpm-avatar.js') }}"></script>
+
+<!-- New clothing scripts -->
+<script src="{{ url_for('static', filename='js/clothing-mapper.js') }}"></script>
+<script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
+
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the avatar managers
+        const avatarManager = new AvatarManager({
+            container: document.getElementById('avatar-container')
+        });
+
+        const rpmManager = new RPMAvatarManager({
+            container: document.getElementById('avatar-container')
+        });
+
+        // Initialize clothing renderer
+        window.clothingRenderer = new ClothingRenderer(rpmManager);
+
+        // Handle tab switching
+        const tabs = document.querySelectorAll('.avatar-tab');
+        const sections = document.querySelectorAll('.avatar-section');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Show corresponding section
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === `${tabName}-avatar-section`) {
+                        section.classList.add('active');
+                    }
+                });
+
+                // Load wardrobe items for the active section
+                const activeSection = document.querySelector('.avatar-section.active');
+                const categorySelect = activeSection.querySelector('.category-select');
+                if (categorySelect) {
+                    loadWardrobeItems(categorySelect.value, activeSection.querySelector('.wardrobe-grid').id);
+                }
+            });
+        });
+
+        // Handle category changes
+        document.querySelectorAll('.category-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const gridId = this.closest('.avatar-section').querySelector('.wardrobe-grid').id;
+                loadWardrobeItems(this.value, gridId);
+            });
+        });
+
+        // Load wardrobe items function
+        async function loadWardrobeItems(category, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = '<div class="loading">Loading items...</div>';
+
+            try {
+                const response = await fetch(`/api/wardrobe-items?category=${category}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load wardrobe items');
+                }
+
+                const data = await response.json();
+                container.innerHTML = '';
+
+                const items = data[category] || [];
+
+                if (items.length === 0) {
+                    container.innerHTML = '<div class="error">No items found in this category</div>';
+                    return;
+                }
+
+                items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'wardrobe-item';
+                    itemElement.dataset.itemId = item._id;
+
+                    const itemName = item.label || 'Unnamed Item';
+
+                    itemElement.innerHTML = `
+                        <div class="item-image">
+                            ${item.file_path ? `
+                                <img src="${item.file_path}"
+                                     alt="${itemName}"
+                                     onerror="this.parentElement.innerHTML='<div class=\\'error-message\\'>Image not available</div>'">
+                            ` : `
+                                <div class="error-message">No image available</div>
+                            `}
+                        </div>
+                        <div class="item-name">${itemName}</div>
+                    `;
+
+                    // Add click handler to try on the item
+                    itemElement.addEventListener('click', function() {
+                        // First select the item visually
+                        container.querySelectorAll('.wardrobe-item').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+
+                        // Then render it on the avatar
+                        if (window.clothingRenderer) {
+                            window.clothingRenderer.renderClothing(item);
+                        }
+                    });
+
+                    container.appendChild(itemElement);
+                });
+            } catch (error) {
+                console.error('Error loading wardrobe items:', error);
+                container.innerHTML = '<div class="error">Failed to load items</div>';
+            }
+        }
+
+        // Handle try on buttons
+        document.querySelectorAll('.try-on-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const section = this.closest('.avatar-section');
+                const selectedItems = section.querySelectorAll('.wardrobe-item.selected');
+
+                if (selectedItems.length === 0) {
+                    alert('Please select items to try on');
+                    return;
+                }
+
+                // Clear previous clothing
+                if (window.clothingRenderer) {
+                    window.clothingRenderer.clearAllClothing();
+                }
+
+                // Try on each selected item
+                for (const item of selectedItems) {
+                    const itemId = item.dataset.itemId;
+
+                    try {
+                        const response = await fetch(`/api/wardrobe/item/${itemId}`);
+                        if (!response.ok) {
+                            throw new Error('Failed to get item data');
+                        }
+
+                        const itemData = await response.json();
+
+                        // Render the clothing
+                        if (window.clothingRenderer) {
+                            await window.clothingRenderer.renderClothing(itemData);
+                        }
+                    } catch (error) {
+                        console.error('Error trying on item:', error);
+                    }
+                }
+            });
+        });
+
+        // Load initial wardrobe items for both sections
+        loadWardrobeItems('tops', 'wardrobe-items-custom');
+        loadWardrobeItems('tops', 'wardrobe-items-rpm');
+
+        // Load the RPM avatar
+        rpmManager.loadSavedAvatar().then(() => {
+            console.log('Avatar loaded, ready for clothing');
+        }).catch(error => {
+            console.error('Error loading avatar:', error);
+        });
+    });
+</script>
+{% endblock %}
+
+
+<script>
+
+
     let currentAvatarUrl = null;
 
     // Listen for messages from RPM iframe
@@ -292,4 +478,187 @@
         loadSavedAvatar();
     });
 </script>
-{% endblock %} 
+{% endblock %}
+
+{% block extra_js %}
+<!-- Three.js and related libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<!-- Your existing scripts -->
+<script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rpm-avatar.js') }}"></script>
+
+<!-- New clothing scripts -->
+<script src="{{ url_for('static', filename='js/clothing-mapper.js') }}"></script>
+<script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the avatar managers
+        const avatarManager = new AvatarManager({
+            container: document.getElementById('avatar-container')
+        });
+
+        const rpmManager = new RPMAvatarManager({
+            container: document.getElementById('avatar-container')
+        });
+
+        // Initialize clothing renderer
+        window.clothingRenderer = new ClothingRenderer(rpmManager);
+
+        // Handle tab switching
+        const tabs = document.querySelectorAll('.avatar-tab');
+        const sections = document.querySelectorAll('.avatar-section');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Show corresponding section
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === `${tabName}-avatar-section`) {
+                        section.classList.add('active');
+                    }
+                });
+
+                // Load wardrobe items for the active section
+                const activeSection = document.querySelector('.avatar-section.active');
+                const categorySelect = activeSection.querySelector('.category-select');
+                if (categorySelect) {
+                    loadWardrobeItems(categorySelect.value, activeSection.querySelector('.wardrobe-grid').id);
+                }
+            });
+        });
+
+        // Handle category changes
+        document.querySelectorAll('.category-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const gridId = this.closest('.avatar-section').querySelector('.wardrobe-grid').id;
+                loadWardrobeItems(this.value, gridId);
+            });
+        });
+
+        // Load wardrobe items function
+        async function loadWardrobeItems(category, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = '<div class="loading">Loading items...</div>';
+
+            try {
+                const response = await fetch(`/api/wardrobe-items?category=${category}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load wardrobe items');
+                }
+
+                const data = await response.json();
+                container.innerHTML = '';
+
+                const items = data[category] || [];
+
+                if (items.length === 0) {
+                    container.innerHTML = '<div class="error">No items found in this category</div>';
+                    return;
+                }
+
+                items.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'wardrobe-item';
+                    itemElement.dataset.itemId = item._id;
+
+                    const itemName = item.label || 'Unnamed Item';
+
+                    itemElement.innerHTML = `
+                        <div class="item-image">
+                            ${item.file_path ? `
+                                <img src="${item.file_path}"
+                                     alt="${itemName}"
+                                     onerror="this.parentElement.innerHTML='<div class=\\'error-message\\'>Image not available</div>'">
+                            ` : `
+                                <div class="error-message">No image available</div>
+                            `}
+                        </div>
+                        <div class="item-name">${itemName}</div>
+                    `;
+
+                    // Add click handler to try on the item
+                    itemElement.addEventListener('click', function() {
+                        // First select the item visually
+                        container.querySelectorAll('.wardrobe-item').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+
+                        // Then render it on the avatar
+                        if (window.clothingRenderer) {
+                            window.clothingRenderer.renderClothing(item);
+                        }
+                    });
+
+                    container.appendChild(itemElement);
+                });
+            } catch (error) {
+                console.error('Error loading wardrobe items:', error);
+                container.innerHTML = '<div class="error">Failed to load items</div>';
+            }
+        }
+
+        // Handle try on buttons
+        document.querySelectorAll('.try-on-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const section = this.closest('.avatar-section');
+                const selectedItems = section.querySelectorAll('.wardrobe-item.selected');
+
+                if (selectedItems.length === 0) {
+                    alert('Please select items to try on');
+                    return;
+                }
+
+                // Clear previous clothing
+                if (window.clothingRenderer) {
+                    window.clothingRenderer.clearAllClothing();
+                }
+
+                // Try on each selected item
+                for (const item of selectedItems) {
+                    const itemId = item.dataset.itemId;
+
+                    try {
+                        const response = await fetch(`/api/wardrobe/item/${itemId}`);
+                        if (!response.ok) {
+                            throw new Error('Failed to get item data');
+                        }
+
+                        const itemData = await response.json();
+
+                        // Render the clothing
+                        if (window.clothingRenderer) {
+                            await window.clothingRenderer.renderClothing(itemData);
+                        }
+                    } catch (error) {
+                        console.error('Error trying on item:', error);
+                    }
+                }
+            });
+        });
+
+        // Load initial wardrobe items for both sections
+        loadWardrobeItems('tops', 'wardrobe-items-custom');
+        loadWardrobeItems('tops', 'wardrobe-items-rpm');
+
+        // Load the RPM avatar
+        rpmManager.loadSavedAvatar().then(() => {
+            console.log('Avatar loaded, ready for clothing');
+        }).catch(error => {
+            console.error('Error loading avatar:', error);
+        });
+    });
+</script>
+{% endblock %}

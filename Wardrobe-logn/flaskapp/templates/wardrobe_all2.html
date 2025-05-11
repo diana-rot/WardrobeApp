@@ -4,40 +4,97 @@
 
 {% block extra_css %}
 <style>
+    :root {
+        --accent-color: #b49a8d;
+        --accent-color-dark: #a07d6b;
+        --text-color: #222;
+        --card-bg: #fff;
+        --card-border: #e5d5c3;
+        --btn-accent: #b49a8d;
+        --btn-accent-hover: #a07d6b;
+    }
     .wardrobe-title {
-        color: var(--text-color);
+        color: var(--accent-color-dark);
         text-align: center;
         font-weight: bold;
+        margin-bottom: 1.5rem;
     }
-
-    .carousel-item img {
-        max-height: 500px;
+    .category-btn {
+        border-radius: 20px;
+        border: 2px solid var(--accent-color);
+        color: var(--accent-color-dark);
+        background: #fff;
+        font-weight: 500;
+        transition: background 0.2s, color 0.2s;
+    }
+    .category-btn.active, .category-btn:focus {
+        background-color: var(--accent-color);
+        color: #fff;
+        border-color: var(--accent-color-dark);
+    }
+    .wardrobe-card {
+        background: var(--card-bg);
+        border: 1.5px solid var(--card-border);
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(180,154,141,0.08);
+        transition: box-shadow 0.2s, transform 0.2s;
+        padding-bottom: 0.5rem;
+    }
+    .wardrobe-card:hover {
+        box-shadow: 0 8px 24px rgba(180,154,141,0.18);
+        transform: translateY(-4px) scale(1.03);
+    }
+    .img-container {
+        width: 100%;
+        height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f7f3f0;
+        border-radius: 12px 12px 0 0;
+        overflow: hidden;
+    }
+    .card-img-top {
+        max-height: 180px;
+        width: auto;
         object-fit: contain;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        border-radius: 12px 12px 0 0;
+        background: #f7f3f0;
     }
-
-    .carousel-caption {
-        background: rgba(0, 0, 0, 0.6);
-        border-radius: 10px;
-        padding: 10px;
+    .no-image {
+        color: #bbb;
+        font-size: 1.1em;
+        text-align: center;
+        width: 100%;
     }
-
-    .carousel-control-prev, .carousel-control-next {
-        width: 8%;
-    }
-
-    .carousel-control-prev-icon, .carousel-control-next-icon {
-        background-color: rgba(0, 0, 0, 0.7);
+    .color-dot {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
-        padding: 15px;
-        width: 50px;
-        height: 50px;
+        margin-right: 6px;
+        border: 1px solid #ccc;
+        vertical-align: middle;
     }
-
-    .carousel-control-prev:hover .carousel-control-prev-icon,
-    .carousel-control-next:hover .carousel-control-next-icon {
-        background-color: rgba(0, 0, 0, 1);
+    .btn-accent {
+        background: var(--btn-accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+    .btn-accent:hover, .btn-accent:focus {
+        background: var(--btn-accent-hover);
+        color: #fff;
+    }
+    .btn-danger {
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .card-footer {
+        background: none;
+        border: none;
     }
 </style>
 {% endblock %}
@@ -45,48 +102,79 @@
 {% block content %}
 <div class="container mt-4">
     <h1 class="wardrobe-title">Your Wardrobe</h1>
-
-    <div class="col-md-8">
-        {% set wardrobe_list = wardrobes | list %}
-        {% if wardrobe_list|length > 0 %}
-        <div id="wardrobeCarousel" class="carousel slide" data-bs-ride="carousel">
-            <div class="carousel-indicators">
-                {% for item in wardrobe_list %}
-                <button type="button" data-bs-target="#wardrobeCarousel" data-bs-slide-to="{{ loop.index0 }}"
-                    {% if loop.first %}class="active"{% endif %}></button>
-                {% endfor %}
-            </div>
-
-            <div class="carousel-inner">
-                {% for item in wardrobe_list %}
-                <div class="carousel-item {% if loop.first %}active{% endif %}">
-                    <img src="{{ item.file_path }}" class="d-block w-100 img-fluid" alt="Clothing Item">
-                    <div class="carousel-caption d-none d-md-block">
-                        <h5>{{ item.label }}</h5>
-                        <p>Color: RGB({{ item.color.rgb|join(', ') }})</p>
-                        <div class="d-flex justify-content-center gap-2">
-                            <button class="btn btn-warning add-to-favorites" data-id="{{ item._id }}">Add to Favorites</button>
-                            <button class="btn btn-danger delete-item" data-id="{{ item._id }}">Delete</button>
-                        </div>
-                    </div>
+    {% set categories = ['tops', 'bottoms', 'dresses', 'outerwear', 'shoes', 'accessories'] %}
+    <div class="mb-4 d-flex justify-content-center gap-3 flex-wrap">
+        {% for category in categories %}
+            <button class="btn btn-accent category-btn" data-category="{{ category }}">{{ category|capitalize }}</button>
+        {% endfor %}
+    </div>
+    <div id="wardrobe-categories">
+        {% for category in categories %}
+            <div class="wardrobe-category-section" data-category-section="{{ category }}" style="display: none;">
+                <div class="row row-cols-2 row-cols-md-4 g-3">
+                    {% set items = wardrobe_items[category] if wardrobe_items[category] is defined else [] %}
+                    {% if items|length > 0 %}
+                        {% for item in items %}
+                            <div class="col">
+                                <div class="card h-100 wardrobe-card site-accent-border">
+                                    <div class="img-container">
+                                        {% if item.file_path %}
+                                            <img src="{{ item.file_path }}" class="card-img-top" alt="{{ item.label }}" onerror="this.onerror=null;this.src='/static/image/no-image.png';">
+                                        {% else %}
+                                            <div class="no-image">No image</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ item.label }}</h5>
+                                        <p class="card-text">Color: 
+                                            {% if item.color.rgb %}
+                                                <span class="color-dot" style="background: rgb({{ item.color.rgb|join(',') }});"></span>
+                                                RGB({{ item.color.rgb|join(', ') }})
+                                            {% else %}
+                                                {{ item.color }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="card-footer d-flex justify-content-center gap-2">
+                                        <button class="btn btn-accent add-to-favorites" data-id="{{ item._id }}">Add to Favorites</button>
+                                        <button class="btn btn-danger delete-item" data-id="{{ item.id }}">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col"><p class="text-muted">No items in this category.</p></div>
+                    {% endif %}
                 </div>
-                {% endfor %}
             </div>
-
-            <button class="carousel-control-prev" type="button" data-bs-target="#wardrobeCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#wardrobeCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            </button>
-        </div>
-        {% endif %}
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// Category filtering
+const categoryBtns = document.querySelectorAll('.category-btn');
+const categorySections = document.querySelectorAll('.wardrobe-category-section');
+function showCategory(category) {
+    categorySections.forEach(section => {
+        section.style.display = section.getAttribute('data-category-section') === category ? '' : 'none';
+    });
+    categoryBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-category') === category);
+    });
+}
+if (categoryBtns.length) {
+    showCategory(categoryBtns[0].getAttribute('data-category'));
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            showCategory(this.getAttribute('data-category'));
+        });
+    });
+}
+// Delete button logic
+
 document.querySelectorAll('.delete-item').forEach(button => {
     button.addEventListener('click', async function(e) {
         e.preventDefault();
@@ -97,16 +185,17 @@ document.querySelectorAll('.delete-item').forEach(button => {
                     method: 'DELETE'
                 });
                 if (response.ok) {
-                    const carouselItem = this.closest('.carousel-item');
-                    if (carouselItem.classList.contains('active')) {
-                        const nextItem = carouselItem.nextElementSibling || carouselItem.parentNode.firstElementChild;
-                        nextItem.classList.add('active');
+                    // Remove the card from the DOM
+                    const card = this.closest('.col');
+                    card.remove();
+                    // If no cards left in the visible section, show the empty message
+                    const visibleSection = document.querySelector('.wardrobe-category-section:not([style*="display: none"])');
+                    const remainingCards = visibleSection.querySelectorAll('.col');
+                    if (remainingCards.length === 0) {
+                        visibleSection.innerHTML += '<div class="col"><p class="text-muted">No items in this category.</p></div>';
                     }
-                    carouselItem.remove();
-
-                    if (document.querySelectorAll('.carousel-item').length === 0) {
-                        window.location.reload();
-                    }
+                } else {
+                    alert('Failed to delete item');
                 }
             } catch (error) {
                 console.error('Error:', error);

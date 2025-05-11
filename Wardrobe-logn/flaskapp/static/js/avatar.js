@@ -11,7 +11,7 @@ let loadingProgress = document.getElementById('loading-progress');
 // Model paths for different genders
 const MODEL_PATHS = {
     male: '/static/models/avatar/male.gltf',
-    female: '/static/models/avatar/female_1.glb'
+    female: '/static/models/avatar/female.glb'
 };
 
 // Hair style paths
@@ -133,77 +133,92 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load the female avatar by default
     loadAvatarModel({ gender: 'female' });
+
+    const refreshBtn = document.getElementById('refresh-preview-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            updateAvatarPreview();
+            if (typeof showMessage === 'function') showMessage('Preview refreshed', 'info');
+        });
+    }
 });
 
 // Initialize the 3D scene
 function init() {
-    // Get container
-    avatarContainer = document.getElementById('avatarContainer');
-    
+    // Get the avatar container if it's not already defined
+    avatarContainer = document.getElementById('avatar-container');
+    // Check if container exists and is properly initialized
+    if (!avatarContainer) {
+        console.error('Avatar container not found');
+        return;
+    }
+
     // Create scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
-    
-    // Calculate available space for renderer (excluding left menu)
-    const leftMenu = document.querySelector('.customization-panel') || document.querySelector('.left-panel');
-    const menuWidth = leftMenu ? leftMenu.offsetWidth : 300; // Default to 300px if menu not found
-    const availableWidth = window.innerWidth - menuWidth;
-    
-    // Create camera with better initial position
-    camera = new THREE.PerspectiveCamera(45, availableWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 3);
-    
-    // Create renderer with improved settings
-    renderer = new THREE.WebGLRenderer({ 
-        antialias: true,
-        alpha: true
-    });
-    renderer.setSize(availableWidth, window.innerHeight);
+
+    // Set up camera with further position
+    camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 0.0);
+
+    // Set up renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
+
+    // Get menu width for positioning
+    const leftMenu = document.querySelector('.customization-panel') || document.querySelector('.left-panel');
+    const menuWidth = leftMenu ? leftMenu.offsetWidth : 0;
     
-    // Position the renderer next to the menu
-    avatarContainer.style.position = 'absolute';
-    avatarContainer.style.left = menuWidth + 'px';
-    avatarContainer.style.top = '0';
-    avatarContainer.appendChild(renderer.domElement);
-    
-    // Add orbit controls with better constraints
+    // Set up container and renderer
+    if (avatarContainer) {
+        avatarContainer.style.position = 'absolute';
+        avatarContainer.style.left = menuWidth + 'px';
+        avatarContainer.style.top = '0';
+        
+        // Set renderer size based on container
+        const width = avatarContainer.clientWidth || window.innerWidth - menuWidth;
+        const height = avatarContainer.clientHeight || window.innerHeight;
+        renderer.setSize(width, height);
+        avatarContainer.appendChild(renderer.domElement);
+    }
+
+    // Adjust orbit controls for closer viewing
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.minDistance = 2;
-    controls.maxDistance = 10;
+    controls.maxDistance = 6;
     controls.target.set(0, 1, 0);
     controls.maxPolarAngle = Math.PI * 0.8;
     controls.minPolarAngle = Math.PI * 0.2;
-    
-    // Enhanced lighting setup
+
+    // Set up lighting
     setupLighting();
-    
-    // Add ground plane for better context
-        const groundGeometry = new THREE.PlaneGeometry(10, 10);
-    const groundMaterial = new THREE.MeshStandardMaterial({ 
+
+    // Add ground plane
+    const groundGeometry = new THREE.PlaneGeometry(10, 10);
+    const groundMaterial = new THREE.MeshStandardMaterial({
         color: 0xcccccc,
         roughness: 0.8,
         metalness: 0.2
     });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
-        ground.receiveShadow = true;
+    ground.receiveShadow = true;
     scene.add(ground);
-    
+
     // Start animation loop
     animate();
 
     // Handle window resize
     window.addEventListener('resize', onWindowResize, false);
-    }
+}
 
 // Set up enhanced lighting
 function setupLighting() {
@@ -480,10 +495,13 @@ async function updateAvatar(avatarData) {
         // Update UI controls to match avatar
         updateUIControls(avatarData);
         
-        // Update camera position to focus on avatar
-        camera.position.set(0, 1.6, 2);
-        controls.target.set(0, 1, 0);
+        // Reset camera position for further view
+        camera.position.set(0, 1.5, 4.0);
+        controls.target.set(0, 0.9, 0);
         controls.update();
+        
+        // Update the preview
+        updateAvatarPreview();
         
         return avatarModel;
     } catch (error) {
@@ -495,7 +513,6 @@ async function updateAvatar(avatarData) {
 // Load the avatar model
 async function loadAvatarModel(avatarData) {
     showLoading();
-    
     try {
         // Clean up existing avatar
         if (avatar) {
@@ -513,12 +530,10 @@ async function loadAvatarModel(avatarData) {
                 }
             });
         }
-
-        // Load the model
-        const loader = new THREE.GLTFLoader();
-        const modelPath = MODEL_PATHS[avatarData?.gender || 'female'];
+        // Always load the female.glb model
+        const modelPath = '/static/models/avatar/female.glb';
         console.log('Loading model from:', modelPath);
-
+        const loader = new THREE.GLTFLoader();
         const gltf = await new Promise((resolve, reject) => {
             loader.load(
                 modelPath,
@@ -530,38 +545,20 @@ async function loadAvatarModel(avatarData) {
                 reject
             );
         });
-
         // Set up the avatar
         avatar = gltf.scene;
-        
-        // Check for morph targets
-        avatar.traverse((node) => {
-            if (node.isMesh && node.morphTargetDictionary) {
-                console.log('Found morph targets:', node.morphTargetDictionary);
-                // Store reference to mesh with morph targets
-                node.morphTargetInfluences = node.morphTargetInfluences || [];
-                setupMorphTargetControls(node);
-            }
-        });
-        
-        // Scale and position the avatar appropriately
-        avatar.scale.set(1, 1, 1);
-        avatar.position.set(0, 0, 0);
-
-        // Add the avatar to the scene
+        avatar.scale.set(1.1, 1.1, 1.1);  // Make avatar slightly bigger
+        avatar.position.set(0, 0, 0);  // Keep position at origin
         scene.add(avatar);
-
-        // Reset camera position for better view
-        camera.position.set(0, 1.6, 2);
-        controls.target.set(0, 1, 0);
+        camera.position.set(0, 1.5, 4.0);
+        controls.target.set(0, 0.9, 0);
         controls.update();
-
         hideLoading();
         return true;
     } catch (error) {
         console.error('Error loading avatar model:', error);
         hideLoading();
-        createFallbackAvatar();
+        // Do NOT create a fallback avatar - this prevents the placeholder figurine
         return false;
     }
 }
@@ -666,11 +663,26 @@ function createHairMaterial(hairColor) {
 
 // Create a simple fallback avatar
 function createFallbackAvatar() {
-    const geometry = new THREE.CylinderGeometry(0.3, 0.2, 1.8, 32);
-    const material = new THREE.MeshPhongMaterial({ color: 0x808080 });
-    avatar = new THREE.Mesh(geometry, material);
-    avatar.position.set(0, 0.9, 0);
-    scene.add(avatar);
+    const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.25, 1.2, 16);
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xddccbb });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.set(0, 0.6, 0);
+    
+    const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+    const headMaterial = new THREE.MeshStandardMaterial({ color: 0xddccbb });
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.set(0, 1.3, 0);
+    
+    const fallbackAvatar = new THREE.Group();
+    fallbackAvatar.add(body);
+    fallbackAvatar.add(head);
+    
+    scene.add(fallbackAvatar);
+    avatar = fallbackAvatar;
+    
+    camera.position.set(0, 1.5, 4.0);
+    controls.target.set(0, 0.9, 0);
+    controls.update();
 }
 
 // Loading overlay management
@@ -731,181 +743,136 @@ async function tryOnClothing(itemId) {
 
 // Apply clothing to avatar
 async function applyClothing(item) {
-    // This is a simplified version - in a real implementation, 
-    // you would load 3D models for each clothing item
-    
-    // For now, we'll create a simple placeholder representation
-    const type = item.type || 'unknown';
-    
-    // Remove existing clothing of the same type
-    if (currentClothing[type]) {
-        scene.remove(currentClothing[type]);
-        currentClothing[type] = null;
+    console.log('[DEBUG] Applying clothing item:', item);
+    const category = getCustomClothingCategory(item.type);
+    console.log('[DEBUG] Clothing category:', category);
+
+    // Remove existing clothing of the same category
+    if (currentClothing[category]) {
+        console.log('[DEBUG] Removing existing clothing of category:', category);
+        scene.remove(currentClothing[category]);
+        currentClothing[category] = null;
     }
-    
-    // Parse color
-    const color = item.color || '#FFFFFF';
-    const colorValue = new THREE.Color(color);
-    
-    // Create a clothing item based on type
-    let clothingMesh;
-    
-    switch (type) {
-        case 'top':
-            // Create a simple shirt shape
-            const shirtGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.5, 16);
-            const shirtMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(shirtGeo, shirtMat);
-            clothingMesh.position.set(0, 1.2, 0);
-            break;
-            
-        case 'bottom':
-            // Create simple pants
-            const pantsGeo = new THREE.CylinderGeometry(0.25, 0.2, 0.8, 16);
-            const pantsMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(pantsGeo, pantsMat);
-            clothingMesh.position.set(0, 0.6, 0);
-            break;
-            
-        case 'dress':
-            // Create a simple dress shape
-            const dressGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 16);
-            const dressMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(dressGeo, dressMat);
-            clothingMesh.position.set(0, 0.8, 0);
-            break;
-            
-        case 'outerwear':
-            // Create a simple jacket shape
-            const jacketGeo = new THREE.CylinderGeometry(0.35, 0.3, 0.6, 16);
-            const jacketMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(jacketGeo, jacketMat);
-            clothingMesh.position.set(0, 1.2, 0);
-            break;
-            
-        case 'shoes':
-            // Create simple shoes
-            const shoeGeo = new THREE.BoxGeometry(0.2, 0.1, 0.3);
-            const shoeMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            
-            // Create left and right shoes
-            const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
-            leftShoe.position.set(-0.15, 0.05, 0);
-            
-            const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
-            rightShoe.position.set(0.15, 0.05, 0);
-            
-            // Create a group to hold both shoes
-            clothingMesh = new THREE.Group();
-            clothingMesh.add(leftShoe);
-            clothingMesh.add(rightShoe);
-            break;
-            
-        case 'accessory':
-            // Create a simple accessory (like a hat)
-            const hatGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
-            const hatMat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(hatGeo, hatMat);
-            clothingMesh.position.set(0, 1.9, 0);
-            break;
-            
-        default:
-            // Generic placeholder
-            const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-            const mat = new THREE.MeshStandardMaterial({ color: colorValue });
-            clothingMesh = new THREE.Mesh(geo, mat);
-            clothingMesh.position.set(0, 1.2, 0);
-    }
-    
-    // Add shadow casting
-    if (clothingMesh) {
-        clothingMesh.traverse((node) => {
-            if (node.isMesh) {
-                node.castShadow = true;
-                node.receiveShadow = true;
+
+    const modelPath = getCustomModelPath(item.type);
+    console.log('[DEBUG] Loading model from path:', modelPath);
+
+    try {
+        const gltf = await gltfLoader.loadAsync(modelPath);
+        console.log('[DEBUG] Model loaded successfully');
+
+        const model = gltf.scene;
+        const adjustments = CUSTOM_POSITION_ADJUSTMENTS[category] || { y: 0, scale: 1 };
+
+        // Apply position and scale
+        model.position.set(0, adjustments.y, 0);
+        model.scale.set(adjustments.scale, adjustments.scale, adjustments.scale);
+        
+        // Apply rotation if specified
+        if (adjustments.rotation) {
+            model.rotation.set(
+                adjustments.rotation.x,
+                adjustments.rotation.y,
+                adjustments.rotation.z
+            );
+        }
+
+        // Enable shadows
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
             }
         });
-        
-        // Add to scene
-        scene.add(clothingMesh);
-        
-        // Store for later reference
-        currentClothing[type] = clothingMesh;
-        
-        // Attach item data for reference
-        clothingMesh.userData = {
-            itemId: item.id,
-            label: item.label,
-            type: item.type
-        };
+
+        scene.add(model);
+        currentClothing[category] = model;
+        console.log('[DEBUG] Clothing applied successfully');
+    } catch (error) {
+        console.error('[DEBUG] Error loading model:', error);
+        // Fallback to basic shape if model loading fails
+        const fallbackMesh = createFallbackClothing(item);
+        if (fallbackMesh) {
+            scene.add(fallbackMesh);
+            currentClothing[category] = fallbackMesh;
+            console.log('[DEBUG] Fallback clothing applied');
+        }
     }
-    
-    return clothingMesh;
 }
 
 // Load wardrobe items
-async function loadWardrobeItems(category) {
-    const container = document.getElementById('wardrobeItems');
-    
-    // Show loading
-    container.innerHTML = '<div class="loading">Loading your wardrobe...</div>';
-    
+async function loadWardrobeItems(category, containerId = 'wardrobe-items') {
     try {
-        const response = await fetch(`/api/wardrobe-items?category=${category}`);
+        const response = await fetch(`/api/wardrobe/items?category=${category}`);
         if (!response.ok) {
             throw new Error('Failed to load wardrobe items');
         }
-        
-        const data = await response.json();
-        
-        // Clear container
+
+        const items = await response.json();
+        const container = document.getElementById(containerId);
         container.innerHTML = '';
-        
-        // Get items for the selected category
-        const items = data[category] || [];
-        
-        if (items.length === 0) {
-            container.innerHTML = '<div class="no-items">No items in this category</div>';
+
+        if (!items || items.length === 0) {
+            container.innerHTML = '<div class="error">No items found in this category</div>';
             return;
         }
-        
-        // Create item elements
+
         items.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.className = 'wardrobe-item';
             itemElement.dataset.itemId = item._id;
-            
-            const hasValidImage = item.file_path && 
-                               item.file_path !== 'null' && 
-                               !item.file_path.includes('undefined');
-            
-            const itemName = item.label || 'Unnamed Item';
+            itemElement.dataset.itemType = item.type || item.category;
+            itemElement.dataset.category = category;
+            itemElement.dataset.imageUrl = item.file_path || item.imageUrl;
             
             itemElement.innerHTML = `
-                <div class="item-image">
-                    ${hasValidImage ? 
-                        `<img src="${item.file_path}" 
-                             alt="${itemName}"
-                             onerror="this.parentElement.innerHTML='<div class=\'error-message\'>Image not available</div>'">`
-                        : 
-                        `<div class="error-message">No image available</div>`
-                    }
-                </div>
-                <div class="item-name">${itemName}</div>
+                <img src="${item.file_path || item.imageUrl}" alt="${item.label}" onerror="this.onerror=null;this.src='/static/image/no-image.png';">
+                <div class="item-name">${item.label}</div>
+                <div class="item-category">${item.type || item.category}</div>
             `;
 
-            itemElement.addEventListener('click', function() {
-                container.querySelectorAll('.wardrobe-item').forEach(el => {
-                    el.classList.remove('selected');
-                });
-                this.classList.add('selected');
+            // Add click handler for selection
+            itemElement.addEventListener('click', async function() {
+                // Toggle selection state
+                this.classList.toggle('selected');
+                
+                // Get the active tab
+                const customTab = document.getElementById('custom-avatar-tab');
+                const rpmTab = document.getElementById('rpm-avatar-tab');
+                
+                if (this.classList.contains('selected')) {
+                    // Item was selected - apply clothing
+                    if (customTab && customTab.classList.contains('active')) {
+                        console.log('[DEBUG] Custom avatar tab is active. Applying clothing to custom avatar.');
+                        await avatarManager.loadClothing(item._id, item.type || item.category);
+                        avatarManager.updateAvatarPreview && avatarManager.updateAvatarPreview();
+                        if (typeof showMessage === 'function') showMessage(item.type + ' applied to custom avatar', 'success');
+                    } else if (rpmTab && rpmTab.classList.contains('active')) {
+                        console.log('[DEBUG] RPM avatar tab is active. Applying clothing to RPM avatar.');
+                        await rpmManager.loadClothing(item._id, item.type || item.category);
+                        if (typeof showMessage === 'function') showMessage(item.type + ' applied to RPM avatar', 'success');
+                    }
+                } else {
+                    // Item was deselected - remove clothing
+                    if (customTab && customTab.classList.contains('active')) {
+                        console.log('[DEBUG] Custom avatar tab is active. Removing clothing from custom avatar.');
+                        avatarManager.removeClothing(item._id);
+                        avatarManager.updateAvatarPreview && avatarManager.updateAvatarPreview();
+                    } else if (rpmTab && rpmTab.classList.contains('active')) {
+                        console.log('[DEBUG] RPM avatar tab is active. Removing clothing from RPM avatar.');
+                        rpmManager.removeClothing(item._id);
+                    }
+                }
             });
 
             container.appendChild(itemElement);
         });
     } catch (error) {
         console.error('Error loading wardrobe items:', error);
-        container.innerHTML = '<div class="error">Failed to load items</div>';
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = '<div class="error">Failed to load items</div>';
+        }
     }
 }
 
@@ -1354,37 +1321,101 @@ async function applyBodyFeatures(bodyFeatures) {
 }
 
 class AvatarManager {
-    constructor(options) {
+    constructor(options = {}) {
+        if (!options.container) {
+            console.error('Container element is required for AvatarManager');
+            return;
+        }
         this.container = options.container;
         this.scene = null;
         this.camera = null;
         this.renderer = null;
         this.controls = null;
-        this.avatar = null;
-        this.loadingOverlay = this.container.querySelector('.loading-overlay');
-        this.loadingProgress = this.container.querySelector('#loading-progress');
+        this.avatarModel = null;
+        this.animations = {};
+        this.mixer = null;
+        // Add clothing management
+        this.clothingItems = new Map();
+        this.gltfLoader = new THREE.GLTFLoader();
+        this.positionAdjustments = {
+            'tops': { y: 1.4, scale: 0.5 },
+            'bottoms': { y: 0.6, scale: 0.5 },
+            'dresses': { y: 1.0, scale: 0.6 },
+            'skirts': { y: 0.7, scale: 0.5 },
+            'outerwear': { y: 1.3, scale: 0.55 },
+            'shoes': { y: 0.1, scale: 0.4 },
+            'accessories': { y: 1.5, scale: 0.4 }
+        };
+        this.categoryMapping = {
+            'tops': ['T-shirt/top', 'Shirt', 'Pullover', 'Top', 'tshirt'],
+            'bottoms': ['Trouser', 'Pants', 'pants', 'Jeans', 'jeans'],
+            'dresses': ['Dress', 'dress'],
+            'skirts': ['Skirt', 'skirt', 'maxi_skirt'],
+            'outerwear': ['Jacket', 'Coat'],
+            'shoes': ['Sandal', 'Sneaker', 'Ankle boot'],
+            'accessories': ['Bag']
+        };
+        this.modelMapping = {
+            // Tops
+            'T-shirt/top': '/static/models/clothing/top.glb',
+            'Shirt': '/static/models/clothing/top.glb',
+            'Pullover': '/static/models/clothing/top.glb',
+            'Top': '/static/models/clothing/top.glb',
+            'tshirt': '/static/models/clothing/top.glb',
+            // Bottoms
+            'Trouser': '/static/models/clothing/pants.glb',
+            'Pants': '/static/models/clothing/pants.glb',
+            'pants': '/static/models/clothing/pants.glb',
+            'Jeans': '/static/models/clothing/jeans.glb',
+            'jeans': '/static/models/clothing/jeans.glb',
+            // Dresses
+            'Dress': '/static/models/clothing/dress.glb',
+            'dress': '/static/models/clothing/dress.glb',
+            // Skirts
+            'Skirt': '/static/models/clothing/skirt.glb',
+            'skirt': '/static/models/clothing/skirt.glb',
+            'maxi_skirt': '/static/models/clothing/maxi_skirt.glb',
+            // Outerwear
+            'Jacket': '/static/models/clothing/jacket.glb',
+            'Coat': '/static/models/clothing/coat.glb',
+            // Shoes
+            'Sandal': '/static/models/clothing/sandal.glb',
+            'Sneaker': '/static/models/clothing/sneaker.glb',
+            'Ankle boot': '/static/models/clothing/ankle_boot.glb',
+            // Accessories
+            'Bag': '/static/models/clothing/bag.glb'
+        };
+        // Initialize the 3D scene
+        this.init();
+        // Set up event listeners
+        this.setupEventListeners();
     }
 
     init() {
-        // Initialize Three.js scene
+        // Create scene
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xf0f0f0);
 
-        // Setup camera
+        // Set up camera with further position
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
-        this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-        this.camera.position.set(0, 1.6, 2);
-        this.camera.lookAt(0, 1.6, 0);
+        this.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+        this.camera.position.set(0, 1.5, 4.0);
 
-        // Setup renderer
+        // Set up renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(width, height);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.0;
+
+        // Add renderer to container
         this.container.appendChild(this.renderer.domElement);
 
-        // Setup controls
+        // Set up controls
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.target.set(0, 1.6, 0);
         this.controls.enableDamping = true;
@@ -1396,7 +1427,6 @@ class AvatarManager {
 
         const mainLight = new THREE.DirectionalLight(0xffffff, 1);
         mainLight.position.set(5, 5, 5);
-        mainLight.castShadow = true;
         this.scene.add(mainLight);
 
         const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
@@ -1416,7 +1446,7 @@ class AvatarManager {
         this.scene.add(ground);
 
         // Handle window resize
-        window.addEventListener('resize', this.onWindowResize.bind(this));
+        window.addEventListener('resize', () => this.onWindowResize(), false);
 
         // Start animation loop
         this.animate();
@@ -1521,12 +1551,12 @@ class AvatarManager {
             const gltf = await loader.loadAsync(url);
 
             // Remove existing avatar if any
-            if (this.avatar) {
-                this.scene.remove(this.avatar);
+            if (this.avatarModel) {
+                this.scene.remove(this.avatarModel);
             }
 
-            this.avatar = gltf.scene;
-            this.avatar.traverse((node) => {
+            this.avatarModel = gltf.scene;
+            this.avatarModel.traverse((node) => {
                 if (node.isMesh) {
                     node.castShadow = true;
                     node.receiveShadow = true;
@@ -1534,17 +1564,20 @@ class AvatarManager {
             });
 
             // Center the avatar
-            const box = new THREE.Box3().setFromObject(this.avatar);
+            const box = new THREE.Box3().setFromObject(this.avatarModel);
             const center = box.getCenter(new THREE.Vector3());
-            this.avatar.position.sub(center);
+            this.avatarModel.position.sub(center);
 
             // Scale the avatar to a reasonable size
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
             const scale = 1.7 / maxDim;
-            this.avatar.scale.multiplyScalar(scale);
+            this.avatarModel.scale.multiplyScalar(scale);
 
-            this.scene.add(this.avatar);
+            this.scene.add(this.avatarModel);
+
+            // Update the preview
+            this.updateAvatarPreview();
 
         } catch (error) {
             console.error('Error loading avatar:', error);
@@ -1553,4 +1586,865 @@ class AvatarManager {
             this.hideLoading();
         }
     }
+
+    setupEventListeners() {
+        // Avatar form submission
+        const avatarForm = document.getElementById('avatar-form');
+        if (avatarForm) {
+            avatarForm.addEventListener('submit', this.handleFormSubmit.bind(this));
+        }
+        
+        // Update avatar button
+        const updateButton = document.getElementById('updateAvatar');
+        if (updateButton) {
+            updateButton.addEventListener('click', this.handleAvatarUpdate.bind(this));
+        }
+        
+        // Clothing category selection
+        const categorySelect = document.getElementById('clothingCategory');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', (e) => {
+                this.loadWardrobeItems(e.target.value);
+            });
+        }
+        
+        // Add photo upload handler
+        const photoInput = document.getElementById('photo');
+        if (photoInput) {
+            photoInput.addEventListener('change', this.handlePhotoUpload.bind(this));
+        }
+
+        // Set up tab switching
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons and panels
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding panel
+                button.classList.add('active');
+                const panelId = `${button.dataset.tab}-panel`;
+                document.getElementById(panelId).classList.add('active');
+            });
+        });
+
+        // Set up measurement sliders
+        this.setupMeasurementSliders();
+
+        // Add preset card click handlers
+        const presetCards = document.querySelectorAll('.preset-card');
+        presetCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove selected class from all cards
+                presetCards.forEach(c => c.classList.remove('selected'));
+                // Add selected class to clicked card
+                card.classList.add('selected');
+                // Apply the preset
+                this.applyBodyTypePreset(card.dataset.preset);
+            });
+        });
+    }
+
+    setupMeasurementSliders() {
+        const sliders = document.querySelectorAll('.measurement-slider');
+        sliders.forEach(slider => {
+            const valueDisplay = slider.nextElementSibling;
+            
+            // Update value display
+            slider.addEventListener('input', (e) => {
+                valueDisplay.textContent = e.target.value;
+            });
+            
+            // Update avatar when slider changes
+            slider.addEventListener('change', () => {
+                this.updateAvatarFromControls();
+            });
+        });
+    }
+
+    updateAvatarFromControls() {
+        if (!this.avatarModel) return;
+
+        const features = {
+            // Face features
+            face_width: parseFloat(document.getElementById('faceWidth').value),
+            face_height: parseFloat(document.getElementById('faceHeight').value),
+            eye_distance: parseFloat(document.getElementById('eyeDistance').value),
+            nose_length: parseFloat(document.getElementById('noseLength').value),
+            mouth_width: parseFloat(document.getElementById('mouthWidth').value),
+            
+            // Body features
+            body_height: parseFloat(document.getElementById('height').value),
+            shoulder_width: parseFloat(document.getElementById('shoulderWidth').value),
+            hip_width: parseFloat(document.getElementById('hipWidth').value),
+            arm_length: parseFloat(document.getElementById('armLength').value),
+            leg_length: parseFloat(document.getElementById('legLength').value)
+        };
+
+        this.applyFeatures(this.avatarModel, features);
+    }
+
+    applyFeatures(avatar, features) {
+        if (!avatar) return;
+
+        // Store original scale for reference
+        const originalScale = avatar.scale.clone();
+
+        // Apply body features with bone transformations
+        avatar.traverse((child) => {
+            if (child.isMesh) {
+                const name = child.name.toLowerCase();
+                
+                // Body scaling
+                if (name.includes('torso') || name.includes('chest')) {
+                    child.scale.x = originalScale.x * (features.shoulder_width || 1.0);
+                    child.scale.y = originalScale.y * (features.body_height || 1.0);
+                    if (features.waist_width) {
+                        // Apply waist scaling at the bottom of the torso
+                        const waistScale = features.waist_width;
+                        child.geometry.scale(waistScale, 1, waistScale);
+                    }
+                }
+                
+                // Hip area
+                if (name.includes('hip')) {
+                    child.scale.x = originalScale.x * (features.hip_width || 1.0);
+                }
+                
+                // Arms
+                if (name.includes('arm') || name.includes('shoulder')) {
+                    if (name.includes('upper')) {
+                        child.scale.y = originalScale.y * (features.arm_length || 1.0) * 0.5;
+                    } else if (name.includes('lower')) {
+                        child.scale.y = originalScale.y * (features.arm_length || 1.0) * 0.5;
+                    }
+                }
+                
+                // Legs
+                if (name.includes('leg') || name.includes('thigh')) {
+                    if (name.includes('upper')) {
+                        child.scale.y = originalScale.y * (features.leg_length || 1.0) * 0.5;
+                    } else if (name.includes('lower')) {
+                        child.scale.y = originalScale.y * (features.leg_length || 1.0) * 0.5;
+                    }
+                }
+                
+                // Face features
+                if (name.includes('head') || name.includes('face')) {
+                    if (features.face_width) child.scale.x = originalScale.x * features.face_width;
+                    if (features.face_height) child.scale.y = originalScale.y * features.face_height;
+                }
+                
+                // Apply specific face feature scaling
+                if (name.includes('eye') && features.eye_distance) {
+                    child.scale.x = features.eye_distance;
+                }
+                if (name.includes('nose') && features.nose_length) {
+                    child.scale.y = features.nose_length;
+                }
+                if (name.includes('mouth') && features.mouth_width) {
+                    child.scale.x = features.mouth_width;
+                }
+            }
+        });
+
+        // Update the scene
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    applyBodyTypePreset(presetName) {
+        const gender = document.getElementById('gender').value;
+        const preset = BODY_TYPE_PRESETS[gender][presetName];
+        
+        if (!preset) return;
+
+        // Update UI controls with preset values
+        Object.entries(preset).forEach(([key, value]) => {
+            const control = document.getElementById(key);
+            if (control) {
+                control.value = value;
+                control.nextElementSibling.textContent = value;
+            }
+        });
+
+        // Create features object from preset
+        const features = {
+            ...preset,
+            // Keep existing face features
+            face_width: parseFloat(document.getElementById('faceWidth').value),
+            face_height: parseFloat(document.getElementById('faceHeight').value),
+            eye_distance: parseFloat(document.getElementById('eyeDistance').value),
+            nose_length: parseFloat(document.getElementById('noseLength').value),
+            mouth_width: parseFloat(document.getElementById('mouthWidth').value)
+        };
+
+        // Apply features to avatar
+        this.applyFeatures(this.avatarModel, features);
+    }
+
+    handleAvatarUpdate() {
+        // Implementation needed
+    }
+
+    handlePhotoUpload(event) {
+        // Implementation needed
+    }
+
+    loadWardrobeItems(category) {
+        // Implementation needed
+    }
+
+    updateAvatarPreview() {
+        const previewContainer = document.getElementById('custom-avatar-preview');
+        if (!previewContainer || !this.renderer || !this.scene || !this.camera) {
+            console.warn('Cannot update preview: missing elements');
+            return;
+        }
+        while (previewContainer.firstChild) {
+            previewContainer.removeChild(previewContainer.firstChild);
+        }
+        try {
+            const previewRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            previewRenderer.setSize(previewContainer.clientWidth, previewContainer.clientHeight);
+            previewRenderer.setPixelRatio(window.devicePixelRatio);
+            previewRenderer.outputEncoding = THREE.sRGBEncoding;
+            previewContainer.appendChild(previewRenderer.domElement);
+            const previewCamera = new THREE.PerspectiveCamera(
+                40,
+                previewContainer.clientWidth / previewContainer.clientHeight,
+                0.1,
+                1000
+            );
+            previewCamera.position.set(1.2, 1.5, 3);
+            const previewScene = new THREE.Scene();
+            previewScene.background = new THREE.Color(0xf5f5f5);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            previewScene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 2, 1);
+            previewScene.add(directionalLight);
+            if (this.avatarModel) {
+                const avatarClone = this.avatarModel.clone();
+                avatarClone.scale.set(0.9, 0.9, 0.9);
+                previewScene.add(avatarClone);
+                for (const type in currentClothing) {
+                    if (currentClothing[type]) {
+                        const clothingClone = currentClothing[type].clone();
+                        previewScene.add(clothingClone);
+                    }
+                }
+            } else {
+                const geometry = new THREE.BoxGeometry(0.5, 1.7, 0.3);
+                const material = new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true });
+                const placeholder = new THREE.Mesh(geometry, material);
+                placeholder.position.y = 0.85;
+                previewScene.add(placeholder);
+            }
+            previewCamera.lookAt(0, 1, 0);
+            function animatePreview() {
+                if (!previewContainer.isConnected) return;
+                requestAnimationFrame(animatePreview);
+                previewCamera.position.x = Math.sin(Date.now() * 0.0005) * 2;
+                previewCamera.position.z = Math.cos(Date.now() * 0.0005) * 2;
+                previewCamera.lookAt(0, 1, 0);
+                previewRenderer.render(previewScene, previewCamera);
+            }
+            animatePreview();
+            console.log('Avatar preview updated');
+        } catch (error) {
+            console.error('Error updating avatar preview:', error);
+            previewContainer.innerHTML = '<div class="preview-placeholder"><i class="bi bi-exclamation-triangle"></i><p>Preview failed to load</p></div>';
+        }
+    }
+
+    clearAllClothing() {
+        if (!this.clothingItems) {
+            console.warn('[DEBUG] No clothingItems map found.');
+            return;
+        }
+        console.log('[DEBUG] Clearing all clothing items...');
+        for (const [itemId, item] of this.clothingItems.entries()) {
+            if (item.mesh) {
+                if (item.mesh.parent) {
+                    item.mesh.parent.remove(item.mesh);
+                    console.log(`[DEBUG] Removed mesh from parent for itemId: ${itemId}`);
+                } else {
+                    console.warn(`[DEBUG] Mesh for itemId: ${itemId} had no parent`);
+                }
+                item.mesh.traverse((node) => {
+                    if (node.isMesh) {
+                        if (node.geometry) {
+                            node.geometry.dispose();
+                            console.log(`[DEBUG] Disposed geometry for itemId: ${itemId}`);
+                        }
+                        if (node.material) {
+                            if (Array.isArray(node.material)) {
+                                node.material.forEach(mat => {
+                                    if (mat.map) mat.map.dispose();
+                                    mat.dispose();
+                                });
+                            } else {
+                                if (node.material.map) node.material.map.dispose();
+                                node.material.dispose();
+                            }
+                            console.log(`[DEBUG] Disposed material for itemId: ${itemId}`);
+                        }
+                    }
+                });
+            } else {
+                console.warn(`[DEBUG] No mesh found for itemId: ${itemId}`);
+            }
+        }
+        this.clothingItems.clear();
+        console.log('[DEBUG] clothingItems map cleared.');
+        document.querySelectorAll('.wardrobe-item.selected').forEach(item => item.classList.remove('selected'));
+        console.log('[DEBUG] Deselected all wardrobe items in UI.');
+        if (this.renderer && this.scene && this.camera) {
+            this.renderer.render(this.scene, this.camera);
+            console.log('[DEBUG] Forced scene render after clearing clothing.');
+        }
+    }
+
+    async loadClothing(itemId, itemType) {
+        if (!this.avatarModel) {
+            console.error('No avatar loaded. Please load an avatar first.');
+            return false;
+        }
+        if (!this.gltfLoader) {
+            this.gltfLoader = new THREE.GLTFLoader();
+        }
+        if (!this.positionAdjustments) {
+            this.positionAdjustments = {
+                'tops': { y: 1.4, scale: 0.5 },
+                'bottoms': { y: 0.6, scale: 0.5 },
+                'dresses': { y: 1.0, scale: 0.6 },
+                'skirts': { y: 0.7, scale: 0.5 },
+                'outerwear': { y: 1.3, scale: 0.55 },
+                'shoes': { y: 0.1, scale: 0.4 },
+                'accessories': { y: 1.5, scale: 0.4 }
+            };
+        }
+        try {
+            console.log('--- [Wardrobe Debug] ---');
+            console.log('Loading clothing item:', { itemId, itemType });
+            const category = this.getClothingCategory(itemType);
+            console.log(`Mapped itemType "${itemType}" to category: "${category}"`);
+            await this.removeClothingByCategory(category);
+            const modelPath = this.getModelPath(itemType);
+            console.log(`Model path for "${itemType}": ${modelPath}`);
+            const gltf = await new Promise((resolve, reject) => {
+                this.gltfLoader.load(
+                    modelPath,
+                    resolve,
+                    (xhr) => {
+                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                        console.log(`[${itemType}] Loading model: ${percent}%`);
+                    },
+                    reject
+                );
+            });
+            let model = gltf.scene;
+            if (!model.position || !model.scale) {
+                model = model.children.find(child => child.position && child.scale) || model;
+            }
+            const adjustment = this.positionAdjustments[category] || { y: 1.2, scale: 0.5 };
+            console.log(`Position/scale for category "${category}":`, adjustment);
+            if (model && model.position && model.scale) {
+                model.position.set(0, adjustment.y, 0);
+                model.scale.set(adjustment.scale, adjustment.scale, adjustment.scale);
+            } else {
+                console.error('Model is missing position or scale property:', model);
+                return false;
+            }
+            this.avatarModel.add(model);
+            console.log(`[DEBUG] ${itemType} added as child of avatarModel`);
+            this.clothingItems.set(itemId, {
+                mesh: model,
+                type: itemType,
+                category: category
+            });
+            return true;
+        } catch (error) {
+            console.error('Error loading clothing:', error);
+            return false;
+        }
+    }
+
+    toggleDebug() {
+        this.debug = !this.debug;
+        if (this.currentClothing && this.debug) {
+            const boxHelper = new THREE.BoxHelper(this.currentClothing, 0xff0000);
+            this.scene.add(boxHelper);
+            const axesHelper = new THREE.AxesHelper(1);
+            this.currentClothing.add(axesHelper);
+        }
+    }
+
+    removeClothing(itemId) {
+        if (!this.clothingItems || !this.clothingItems.has(itemId)) {
+            return false;
+        }
+        const item = this.clothingItems.get(itemId);
+        if (item.mesh) {
+            if (item.mesh.parent) {
+                item.mesh.parent.remove(item.mesh);
+                console.log(`[DEBUG] Removed mesh from parent for itemId: ${itemId}`);
+            } else {
+                console.warn(`[DEBUG] Mesh for itemId: ${itemId} had no parent`);
+            }
+            item.mesh.traverse((node) => {
+                if (node.isMesh) {
+                    if (node.geometry) {
+                        node.geometry.dispose();
+                        console.log(`[DEBUG] Disposed geometry for itemId: ${itemId}`);
+                    }
+                    if (node.material) {
+                        if (Array.isArray(node.material)) {
+                            node.material.forEach(mat => {
+                                if (mat.map) mat.map.dispose();
+                                mat.dispose();
+                            });
+                        } else {
+                            if (node.material.map) node.material.map.dispose();
+                            node.material.dispose();
+                        }
+                        console.log(`[DEBUG] Disposed material for itemId: ${itemId}`);
+                    }
+                }
+            });
+        } else {
+            console.warn(`[DEBUG] No mesh found for itemId: ${itemId}`);
+        }
+        this.clothingItems.delete(itemId);
+        return true;
+    }
+
+    removeClothingByCategory(category) {
+        if (!this.clothingItems) return;
+        const itemsToRemove = [];
+        for (const [itemId, item] of this.clothingItems.entries()) {
+            if (item.category === category) {
+                itemsToRemove.push(itemId);
+            }
+        }
+        for (const itemId of itemsToRemove) {
+            this.removeClothing(itemId);
+        }
+    }
+
+    getClothingCategory(itemType) {
+        if (!itemType) return 'tops';
+        const lowerItemType = itemType.toLowerCase();
+        for (const [category, types] of Object.entries(this.categoryMapping)) {
+            for (const type of types) {
+                if (type.toLowerCase() === lowerItemType || lowerItemType.includes(type.toLowerCase())) {
+                    return category;
+                }
+            }
+        }
+        return 'tops';
+    }
+
+    getModelPath(itemType) {
+        if (!itemType) return '/static/models/clothing/top.glb'; // Default
+        // First try exact match
+        if (this.modelMapping[itemType]) {
+            return this.modelMapping[itemType];
+        }
+        // Try case-insensitive match
+        const lowerItemType = itemType.toLowerCase();
+        for (const [type, path] of Object.entries(this.modelMapping)) {
+            if (type.toLowerCase() === lowerItemType) {
+                return path;
+            }
+        }
+        // Try partial match
+        for (const [type, path] of Object.entries(this.modelMapping)) {
+            if (lowerItemType.includes(type.toLowerCase()) || type.toLowerCase().includes(lowerItemType)) {
+                return path;
+            }
+        }
+        // Default to top.glb
+        return '/static/models/clothing/top.glb';
+    }
+}
+
+// Helper function to position clothing on avatar
+function positionClothingOnAvatar(clothingModel, type) {
+    if (!clothingModel) return;
+    clothingModel.scale.set(1, 1, 1);
+    switch (type.toLowerCase()) {
+        case 'top':
+            clothingModel.position.set(0, 0.8, 0);
+            break;
+        case 'bottom':
+            clothingModel.position.set(0, 0.3, 0);
+            break;
+        case 'dress':
+            clothingModel.position.set(0, 0.5, 0);
+            break;
+        default:
+            clothingModel.position.set(0, 0.6, 0);
+    }
+}
+
+// Update Test Custom Top button handler
+const testCustomTopBtn = document.getElementById('test-custom-top-btn');
+if (testCustomTopBtn) {
+    testCustomTopBtn.addEventListener('click', async function() {
+        console.log('[DEBUG] Test Custom Top button clicked');
+        try {
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) loadingElement.style.display = 'flex';
+            if (!avatar) {
+                console.log('[DEBUG] No avatar found, loading female model first');
+                await loadAvatarModel({ gender: 'female' });
+            }
+            const topModelPath = '/static/models/clothing/top.glb';
+            console.log('[DEBUG] Loading top model from:', topModelPath);
+            const loader = new THREE.GLTFLoader();
+            const gltf = await new Promise((resolve, reject) => {
+                loader.load(
+                    topModelPath,
+                    resolve,
+                    (xhr) => {
+                        const progress = Math.floor((xhr.loaded / xhr.total) * 100);
+                        console.log(`Loading top model: ${progress}%`);
+                    },
+                    reject
+                );
+            });
+            if (currentClothing['top'] && scene) {
+                scene.remove(currentClothing['top']);
+                currentClothing['top'] = null;
+            }
+            const topModel = gltf.scene;
+            // Fix top positioning and scaling to match avatar
+            topModel.scale.set(0.8, 0.8, 0.8); // Scale down the top
+            topModel.position.set(0, 0.8, 0); // Position it at chest level
+            topModel.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                    if (node.material) {
+                        node.material.metalness = 0.2;
+                        node.material.roughness = 0.8;
+                        node.material.needsUpdate = true;
+                    }
+                }
+            });
+            scene.add(topModel);
+            currentClothing['top'] = topModel;
+            console.log('[DEBUG] Top model added to scene');
+            updateAvatarPreview();
+            if (typeof showMessage === 'function') showMessage('Top applied successfully', 'success');
+        } catch (error) {
+            console.error('[DEBUG] Error applying top:', error);
+            try {
+                const cylinderGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.4, 16);
+                const cylinderMat = new THREE.MeshStandardMaterial({ color: 0x3498db });
+                const cylinderMesh = new THREE.Mesh(cylinderGeo, cylinderMat);
+                cylinderMesh.position.set(0, 0.8, 0);
+                scene.add(cylinderMesh);
+                if (currentClothing['top'] && scene) {
+                    scene.remove(currentClothing['top']);
+                }
+                currentClothing['top'] = cylinderMesh;
+                updateAvatarPreview();
+                if (typeof showMessage === 'function') showMessage('Applied basic top (fallback)', 'warning');
+            } catch (fallbackError) {
+                console.error('[DEBUG] Fallback method failed:', fallbackError);
+                if (typeof showMessage === 'function') showMessage('Failed to apply top', 'error');
+            }
+        } finally {
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) loadingElement.style.display = 'none';
+        }
+    });
+}
+
+// Handle load female model button click
+const loadFemaleModelBtn = document.getElementById('load-female-model');
+if (loadFemaleModelBtn) {
+    loadFemaleModelBtn.addEventListener('click', async function() {
+        try {
+            // Show loading indicator
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) {
+                loadingElement.style.display = 'flex';
+            }
+            // Make sure avatarContainer is defined
+            avatarContainer = document.getElementById('avatar-container');
+            if (!avatarContainer) {
+                console.error('Avatar container not found');
+                throw new Error('Avatar container not found');
+            }
+            // Initialize scene if needed
+            if (!scene) {
+                init();
+            }
+            // Load the female model - directly use loadAvatarModel
+            console.log('Loading female avatar model');
+            await loadAvatarModel({ gender: 'female' });
+            camera.position.set(0, 0.9, 0.0);
+            controls.target.set(0, 0.9, 0);
+            controls.update();
+            if (typeof showMessage === 'function') showMessage('Female model loaded successfully', 'success');
+        } catch (error) {
+            console.error('Error loading female model:', error);
+            if (typeof showMessage === 'function') showMessage('Failed to load female model: ' + error.message, 'error');
+        } finally {
+            // Hide loading indicator
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+        }
+    });
+}
+
+// Shared wardrobe item click handler for both avatars
+const wardrobeContainer = document.getElementById('wardrobe-items');
+if (wardrobeContainer) {
+    wardrobeContainer.addEventListener('click', async function(event) {
+        console.log('[DEBUG] Wardrobe click handler triggered');
+        const itemElement = event.target.closest('.wardrobe-item');
+        if (!itemElement) {
+            console.log('[DEBUG] Clicked element is not a wardrobe item.');
+            return;
+        }
+
+        const itemId = itemElement.dataset.itemId;
+        const itemType = itemElement.dataset.itemType;
+        if (!itemId || !itemType) {
+            console.log('[DEBUG] Wardrobe item missing data attributes:', itemElement);
+            return;
+        }
+
+        try {
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) loadingElement.style.display = 'flex';
+
+            // Get the active tab
+            const customTab = document.getElementById('custom-avatar-tab');
+            const rpmTab = document.getElementById('rpm-avatar-tab');
+
+            console.log('[DEBUG] Active tabs:', {
+                customTabActive: customTab?.classList.contains('active'),
+                rpmTabActive: rpmTab?.classList.contains('active')
+            });
+
+            // Toggle selection state
+            itemElement.classList.toggle('selected');
+
+            if (itemElement.classList.contains('selected')) {
+                // Item was selected - apply clothing
+                if (customTab && customTab.classList.contains('active')) {
+                    console.log('[DEBUG] Custom avatar tab is active. Applying clothing to custom avatar.');
+                    // Use the custom avatar's applyClothing function
+                    await applyClothing({
+                        id: itemId,
+                        type: itemType,
+                        label: itemElement.querySelector('.item-name')?.textContent || itemType
+                    });
+                    updateAvatarPreview();
+                    if (typeof showMessage === 'function') {
+                        showMessage(`${itemType} applied to custom avatar`, 'success');
+                    }
+                } else if (rpmTab && rpmTab.classList.contains('active')) {
+                    console.log('[DEBUG] RPM avatar tab is active. Applying clothing to RPM avatar.');
+                    await rpmManager.loadClothing(itemId, itemType);
+                    if (typeof showMessage === 'function') {
+                        showMessage(`${itemType} applied to RPM avatar`, 'success');
+                    }
+                }
+            } else {
+                // Item was deselected - remove clothing
+                if (customTab && customTab.classList.contains('active')) {
+                    console.log('[DEBUG] Custom avatar tab is active. Removing clothing from custom avatar.');
+                    const category = getCustomClothingCategory(itemType);
+                    if (currentClothing[category]) {
+                        scene.remove(currentClothing[category]);
+                        currentClothing[category] = null;
+                        updateAvatarPreview();
+                    }
+                } else if (rpmTab && rpmTab.classList.contains('active')) {
+                    console.log('[DEBUG] RPM avatar tab is active. Removing clothing from RPM avatar.');
+                    rpmManager.removeClothing(itemId);
+                }
+            }
+        } catch (error) {
+            console.error('[DEBUG] Error applying clothing:', error);
+            if (typeof showMessage === 'function') {
+                showMessage('Failed to apply clothing: ' + error.message, 'error');
+            }
+        } finally {
+            const loadingElement = document.querySelector('.loading-overlay');
+            if (loadingElement) loadingElement.style.display = 'none';
+        }
+    });
+}
+
+// Update model mapping to match actual file names
+const CUSTOM_MODEL_MAPPING = {
+    // Tops
+    'T-shirt/top': '/static/models/clothing/tshirt.glb',
+    'Shirt': '/static/models/clothing/top.glb',
+    'Pullover': '/static/models/clothing/top_custom.glb',
+    'Top': '/static/models/clothing/newtop.glb',
+    'tshirt': '/static/models/clothing/tshirt.glb',
+    // Bottoms
+    'Trouser': '/static/models/clothing/pants.glb',
+    'Pants': '/static/models/clothing/pants.glb',
+    'pants': '/static/models/clothing/pants.glb',
+    'Jeans': '/static/models/clothing/jeans.glb',
+    'jeans': '/static/models/clothing/jeans.glb',
+    // Dresses
+    'Dress': '/static/models/clothing/dress.glb',
+    'dress': '/static/models/clothing/dress.glb',
+    // Skirts
+    'Skirt': '/static/models/clothing/skirt.glb',
+    'skirt': '/static/models/clothing/skirt.glb',
+    'maxi_skirt': '/static/models/clothing/maxi_skirt.glb'
+};
+
+// Update position adjustments for better placement
+const CUSTOM_POSITION_ADJUSTMENTS = {
+    'tops': { y: 1.4, scale: 0.5, rotation: { x: 0, y: 0, z: 0 } },
+    'bottoms': { y: 0.6, scale: 0.5, rotation: { x: 0, y: 0, z: 0 } },
+    'dresses': { y: 1.0, scale: 0.5, rotation: { x: 0, y: 0, z: 0 } },
+    'skirts': { y: 0.8, scale: 0.5, rotation: { x: 0, y: 0, z: 0 } }
+};
+
+// Helper function to get model path for custom avatar
+function getCustomModelPath(itemType) {
+    if (!itemType) return '/static/models/clothing/top.glb'; // Default
+    // First try exact match
+    if (CUSTOM_MODEL_MAPPING[itemType]) {
+        return CUSTOM_MODEL_MAPPING[itemType];
+    }
+    // Try case-insensitive match
+    const lowerItemType = itemType.toLowerCase();
+    for (const [type, path] of Object.entries(CUSTOM_MODEL_MAPPING)) {
+        if (type.toLowerCase() === lowerItemType) {
+            return path;
+        }
+    }
+    // Try partial match
+    for (const [type, path] of Object.entries(CUSTOM_MODEL_MAPPING)) {
+        if (lowerItemType.includes(type.toLowerCase()) || type.toLowerCase().includes(lowerItemType)) {
+            return path;
+        }
+    }
+    // Default to top.glb
+    return '/static/models/clothing/top.glb';
+}
+
+// Helper function to get category for custom avatar
+function getCustomClothingCategory(itemType) {
+    if (!itemType) return 'tops';
+    const lowerItemType = itemType.toLowerCase();
+    for (const [category, types] of Object.entries(CUSTOM_CATEGORY_MAPPING)) {
+        for (const type of types) {
+            if (type.toLowerCase() === lowerItemType || lowerItemType.includes(type.toLowerCase())) {
+                return category;
+            }
+        }
+    }
+    return 'tops';
+}
+
+// Fallback function to create basic shapes if model loading fails
+function createFallbackClothing(item) {
+    const type = item.type || 'unknown';
+    const color = item.color || '#FFFFFF';
+    const colorValue = new THREE.Color(color);
+    
+    let clothingMesh;
+    
+    switch (type) {
+        case 'top':
+            const shirtGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.5, 16);
+            const shirtMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(shirtGeo, shirtMat);
+            clothingMesh.position.set(0, 0.8, 0);
+            break;
+            
+        case 'bottom':
+            const pantsGeo = new THREE.CylinderGeometry(0.25, 0.2, 0.8, 16);
+            const pantsMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(pantsGeo, pantsMat);
+            clothingMesh.position.set(0, 0.3, 0);
+            break;
+            
+        case 'dress':
+            // Create a simple dress shape
+            const dressGeo = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 16);
+            const dressMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(dressGeo, dressMat);
+            clothingMesh.position.set(0, 0.5, 0);
+            break;
+            
+        case 'outerwear':
+            // Create a simple jacket shape
+            const jacketGeo = new THREE.CylinderGeometry(0.35, 0.3, 0.6, 16);
+            const jacketMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(jacketGeo, jacketMat);
+            clothingMesh.position.set(0, 0.8, 0);
+            break;
+            
+        case 'shoes':
+            // Create simple shoes
+            const shoeGeo = new THREE.BoxGeometry(0.2, 0.1, 0.3);
+            const shoeMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            
+            // Create left and right shoes
+            const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
+            leftShoe.position.set(-0.15, 0.05, 0);
+            
+            const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
+            rightShoe.position.set(0.15, 0.05, 0);
+            
+            // Create a group to hold both shoes
+            clothingMesh = new THREE.Group();
+            clothingMesh.add(leftShoe);
+            clothingMesh.add(rightShoe);
+            break;
+            
+        case 'accessory':
+            // Create a simple accessory (like a hat)
+            const hatGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 16);
+            const hatMat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(hatGeo, hatMat);
+            clothingMesh.position.set(0, 1.9, 0);
+            break;
+            
+        default:
+            // Generic placeholder
+            const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            const mat = new THREE.MeshStandardMaterial({ color: colorValue });
+            clothingMesh = new THREE.Mesh(geo, mat);
+            clothingMesh.position.set(0, 0.6, 0);
+    }
+    
+    if (clothingMesh) {
+        clothingMesh.traverse((node) => {
+            if (node.isMesh) {
+                node.castShadow = true;
+                node.receiveShadow = true;
+            }
+        });
+        
+        scene.add(clothingMesh);
+        currentClothing[type] = clothingMesh;
+        clothingMesh.userData = {
+            itemId: item.id,
+            label: item.label,
+            type: item.type
+        };
+    }
+    
+    updateAvatarPreview();
+    return clothingMesh;
 }
