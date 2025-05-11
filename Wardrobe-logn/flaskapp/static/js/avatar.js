@@ -1828,6 +1828,65 @@ class AvatarManager {
             previewContainer.innerHTML = '<div class="preview-placeholder"><i class="bi bi-exclamation-triangle"></i><p>Preview failed to load</p></div>';
         }
     }
+
+    clearAllClothing() {
+        if (!this.clothingItems) {
+            console.warn('[DEBUG] No clothingItems map found.');
+            return;
+        }
+
+        console.log('[DEBUG] Clearing all clothing items...');
+        for (const [itemId, item] of this.clothingItems.entries()) {
+            if (item.mesh) {
+                console.log(`[DEBUG] Removing mesh for itemId: ${itemId}`, item.mesh);
+
+                // Remove from any parent
+                if (item.mesh.parent) {
+                    item.mesh.parent.remove(item.mesh);
+                    console.log(`[DEBUG] Removed mesh from parent for itemId: ${itemId}`);
+                } else {
+                    console.warn(`[DEBUG] Mesh for itemId: ${itemId} had no parent`);
+                }
+
+                // Dispose geometry and material
+                item.mesh.traverse((node) => {
+                    if (node.isMesh) {
+                        if (node.geometry) {
+                            node.geometry.dispose();
+                            console.log(`[DEBUG] Disposed geometry for itemId: ${itemId}`);
+                        }
+                        if (node.material) {
+                            if (Array.isArray(node.material)) {
+                                node.material.forEach(mat => {
+                                    if (mat.map) mat.map.dispose();
+                                    mat.dispose();
+                                });
+                            } else {
+                                if (node.material.map) node.material.map.dispose();
+                                node.material.dispose();
+                            }
+                            console.log(`[DEBUG] Disposed material for itemId: ${itemId}`);
+                        }
+                    }
+                });
+            } else {
+                console.warn(`[DEBUG] No mesh found for itemId: ${itemId}`);
+            }
+        }
+
+        this.clothingItems.clear();
+        console.log('[DEBUG] clothingItems map cleared.');
+
+        // Deselect all wardrobe items in the UI
+        document.querySelectorAll('.wardrobe-item.selected').forEach(item => item.classList.remove('selected'));
+        console.log('[DEBUG] Deselected all wardrobe items in UI.');
+
+        // Force a render update
+        if (this.renderer && this.scene && this.camera) {
+            this.renderer.render(this.scene, this.camera);
+            console.log('[DEBUG] Forced scene render after clearing clothing.');
+        }
+    }
 }
 
 // Helper function to position clothing on avatar

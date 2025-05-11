@@ -14,8 +14,52 @@ class RPMAvatarManager {
         this.isLoading = false;
         this.debug = false;
 
+        // Initialize clothingItems map
+        this.clothingItems = new Map();
+
         // Try to load saved avatar on initialization
         this.loadSavedAvatar();
+
+        // Update modelMapping and categoryMapping
+        this.modelMapping = {
+            // Tops
+            'T-shirt/top': '/static/models/clothing/top.glb',
+            'Shirt': '/static/models/clothing/top.glb',
+            'Pullover': '/static/models/clothing/top.glb',
+            'Top': '/static/models/clothing/top.glb',
+            'tshirt': '/static/models/clothing/top.glb',
+            // Bottoms
+            'Trouser': '/static/models/clothing/pants.glb',
+            'Pants': '/static/models/clothing/pants.glb',
+            'pants': '/static/models/clothing/pants.glb',
+            'Jeans': '/static/models/clothing/jeans.glb',
+            'jeans': '/static/models/clothing/jeans.glb',
+            // Dresses
+            'Dress': '/static/models/clothing/dress.glb',
+            'dress': '/static/models/clothing/dress.glb',
+            // Skirts
+            'Skirt': '/static/models/clothing/skirt.glb',
+            'skirt': '/static/models/clothing/skirt.glb',
+            'maxi_skirt': '/static/models/clothing/maxi_skirt.glb',
+            // Outerwear
+            'Jacket': '/static/models/clothing/jacket.glb',
+            'Coat': '/static/models/clothing/coat.glb',
+            // Shoes
+            'Sandal': '/static/models/clothing/sandal.glb',
+            'Sneaker': '/static/models/clothing/sneaker.glb',
+            'Ankle boot': '/static/models/clothing/ankle_boot.glb',
+            // Accessories
+            'Bag': '/static/models/clothing/bag.glb'
+        };
+        this.categoryMapping = {
+            'tops': ['T-shirt/top', 'Shirt', 'Pullover', 'Top', 'tshirt'],
+            'bottoms': ['Trouser', 'Pants', 'pants', 'Jeans', 'jeans'],
+            'dresses': ['Dress', 'dress'],
+            'skirts': ['Skirt', 'skirt', 'maxi_skirt'],
+            'outerwear': ['Jacket', 'Coat'],
+            'shoes': ['Sandal', 'Sneaker', 'Ankle boot'],
+            'accessories': ['Bag']
+        };
     }
 
     initThreeJS() {
@@ -35,7 +79,7 @@ class RPMAvatarManager {
             0.1,
             1000
         );
-        this.camera.position.set(0, -2.0, 2.5);
+        this.camera.position.set(0, 0.5, 0);
 
         // Create renderer
         this.renderer = new THREE.WebGLRenderer({ 
@@ -47,6 +91,9 @@ class RPMAvatarManager {
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.renderer.shadowMap.enabled = true;
         
+        // Ensure GLTFLoader is initialized
+        this.gltfLoader = new THREE.GLTFLoader();
+
         // Clear any existing canvas
         while (this.container.firstChild) {
             this.container.removeChild(this.container.firstChild);
@@ -313,115 +360,76 @@ class RPMAvatarManager {
     }
 
     // Load clothing onto the avatar
-    async loadClothing(itemId, imageUrl, itemType) {
+    async loadClothing(itemId, imagePath, itemType) {
         if (!this.avatarModel) {
             console.error('No avatar loaded. Please load an avatar first.');
             return false;
         }
-
+        // Defensive: ensure gltfLoader is initialized
+        if (!this.gltfLoader) {
+            this.gltfLoader = new THREE.GLTFLoader();
+        }
+        // Defensive: ensure positionAdjustments is initialized
+        if (!this.positionAdjustments) {
+            this.positionAdjustments = {
+                'tops': { y: 1.4, scale: 0.5 },
+                'bottoms': { y: 0.6, scale: 0.5 },
+                'dresses': { y: 1.0, scale: 0.6 },
+                'skirts': { y: 0.7, scale: 0.5 },
+                'outerwear': { y: 1.3, scale: 0.55 },
+                'shoes': { y: 0.1, scale: 0.4 },
+                'accessories': { y: 1.5, scale: 0.4 }
+            };
+        }
         try {
-            console.log('Loading clothing item:', { itemId, imageUrl, itemType });
-            this.showLoadingOverlay('Loading clothing...');
-
-            // Initialize GLTFLoader if not exists
-            if (!this.gltfLoader) {
-                this.gltfLoader = new THREE.GLTFLoader();
+            console.log('--- [Wardrobe Debug] ---');
+            console.log('Loading clothing item:', { itemId, imagePath, itemType });
+            // Determine the category of the clothing item
+            const category = this.getClothingCategory(itemType);
+            console.log(`Mapped itemType "${itemType}" to category: "${category}"`);
+            // Get the model path based on item type
+            const modelPath = this.getModelPath(itemType);
+            console.log(`Model path for "${itemType}": ${modelPath}`);
+            // Remove existing clothing of the same category
+            await this.removeClothingByCategory(category);
+            // Load the model
+            const gltf = await new Promise((resolve, reject) => {
+                this.gltfLoader.load(
+                    modelPath,
+                    resolve,
+                    (xhr) => {
+                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                        console.log(`[${itemType}] Loading model: ${percent}%`);
+                    },
+                    reject
+                );
+            });
+            let model = gltf.scene;
+            if (!model.position || !model.scale) {
+                // Try to find the first mesh or group with position/scale
+                model = model.children.find(child => child.position && child.scale) || model;
             }
-
-            // Load the top.glb model
-            const modelPath = '/static/models/clothing/top.glb';
-            console.log('Loading model from:', modelPath);
-
-            try {
-                const gltf = await new Promise((resolve, reject) => {
-                    this.gltfLoader.load(
-                        modelPath,
-                        resolve,
-                        (xhr) => {
-                            const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                            console.log(`Loading model: ${percent}%`);
-                        },
-                        reject
-                    );
-                });
-
-                console.log('Model loaded successfully:', gltf);
-
-                // Remove existing clothing if any
-                if (this.currentClothing) {
-                    this.scene.remove(this.currentClothing);
-                    this.currentClothing = null;
-                }
-
-                const model = gltf.scene;
-
-                // Make sure model and its children are visible and castShadow
-                model.traverse((node) => {
-                    if (node.isMesh) {
-                        node.castShadow = true;
-                        node.receiveShadow = true;
-                        node.visible = true;
-                        
-                        // Ensure material is properly configured
-                        if (node.material) {
-                            node.material.transparent = true;
-                            node.material.needsUpdate = true;
-                            node.material.side = THREE.DoubleSide;
-                        }
-                    }
-                });
-
-                // Calculate bounding box to help with positioning
-                const bbox = new THREE.Box3().setFromObject(model);
-                const size = new THREE.Vector3();
-                bbox.getSize(size);
-                const center = new THREE.Vector3();
-                bbox.getCenter(center);
-
-                // Position relative to avatar's chest area
-                model.position.set(0, 1.4, 0); // Y position at chest level
-                model.scale.set(0.5, 0.5, 0.5); // Start with half scale, adjust as needed
-
-                // Add to avatar if loaded, otherwise to scene
-                if (this.avatarModel) {
-                    this.avatarModel.add(model);
-                    console.log('[DEBUG] top.glb added as child of avatarModel');
-                } else {
-                    this.scene.add(model);
-                    console.warn('[DEBUG] avatarModel not present, added top.glb to scene');
-                }
-                this.currentClothing = model;
-
-                // Store reference
-                if (!this.clothingItems) {
-                    this.clothingItems = new Map();
-                }
-                this.clothingItems.set(itemId, {
-                    mesh: model,
-                    type: itemType
-                });
-
-                // Log model position, scale, and parent
-                console.log('[DEBUG] top.glb position:', model.position);
-                console.log('[DEBUG] top.glb scale:', model.scale);
-                console.log('[DEBUG] top.glb parent:', model.parent);
-
-                // Add debug helpers
-                if (this.debug) {
-                    // Add bounding box helper
-                    const boxHelper = new THREE.BoxHelper(model, 0xff0000);
-                    this.scene.add(boxHelper);
-
-                    // Add axes helper
-                    const axesHelper = new THREE.AxesHelper(1);
-                    model.add(axesHelper);
-                }
-
-                return true;
-            } catch (error) {
-                console.error('Error loading GLB model:', error);
+            // Get position and scale adjustments for this category
+            const adjustment = this.positionAdjustments[category] || { y: 1.2, scale: 0.5 };
+            console.log(`Position/scale for category "${category}":`, adjustment);
+            // Defensive: only set position/scale if available
+            if (model && model.position && model.scale) {
+                model.position.set(0, adjustment.y, 0);
+                model.scale.set(adjustment.scale, adjustment.scale, adjustment.scale);
+            } else {
+                console.error('Model is missing position or scale property:', model);
                 return false;
             }
+            // Add to avatar model
+            this.avatarModel.add(model);
+            console.log(`[DEBUG] ${itemType} added as child of avatarModel`);
+            // Store reference
+            this.clothingItems.set(itemId, {
+                mesh: model,
+                type: itemType,
+                category: category
+            });
+            return true;
         } catch (error) {
             console.error('Error loading clothing:', error);
             return false;
@@ -468,17 +476,117 @@ class RPMAvatarManager {
         return true;
     }
 
+    // Add missing removeClothingByCategory method
+    removeClothingByCategory(category) {
+        if (!this.clothingItems) return;
+        // Find all items in the given category and remove them
+        const itemsToRemove = [];
+        for (const [itemId, item] of this.clothingItems.entries()) {
+            if (item.category === category) {
+                itemsToRemove.push(itemId);
+            }
+        }
+        for (const itemId of itemsToRemove) {
+            this.removeClothing(itemId);
+        }
+    }
+
     // Clear all clothing
     clearAllClothing() {
         if (!this.clothingItems) {
+            console.warn('[DEBUG] No clothingItems map found.');
             return;
         }
 
+        console.log('[DEBUG] Clearing all clothing items...');
         for (const [itemId, item] of this.clothingItems.entries()) {
-            this.removeClothing(itemId);
+            if (item.mesh) {
+                console.log(`[DEBUG] Removing mesh for itemId: ${itemId}`, item.mesh);
+
+                // Remove from any parent
+                if (item.mesh.parent) {
+                    item.mesh.parent.remove(item.mesh);
+                    console.log(`[DEBUG] Removed mesh from parent for itemId: ${itemId}`);
+                } else {
+                    console.warn(`[DEBUG] Mesh for itemId: ${itemId} had no parent`);
+                }
+
+                // Dispose geometry and material
+                item.mesh.traverse((node) => {
+                    if (node.isMesh) {
+                        if (node.geometry) {
+                            node.geometry.dispose();
+                            console.log(`[DEBUG] Disposed geometry for itemId: ${itemId}`);
+                        }
+                        if (node.material) {
+                            if (Array.isArray(node.material)) {
+                                node.material.forEach(mat => {
+                                    if (mat.map) mat.map.dispose();
+                                    mat.dispose();
+                                });
+                            } else {
+                                if (node.material.map) node.material.map.dispose();
+                                node.material.dispose();
+                            }
+                            console.log(`[DEBUG] Disposed material for itemId: ${itemId}`);
+                        }
+                    }
+                });
+            } else {
+                console.warn(`[DEBUG] No mesh found for itemId: ${itemId}`);
+            }
         }
 
         this.clothingItems.clear();
+        console.log('[DEBUG] clothingItems map cleared.');
+
+        // Deselect all wardrobe items in the UI
+        document.querySelectorAll('.wardrobe-item.selected').forEach(item => item.classList.remove('selected'));
+        console.log('[DEBUG] Deselected all wardrobe items in UI.');
+
+        // Force a render update
+        if (this.renderer && this.scene && this.camera) {
+            this.renderer.render(this.scene, this.camera);
+            console.log('[DEBUG] Forced scene render after clearing clothing.');
+        }
+    }
+
+    // Add missing getClothingCategory method
+    getClothingCategory(itemType) {
+        if (!itemType) return 'tops'; // Default to tops
+        const lowerItemType = itemType.toLowerCase();
+        for (const [category, types] of Object.entries(this.categoryMapping)) {
+            for (const type of types) {
+                if (type.toLowerCase() === lowerItemType || lowerItemType.includes(type.toLowerCase())) {
+                    return category;
+                }
+            }
+        }
+        return 'tops';
+    }
+
+    // Add missing getModelPath method
+    getModelPath(itemType) {
+        if (!itemType) return '/static/models/clothing/top.glb'; // Default
+        // First try exact match
+        if (this.modelMapping[itemType]) {
+            return this.modelMapping[itemType];
+        }
+        // Try case-insensitive match
+        const lowerItemType = itemType.toLowerCase();
+        for (const [type, path] of Object.entries(this.modelMapping)) {
+            if (type.toLowerCase() === lowerItemType) {
+                return path;
+            }
+        }
+        // Try partial match
+        for (const [type, path] of Object.entries(this.modelMapping)) {
+            if (lowerItemType.includes(type.toLowerCase()) || type.toLowerCase().includes(lowerItemType)) {
+                return path;
+            }
+        }
+        // Default to top.glb
+        return '/static/models/clothing/top.glb';
     }
 
     getGLBUrlFromAvatarUrl(avatarUrl) {
