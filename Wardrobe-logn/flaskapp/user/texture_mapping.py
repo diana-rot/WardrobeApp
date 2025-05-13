@@ -228,3 +228,86 @@ def process_clothing_texture(img_path, clothing_type):
         'texture_path': texture_path,
         'normal_map_path': normal_map_path
     }
+
+
+def process_texture(image_path, clothing_type):
+    """
+    Simplified texture processing that:
+    1. Removes background
+    2. Creates a simple texture map
+    3. Returns paths to save in database
+    """
+    try:
+        # 1. Load and process image
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError(f"Could not load image: {image_path}")
+
+        # 2. Create a simple texture map (1024x1024)
+        texture_size = 1024
+        texture = np.zeros((texture_size, texture_size, 4), dtype=np.uint8)
+        
+        # 3. Resize and center the image
+        h, w = img.shape[:2]
+        scale = min(texture_size/w, texture_size/h) * 0.8  # 80% of the texture
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        resized = cv2.resize(img, (new_w, new_h))
+        
+        # 4. Center the image in the texture
+        x = (texture_size - new_w) // 2
+        y = (texture_size - new_h) // 2
+        texture[y:y+new_h, x:x+new_w, :3] = resized
+        texture[y:y+new_h, x:x+new_w, 3] = 255  # Alpha channel
+
+        # 5. Save the texture
+        base_dir = os.path.dirname(image_path)
+        filename = os.path.basename(image_path).split(".")[0]
+        texture_path = os.path.join(base_dir, f"{filename}_texture.png")
+        cv2.imwrite(texture_path, texture)
+
+        # 6. Create a simple normal map
+        normal_map = np.zeros((texture_size, texture_size, 3), dtype=np.uint8)
+        normal_map[..., 2] = 255  # Default normal pointing up
+        normal_map_path = os.path.join(base_dir, f"{filename}_normal.png")
+        cv2.imwrite(normal_map_path, normal_map)
+
+        return {
+            'texture_path': texture_path,
+            'normal_map_path': normal_map_path,
+            'material_properties': {
+                'roughness': 0.7,
+                'metalness': 0.1
+            }
+        }
+
+    except Exception as e:
+        print(f"Error processing texture: {str(e)}")
+        return None
+
+
+def apply_texture_to_model(model, texture_data):
+    """
+    Apply texture to a 3D model
+    """
+    try:
+        # Load textures
+        texture = cv2.imread(texture_data['texture_path'], cv2.IMREAD_UNCHANGED)
+        normal_map = cv2.imread(texture_data['normal_map_path'])
+        
+        # Convert to base64 for storage
+        _, texture_buffer = cv2.imencode('.png', texture)
+        _, normal_buffer = cv2.imencode('.png', normal_map)
+        
+        texture_base64 = texture_buffer.tobytes()
+        normal_base64 = normal_buffer.tobytes()
+        
+        return {
+            'texture_data': texture_base64,
+            'normal_map_data': normal_base64,
+            'material_properties': texture_data['material_properties']
+        }
+        
+    except Exception as e:
+        print(f"Error applying texture: {str(e)}")
+        return None

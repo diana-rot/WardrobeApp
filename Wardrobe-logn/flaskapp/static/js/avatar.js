@@ -1907,63 +1907,38 @@ class AvatarManager {
     }
 
     async loadClothing(itemId, itemType) {
-        if (!this.avatarModel) {
-            console.error('No avatar loaded. Please load an avatar first.');
-            return false;
-        }
-        if (!this.gltfLoader) {
-            this.gltfLoader = new THREE.GLTFLoader();
-        }
-        if (!this.positionAdjustments) {
-            this.positionAdjustments = {
-                'tops': { y: 1.4, scale: 0.5 },
-                'bottoms': { y: 0.6, scale: 0.5 },
-                'dresses': { y: 1.0, scale: 0.6 },
-                'skirts': { y: 0.7, scale: 0.5 },
-                'outerwear': { y: 1.3, scale: 0.55 },
-                'shoes': { y: 0.1, scale: 0.4 },
-                'accessories': { y: 1.5, scale: 0.4 }
-            };
-        }
         try {
-            console.log('--- [Wardrobe Debug] ---');
-            console.log('Loading clothing item:', { itemId, itemType });
-            const category = this.getClothingCategory(itemType);
-            console.log(`Mapped itemType "${itemType}" to category: "${category}"`);
-            await this.removeClothingByCategory(category);
+            // Get item data from database
+            const response = await fetch(`/api/wardrobe/item/${itemId}`);
+            const item = await response.json();
+
+            if (!item.success) {
+                throw new Error('Failed to load item data');
+            }
+
+            // Get model path
             const modelPath = this.getModelPath(itemType);
-            console.log(`Model path for "${itemType}": ${modelPath}`);
-            const gltf = await new Promise((resolve, reject) => {
-                this.gltfLoader.load(
-                    modelPath,
-                    resolve,
-                    (xhr) => {
-                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                        console.log(`[${itemType}] Loading model: ${percent}%`);
-                    },
-                    reject
-                );
-            });
-            let model = gltf.scene;
-            if (!model.position || !model.scale) {
-                model = model.children.find(child => child.position && child.scale) || model;
+            
+            // Load model
+            const gltf = await this.gltfLoader.loadAsync(modelPath);
+            const model = gltf.scene;
+
+            // Apply stored texture if available
+            if (item.texture_data) {
+                applyStoredTexture(model, item.texture_data);
             }
-            const adjustment = this.positionAdjustments[category] || { y: 1.2, scale: 0.5 };
-            console.log(`Position/scale for category "${category}":`, adjustment);
-            if (model && model.position && model.scale) {
-                model.position.set(0, adjustment.y, 0);
-                model.scale.set(adjustment.scale, adjustment.scale, adjustment.scale);
-            } else {
-                console.error('Model is missing position or scale property:', model);
-                return false;
-            }
-            this.avatarModel.add(model);
-            console.log(`[DEBUG] ${itemType} added as child of avatarModel`);
-            this.clothingItems.set(itemId, {
-                mesh: model,
-                type: itemType,
-                category: category
-            });
+
+            // Position model
+            const category = this.getClothingCategory(itemType);
+            const adjustments = this.positionAdjustments[category] || { y: 0, scale: 1 };
+            
+            model.position.set(0, adjustments.y, 0);
+            model.scale.set(adjustments.scale, adjustments.scale, adjustments.scale);
+
+            // Add to scene
+            this.scene.add(model);
+            this.clothingItems.set(itemId, { mesh: model, type: itemType });
+
             return true;
         } catch (error) {
             console.error('Error loading clothing:', error);
@@ -2447,4 +2422,62 @@ function createFallbackClothing(item) {
     
     updateAvatarPreview();
     return clothingMesh;
+}
+
+function applyStoredTexture(model, textureData) {
+    if (!textureData) return;
+
+    try {
+        // Create texture loader
+        const textureLoader = new THREE.TextureLoader();
+        const normalLoader = new THREE.TextureLoader();
+
+        // Convert base64 to blob URLs
+        const textureBlob = new Blob([textureData.texture_data], { type: 'image/png' });
+        const normalBlob = new Blob([textureData.normal_map_data], { type: 'image/png' });
+        const textureUrl = URL.createObjectURL(textureBlob);
+        const normalUrl = URL.createObjectURL(normalBlob);
+
+        // Load textures
+        textureLoader.load(textureUrl, (texture) => {
+            // Set texture parameters
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+
+            // Create material with texture
+            const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: textureData.material_properties.roughness || 0.7,
+                metalness: textureData.material_properties.metalness || 0.1
+            });
+
+            // Load normal map if available
+            if (textureData.normal_map_data) {
+                normalLoader.load(normalUrl, (normalMap) => {
+                    normalMap.wrapS = THREE.RepeatWrapping;
+                    normalMap.wrapT = THREE.RepeatWrapping;
+                    material.normalMap = normalMap;
+                    material.normalScale.set(1, 1);
+                    material.needsUpdate = true;
+                });
+            }
+
+            // Apply material to model
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = material;
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            // Clean up blob URLs
+            URL.revokeObjectURL(textureUrl);
+            URL.revokeObjectURL(normalUrl);
+        });
+    } catch (error) {
+        console.error('Error applying stored texture:', error);
+    }
 }
