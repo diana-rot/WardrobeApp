@@ -392,25 +392,17 @@ def api_process_clothing_texture():
         return jsonify({'error': str(e)}), 500
 
 
-
-
-def predict_color(img_path):
+def improved_predict_color(img_path):
     """
-    Improved color prediction that focuses on the clothing item in the image.
+    Improved color prediction that accurately identifies the dominant color of clothing
+    by effectively removing the background and focusing on the central object.
 
-    Steps:
-    1. Load the image
-    2. Detect and crop the clothing item
-    3. Apply color segmentation on the cropped region
-    4. Return the dominant color and its percentage
-
-    Returns a tuple of (percentage, [R, G, B])
+    Returns: (percentage, [R, G, B])
     """
     import cv2
     import numpy as np
     from sklearn.cluster import KMeans
     import imutils
-    import matplotlib.pyplot as plt
 
     # Load the image
     img = cv2.imread(img_path)
@@ -418,182 +410,417 @@ def predict_color(img_path):
         print(f"Error: Could not load image from {img_path}")
         return None
 
-    # Make a copy for visualization
-    org_img = img.copy()
+    # Resize for consistent processing
+    img = imutils.resize(img, height=300)
 
-    # Step 1: Apply preprocessing to enhance the clothing item
-    # Convert to grayscale for processing
+    # Step 1: Background Removal
+    # Convert to RGBA to detect white/transparent backgrounds
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
 
-    # Apply Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    # Apply morphological operations to clean up the mask
+    kernel = np.ones((5, 5), np.uint8)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
-    # Apply Canny edge detection
-    edges = cv2.Canny(blurred, 50, 150)
+    # Find contours to identify the clothing item
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Find contours in the edge map
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Create a mask for the main object
+    mask = np.zeros_like(gray)
 
-    # Find the largest contour which is likely to be the clothing item
     if contours:
+        # Find the largest contour which is assumed to be the clothing item
         main_contour = max(contours, key=cv2.contourArea)
 
-        # Create a mask for the largest contour
-        mask = np.zeros_like(gray)
-        cv2.drawContours(mask, [main_contour], 0, 255, -1)
-
-        # Apply the mask to get the clothing item
-        clothing_item = cv2.bitwise_and(img, img, mask=mask)
-
-        # Get the bounding box of the contour
-        x, y, w, h = cv2.boundingRect(main_contour)
-
-        # Crop the clothing item
-        cropped_item = clothing_item[y:y + h, x:x + w]
-
-        # Ensure the cropped item is not empty
-        if cropped_item.size == 0:
-            print("Warning: Cropped image is empty, using original image")
-            cropped_item = img
+        # Only use the contour if it's large enough (to avoid small artifacts)
+        if cv2.contourArea(main_contour) > 1000:
+            # Create a mask from the contour
+            cv2.drawContours(mask, [main_contour], 0, 255, -1)
+        else:
+            # If no large contour, use a central region of the image
+            height, width = img.shape[:2]
+            cv2.rectangle(mask, (width // 4, height // 4), (width * 3 // 4, height * 3 // 4), 255, -1)
     else:
-        print("Warning: No contours found, using original image")
-        cropped_item = img
+        # If no contours, use a central region of the image
+        height, width = img.shape[:2]
+        cv2.rectangle(mask, (width // 4, height // 4), (width * 3 // 4, height * 3 // 4), 255, -1)
 
-    # Step 2: Resize the cropped item for consistent processing
-    cropped_item = imutils.resize(cropped_item, height=300)
+    # Apply the mask to the image
+    masked_img = cv2.bitwise_and(img, img, mask=mask)
 
-    # Step 3: Apply color segmentation using K-means clustering
-    # Reshape the image to be a list of pixels
-    pixels = cropped_item.reshape(-1, 3)
+    # Step 2: Color Clustering (K-means)
+    # Reshape the masked image to a list of pixels
+    pixels = masked_img.reshape(-1, 3)
 
-    # Remove black background (mask pixels)
+    # Filter out black background (masked areas)
     non_black_pixels = pixels[~np.all(pixels == [0, 0, 0], axis=1)]
 
-    # If there are no non-black pixels, revert to original image
+    # If no non-black pixels, return None
     if len(non_black_pixels) == 0:
-        print("Warning: No non-black pixels found, using original image")
-        non_black_pixels = img.reshape(-1, 3)
+        print("Warning: No valid pixels found after masking")
+        return None
 
     # Apply K-means clustering to find dominant colors
     clusters = 5
-    kmeans = KMeans(n_clusters=clusters, random_state=0, n_init=10)
+    kmeans = KMeans(n_clusters=clusters, random_state=42, n_init=10)
     kmeans.fit(non_black_pixels)
 
-    # Get the colors and their percentages
-    colors = np.array(kmeans.cluster_centers_, dtype='uint8')
-    percentages = np.bincount(kmeans.labels_) / len(kmeans.labels_)
+    # Get colors and percentages
+    colors = kmeans.cluster_centers_.astype(np.uint8)
+    labels = kmeans.labels_
+    counts = np.bincount(labels)
+    percentages = counts / len(labels)
 
+    # Step 3: Color Validation and Selection
     # Sort colors by percentage
-    p_and_c = sorted(zip(percentages, colors), reverse=True)
+    color_percentages = list(zip(percentages, colors))
+    color_percentages.sort(reverse=True)
 
-    # Debug: Visualize the color segmentation
-    if False:  # Set to True to debug color segmentation
-        plt.figure(figsize=(12, 6))
+    # Filter out very dark and very light colors
+    filtered_colors = []
+    for percentage, color in color_percentages:
+        brightness = np.mean(color)
+        # Skip very dark colors (almost black) or very light colors (almost white)
+        if 15 < brightness < 240:
+            filtered_colors.append((percentage, color))
 
-        # Plot the original image
-        plt.subplot(1, 3, 1)
-        plt.imshow(cv2.cvtColor(org_img, cv2.COLOR_BGR2RGB))
-        plt.title('Original Image')
-        plt.axis('off')
+    # If all colors were filtered out, use the original list
+    if not filtered_colors:
+        filtered_colors = color_percentages
 
-        # Plot the cropped clothing item
-        plt.subplot(1, 3, 2)
-        plt.imshow(cv2.cvtColor(cropped_item, cv2.COLOR_BGR2RGB))
-        plt.title('Cropped Clothing Item')
-        plt.axis('off')
+    # Get dominant color (first in the filtered list)
+    dominant_percentage, dominant_color = filtered_colors[0]
 
-        # Plot the color palette
-        plt.subplot(1, 3, 3)
-        # Create a color palette
-        palette = np.zeros((100, 500, 3), dtype='uint8')
-        start = 0
-        for i, (percentage, color) in enumerate(p_and_c):
-            end = start + int(percentage * 500)
-            palette[:, start:end] = color[::-1]  # BGR to RGB
-            start = end
-
-        plt.imshow(palette)
-        plt.title('Color Palette')
-        plt.axis('off')
-
-        plt.tight_layout()
-        plt.show()
-
-    # Return the dominant color (first in the sorted list)
-    # Format: (percentage, [R, G, B])
-    return (float(p_and_c[0][0]), p_and_c[0][1])
+    # Convert BGR to RGB for the result
+    return (float(dominant_percentage), dominant_color[::-1])  # BGR to RGB
 
 
-def predict_color(img_path):
-    clusters = 5
+#
+# def predict_color(img_path):
+#     """
+#     Improved color prediction that focuses on the clothing item in the image.
+#
+#     Steps:
+#     1. Load the image
+#     2. Detect and crop the clothing item
+#     3. Apply color segmentation on the cropped region
+#     4. Return the dominant color and its percentage
+#
+#     Returns a tuple of (percentage, [R, G, B])
+#     """
+#     import cv2
+#     import numpy as np
+#     from sklearn.cluster import KMeans
+#     import imutils
+#     import matplotlib.pyplot as plt
+#
+#     # Load the image
+#     img = cv2.imread(img_path)
+#     if img is None:
+#         print(f"Error: Could not load image from {img_path}")
+#         return None
+#
+#     # Make a copy for visualization
+#     org_img = img.copy()
+#
+#     # Step 1: Apply preprocessing to enhance the clothing item
+#     # Convert to grayscale for processing
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#
+#     # Apply Gaussian blur to reduce noise
+#     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+#
+#     # Apply Canny edge detection
+#     edges = cv2.Canny(blurred, 50, 150)
+#
+#     # Find contours in the edge map
+#     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#
+#     # Find the largest contour which is likely to be the clothing item
+#     if contours:
+#         main_contour = max(contours, key=cv2.contourArea)
+#
+#         # Create a mask for the largest contour
+#         mask = np.zeros_like(gray)
+#         cv2.drawContours(mask, [main_contour], 0, 255, -1)
+#
+#         # Apply the mask to get the clothing item
+#         clothing_item = cv2.bitwise_and(img, img, mask=mask)
+#
+#         # Get the bounding box of the contour
+#         x, y, w, h = cv2.boundingRect(main_contour)
+#
+#         # Crop the clothing item
+#         cropped_item = clothing_item[y:y + h, x:x + w]
+#
+#         # Ensure the cropped item is not empty
+#         if cropped_item.size == 0:
+#             print("Warning: Cropped image is empty, using original image")
+#             cropped_item = img
+#     else:
+#         print("Warning: No contours found, using original image")
+#         cropped_item = img
+#
+#     # Step 2: Resize the cropped item for consistent processing
+#     cropped_item = imutils.resize(cropped_item, height=300)
+#
+#     # Step 3: Apply color segmentation using K-means clustering
+#     # Reshape the image to be a list of pixels
+#     pixels = cropped_item.reshape(-1, 3)
+#
+#     # Remove black background (mask pixels)
+#     non_black_pixels = pixels[~np.all(pixels == [0, 0, 0], axis=1)]
+#
+#     # If there are no non-black pixels, revert to original image
+#     if len(non_black_pixels) == 0:
+#         print("Warning: No non-black pixels found, using original image")
+#         non_black_pixels = img.reshape(-1, 3)
+#
+#     # Apply K-means clustering to find dominant colors
+#     clusters = 5
+#     kmeans = KMeans(n_clusters=clusters, random_state=0, n_init=10)
+#     kmeans.fit(non_black_pixels)
+#
+#     # Get the colors and their percentages
+#     colors = np.array(kmeans.cluster_centers_, dtype='uint8')
+#     percentages = np.bincount(kmeans.labels_) / len(kmeans.labels_)
+#
+#     # Sort colors by percentage
+#     p_and_c = sorted(zip(percentages, colors), reverse=True)
+#
+#     # Debug: Visualize the color segmentation
+#     if False:  # Set to True to debug color segmentation
+#         plt.figure(figsize=(12, 6))
+#
+#         # Plot the original image
+#         plt.subplot(1, 3, 1)
+#         plt.imshow(cv2.cvtColor(org_img, cv2.COLOR_BGR2RGB))
+#         plt.title('Original Image')
+#         plt.axis('off')
+#
+#         # Plot the cropped clothing item
+#         plt.subplot(1, 3, 2)
+#         plt.imshow(cv2.cvtColor(cropped_item, cv2.COLOR_BGR2RGB))
+#         plt.title('Cropped Clothing Item')
+#         plt.axis('off')
+#
+#         # Plot the color palette
+#         plt.subplot(1, 3, 3)
+#         # Create a color palette
+#         palette = np.zeros((100, 500, 3), dtype='uint8')
+#         start = 0
+#         for i, (percentage, color) in enumerate(p_and_c):
+#             end = start + int(percentage * 500)
+#             palette[:, start:end] = color[::-1]  # BGR to RGB
+#             start = end
+#
+#         plt.imshow(palette)
+#         plt.title('Color Palette')
+#         plt.axis('off')
+#
+#         plt.tight_layout()
+#         plt.show()
+#
+#     # Return the dominant color (first in the sorted list)
+#     # Format: (percentage, [R, G, B])
+#     return (float(p_and_c[0][0]), p_and_c[0][1])
+#
+#
+# def predict_color(img_path):
+#     clusters = 5
+#     img = cv2.imread(img_path)
+#     org_img = img.copy()
+#     img = imutils.resize(img, height=200)
+#     flat_img = np.reshape(img, (-1, 3))
+#     print('After Flattening shape --> ', flat_img.shape)
+#
+#     kmeans = KMeans(n_clusters=clusters, random_state=0)
+#     kmeans.fit(flat_img)
+#
+#     dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
+#
+#     percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
+#     p_and_c = zip(percentages, dominant_colors)
+#     p_and_c = sorted(p_and_c, reverse=True)
+#     print("the colour in the db")
+#     print(p_and_c[1])
+#     block = np.ones((50, 50, 3), dtype='uint')
+#     plt.figure(figsize=(12, 8))
+#     for i in range(clusters):
+#         plt.subplot(1, clusters, i + 1)
+#         block[:] = p_and_c[i][1][::-1]  # we have done this to convert bgr(opencv) to rgb(matplotlib)
+#         plt.imshow(block)
+#         plt.xticks([])
+#         plt.yticks([])
+#         plt.xlabel(str(round(p_and_c[i][0] * 100, 2)) + '%')
+#
+#     bar = np.ones((50, 500, 3), dtype='uint')
+#     plt.figure(figsize=(12, 8))
+#     plt.title('Proportions of colors in the image')
+#     start = 0
+#     i = 1
+#     for p, c in p_and_c:
+#         end = start + int(p * bar.shape[1])
+#         if i == clusters:
+#             bar[:, start:] = c[::-1]
+#         else:
+#             bar[:, start:end] = c[::-1]
+#         start = end
+#         i += 1
+#
+#     plt.imshow(bar)
+#     plt.xticks([])
+#     plt.yticks([])
+#
+#     rows = 1000
+#     cols = int((org_img.shape[0] / org_img.shape[1]) * rows)
+#     img = cv2.resize(org_img, dsize=(rows, cols), interpolation=cv2.INTER_LINEAR)
+#
+#     copy = img.copy()
+#     cv2.rectangle(copy, (rows // 2 - 250, cols // 2 - 90), (rows // 2 + 250, cols // 2 + 110), (255, 255, 255), -1)
+#
+#     final = cv2.addWeighted(img, 0.1, copy, 0.9, 0)
+#     cv2.putText(final, 'Most Dominant Colors in the Image',
+#                 (rows // 2 - 230, cols // 2 - 40),
+#                 cv2.FONT_HERSHEY_DUPLEX,
+#                 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+#
+#     start = rows // 2 - 220
+#     for i in range(5):
+#         end = start + 70
+#         final[cols // 2:cols // 2 + 70, start:end] = p_and_c[i][1]
+#         cv2.putText(final, str(i + 1), (start + 25, cols // 2 + 45), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1,
+#                     cv2.LINE_AA)
+#         start = end + 20
+#
+#     plt.show()
+#     return p_and_c[1]
+
+
+def improved_predict_color(img_path):
+    """
+    Enhanced color prediction that accurately identifies clothing colors.
+
+    Improvements:
+    1. Better background removal using HSV color space
+    2. Improved clothing segmentation using contour analysis
+    3. Weighted color clustering to prioritize central regions
+    4. Color validation to avoid dark/black misidentification
+
+    Returns color information tuple (percentage, [R, G, B])
+    """
+    import cv2
+    import numpy as np
+    from sklearn.cluster import KMeans
+    import imutils
+
+    # Load the image
     img = cv2.imread(img_path)
-    org_img = img.copy()
-    img = imutils.resize(img, height=200)
-    flat_img = np.reshape(img, (-1, 3))
-    print('After Flattening shape --> ', flat_img.shape)
+    if img is None:
+        print(f"Error: Could not load image from {img_path}")
+        return None
 
-    kmeans = KMeans(n_clusters=clusters, random_state=0)
-    kmeans.fit(flat_img)
+    # Resize for consistent processing
+    img = imutils.resize(img, height=300)
 
-    dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
+    # Convert to HSV for better segmentation
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
-    p_and_c = zip(percentages, dominant_colors)
-    p_and_c = sorted(p_and_c, reverse=True)
-    print("the colour in the db")
-    print(p_and_c[1])
-    block = np.ones((50, 50, 3), dtype='uint')
-    plt.figure(figsize=(12, 8))
+    # Step 1: Create a mask to remove white/light backgrounds
+    # This range covers white/very light backgrounds
+    lower_white = np.array([0, 0, 180])
+    upper_white = np.array([180, 30, 255])
+    mask_white = cv2.inRange(hsv_img, lower_white, upper_white)
+
+    # Invert mask to keep the clothing item
+    mask = cv2.bitwise_not(mask_white)
+
+    # Apply morphological operations to clean up the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    # Step 2: Find contours to identify the clothing item
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # If contours exist, find the largest one (likely the clothing item)
+    if contours:
+        main_contour = max(contours, key=cv2.contourArea)
+
+        # Create a new mask with only the main contour
+        item_mask = np.zeros_like(mask)
+        cv2.drawContours(item_mask, [main_contour], 0, 255, -1)
+
+        # Apply the mask to get just the clothing
+        clothing = cv2.bitwise_and(img, img, mask=item_mask)
+    else:
+        # If no significant contours, use the original mask
+        clothing = cv2.bitwise_and(img, img, mask=mask)
+
+    # Step 3: Create a central weighting map (pixels in center get higher weight)
+    height, width = clothing.shape[:2]
+    center_y, center_x = height // 2, width // 2
+    y, x = np.ogrid[:height, :width]
+    # Create distance map from center
+    dist_from_center = np.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+    # Normalize and invert so center has high values
+    max_dist = np.sqrt(center_x ** 2 + center_y ** 2)
+    weight_map = 1 - (dist_from_center / max_dist)
+    # Apply threshold to make it binary (optional)
+    # weight_map = (weight_map > 0.7).astype(np.uint8) * 255
+
+    # Step 4: Apply K-means clustering with weighted samples
+    # Reshape the image and remove black background
+    pixels = clothing.reshape(-1, 3)
+    mask_flat = mask.reshape(-1)
+    valid_pixels = pixels[mask_flat > 0]
+
+    if len(valid_pixels) == 0:
+        print("Warning: No valid pixels found after masking")
+        return None
+
+    # Get weights for each pixel
+    weight_flat = weight_map.reshape(-1)
+    valid_weights = weight_flat[mask_flat > 0]
+
+    # Apply K-means clustering with weights (sample_weight parameter)
+    clusters = 5
+    kmeans = KMeans(n_clusters=clusters, random_state=42, n_init=10)
+    kmeans.fit(valid_pixels, sample_weight=valid_weights)
+
+    # Get colors and calculate percentages
+    colors = kmeans.cluster_centers_.astype(np.uint8)
+    labels = kmeans.labels_
+
+    # Count pixels per cluster with weighting
+    weighted_counts = np.zeros(clusters)
     for i in range(clusters):
-        plt.subplot(1, clusters, i + 1)
-        block[:] = p_and_c[i][1][::-1]  # we have done this to convert bgr(opencv) to rgb(matplotlib)
-        plt.imshow(block)
-        plt.xticks([])
-        plt.yticks([])
-        plt.xlabel(str(round(p_and_c[i][0] * 100, 2)) + '%')
+        weighted_counts[i] = np.sum(valid_weights[labels == i])
 
-    bar = np.ones((50, 500, 3), dtype='uint')
-    plt.figure(figsize=(12, 8))
-    plt.title('Proportions of colors in the image')
-    start = 0
-    i = 1
-    for p, c in p_and_c:
-        end = start + int(p * bar.shape[1])
-        if i == clusters:
-            bar[:, start:] = c[::-1]
-        else:
-            bar[:, start:end] = c[::-1]
-        start = end
-        i += 1
+    # Calculate percentages
+    percentages = weighted_counts / np.sum(weighted_counts)
 
-    plt.imshow(bar)
-    plt.xticks([])
-    plt.yticks([])
+    # Step 5: Validate colors (avoid very dark colors being selected as dominant)
+    # Calculate brightness of each color
+    brightnesses = np.sum(colors, axis=1) / 3
 
-    rows = 1000
-    cols = int((org_img.shape[0] / org_img.shape[1]) * rows)
-    img = cv2.resize(org_img, dsize=(rows, cols), interpolation=cv2.INTER_LINEAR)
+    # Filter out very dark colors (brightness < 30)
+    valid_colors = []
+    for i in range(clusters):
+        if brightnesses[i] > 30 or percentages[i] > 0.5:  # Keep dark only if dominant
+            valid_colors.append((percentages[i], colors[i]))
 
-    copy = img.copy()
-    cv2.rectangle(copy, (rows // 2 - 250, cols // 2 - 90), (rows // 2 + 250, cols // 2 + 110), (255, 255, 255), -1)
+    # If no valid colors, return the original results
+    if not valid_colors:
+        valid_colors = [(percentages[i], colors[i]) for i in range(clusters)]
 
-    final = cv2.addWeighted(img, 0.1, copy, 0.9, 0)
-    cv2.putText(final, 'Most Dominant Colors in the Image',
-                (rows // 2 - 230, cols // 2 - 40),
-                cv2.FONT_HERSHEY_DUPLEX,
-                0.8, (0, 0, 0), 1, cv2.LINE_AA)
+    # Sort by percentage
+    valid_colors.sort(reverse=True)
 
-    start = rows // 2 - 220
-    for i in range(5):
-        end = start + 70
-        final[cols // 2:cols // 2 + 70, start:end] = p_and_c[i][1]
-        cv2.putText(final, str(i + 1), (start + 25, cols // 2 + 45), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1,
-                    cv2.LINE_AA)
-        start = end + 20
-
-    plt.show()
-    return p_and_c[1]
-
+    # Convert BGR to RGB for the result
+    dominant_color = valid_colors[0]
+    return (float(dominant_color[0]), dominant_color[1][::-1])  # Reverse BGR to RGB
 
 def extract_material_properties(img_path):
     """
@@ -1811,22 +2038,22 @@ def add_wardrobe():
                 # Make prediction
                 preds = model_predict(file_path, model)
                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+                              'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
                 # Get predicted label and confidence scores
                 predicted_label = np.argmax(preds)
                 clothing_type = class_names[predicted_label]
 
-                # Get color prediction
-                color_result = predict_color(file_path)
+                # Get color prediction using the improved function
+                color_result = improved_predict_color(file_path)
                 # color_result is a tuple of (percentage, RGB array)
                 color_percentage = float(color_result[0])
                 color_rgb = color_result[1].tolist()  # Convert numpy array to list
 
-                # Extract material properties with pattern detection
+                # Extract material properties
                 material_properties = extract_material_properties(file_path)
 
-                # Generate normal map for textured materials - with safety checks
+                # Generate normal map for textured materials
                 normal_map_path = None
                 # Check if material_properties contains pattern_info before accessing it
                 has_pattern = False
@@ -1852,6 +2079,9 @@ def add_wardrobe():
                             print(f"Error generating normal map: {str(e)}")
                             # Continue even if normal map generation fails
 
+                # Set texture preview path (explicitly store it)
+                texture_preview_path = file_path_db
+
                 # Save image data
                 userId = session['user']['_id']
                 db.wardrobe.insert_one({
@@ -1867,12 +2097,13 @@ def add_wardrobe():
                     'normal_map_path': normal_map_path,
                     'filename': secure_filename(f.filename),
                     'file_path': file_path_db,
+                    'texture_preview_path': texture_preview_path,  # Add this for UI display
                     'created_at': datetime.now(),
                     'last_worn': None,
                     'times_worn': 0
                 })
 
-                # Return success response
+                # Return success response with all needed data for UI display
                 return jsonify({
                     'success': True,
                     'prediction': clothing_type,
@@ -1882,7 +2113,8 @@ def add_wardrobe():
                         'rgb': color_rgb
                     },
                     'material_properties': material_properties,
-                    'normal_map_path': normal_map_path
+                    'normal_map_path': normal_map_path,
+                    'texture_preview_path': texture_preview_path  # Important: Include this
                 })
 
             except Exception as e:
@@ -1897,7 +2129,6 @@ def add_wardrobe():
 
     # GET request
     return render_template('wardrobe.html')
-
 
 # @app.route('/api/wardrobe/material/<item_id>', methods=['GET'])
 # @login_required
