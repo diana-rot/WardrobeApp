@@ -35,6 +35,249 @@ from flask import send_file
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
 
+def extract_material_properties(img_path):
+    """
+    Extract material properties from an image including:
+    - Dominant colors
+    - Texture patterns
+    - Material type estimation based on texture analysis
+    - Pattern information
+
+    Returns a dictionary of material properties
+    """
+    # Load image
+    img = cv2.imread(img_path)
+    img = imutils.resize(img, height=300)  # Resize for consistent processing
+
+    # 1. Color analysis (using your existing KMeans approach)
+    flat_img = np.reshape(img, (-1, 3))
+    kmeans = KMeans(n_clusters=5, random_state=0)
+    kmeans.fit(flat_img)
+
+    dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
+    percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
+    p_and_c = sorted(zip(percentages, dominant_colors), reverse=True)
+
+    # 2. Texture analysis
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # GLCM (Gray Level Co-occurrence Matrix) texture features
+    # Convert to 8-bit grayscale for texture analysis
+    gray_8bit = (gray / gray.max() * 255).astype(np.uint8)
+
+    # Calculate texture features (variance as a simple measure)
+    texture_variance = np.var(gray_8bit)
+
+    # Calculate edge density (a proxy for texture complexity)
+    edges = cv2.Canny(gray_8bit, 100, 200)
+    edge_density = np.sum(edges > 0) / (edges.shape[0] * edges.shape[1])
+
+    # 3. Material type estimation based on texture properties
+    material_type = "unknown"
+
+    # Simple heuristic-based material classification
+    if edge_density < 0.05 and texture_variance < 50:
+        material_type = "smooth"  # Might be leather, silk, etc.
+    elif edge_density > 0.2:
+        material_type = "textured"  # Might be denim, wool, etc.
+    elif texture_variance > 200:
+        material_type = "patterned"  # Has distinct patterns
+    else:
+        material_type = "medium"  # Medium texture, like cotton
+
+    # 4. Add basic pattern information
+    # This is a placeholder - in the full implementation you'd use the detect_pattern_type function
+    # For now we'll create a basic pattern_info structure with default values
+    pattern_info = {
+        "pattern_type": "regular" if texture_variance > 150 else "irregular",
+        "pattern_scale": "medium",
+        "pattern_strength": min(1.0, edge_density * 2),  # Simple scaling to 0-1 range
+        "has_pattern": edge_density > 0.1 or texture_variance > 100,
+        "pattern_regularity": 0.5,
+        "is_directional": False,
+        "peak_count": 0
+    }
+
+    # Return the extracted material properties
+    return {
+        "dominant_colors": [color.tolist() for _, color in p_and_c[:3]],
+        "color_percentages": [float(pct) for pct, _ in p_and_c[:3]],
+        "texture_variance": float(texture_variance),
+        "edge_density": float(edge_density),
+        "estimated_material": material_type,
+        "primary_color_rgb": p_and_c[0][1].tolist(),
+        "pattern_info": pattern_info  # Add pattern_info to the returned dict
+    }
+
+
+def determine_material_type(texture_variance, edge_density, pattern_info):
+    """Determine material type based on texture and pattern analysis"""
+
+    # Check if it's a strong pattern first
+    if pattern_info["has_pattern"] and pattern_info["pattern_strength"] > 0.4:
+        if pattern_info["pattern_type"] in ["check", "stripe"]:
+            return "woven_patterned"
+        elif pattern_info["pattern_type"] == "irregular":
+            return "printed"
+        else:
+            return "patterned"
+
+    # If no strong pattern, determine by texture
+    if edge_density < 0.05 and texture_variance < 50:
+        return "smooth"  # Might be leather, silk, etc.
+    elif edge_density > 0.2:
+        if texture_variance > 150:
+            return "rough_textured"  # Might be tweed, heavy wool
+        else:
+            return "textured"  # Might be denim, canvas
+    elif texture_variance > 200:
+        return "detailed"  # Has distinct texture details
+    else:
+        return "medium"  # Medium texture, like cotton
+
+
+def detect_pattern_type(img_path):
+    """Detect and classify pattern types in the image"""
+    img = cv2.imread(img_path)
+
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Resize for faster processing if needed
+    resized = cv2.resize(gray, (256, 256))
+
+    # Apply FFT to detect regular patterns
+    f = fftpack.fft2(resized)
+    fshift = fftpack.fftshift(f)
+    magnitude_spectrum = 20 * np.log(np.abs(fshift) + 1)
+
+    # Threshold the magnitude spectrum to find strong frequencies
+    threshold = np.mean(magnitude_spectrum) + 3 * np.std(magnitude_spectrum)
+    peaks = magnitude_spectrum > threshold
+
+    # Count peaks in the frequency domain (excluding the DC component)
+    center_y, center_x = resized.shape[0] // 2, resized.shape[1] // 2
+    mask = np.ones_like(peaks)
+    mask[center_y - 5:center_y + 5, center_x - 5:center_x + 5] = 0  # Exclude center
+    peak_count = np.sum(peaks & mask)
+
+    # Analyze peak distribution
+    peak_locs = np.where(peaks & mask)
+    peak_distances = np.sqrt((peak_locs[0] - center_y) ** 2 + (peak_locs[1] - center_x) ** 2)
+    pattern_regularity = 0.0
+
+    if len(peak_distances) > 0:
+        # Calculate coefficient of variation (lower value = more regular)
+        if np.mean(peak_distances) > 0:
+            pattern_regularity = 1.0 - min(1.0, np.std(peak_distances) / np.mean(peak_distances))
+
+    # Gradient analysis for pattern direction
+    sobelx = cv2.Sobel(resized, cv2.CV_64F, 1, 0, ksize=3)
+    sobely = cv2.Sobel(resized, cv2.CV_64F, 0, 1, ksize=3)
+
+    # Calculate gradient magnitudes and directions
+    gradient_magnitude = np.sqrt(sobelx ** 2 + sobely ** 2)
+    gradient_direction = np.arctan2(sobely, sobelx) * 180 / np.pi
+
+    # Analyze gradient directions
+    hist, _ = np.histogram(gradient_direction, bins=8, range=(-180, 180))
+    hist_normalized = hist / np.sum(hist)
+    max_dir_idx = np.argmax(hist_normalized)
+
+    # Determine if there are strong directional patterns
+    has_directional_pattern = np.max(hist_normalized) > 0.25
+
+    # Determine pattern type
+    if peak_count > 15 and pattern_regularity > 0.7:
+        # Check for grid patterns (peaks in both horizontal and vertical)
+        horizontal_peaks = np.sum(peaks[center_y, :] & mask[center_y, :])
+        vertical_peaks = np.sum(peaks[:, center_x] & mask[:, center_x])
+
+        if horizontal_peaks > 3 and vertical_peaks > 3:
+            pattern_type = "check"
+        elif has_directional_pattern:
+            if max_dir_idx in [0, 4]:  # Horizontal (0° or 180°)
+                pattern_type = "horizontal_stripe"
+            elif max_dir_idx in [2, 6]:  # Vertical (90° or 270°)
+                pattern_type = "vertical_stripe"
+            else:
+                pattern_type = "diagonal_stripe"
+        else:
+            pattern_type = "regular"
+    elif peak_count > 5:
+        pattern_type = "semi_regular"
+    else:
+        # For low peak counts, further analyze texture
+        if np.max(hist_normalized) > 0.2:
+            pattern_type = "directional"
+        else:
+            pattern_type = "irregular"
+
+    # Determine pattern scale (fine, medium, large)
+    if len(peak_distances) > 0:
+        avg_distance = np.mean(peak_distances)
+        if avg_distance < 20:
+            pattern_scale = "fine"
+        elif avg_distance < 50:
+            pattern_scale = "medium"
+        else:
+            pattern_scale = "large"
+    else:
+        # Default if no peaks detected
+        pattern_scale = "medium"
+
+    # Calculate pattern strength (how dominant the pattern is)
+    pattern_strength = min(1.0, peak_count / 50)
+
+    return {
+        "pattern_type": pattern_type,
+        "pattern_scale": pattern_scale,
+        "pattern_strength": float(pattern_strength),
+        "has_pattern": peak_count > 3,
+        "pattern_regularity": float(pattern_regularity),
+        "is_directional": has_directional_pattern,
+        "peak_count": int(peak_count)
+    }
+
+
+def generate_normal_map(img_path):
+    """Generate a normal map from a texture for 3D relief"""
+    try:
+        img = cv2.imread(img_path)
+        if img is None:
+            return None
+
+        # Convert to grayscale
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # Apply bilateral filter to smooth while preserving edges
+        smooth = cv2.bilateralFilter(gray, 9, 75, 75)
+
+        # Generate gradients
+        sobelx = cv2.Sobel(smooth, cv2.CV_32F, 1, 0, ksize=5)
+        sobely = cv2.Sobel(smooth, cv2.CV_32F, 0, 1, ksize=5)
+
+        # Normalize gradients
+        sobelx = cv2.normalize(sobelx, None, 0, 1, cv2.NORM_MINMAX, cv2.CV_32F)
+        sobely = cv2.normalize(sobely, None, 0, 1, cv2.NORM_MINMAX, cv2.CV_32F)
+
+        # Create normal map (RGB)
+        normal_map = np.zeros((gray.shape[0], gray.shape[1], 3), dtype=np.uint8)
+        normal_map[..., 0] = sobelx * 127.5 + 127.5  # Red channel (X)
+        normal_map[..., 1] = sobely * 127.5 + 127.5  # Green channel (Y)
+        normal_map[..., 2] = 255  # Blue channel (Z always points up)
+
+        # Save normal map
+        filename, ext = os.path.splitext(img_path)
+        normal_map_path = f"{filename}_normal{ext}"
+        cv2.imwrite(normal_map_path, normal_map)
+
+        return normal_map_path
+
+    except Exception as e:
+        print(f"Error generating normal map: {str(e)}")
+        return None
+
 @app.template_filter('normalize_path')
 def normalize_path_filter(file_path):
     """Normalizes file paths for template rendering"""
@@ -77,75 +320,562 @@ def model_predict(img_path, model):
         print(f"Error in model_predict: {str(e)}")
         raise
 
-def predict_color(img_path):
-    clusters = 5
-    img = cv2.imread(img_path)
-    org_img = img.copy()
-    img = imutils.resize(img, height=200)
-    flat_img = np.reshape(img, (-1, 3))
-    print('After Flattening shape --> ', flat_img.shape)
+from flaskapp.user.texture_mapping import process_clothing_texture
 
-    kmeans = KMeans(n_clusters=clusters, random_state=0)
+
+@app.route('/api/process-clothing-texture', methods=['POST'])
+@login_required
+def api_process_clothing_texture():
+    """
+    API endpoint to process clothing textures for 3D visualization
+
+    Request:
+        - file: The image file
+        - clothing_type: The type of clothing (e.g., "T-shirt/top", "Dress")
+
+    Response:
+        {
+            "success": true,
+            "model_path": "/static/models/clothing/tshirt.glb",
+            "texture_url": "/static/image_users/user_id/image_texture.png",
+            "normal_map_url": "/static/image_users/user_id/image_normal.png"
+        }
+    """
+    try:
+        # Check if the post request has the file part
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Get clothing type from form or predict it
+        clothing_type = request.form.get('clothing_type')
+
+        # If no clothing type provided, try to predict it
+        if not clothing_type:
+            # You can use your existing model_predict function here
+            # For now, we'll default to T-shirt/top
+            clothing_type = "T-shirt/top"
+
+        # Save the file
+        user_id = session['user']['_id']
+        upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Add a unique identifier to prevent filename collisions
+        filename = secure_filename(file.filename)
+        base, ext = os.path.splitext(filename)
+        unique_filename = f"{base}_{user_id}_{int(time.time())}{ext}"
+        file_path = os.path.join(upload_dir, unique_filename)
+
+        file.save(file_path)
+
+        # Process the texture
+        result = process_clothing_texture(file_path, clothing_type)
+
+        # Convert absolute paths to relative URLs
+        base_url = f'/static/image_users/{user_id}/'
+        texture_url = os.path.basename(result['texture_path'])
+        normal_map_url = os.path.basename(result['normal_map_path'])
+
+        return jsonify({
+            'success': True,
+            'model_path': result['model_path'],
+            'texture_url': f"{base_url}{texture_url}",
+            'normal_map_url': f"{base_url}{normal_map_url}"
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error processing texture: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+def improved_predict_color(img_path):
+    """
+    Improved color prediction that accurately identifies the dominant color of clothing
+    by effectively removing the background and focusing on the central object.
+
+    Returns: (percentage, [R, G, B])
+    """
+    import cv2
+    import numpy as np
+    from sklearn.cluster import KMeans
+    import imutils
+
+    # Load the image
+    img = cv2.imread(img_path)
+    if img is None:
+        print(f"Error: Could not load image from {img_path}")
+        return None
+
+    # Resize for consistent processing
+    img = imutils.resize(img, height=300)
+
+    # Step 1: Background Removal
+    # Convert to RGBA to detect white/transparent backgrounds
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+
+    # Apply morphological operations to clean up the mask
+    kernel = np.ones((5, 5), np.uint8)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+
+    # Find contours to identify the clothing item
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Create a mask for the main object
+    mask = np.zeros_like(gray)
+
+    if contours:
+        # Find the largest contour which is assumed to be the clothing item
+        main_contour = max(contours, key=cv2.contourArea)
+
+        # Only use the contour if it's large enough (to avoid small artifacts)
+        if cv2.contourArea(main_contour) > 1000:
+            # Create a mask from the contour
+            cv2.drawContours(mask, [main_contour], 0, 255, -1)
+        else:
+            # If no large contour, use a central region of the image
+            height, width = img.shape[:2]
+            cv2.rectangle(mask, (width // 4, height // 4), (width * 3 // 4, height * 3 // 4), 255, -1)
+    else:
+        # If no contours, use a central region of the image
+        height, width = img.shape[:2]
+        cv2.rectangle(mask, (width // 4, height // 4), (width * 3 // 4, height * 3 // 4), 255, -1)
+
+    # Apply the mask to the image
+    masked_img = cv2.bitwise_and(img, img, mask=mask)
+
+    # Step 2: Color Clustering (K-means)
+    # Reshape the masked image to a list of pixels
+    pixels = masked_img.reshape(-1, 3)
+
+    # Filter out black background (masked areas)
+    non_black_pixels = pixels[~np.all(pixels == [0, 0, 0], axis=1)]
+
+    # If no non-black pixels, return None
+    if len(non_black_pixels) == 0:
+        print("Warning: No valid pixels found after masking")
+        return None
+
+    # Apply K-means clustering to find dominant colors
+    clusters = 5
+    kmeans = KMeans(n_clusters=clusters, random_state=42, n_init=10)
+    kmeans.fit(non_black_pixels)
+
+    # Get colors and percentages
+    colors = kmeans.cluster_centers_.astype(np.uint8)
+    labels = kmeans.labels_
+    counts = np.bincount(labels)
+    percentages = counts / len(labels)
+
+    # Step 3: Color Validation and Selection
+    # Sort colors by percentage
+    color_percentages = list(zip(percentages, colors))
+    color_percentages.sort(reverse=True)
+
+    # Filter out very dark and very light colors
+    filtered_colors = []
+    for percentage, color in color_percentages:
+        brightness = np.mean(color)
+        # Skip very dark colors (almost black) or very light colors (almost white)
+        if 15 < brightness < 240:
+            filtered_colors.append((percentage, color))
+
+    # If all colors were filtered out, use the original list
+    if not filtered_colors:
+        filtered_colors = color_percentages
+
+    # Get dominant color (first in the filtered list)
+    dominant_percentage, dominant_color = filtered_colors[0]
+
+    # Convert BGR to RGB for the result
+    return (float(dominant_percentage), dominant_color[::-1])  # BGR to RGB
+
+
+#
+# def predict_color(img_path):
+#     """
+#     Improved color prediction that focuses on the clothing item in the image.
+#
+#     Steps:
+#     1. Load the image
+#     2. Detect and crop the clothing item
+#     3. Apply color segmentation on the cropped region
+#     4. Return the dominant color and its percentage
+#
+#     Returns a tuple of (percentage, [R, G, B])
+#     """
+#     import cv2
+#     import numpy as np
+#     from sklearn.cluster import KMeans
+#     import imutils
+#     import matplotlib.pyplot as plt
+#
+#     # Load the image
+#     img = cv2.imread(img_path)
+#     if img is None:
+#         print(f"Error: Could not load image from {img_path}")
+#         return None
+#
+#     # Make a copy for visualization
+#     org_img = img.copy()
+#
+#     # Step 1: Apply preprocessing to enhance the clothing item
+#     # Convert to grayscale for processing
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#
+#     # Apply Gaussian blur to reduce noise
+#     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+#
+#     # Apply Canny edge detection
+#     edges = cv2.Canny(blurred, 50, 150)
+#
+#     # Find contours in the edge map
+#     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#
+#     # Find the largest contour which is likely to be the clothing item
+#     if contours:
+#         main_contour = max(contours, key=cv2.contourArea)
+#
+#         # Create a mask for the largest contour
+#         mask = np.zeros_like(gray)
+#         cv2.drawContours(mask, [main_contour], 0, 255, -1)
+#
+#         # Apply the mask to get the clothing item
+#         clothing_item = cv2.bitwise_and(img, img, mask=mask)
+#
+#         # Get the bounding box of the contour
+#         x, y, w, h = cv2.boundingRect(main_contour)
+#
+#         # Crop the clothing item
+#         cropped_item = clothing_item[y:y + h, x:x + w]
+#
+#         # Ensure the cropped item is not empty
+#         if cropped_item.size == 0:
+#             print("Warning: Cropped image is empty, using original image")
+#             cropped_item = img
+#     else:
+#         print("Warning: No contours found, using original image")
+#         cropped_item = img
+#
+#     # Step 2: Resize the cropped item for consistent processing
+#     cropped_item = imutils.resize(cropped_item, height=300)
+#
+#     # Step 3: Apply color segmentation using K-means clustering
+#     # Reshape the image to be a list of pixels
+#     pixels = cropped_item.reshape(-1, 3)
+#
+#     # Remove black background (mask pixels)
+#     non_black_pixels = pixels[~np.all(pixels == [0, 0, 0], axis=1)]
+#
+#     # If there are no non-black pixels, revert to original image
+#     if len(non_black_pixels) == 0:
+#         print("Warning: No non-black pixels found, using original image")
+#         non_black_pixels = img.reshape(-1, 3)
+#
+#     # Apply K-means clustering to find dominant colors
+#     clusters = 5
+#     kmeans = KMeans(n_clusters=clusters, random_state=0, n_init=10)
+#     kmeans.fit(non_black_pixels)
+#
+#     # Get the colors and their percentages
+#     colors = np.array(kmeans.cluster_centers_, dtype='uint8')
+#     percentages = np.bincount(kmeans.labels_) / len(kmeans.labels_)
+#
+#     # Sort colors by percentage
+#     p_and_c = sorted(zip(percentages, colors), reverse=True)
+#
+#     # Debug: Visualize the color segmentation
+#     if False:  # Set to True to debug color segmentation
+#         plt.figure(figsize=(12, 6))
+#
+#         # Plot the original image
+#         plt.subplot(1, 3, 1)
+#         plt.imshow(cv2.cvtColor(org_img, cv2.COLOR_BGR2RGB))
+#         plt.title('Original Image')
+#         plt.axis('off')
+#
+#         # Plot the cropped clothing item
+#         plt.subplot(1, 3, 2)
+#         plt.imshow(cv2.cvtColor(cropped_item, cv2.COLOR_BGR2RGB))
+#         plt.title('Cropped Clothing Item')
+#         plt.axis('off')
+#
+#         # Plot the color palette
+#         plt.subplot(1, 3, 3)
+#         # Create a color palette
+#         palette = np.zeros((100, 500, 3), dtype='uint8')
+#         start = 0
+#         for i, (percentage, color) in enumerate(p_and_c):
+#             end = start + int(percentage * 500)
+#             palette[:, start:end] = color[::-1]  # BGR to RGB
+#             start = end
+#
+#         plt.imshow(palette)
+#         plt.title('Color Palette')
+#         plt.axis('off')
+#
+#         plt.tight_layout()
+#         plt.show()
+#
+#     # Return the dominant color (first in the sorted list)
+#     # Format: (percentage, [R, G, B])
+#     return (float(p_and_c[0][0]), p_and_c[0][1])
+#
+#
+# def predict_color(img_path):
+#     clusters = 5
+#     img = cv2.imread(img_path)
+#     org_img = img.copy()
+#     img = imutils.resize(img, height=200)
+#     flat_img = np.reshape(img, (-1, 3))
+#     print('After Flattening shape --> ', flat_img.shape)
+#
+#     kmeans = KMeans(n_clusters=clusters, random_state=0)
+#     kmeans.fit(flat_img)
+#
+#     dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
+#
+#     percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
+#     p_and_c = zip(percentages, dominant_colors)
+#     p_and_c = sorted(p_and_c, reverse=True)
+#     print("the colour in the db")
+#     print(p_and_c[1])
+#     block = np.ones((50, 50, 3), dtype='uint')
+#     plt.figure(figsize=(12, 8))
+#     for i in range(clusters):
+#         plt.subplot(1, clusters, i + 1)
+#         block[:] = p_and_c[i][1][::-1]  # we have done this to convert bgr(opencv) to rgb(matplotlib)
+#         plt.imshow(block)
+#         plt.xticks([])
+#         plt.yticks([])
+#         plt.xlabel(str(round(p_and_c[i][0] * 100, 2)) + '%')
+#
+#     bar = np.ones((50, 500, 3), dtype='uint')
+#     plt.figure(figsize=(12, 8))
+#     plt.title('Proportions of colors in the image')
+#     start = 0
+#     i = 1
+#     for p, c in p_and_c:
+#         end = start + int(p * bar.shape[1])
+#         if i == clusters:
+#             bar[:, start:] = c[::-1]
+#         else:
+#             bar[:, start:end] = c[::-1]
+#         start = end
+#         i += 1
+#
+#     plt.imshow(bar)
+#     plt.xticks([])
+#     plt.yticks([])
+#
+#     rows = 1000
+#     cols = int((org_img.shape[0] / org_img.shape[1]) * rows)
+#     img = cv2.resize(org_img, dsize=(rows, cols), interpolation=cv2.INTER_LINEAR)
+#
+#     copy = img.copy()
+#     cv2.rectangle(copy, (rows // 2 - 250, cols // 2 - 90), (rows // 2 + 250, cols // 2 + 110), (255, 255, 255), -1)
+#
+#     final = cv2.addWeighted(img, 0.1, copy, 0.9, 0)
+#     cv2.putText(final, 'Most Dominant Colors in the Image',
+#                 (rows // 2 - 230, cols // 2 - 40),
+#                 cv2.FONT_HERSHEY_DUPLEX,
+#                 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+#
+#     start = rows // 2 - 220
+#     for i in range(5):
+#         end = start + 70
+#         final[cols // 2:cols // 2 + 70, start:end] = p_and_c[i][1]
+#         cv2.putText(final, str(i + 1), (start + 25, cols // 2 + 45), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1,
+#                     cv2.LINE_AA)
+#         start = end + 20
+#
+#     plt.show()
+#     return p_and_c[1]
+
+
+def improved_predict_color(img_path):
+    """
+    Enhanced color prediction that accurately identifies clothing colors.
+
+    Improvements:
+    1. Better background removal using HSV color space
+    2. Improved clothing segmentation using contour analysis
+    3. Weighted color clustering to prioritize central regions
+    4. Color validation to avoid dark/black misidentification
+
+    Returns color information tuple (percentage, [R, G, B])
+    """
+    import cv2
+    import numpy as np
+    from sklearn.cluster import KMeans
+    import imutils
+
+    # Load the image
+    img = cv2.imread(img_path)
+    if img is None:
+        print(f"Error: Could not load image from {img_path}")
+        return None
+
+    # Resize for consistent processing
+    img = imutils.resize(img, height=300)
+
+    # Convert to HSV for better segmentation
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # Step 1: Create a mask to remove white/light backgrounds
+    # This range covers white/very light backgrounds
+    lower_white = np.array([0, 0, 180])
+    upper_white = np.array([180, 30, 255])
+    mask_white = cv2.inRange(hsv_img, lower_white, upper_white)
+
+    # Invert mask to keep the clothing item
+    mask = cv2.bitwise_not(mask_white)
+
+    # Apply morphological operations to clean up the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    # Step 2: Find contours to identify the clothing item
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # If contours exist, find the largest one (likely the clothing item)
+    if contours:
+        main_contour = max(contours, key=cv2.contourArea)
+
+        # Create a new mask with only the main contour
+        item_mask = np.zeros_like(mask)
+        cv2.drawContours(item_mask, [main_contour], 0, 255, -1)
+
+        # Apply the mask to get just the clothing
+        clothing = cv2.bitwise_and(img, img, mask=item_mask)
+    else:
+        # If no significant contours, use the original mask
+        clothing = cv2.bitwise_and(img, img, mask=mask)
+
+    # Step 3: Create a central weighting map (pixels in center get higher weight)
+    height, width = clothing.shape[:2]
+    center_y, center_x = height // 2, width // 2
+    y, x = np.ogrid[:height, :width]
+    # Create distance map from center
+    dist_from_center = np.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+    # Normalize and invert so center has high values
+    max_dist = np.sqrt(center_x ** 2 + center_y ** 2)
+    weight_map = 1 - (dist_from_center / max_dist)
+    # Apply threshold to make it binary (optional)
+    # weight_map = (weight_map > 0.7).astype(np.uint8) * 255
+
+    # Step 4: Apply K-means clustering with weighted samples
+    # Reshape the image and remove black background
+    pixels = clothing.reshape(-1, 3)
+    mask_flat = mask.reshape(-1)
+    valid_pixels = pixels[mask_flat > 0]
+
+    if len(valid_pixels) == 0:
+        print("Warning: No valid pixels found after masking")
+        return None
+
+    # Get weights for each pixel
+    weight_flat = weight_map.reshape(-1)
+    valid_weights = weight_flat[mask_flat > 0]
+
+    # Apply K-means clustering with weights (sample_weight parameter)
+    clusters = 5
+    kmeans = KMeans(n_clusters=clusters, random_state=42, n_init=10)
+    kmeans.fit(valid_pixels, sample_weight=valid_weights)
+
+    # Get colors and calculate percentages
+    colors = kmeans.cluster_centers_.astype(np.uint8)
+    labels = kmeans.labels_
+
+    # Count pixels per cluster with weighting
+    weighted_counts = np.zeros(clusters)
+    for i in range(clusters):
+        weighted_counts[i] = np.sum(valid_weights[labels == i])
+
+    # Calculate percentages
+    percentages = weighted_counts / np.sum(weighted_counts)
+
+    # Step 5: Validate colors (avoid very dark colors being selected as dominant)
+    # Calculate brightness of each color
+    brightnesses = np.sum(colors, axis=1) / 3
+
+    # Filter out very dark colors (brightness < 30)
+    valid_colors = []
+    for i in range(clusters):
+        if brightnesses[i] > 30 or percentages[i] > 0.5:  # Keep dark only if dominant
+            valid_colors.append((percentages[i], colors[i]))
+
+    # If no valid colors, return the original results
+    if not valid_colors:
+        valid_colors = [(percentages[i], colors[i]) for i in range(clusters)]
+
+    # Sort by percentage
+    valid_colors.sort(reverse=True)
+
+    # Convert BGR to RGB for the result
+    dominant_color = valid_colors[0]
+    return (float(dominant_color[0]), dominant_color[1][::-1])  # Reverse BGR to RGB
+
+def extract_material_properties(img_path):
+    """
+    Extract material properties from an image including:
+    - Dominant colors
+    - Texture patterns
+    - Material type estimation based on texture analysis
+
+    Returns a dictionary of material properties
+    """
+    # Load image
+    img = cv2.imread(img_path)
+    img = imutils.resize(img, height=300)  # Resize for consistent processing
+
+    # 1. Color analysis (using your existing KMeans approach)
+    flat_img = np.reshape(img, (-1, 3))
+    kmeans = KMeans(n_clusters=5, random_state=0)
     kmeans.fit(flat_img)
 
     dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
-
     percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
-    p_and_c = zip(percentages, dominant_colors)
-    p_and_c = sorted(p_and_c, reverse=True)
-    print("the colour in the db")
-    print(p_and_c[1])
-    block = np.ones((50, 50, 3), dtype='uint')
-    plt.figure(figsize=(12, 8))
-    for i in range(clusters):
-        plt.subplot(1, clusters, i + 1)
-        block[:] = p_and_c[i][1][::-1]  # we have done this to convert bgr(opencv) to rgb(matplotlib)
-        plt.imshow(block)
-        plt.xticks([])
-        plt.yticks([])
-        plt.xlabel(str(round(p_and_c[i][0] * 100, 2)) + '%')
+    p_and_c = sorted(zip(percentages, dominant_colors), reverse=True)
 
-    bar = np.ones((50, 500, 3), dtype='uint')
-    plt.figure(figsize=(12, 8))
-    plt.title('Proportions of colors in the image')
-    start = 0
-    i = 1
-    for p, c in p_and_c:
-        end = start + int(p * bar.shape[1])
-        if i == clusters:
-            bar[:, start:] = c[::-1]
-        else:
-            bar[:, start:end] = c[::-1]
-        start = end
-        i += 1
+    # 2. Texture analysis
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    plt.imshow(bar)
-    plt.xticks([])
-    plt.yticks([])
+    # Calculate texture features (variance as a simple measure)
+    texture_variance = np.var(gray)
 
-    rows = 1000
-    cols = int((org_img.shape[0] / org_img.shape[1]) * rows)
-    img = cv2.resize(org_img, dsize=(rows, cols), interpolation=cv2.INTER_LINEAR)
+    # Calculate edge density (a proxy for texture complexity)
+    edges = cv2.Canny(gray, 100, 200)
+    edge_density = np.sum(edges > 0) / (edges.shape[0] * edges.shape[1])
 
-    copy = img.copy()
-    cv2.rectangle(copy, (rows // 2 - 250, cols // 2 - 90), (rows // 2 + 250, cols // 2 + 110), (255, 255, 255), -1)
+    # 3. Material type estimation based on texture properties
+    material_type = "unknown"
 
-    final = cv2.addWeighted(img, 0.1, copy, 0.9, 0)
-    cv2.putText(final, 'Most Dominant Colors in the Image',
-                (rows // 2 - 230, cols // 2 - 40),
-                cv2.FONT_HERSHEY_DUPLEX,
-                0.8, (0, 0, 0), 1, cv2.LINE_AA)
+    # Simple heuristic-based material classification
+    if edge_density < 0.05 and texture_variance < 50:
+        material_type = "smooth"  # Might be leather, silk, etc.
+    elif edge_density > 0.2:
+        material_type = "textured"  # Might be denim, wool, etc.
+    elif texture_variance > 200:
+        material_type = "patterned"  # Has distinct patterns
+    else:
+        material_type = "medium"  # Medium texture, like cotton
 
-    start = rows // 2 - 220
-    for i in range(5):
-        end = start + 70
-        final[cols // 2:cols // 2 + 70, start:end] = p_and_c[i][1]
-        cv2.putText(final, str(i + 1), (start + 25, cols // 2 + 45), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1,
-                    cv2.LINE_AA)
-        start = end + 20
-
-    plt.show()
-    return p_and_c[1]
+    # Return the extracted material properties
+    return {
+        "dominant_colors": [color.tolist() for _, color in p_and_c[:3]],
+        "color_percentages": [float(pct) for pct, _ in p_and_c[:3]],
+        "texture_variance": float(texture_variance),
+        "edge_density": float(edge_density),
+        "estimated_material": material_type,
+        "primary_color_rgb": p_and_c[0][1].tolist()
+    }
 
 import fastai
 from fastai.vision.all import *
@@ -185,9 +915,13 @@ def upload():
                 if not isinstance(preds, np.ndarray) or preds.size == 0:
                     raise ValueError("Invalid prediction output")
 
+                # Extract color information
                 color_result = predict_color(file_path)
                 if not color_result or len(color_result) < 2:
                     raise ValueError("Invalid color prediction")
+
+                # Extract material properties - NEW
+                material_properties = extract_material_properties(file_path)
 
                 predicted_label = np.argmax(preds)
                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
@@ -198,13 +932,16 @@ def upload():
 
                 result = class_names[predicted_label]
 
-                # Save to database
+                # Save to database with material properties
                 db.wardrobe.insert_one({
                     'label': result,
                     'color': ' '.join(map(str, color_result[1])),
                     'nota': 4,
                     'userId': user_id,
-                    'file_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+                    'file_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',
+                    'material_properties': material_properties,  # NEW - store material data
+                    'texture_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',  # Same as file_path for now
+                    'created_at': datetime.now()
                 })
 
                 return result
@@ -219,6 +956,151 @@ def upload():
             return str(e), 500
 
     return None
+
+
+@app.route('/api/wardrobe/material/<item_id>', methods=['GET'])
+@login_required
+def get_material_properties(item_id):
+    try:
+        userId = session['user']['_id']
+        item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': userId})
+
+        if not item:
+            return jsonify({'error': 'Item not found'}), 404
+
+        # If material properties don't exist yet, extract them now
+        if 'material_properties' not in item or not item['material_properties']:
+            file_path = os.path.join('flaskapp', item['file_path'].lstrip('/'))
+            if os.path.exists(file_path):
+                material_properties = extract_material_properties(file_path)
+
+                # Generate normal map if appropriate
+                normal_map_path = None
+                # Safely check for pattern_info
+                has_pattern = False
+                pattern_strength = 0.0
+
+                if 'pattern_info' in material_properties:
+                    pattern_info = material_properties['pattern_info']
+                    has_pattern = pattern_info.get('has_pattern', False)
+                    pattern_strength = pattern_info.get('pattern_strength', 0.0)
+
+                if (material_properties.get('estimated_material') in ['textured', 'rough_textured',
+                                                                      'woven_patterned'] or
+                        (has_pattern and pattern_strength > 0.3)):
+                    try:
+                        normal_map_path = generate_normal_map(file_path)
+                        if normal_map_path:
+                            # Convert to database path format
+                            normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
+                    except Exception as e:
+                        print(f"Error generating normal map: {str(e)}")
+                        # Continue even if normal map generation fails
+
+                update_data = {'material_properties': material_properties}
+                if normal_map_path:
+                    update_data['normal_map_path'] = normal_map_path
+
+                db.wardrobe.update_one(
+                    {'_id': ObjectId(item_id)},
+                    {'$set': update_data}
+                )
+
+                item['material_properties'] = material_properties
+                item['normal_map_path'] = normal_map_path
+            else:
+                return jsonify({'error': 'Image file not found'}), 404
+
+        # Ensure pattern_info exists in material_properties
+        if 'material_properties' in item and 'pattern_info' not in item['material_properties']:
+            # Add a default pattern_info
+            item['material_properties']['pattern_info'] = {
+                "pattern_type": "regular",
+                "pattern_scale": "medium",
+                "pattern_strength": 0.3,
+                "has_pattern": False,
+                "pattern_regularity": 0.5,
+                "is_directional": False,
+                "peak_count": 0
+            }
+
+            # Update in database too
+            db.wardrobe.update_one(
+                {'_id': ObjectId(item_id)},
+                {'$set': {'material_properties': item['material_properties']}}
+            )
+
+        # Get normalized paths
+        texture_path = normalize_path(item.get('file_path', ''))
+        normal_map_path = normalize_path(item.get('normal_map_path', '')) if item.get('normal_map_path') else None
+
+        return jsonify({
+            'success': True,
+            'itemId': str(item['_id']),
+            'label': item['label'],
+            'materialProperties': item['material_properties'],
+            'texturePath': texture_path,
+            'normalMapPath': normal_map_path
+        })
+
+    except Exception as e:
+        print(f"Error getting material properties: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+# @app.route('/predict', methods=['POST'])
+# @login_required
+# def upload():
+#     if request.method == 'POST':
+#         try:
+#             f = request.files['file']
+#             if not f:
+#                 return "No file uploaded", 400
+#
+#             user_id = session['user']['_id']
+#             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
+#             os.makedirs(upload_dir, exist_ok=True)
+#             file_path = os.path.join(upload_dir, secure_filename(f.filename))
+#             f.save(file_path)
+#
+#             # Make predictions with validation
+#             try:
+#                 preds = model_predict(file_path, model)
+#                 if not isinstance(preds, np.ndarray) or preds.size == 0:
+#                     raise ValueError("Invalid prediction output")
+#
+#                 color_result = predict_color(file_path)
+#                 if not color_result or len(color_result) < 2:
+#                     raise ValueError("Invalid color prediction")
+#
+#                 predicted_label = np.argmax(preds)
+#                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+#                                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+#
+#                 if predicted_label >= len(class_names):
+#                     raise ValueError("Invalid predicted label index")
+#
+#                 result = class_names[predicted_label]
+#
+#                 # Save to database
+#                 db.wardrobe.insert_one({
+#                     'label': result,
+#                     'color': ' '.join(map(str, color_result[1])),
+#                     'nota': 4,
+#                     'userId': user_id,
+#                     'file_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+#                 })
+#
+#                 return result
+#
+#             except Exception as e:
+#                 print(f"Prediction error: {str(e)}")
+#                 if os.path.exists(file_path):
+#                     os.remove(file_path)
+#                 return str(e), 500
+#
+#         except Exception as e:
+#             return str(e), 500
+#
+#     return None
 def load_model():
     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
     # assert os.path.isfile(path)
@@ -1125,7 +2007,6 @@ def get_outfit():
 #             city3={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}
 #         )
 
-
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
 def add_wardrobe():
@@ -1148,30 +2029,58 @@ def add_wardrobe():
             # Save the file
             user_id = session['user']['_id']
             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
-            print('dir' + upload_dir);
             os.makedirs(upload_dir, exist_ok=True)
             file_path = os.path.join(upload_dir, secure_filename(f.filename))
             f.save(file_path)
-            print(file_path + 'fsss')
             file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
-            print('fileeeDB'+ file_path_db);
-            # Rest of the code remains the same...
 
             try:
                 # Make prediction
                 preds = model_predict(file_path, model)
                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+                              'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
                 # Get predicted label and confidence scores
                 predicted_label = np.argmax(preds)
                 clothing_type = class_names[predicted_label]
 
-                # Get color prediction
-                color_result = predict_color(file_path)
+                # Get color prediction using the improved function
+                color_result = improved_predict_color(file_path)
                 # color_result is a tuple of (percentage, RGB array)
                 color_percentage = float(color_result[0])
                 color_rgb = color_result[1].tolist()  # Convert numpy array to list
+
+                # Extract material properties
+                material_properties = extract_material_properties(file_path)
+
+                # Generate normal map for textured materials
+                normal_map_path = None
+                # Check if material_properties contains pattern_info before accessing it
+                has_pattern = False
+                pattern_strength = 0.0
+
+                if material_properties:
+                    # Safely check for pattern_info
+                    if 'pattern_info' in material_properties:
+                        pattern_info = material_properties['pattern_info']
+                        has_pattern = pattern_info.get('has_pattern', False)
+                        pattern_strength = pattern_info.get('pattern_strength', 0.0)
+
+                    # Determine if we should generate a normal map based on material type and pattern
+                    if (material_properties.get('estimated_material') in ['textured', 'rough_textured',
+                                                                          'woven_patterned'] or
+                            (has_pattern and pattern_strength > 0.3)):
+                        try:
+                            normal_map_path = generate_normal_map(file_path)
+                            if normal_map_path:
+                                # Convert to database path format
+                                normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
+                        except Exception as e:
+                            print(f"Error generating normal map: {str(e)}")
+                            # Continue even if normal map generation fails
+
+                # Set texture preview path (explicitly store it)
+                texture_preview_path = file_path_db
 
                 # Save image data
                 userId = session['user']['_id']
@@ -1183,17 +2092,18 @@ def add_wardrobe():
                         'percentage': color_percentage,
                         'rgb': color_rgb
                     },
+                    # Add material properties
+                    'material_properties': material_properties,
+                    'normal_map_path': normal_map_path,
                     'filename': secure_filename(f.filename),
                     'file_path': file_path_db,
+                    'texture_preview_path': texture_preview_path,  # Add this for UI display
                     'created_at': datetime.now(),
                     'last_worn': None,
                     'times_worn': 0
                 })
 
-                # # Clean up the uploaded file
-                # os.remove(file_path)
-
-                # Return success response
+                # Return success response with all needed data for UI display
                 return jsonify({
                     'success': True,
                     'prediction': clothing_type,
@@ -1201,7 +2111,10 @@ def add_wardrobe():
                     'color': {
                         'percentage': color_percentage,
                         'rgb': color_rgb
-                    }
+                    },
+                    'material_properties': material_properties,
+                    'normal_map_path': normal_map_path,
+                    'texture_preview_path': texture_preview_path  # Important: Include this
                 })
 
             except Exception as e:
@@ -1216,6 +2129,156 @@ def add_wardrobe():
 
     # GET request
     return render_template('wardrobe.html')
+
+# @app.route('/api/wardrobe/material/<item_id>', methods=['GET'])
+# @login_required
+# def get_material_properties(item_id):
+#     try:
+#         userId = session['user']['_id']
+#         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': userId})
+#
+#         if not item:
+#             return jsonify({'error': 'Item not found'}), 404
+#
+#         # If material properties don't exist yet, extract them now
+#         if 'material_properties' not in item:
+#             file_path = os.path.join('flaskapp', item['file_path'].lstrip('/'))
+#             if os.path.exists(file_path):
+#                 material_properties = extract_material_properties(file_path)
+#
+#                 # Generate normal map if appropriate
+#                 normal_map_path = None
+#                 if material_properties and (
+#                         material_properties['estimated_material'] in ['textured', 'rough_textured',
+#                                                                       'woven_patterned'] or
+#                         (material_properties['pattern_info']['has_pattern'] and
+#                          material_properties['pattern_info']['pattern_strength'] > 0.3)
+#                 ):
+#                     normal_map_path = generate_normal_map(file_path)
+#                     if normal_map_path:
+#                         # Convert to database path format
+#                         normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
+#
+#                 update_data = {'material_properties': material_properties}
+#                 if normal_map_path:
+#                     update_data['normal_map_path'] = normal_map_path
+#
+#                 db.wardrobe.update_one(
+#                     {'_id': ObjectId(item_id)},
+#                     {'$set': update_data}
+#                 )
+#
+#                 item['material_properties'] = material_properties
+#                 item['normal_map_path'] = normal_map_path
+#             else:
+#                 return jsonify({'error': 'Image file not found'}), 404
+#
+#         # Get normalized paths
+#         texture_path = normalize_path(item.get('file_path', ''))
+#         normal_map_path = normalize_path(item.get('normal_map_path', '')) if item.get('normal_map_path') else None
+#
+#         return jsonify({
+#             'success': True,
+#             'itemId': str(item['_id']),
+#             'label': item['label'],
+#             'materialProperties': item['material_properties'],
+#             'texturePath': texture_path,
+#             'normalMapPath': normal_map_path
+#         })
+#
+#     except Exception as e:
+#         print(f"Error getting material properties: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+# @app.route('/wardrobe', methods=['GET', 'POST'])
+# @login_required
+# def add_wardrobe():
+#     if request.method == 'POST':
+#         try:
+#             # Check if the post request has the file part
+#             if 'file' not in request.files:
+#                 return jsonify({'error': 'No file part'}), 400
+#
+#             f = request.files['file']
+#             if f.filename == '':
+#                 return jsonify({'error': 'No selected file'}), 400
+#
+#             # Check if the file is allowed
+#             allowed_extensions = {'png', 'jpg', 'jpeg'}
+#             if not '.' in f.filename or \
+#                     f.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+#                 return jsonify({'error': 'Invalid file type'}), 400
+#
+#             # Save the file
+#             user_id = session['user']['_id']
+#             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
+#             print('dir' + upload_dir);
+#             os.makedirs(upload_dir, exist_ok=True)
+#             file_path = os.path.join(upload_dir, secure_filename(f.filename))
+#             f.save(file_path)
+#             print(file_path + 'fsss')
+#             file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+#             print('fileeeDB'+ file_path_db);
+#             # Rest of the code remains the same...
+#
+#             try:
+#                 # Make prediction
+#                 preds = model_predict(file_path, model)
+#                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+#                                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+#
+#                 # Get predicted label and confidence scores
+#                 predicted_label = np.argmax(preds)
+#                 clothing_type = class_names[predicted_label]
+#
+#                 # Get color prediction
+#                 color_result = predict_color(file_path)
+#                 # color_result is a tuple of (percentage, RGB array)
+#                 color_percentage = float(color_result[0])
+#                 color_rgb = color_result[1].tolist()  # Convert numpy array to list
+#
+#                 # Save image data
+#                 userId = session['user']['_id']
+#                 db.wardrobe.insert_one({
+#                     'userId': userId,
+#                     'label': clothing_type,
+#                     'confidence': float(preds[0][predicted_label]),
+#                     'color': {
+#                         'percentage': color_percentage,
+#                         'rgb': color_rgb
+#                     },
+#                     'filename': secure_filename(f.filename),
+#                     'file_path': file_path_db,
+#                     'created_at': datetime.now(),
+#                     'last_worn': None,
+#                     'times_worn': 0
+#                 })
+#
+#                 # # Clean up the uploaded file
+#                 # os.remove(file_path)
+#
+#                 # Return success response
+#                 return jsonify({
+#                     'success': True,
+#                     'prediction': clothing_type,
+#                     'confidence': float(preds[0][predicted_label]),
+#                     'color': {
+#                         'percentage': color_percentage,
+#                         'rgb': color_rgb
+#                     }
+#                 })
+#
+#             except Exception as e:
+#                 print(f"Error in prediction: {str(e)}")
+#                 if os.path.exists(file_path):
+#                     os.remove(file_path)
+#                 return jsonify({'error': f'Error processing image: {str(e)}'}), 500
+#
+#         except Exception as e:
+#             print(f"Error in file upload: {str(e)}")
+#             return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
+#
+#     # GET request
+#     return render_template('wardrobe.html')
 
 @app.route('/wardrobe/all', methods=['GET', 'POST'])
 @login_required
@@ -2136,6 +3199,428 @@ def upload_top_glb():
     if resp.status_code not in (200, 201):
         return jsonify({'error': 'Failed to add asset to app', 'details': resp.text}), 500
     return jsonify({'assetId': asset_id, 'message': 'top.glb uploaded and linked to app successfully'})
+
+
+from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
+
+
+
+# material
+
+def extract_enhanced_material_features(img_path):
+    """
+    Extract comprehensive material features from an image
+
+    Parameters:
+        img_path (str): Path to the image file
+
+    Returns:
+        dict: Dictionary of extracted features
+    """
+    import cv2
+    import numpy as np
+    from skimage.feature import graycomatrix, graycoprops
+
+    try:
+        # Load and resize image for consistent processing
+        img = cv2.imread(img_path)
+        if img is None:
+            raise ValueError(f"Could not read image file: {img_path}")
+
+        img = cv2.resize(img, (300, 300))
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # 1. Basic texture features
+        texture_variance = np.var(gray)
+        edges = cv2.Canny(gray, 100, 200)
+        edge_density = np.sum(edges > 0) / (edges.shape[0] * edges.shape[1])
+
+        # 2. GLCM features (Gray Level Co-occurrence Matrix)
+        distances = [1]  # Keep simple for efficiency
+        angles = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
+
+        # Normalize gray scale to reduce feature dimension
+        gray_normalized = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+        # Reduce levels to improve performance
+        levels = 32
+        gray_reduced = (gray_normalized // (256 // levels)).astype(np.uint8)
+
+        # Calculate GLCM
+        glcm = graycomatrix(gray_reduced, distances, angles, levels, symmetric=True, normed=True)
+
+        # Extract GLCM properties
+        contrast = graycoprops(glcm, 'contrast').mean()
+        dissimilarity = graycoprops(glcm, 'dissimilarity').mean()
+        homogeneity = graycoprops(glcm, 'homogeneity').mean()
+        energy = graycoprops(glcm, 'energy').mean()
+        correlation = graycoprops(glcm, 'correlation').mean()
+
+        # 3. Color analysis
+        # Convert to HSV colorspace (better for fabric analysis)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        # Calculate saturation variation (helps distinguish fabrics)
+        saturation_variation = np.var(hsv[:, :, 1])
+
+        # Calculate hue distribution for color consistency
+        hue_histogram = cv2.calcHist([hsv], [0], None, [18], [0, 180])
+        hue_histogram = hue_histogram / np.sum(hue_histogram)  # Normalize
+
+        # Detect primary hue
+        primary_hue_index = np.argmax(hue_histogram)
+        primary_hue_percentage = float(hue_histogram[primary_hue_index])
+
+        # 4. Pattern detection
+        # Check if the material has visible patterns
+        has_pattern = bool(edge_density > 0.1 or texture_variance > 150)
+
+        # Estimate pattern strength
+        pattern_strength = min(1.0, (edge_density * 3 + texture_variance / 400) / 2)
+
+        # Detect pattern type
+        pattern_type = "irregular"
+        if has_pattern:
+            # Check for regular patterns using edge direction histogram
+            sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+            sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+
+            # Calculate gradient directions
+            gradient_direction = np.arctan2(sobely, sobelx) * 180 / np.pi
+
+            # Analyze gradient directions
+            hist, _ = np.histogram(gradient_direction, bins=8, range=(-180, 180))
+            hist_normalized = hist / np.sum(hist)
+            max_dir_idx = np.argmax(hist_normalized)
+            max_dir_percentage = float(hist_normalized[max_dir_idx])
+
+            # Determine pattern type
+            if max_dir_percentage > 0.3:  # Strong directional pattern
+                if max_dir_idx in [0, 4]:  # Horizontal (0° or 180°)
+                    pattern_type = "horizontal_stripe"
+                elif max_dir_idx in [2, 6]:  # Vertical (90° or 270°)
+                    pattern_type = "vertical_stripe"
+                else:
+                    pattern_type = "diagonal_stripe"
+            elif texture_variance > 200 and edge_density > 0.2:
+                pattern_type = "complex"
+            else:
+                pattern_type = "irregular"
+
+        # 5. Combine all features
+        features = {
+            # Basic features
+            'texture_variance': float(texture_variance),
+            'edge_density': float(edge_density),
+
+            # GLCM features
+            'glcm_contrast': float(contrast),
+            'glcm_dissimilarity': float(dissimilarity),
+            'glcm_homogeneity': float(homogeneity),
+            'glcm_energy': float(energy),
+            'glcm_correlation': float(correlation),
+
+            # Color features
+            'saturation_variation': float(saturation_variation),
+            'primary_hue_percentage': float(primary_hue_percentage),
+
+            # Pattern features
+            'has_pattern': has_pattern,
+            'pattern_strength': float(pattern_strength),
+            'pattern_type': pattern_type
+        }
+
+        return features
+
+    except Exception as e:
+        print(f"Error extracting material features: {str(e)}")
+        # Return basic features if anything fails
+        return {
+            'texture_variance': 100.0,
+            'edge_density': 0.1,
+            'glcm_energy': 0.5,
+            'glcm_homogeneity': 0.5,
+            'has_pattern': False
+        }
+
+
+def get_material_prediction_with_confidence(features):
+    """
+    Predict material type with confidence score
+
+    Parameters:
+        features (dict): Dictionary of extracted features
+
+    Returns:
+        dict: Prediction results with confidence
+    """
+    import json
+    import os
+
+    def load_material_database():
+        """Load material database from JSON file"""
+        try:
+            db_path = os.path.join('flaskapp', 'static', 'data', 'material_database.json')
+            with open(db_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading material database: {str(e)}")
+            # Return a minimal fallback database
+            return {
+                "cotton": {
+                    "texture_variance_range": [70, 160],
+                    "edge_density_range": [0.05, 0.15],
+                    "glcm_contrast_range": [0.2, 0.5],
+                    "glcm_energy_range": [0.1, 0.3],
+                    "weight": 0.8
+                },
+                "denim": {
+                    "texture_variance_range": [150, 300],
+                    "edge_density_range": [0.15, 0.25],
+                    "glcm_contrast_range": [0.4, 0.7],
+                    "glcm_energy_range": [0.05, 0.2],
+                    "weight": 0.9
+                }
+            }
+
+    def determine_material_type(features):
+        """Simple rule-based material determination"""
+        if features.get('edge_density', 0) < 0.05 and features.get('texture_variance', 0) < 50:
+            return "silk"
+        elif features.get('edge_density', 0) > 0.2:
+            if features.get('texture_variance', 0) > 200:
+                return "wool"
+            else:
+                return "denim"
+        elif features.get('edge_density', 0) > 0.1:
+            return "cotton"
+        elif features.get('glcm_energy', 0) > 0.5:
+            return "polyester"
+        else:
+            return "unknown"
+
+    def calculate_material_similarity(features, properties):
+        """Calculate similarity score between features and reference"""
+        score = 0
+        total_weight = 0
+
+        # Helper function to calculate range score
+        def range_score(value, range_min, range_max):
+            if value < range_min:
+                return max(0, 1 - min(1, (range_min - value) / range_min))
+            elif value > range_max:
+                return max(0, 1 - min(1, (value - range_max) / range_max))
+            else:
+                # Calculate how close to center of range
+                range_center = (range_min + range_max) / 2
+                range_width = max(1, range_max - range_min)
+                distance = abs(value - range_center)
+                return max(0, 1 - (distance / (range_width / 2)))
+
+        # Check texture variance
+        if 'texture_variance' in features and 'texture_variance_range' in properties:
+            var_score = range_score(
+                features['texture_variance'],
+                properties['texture_variance_range'][0],
+                properties['texture_variance_range'][1]
+            )
+            score += var_score * 0.3
+            total_weight += 0.3
+
+        # Check edge density
+        if 'edge_density' in features and 'edge_density_range' in properties:
+            edge_score = range_score(
+                features['edge_density'],
+                properties['edge_density_range'][0],
+                properties['edge_density_range'][1]
+            )
+            score += edge_score * 0.3
+            total_weight += 0.3
+
+        # Check GLCM contrast if available
+        if 'glcm_contrast' in features and 'glcm_contrast_range' in properties:
+            contrast_score = range_score(
+                features['glcm_contrast'],
+                properties['glcm_contrast_range'][0],
+                properties['glcm_contrast_range'][1]
+            )
+            score += contrast_score * 0.2
+            total_weight += 0.2
+
+        # Check GLCM energy if available
+        if 'glcm_energy' in features and 'glcm_energy_range' in properties:
+            energy_score = range_score(
+                features['glcm_energy'],
+                properties['glcm_energy_range'][0],
+                properties['glcm_energy_range'][1]
+            )
+            score += energy_score * 0.2
+            total_weight += 0.2
+
+        # Normalize final score
+        if total_weight > 0:
+            final_score = score / total_weight
+        else:
+            final_score = 0
+
+        # Adjust by material weight if available
+        weight = properties.get('weight', 1.0)
+        return final_score * weight
+
+    def compare_with_reference_materials(features):
+        """Compare features with reference database"""
+        material_db = load_material_database()
+        scores = {}
+
+        for material, properties in material_db.items():
+            similarity = calculate_material_similarity(features, properties)
+            scores[material] = similarity
+
+        # Find best match
+        if not scores:
+            return "unknown", 0
+
+        best_match = max(scores.items(), key=lambda x: x[1])
+        return best_match[0], best_match[1]
+
+    def calculate_feature_distinctiveness(features):
+        """Calculate how distinctive the features are"""
+        distinctiveness = 0
+
+        # Very low or high variance is distinctive
+        if 'texture_variance' in features:
+            variance = features['texture_variance']
+            if variance < 50 or variance > 200:
+                distinctiveness += 0.3
+            else:
+                distinctiveness += 0.1
+
+        # Very smooth or rough textures are distinctive
+        if 'edge_density' in features:
+            edge_density = features['edge_density']
+            if edge_density < 0.05 or edge_density > 0.2:
+                distinctiveness += 0.3
+            else:
+                distinctiveness += 0.1
+
+        # GLCM features add distinctiveness
+        if 'glcm_energy' in features:
+            energy = features['glcm_energy']
+            if energy > 0.6 or energy < 0.1:
+                distinctiveness += 0.2
+            else:
+                distinctiveness += 0.1
+
+        # Pattern detection increases distinctiveness
+        if features.get('has_pattern', False):
+            distinctiveness += 0.2
+
+        return min(1.0, distinctiveness)
+
+    def get_alternative_materials(features):
+        """Find alternative material matches"""
+        material_db = load_material_database()
+        scores = {}
+
+        for material, properties in material_db.items():
+            similarity = calculate_material_similarity(features, properties)
+            scores[material] = similarity
+
+        # Sort by score
+        sorted_materials = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+        # Return top alternatives (excluding the best match)
+        alternatives = []
+        for material, score in sorted_materials[1:4]:  # Get 2nd to 4th best matches
+            if score > 0.3:  # Only include reasonable matches
+                alternatives.append({
+                    "material": material,
+                    "confidence": round(min(score * 100, 100), 1)
+                })
+
+        return alternatives
+
+    try:
+        # 1. Direct classification
+        rule_based_material = determine_material_type(features)
+
+        # 2. Reference comparison
+        reference_material, similarity = compare_with_reference_materials(features)
+
+        # 3. Calculate confidence
+        feature_clarity = calculate_feature_distinctiveness(features)
+        confidence = (similarity * 0.7) + (feature_clarity * 0.3)
+
+        # 4. Choose final material
+        # Use reference material if similarity is high enough
+        if similarity > 0.6:
+            final_material = reference_material
+        else:
+            final_material = rule_based_material
+
+        # 5. Get alternative materials
+        alternatives = get_alternative_materials(features)
+
+        # 6. Return comprehensive result
+        return {
+            "material_type": final_material,
+            "confidence": round(min(confidence * 100, 100), 1),
+            "feature_distinctiveness": round(feature_clarity * 100, 1),
+            "reference_match": reference_material,
+            "reference_similarity": round(similarity * 100, 1),
+            "rule_based_material": rule_based_material,
+            "alternative_materials": alternatives
+        }
+
+    except Exception as e:
+        print(f"Error in material prediction: {str(e)}")
+        return {
+            "material_type": "unknown",
+            "confidence": 0,
+            "alternative_materials": []
+        }
+
+# Add a new route to handle material analysis
+@app.route('/api/wardrobe/analyze-material', methods=['POST'])
+@login_required
+def analyze_material():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Save uploaded file
+        user_id = session['user']['_id']
+        upload_dir = os.path.join('flaskapp', 'static', 'temp_analysis', user_id)
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, secure_filename(file.filename))
+        file.save(file_path)
+
+        # Extract enhanced features
+        features = extract_enhanced_material_features(file_path)
+
+        # Get material prediction
+        material_prediction = get_material_prediction_with_confidence(features)
+
+        # Clean up temp file
+        os.remove(file_path)
+
+        return jsonify({
+            'success': True,
+            'materialAnalysis': material_prediction
+        })
+
+    except Exception as e:
+        print(f"Error analyzing material: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
