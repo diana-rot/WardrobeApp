@@ -3200,5 +3200,427 @@ def upload_top_glb():
         return jsonify({'error': 'Failed to add asset to app', 'details': resp.text}), 500
     return jsonify({'assetId': asset_id, 'message': 'top.glb uploaded and linked to app successfully'})
 
+
+from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
+
+
+
+# material
+
+def extract_enhanced_material_features(img_path):
+    """
+    Extract comprehensive material features from an image
+
+    Parameters:
+        img_path (str): Path to the image file
+
+    Returns:
+        dict: Dictionary of extracted features
+    """
+    import cv2
+    import numpy as np
+    from skimage.feature import graycomatrix, graycoprops
+
+    try:
+        # Load and resize image for consistent processing
+        img = cv2.imread(img_path)
+        if img is None:
+            raise ValueError(f"Could not read image file: {img_path}")
+
+        img = cv2.resize(img, (300, 300))
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # 1. Basic texture features
+        texture_variance = np.var(gray)
+        edges = cv2.Canny(gray, 100, 200)
+        edge_density = np.sum(edges > 0) / (edges.shape[0] * edges.shape[1])
+
+        # 2. GLCM features (Gray Level Co-occurrence Matrix)
+        distances = [1]  # Keep simple for efficiency
+        angles = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
+
+        # Normalize gray scale to reduce feature dimension
+        gray_normalized = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+        # Reduce levels to improve performance
+        levels = 32
+        gray_reduced = (gray_normalized // (256 // levels)).astype(np.uint8)
+
+        # Calculate GLCM
+        glcm = graycomatrix(gray_reduced, distances, angles, levels, symmetric=True, normed=True)
+
+        # Extract GLCM properties
+        contrast = graycoprops(glcm, 'contrast').mean()
+        dissimilarity = graycoprops(glcm, 'dissimilarity').mean()
+        homogeneity = graycoprops(glcm, 'homogeneity').mean()
+        energy = graycoprops(glcm, 'energy').mean()
+        correlation = graycoprops(glcm, 'correlation').mean()
+
+        # 3. Color analysis
+        # Convert to HSV colorspace (better for fabric analysis)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        # Calculate saturation variation (helps distinguish fabrics)
+        saturation_variation = np.var(hsv[:, :, 1])
+
+        # Calculate hue distribution for color consistency
+        hue_histogram = cv2.calcHist([hsv], [0], None, [18], [0, 180])
+        hue_histogram = hue_histogram / np.sum(hue_histogram)  # Normalize
+
+        # Detect primary hue
+        primary_hue_index = np.argmax(hue_histogram)
+        primary_hue_percentage = float(hue_histogram[primary_hue_index])
+
+        # 4. Pattern detection
+        # Check if the material has visible patterns
+        has_pattern = bool(edge_density > 0.1 or texture_variance > 150)
+
+        # Estimate pattern strength
+        pattern_strength = min(1.0, (edge_density * 3 + texture_variance / 400) / 2)
+
+        # Detect pattern type
+        pattern_type = "irregular"
+        if has_pattern:
+            # Check for regular patterns using edge direction histogram
+            sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+            sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+
+            # Calculate gradient directions
+            gradient_direction = np.arctan2(sobely, sobelx) * 180 / np.pi
+
+            # Analyze gradient directions
+            hist, _ = np.histogram(gradient_direction, bins=8, range=(-180, 180))
+            hist_normalized = hist / np.sum(hist)
+            max_dir_idx = np.argmax(hist_normalized)
+            max_dir_percentage = float(hist_normalized[max_dir_idx])
+
+            # Determine pattern type
+            if max_dir_percentage > 0.3:  # Strong directional pattern
+                if max_dir_idx in [0, 4]:  # Horizontal (0° or 180°)
+                    pattern_type = "horizontal_stripe"
+                elif max_dir_idx in [2, 6]:  # Vertical (90° or 270°)
+                    pattern_type = "vertical_stripe"
+                else:
+                    pattern_type = "diagonal_stripe"
+            elif texture_variance > 200 and edge_density > 0.2:
+                pattern_type = "complex"
+            else:
+                pattern_type = "irregular"
+
+        # 5. Combine all features
+        features = {
+            # Basic features
+            'texture_variance': float(texture_variance),
+            'edge_density': float(edge_density),
+
+            # GLCM features
+            'glcm_contrast': float(contrast),
+            'glcm_dissimilarity': float(dissimilarity),
+            'glcm_homogeneity': float(homogeneity),
+            'glcm_energy': float(energy),
+            'glcm_correlation': float(correlation),
+
+            # Color features
+            'saturation_variation': float(saturation_variation),
+            'primary_hue_percentage': float(primary_hue_percentage),
+
+            # Pattern features
+            'has_pattern': has_pattern,
+            'pattern_strength': float(pattern_strength),
+            'pattern_type': pattern_type
+        }
+
+        return features
+
+    except Exception as e:
+        print(f"Error extracting material features: {str(e)}")
+        # Return basic features if anything fails
+        return {
+            'texture_variance': 100.0,
+            'edge_density': 0.1,
+            'glcm_energy': 0.5,
+            'glcm_homogeneity': 0.5,
+            'has_pattern': False
+        }
+
+
+def get_material_prediction_with_confidence(features):
+    """
+    Predict material type with confidence score
+
+    Parameters:
+        features (dict): Dictionary of extracted features
+
+    Returns:
+        dict: Prediction results with confidence
+    """
+    import json
+    import os
+
+    def load_material_database():
+        """Load material database from JSON file"""
+        try:
+            db_path = os.path.join('flaskapp', 'static', 'data', 'material_database.json')
+            with open(db_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading material database: {str(e)}")
+            # Return a minimal fallback database
+            return {
+                "cotton": {
+                    "texture_variance_range": [70, 160],
+                    "edge_density_range": [0.05, 0.15],
+                    "glcm_contrast_range": [0.2, 0.5],
+                    "glcm_energy_range": [0.1, 0.3],
+                    "weight": 0.8
+                },
+                "denim": {
+                    "texture_variance_range": [150, 300],
+                    "edge_density_range": [0.15, 0.25],
+                    "glcm_contrast_range": [0.4, 0.7],
+                    "glcm_energy_range": [0.05, 0.2],
+                    "weight": 0.9
+                }
+            }
+
+    def determine_material_type(features):
+        """Simple rule-based material determination"""
+        if features.get('edge_density', 0) < 0.05 and features.get('texture_variance', 0) < 50:
+            return "silk"
+        elif features.get('edge_density', 0) > 0.2:
+            if features.get('texture_variance', 0) > 200:
+                return "wool"
+            else:
+                return "denim"
+        elif features.get('edge_density', 0) > 0.1:
+            return "cotton"
+        elif features.get('glcm_energy', 0) > 0.5:
+            return "polyester"
+        else:
+            return "unknown"
+
+    def calculate_material_similarity(features, properties):
+        """Calculate similarity score between features and reference"""
+        score = 0
+        total_weight = 0
+
+        # Helper function to calculate range score
+        def range_score(value, range_min, range_max):
+            if value < range_min:
+                return max(0, 1 - min(1, (range_min - value) / range_min))
+            elif value > range_max:
+                return max(0, 1 - min(1, (value - range_max) / range_max))
+            else:
+                # Calculate how close to center of range
+                range_center = (range_min + range_max) / 2
+                range_width = max(1, range_max - range_min)
+                distance = abs(value - range_center)
+                return max(0, 1 - (distance / (range_width / 2)))
+
+        # Check texture variance
+        if 'texture_variance' in features and 'texture_variance_range' in properties:
+            var_score = range_score(
+                features['texture_variance'],
+                properties['texture_variance_range'][0],
+                properties['texture_variance_range'][1]
+            )
+            score += var_score * 0.3
+            total_weight += 0.3
+
+        # Check edge density
+        if 'edge_density' in features and 'edge_density_range' in properties:
+            edge_score = range_score(
+                features['edge_density'],
+                properties['edge_density_range'][0],
+                properties['edge_density_range'][1]
+            )
+            score += edge_score * 0.3
+            total_weight += 0.3
+
+        # Check GLCM contrast if available
+        if 'glcm_contrast' in features and 'glcm_contrast_range' in properties:
+            contrast_score = range_score(
+                features['glcm_contrast'],
+                properties['glcm_contrast_range'][0],
+                properties['glcm_contrast_range'][1]
+            )
+            score += contrast_score * 0.2
+            total_weight += 0.2
+
+        # Check GLCM energy if available
+        if 'glcm_energy' in features and 'glcm_energy_range' in properties:
+            energy_score = range_score(
+                features['glcm_energy'],
+                properties['glcm_energy_range'][0],
+                properties['glcm_energy_range'][1]
+            )
+            score += energy_score * 0.2
+            total_weight += 0.2
+
+        # Normalize final score
+        if total_weight > 0:
+            final_score = score / total_weight
+        else:
+            final_score = 0
+
+        # Adjust by material weight if available
+        weight = properties.get('weight', 1.0)
+        return final_score * weight
+
+    def compare_with_reference_materials(features):
+        """Compare features with reference database"""
+        material_db = load_material_database()
+        scores = {}
+
+        for material, properties in material_db.items():
+            similarity = calculate_material_similarity(features, properties)
+            scores[material] = similarity
+
+        # Find best match
+        if not scores:
+            return "unknown", 0
+
+        best_match = max(scores.items(), key=lambda x: x[1])
+        return best_match[0], best_match[1]
+
+    def calculate_feature_distinctiveness(features):
+        """Calculate how distinctive the features are"""
+        distinctiveness = 0
+
+        # Very low or high variance is distinctive
+        if 'texture_variance' in features:
+            variance = features['texture_variance']
+            if variance < 50 or variance > 200:
+                distinctiveness += 0.3
+            else:
+                distinctiveness += 0.1
+
+        # Very smooth or rough textures are distinctive
+        if 'edge_density' in features:
+            edge_density = features['edge_density']
+            if edge_density < 0.05 or edge_density > 0.2:
+                distinctiveness += 0.3
+            else:
+                distinctiveness += 0.1
+
+        # GLCM features add distinctiveness
+        if 'glcm_energy' in features:
+            energy = features['glcm_energy']
+            if energy > 0.6 or energy < 0.1:
+                distinctiveness += 0.2
+            else:
+                distinctiveness += 0.1
+
+        # Pattern detection increases distinctiveness
+        if features.get('has_pattern', False):
+            distinctiveness += 0.2
+
+        return min(1.0, distinctiveness)
+
+    def get_alternative_materials(features):
+        """Find alternative material matches"""
+        material_db = load_material_database()
+        scores = {}
+
+        for material, properties in material_db.items():
+            similarity = calculate_material_similarity(features, properties)
+            scores[material] = similarity
+
+        # Sort by score
+        sorted_materials = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+        # Return top alternatives (excluding the best match)
+        alternatives = []
+        for material, score in sorted_materials[1:4]:  # Get 2nd to 4th best matches
+            if score > 0.3:  # Only include reasonable matches
+                alternatives.append({
+                    "material": material,
+                    "confidence": round(min(score * 100, 100), 1)
+                })
+
+        return alternatives
+
+    try:
+        # 1. Direct classification
+        rule_based_material = determine_material_type(features)
+
+        # 2. Reference comparison
+        reference_material, similarity = compare_with_reference_materials(features)
+
+        # 3. Calculate confidence
+        feature_clarity = calculate_feature_distinctiveness(features)
+        confidence = (similarity * 0.7) + (feature_clarity * 0.3)
+
+        # 4. Choose final material
+        # Use reference material if similarity is high enough
+        if similarity > 0.6:
+            final_material = reference_material
+        else:
+            final_material = rule_based_material
+
+        # 5. Get alternative materials
+        alternatives = get_alternative_materials(features)
+
+        # 6. Return comprehensive result
+        return {
+            "material_type": final_material,
+            "confidence": round(min(confidence * 100, 100), 1),
+            "feature_distinctiveness": round(feature_clarity * 100, 1),
+            "reference_match": reference_material,
+            "reference_similarity": round(similarity * 100, 1),
+            "rule_based_material": rule_based_material,
+            "alternative_materials": alternatives
+        }
+
+    except Exception as e:
+        print(f"Error in material prediction: {str(e)}")
+        return {
+            "material_type": "unknown",
+            "confidence": 0,
+            "alternative_materials": []
+        }
+
+# Add a new route to handle material analysis
+@app.route('/api/wardrobe/analyze-material', methods=['POST'])
+@login_required
+def analyze_material():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Save uploaded file
+        user_id = session['user']['_id']
+        upload_dir = os.path.join('flaskapp', 'static', 'temp_analysis', user_id)
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, secure_filename(file.filename))
+        file.save(file_path)
+
+        # Extract enhanced features
+        features = extract_enhanced_material_features(file_path)
+
+        # Get material prediction
+        material_prediction = get_material_prediction_with_confidence(features)
+
+        # Clean up temp file
+        os.remove(file_path)
+
+        return jsonify({
+            'success': True,
+            'materialAnalysis': material_prediction
+        })
+
+    except Exception as e:
+        print(f"Error analyzing material: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

@@ -577,6 +577,101 @@
         animation: spin 1s linear infinite;
         margin: 20px auto;
     }
+
+    /* Material Analysis Styles */
+    .material-analysis-container {
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+
+    .material-type-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        background-color: var(--accent-color, #b99593);
+        color: white;
+        border-radius: 4px;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+
+    .confidence-badge {
+        display: inline-block;
+        padding: 3px 6px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 10px;
+        font-size: 12px;
+        margin-left: 8px;
+    }
+
+    .alternative-material {
+        display: inline-block;
+        padding: 3px 8px;
+        background-color: #e9ecef;
+        color: #495057;
+        border-radius: 12px;
+        font-size: 12px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+
+    .alternative-material .confidence {
+        font-size: 10px;
+        color: #6c757d;
+        margin-left: 4px;
+    }
+
+    .progress-bar-container {
+        height: 10px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+        margin-top: 5px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: var(--accent-color, #b99593);
+        border-radius: 5px;
+    }
+
+    .material-property-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .material-property-name {
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .material-property-value {
+        flex: 2;
+    }
+
+    .care-instruction {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+
+    .care-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 10px;
+        background-color: #f1f1f1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .care-text {
+        flex: 1;
+    }
 </style>
 {% endblock %}
 
@@ -619,6 +714,79 @@
                 <h3>Color Analysis Debug</h3>
                 <button id="show-debug-btn" class="btn btn-secondary">Show Color Analysis Details</button>
                 <div id="debug-image-container" style="display: none;"></div>
+            </div>
+
+            <!-- Add this inside your template where you want the material analysis to appear -->
+            <div id="material-analysis-section" class="result-section" style="display: none;">
+                <h3>Material Analysis</h3>
+                <div id="material-analysis-container" class="material-analysis-container">
+                    <div class="result-row">
+                        <div class="result-label">Material Type:</div>
+                        <div class="result-value">
+                            <span id="material-type-result" class="font-weight-bold"></span>
+                            <span class="badge badge-pill badge-primary ml-2" id="material-confidence"></span>
+                        </div>
+                    </div>
+
+                    <div class="result-row">
+                        <div class="result-label">Alternatives:</div>
+                        <div class="result-value" id="alternative-materials"></div>
+                    </div>
+
+                    <div class="result-row">
+                        <div class="result-label">Properties:</div>
+                        <div class="result-value">
+                            <div class="material-property-row">
+                                <div class="material-property-name">Breathability:</div>
+                                <div class="material-property-value">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="breathability-bar" style="width: 70%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="material-property-row">
+                                <div class="material-property-name">Durability:</div>
+                                <div class="material-property-value">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="durability-bar" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="material-property-row">
+                                <div class="material-property-name">Warmth:</div>
+                                <div class="material-property-value">
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" id="warmth-bar" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="result-row">
+                        <div class="result-label">Care:</div>
+                        <div class="result-value" id="care-instructions">
+                            <div class="care-instruction">
+                                <div class="care-icon">
+                                    <i class="fas fa-tint"></i>
+                                </div>
+                                <div class="care-text">Machine wash at 30°C</div>
+                            </div>
+                            <div class="care-instruction">
+                                <div class="care-icon">
+                                    <i class="fas fa-wind"></i>
+                                </div>
+                                <div class="care-text">Tumble dry low</div>
+                            </div>
+                            <div class="care-instruction">
+                                <div class="care-icon">
+                                    <i class="fas fa-iron"></i>
+                                </div>
+                                <div class="care-text">Iron on medium heat</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -941,6 +1109,7 @@
     <div class="action-buttons">
       <button onclick="location.reload()" class="btn btn-secondary">Add Another Item</button>
       <button id="view-in-3d-btn" class="btn btn-primary">View in 3D</button>
+      <button id="analyze-material-btn" class="btn btn-info">Advanced Material Analysis</button>
       <button id="debug-color-btn" class="btn btn-info">Debug Color</button>
     </div>
   </div>
@@ -953,6 +1122,9 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/DRACOLoader.js"></script>
+
+<!-- Add Font Awesome for icons -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
 <!-- Custom scripts -->
 <script>
@@ -1879,6 +2051,248 @@ function debugColorDetection(itemId) {
 }
 
 /**
+ * Advanced Material Analysis
+ * Makes a request to the API to analyze material in detail
+ */
+function analyzeMaterial(file) {
+    return new Promise((resolve, reject) => {
+        // Create form data with the file
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Make API request
+        fetch('/api/wardrobe/analyze-material', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show the material analysis section
+                document.getElementById('material-analysis-section').style.display = 'block';
+
+                // Update UI with material analysis data
+                updateMaterialAnalysisUI(data.materialAnalysis);
+                resolve(data.materialAnalysis);
+            } else {
+                reject(new Error(data.error || 'Failed to analyze material'));
+            }
+        })
+        .catch(error => {
+            console.error('Error analyzing material:', error);
+            reject(error);
+        });
+    });
+}
+
+/**
+ * Update Material Analysis UI with advanced material properties
+ */
+function updateMaterialAnalysisUI(materialData) {
+    if (!materialData) return;
+
+    const container = document.getElementById('material-analysis-container');
+    if (!container) return;
+
+    // Update material type
+    const materialTypeElement = document.getElementById('material-type-result');
+    if (materialTypeElement) {
+        materialTypeElement.textContent = materialData.material_type.charAt(0).toUpperCase() +
+                                          materialData.material_type.slice(1);
+    }
+
+    // Update confidence
+    const confidenceElement = document.getElementById('material-confidence');
+    if (confidenceElement) {
+        confidenceElement.textContent = `${materialData.confidence}% confidence`;
+
+        // Color the badge based on confidence
+        if (materialData.confidence > 80) {
+            confidenceElement.style.backgroundColor = '#28a745'; // Green for high confidence
+        } else if (materialData.confidence > 50) {
+            confidenceElement.style.backgroundColor = '#ffc107'; // Yellow for medium
+        } else {
+            confidenceElement.style.backgroundColor = '#dc3545'; // Red for low
+        }
+    }
+
+    // Update alternative materials
+    const alternativesElement = document.getElementById('alternative-materials');
+    if (alternativesElement && materialData.alternative_materials) {
+        alternativesElement.innerHTML = '';
+
+        materialData.alternative_materials.forEach(alt => {
+            const altElement = document.createElement('span');
+            altElement.className = 'alternative-material';
+            altElement.innerHTML = `${alt.material} <span class="confidence">${alt.confidence}%</span>`;
+            alternativesElement.appendChild(altElement);
+        });
+    }
+
+    // Update material properties based on material type
+    updateMaterialProperties(materialData.material_type);
+
+    // Update care instructions based on material type
+    updateCareInstructions(materialData.material_type);
+}
+
+/**
+ * Update material properties bars based on material type
+ */
+function updateMaterialProperties(materialType) {
+    // Define property values for different materials
+    const materialProperties = {
+        'cotton': {
+            breathability: 90,
+            durability: 70,
+            warmth: 50
+        },
+        'silk': {
+            breathability: 95,
+            durability: 30,
+            warmth: 40
+        },
+        'wool': {
+            breathability: 60,
+            durability: 75,
+            warmth: 90
+        },
+        'polyester': {
+            breathability: 40,
+            durability: 90,
+            warmth: 65
+        },
+        'denim': {
+            breathability: 50,
+            durability: 95,
+            warmth: 60
+        },
+        'leather': {
+            breathability: 30,
+            durability: 85,
+            warmth: 70
+        },
+        'textured': {
+            breathability: 60,
+            durability: 80,
+            warmth: 65
+        },
+        'smooth': {
+            breathability: 80,
+            durability: 50,
+            warmth: 45
+        },
+        'patterned': {
+            breathability: 70,
+            durability: 65,
+            warmth: 55
+        },
+        'rough_textured': {
+            breathability: 50,
+            durability: 90,
+            warmth: 80
+        },
+        'medium': {
+            breathability: 75,
+            durability: 70,
+            warmth: 60
+        },
+        'unknown': {
+            breathability: 50,
+            durability: 50,
+            warmth: 50
+        }
+    };
+
+    // Get properties for the material type (or default to unknown)
+    const properties = materialProperties[materialType.toLowerCase()] || materialProperties.unknown;
+
+    // Update progress bars
+    document.getElementById('breathability-bar').style.width = `${properties.breathability}%`;
+    document.getElementById('durability-bar').style.width = `${properties.durability}%`;
+    document.getElementById('warmth-bar').style.width = `${properties.warmth}%`;
+}
+
+/**
+ * Update care instructions based on material type
+ */
+function updateCareInstructions(materialType) {
+    const careElement = document.getElementById('care-instructions');
+    if (!careElement) return;
+
+    // Define care instructions for different materials
+    const careInstructions = {
+        'cotton': [
+            { icon: 'tint', text: 'Machine wash at 40°C' },
+            { icon: 'wind', text: 'Tumble dry on low heat' },
+            { icon: 'tshirt', text: 'Iron on medium heat' }
+        ],
+        'silk': [
+            { icon: 'tint', text: 'Hand wash in cold water' },
+            { icon: 'wind', text: 'Do not tumble dry' },
+            { icon: 'tshirt', text: 'Iron on low heat or steam' }
+        ],
+        'wool': [
+            { icon: 'tint', text: 'Hand wash or dry clean' },
+            { icon: 'wind', text: 'Lay flat to dry' },
+            { icon: 'tshirt', text: 'Iron on low heat with steam' }
+        ],
+        'polyester': [
+            { icon: 'tint', text: 'Machine wash at 30°C' },
+            { icon: 'wind', text: 'Tumble dry on low heat' },
+            { icon: 'tshirt', text: 'Iron on low heat if needed' }
+        ],
+        'denim': [
+            { icon: 'tint', text: 'Machine wash cold inside out' },
+            { icon: 'wind', text: 'Line dry to prevent shrinking' },
+            { icon: 'tshirt', text: 'Iron on medium heat if needed' }
+        ],
+        'leather': [
+            { icon: 'tint', text: 'Wipe with damp cloth' },
+            { icon: 'wind', text: 'Air dry away from heat' },
+            { icon: 'tshirt', text: 'Use leather conditioner' }
+        ],
+        'textured': [
+            { icon: 'tint', text: 'Machine wash at 30°C' },
+            { icon: 'wind', text: 'Tumble dry on low heat' },
+            { icon: 'tshirt', text: 'Iron on medium heat' }
+        ],
+        'smooth': [
+            { icon: 'tint', text: 'Gentle wash at 30°C' },
+            { icon: 'wind', text: 'Line dry or lay flat' },
+            { icon: 'tshirt', text: 'Iron on low heat if needed' }
+        ],
+        'rough_textured': [
+            { icon: 'tint', text: 'Machine wash cold' },
+            { icon: 'wind', text: 'Tumble dry on low heat' },
+            { icon: 'tshirt', text: 'Iron on medium heat if needed' }
+        ],
+        'unknown': [
+            { icon: 'tint', text: 'Machine wash at 30°C' },
+            { icon: 'wind', text: 'Tumble dry on low heat' },
+            { icon: 'tshirt', text: 'Iron on medium heat' }
+        ]
+    };
+
+    // Get care instructions for the material type (or default to unknown)
+    const instructions = careInstructions[materialType.toLowerCase()] || careInstructions.unknown;
+
+    // Update care instructions
+    careElement.innerHTML = '';
+    instructions.forEach(instruction => {
+        const careInstruction = document.createElement('div');
+        careInstruction.className = 'care-instruction';
+        careInstruction.innerHTML = `
+            <div class="care-icon">
+                <i class="fas fa-${instruction.icon}"></i>
+            </div>
+            <div class="care-text">${instruction.text}</div>
+        `;
+        careElement.appendChild(careInstruction);
+    });
+}
+
+/**
  * Main initialization when DOM content is loaded
  */
 document.addEventListener('DOMContentLoaded', function() {
@@ -2025,6 +2439,33 @@ document.addEventListener('DOMContentLoaded', function() {
                   debugContainer.style.display = 'none';
                   e.target.textContent = 'Show Color Analysis Details';
               }
+          }
+      }
+
+      // Advanced Material Analysis button
+      if (e.target && e.target.id === 'analyze-material-btn') {
+          const fileInput = document.getElementById('imageUpload');
+          if (fileInput && fileInput.files && fileInput.files[0]) {
+              // Show loading state
+              e.target.textContent = 'Analyzing...';
+              e.target.disabled = true;
+
+              // Run advanced material analysis
+              analyzeMaterial(fileInput.files[0])
+                  .then(result => {
+                      console.log('Material analysis complete:', result);
+                      // Reset button
+                      e.target.textContent = 'Advanced Material Analysis';
+                      e.target.disabled = false;
+                  })
+                  .catch(error => {
+                      console.error('Material analysis failed:', error);
+                      // Reset button
+                      e.target.textContent = 'Advanced Material Analysis';
+                      e.target.disabled = false;
+                  });
+          } else {
+              alert('Please upload an image first');
           }
       }
   });
