@@ -77,7 +77,7 @@
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
-    /* Result styles - updated for new layout */
+    /* Result styles */
     .prediction-result {
         margin-top: 20px;
         padding: 20px;
@@ -133,6 +133,64 @@
         vertical-align: middle;
     }
 
+    /* Google Colab Setup Card */
+    .colab-setup-card {
+        background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 25px 0;
+        color: white;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .colab-setup-card h3 {
+        color: white;
+        margin-bottom: 15px;
+    }
+
+    .colab-url-input {
+        width: 100%;
+        padding: 12px 15px;
+        border: none;
+        border-radius: 25px;
+        margin: 10px 0;
+        font-size: 16px;
+    }
+
+    .connect-btn {
+        background: white;
+        color: #4285f4;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        margin: 10px;
+    }
+
+    .connect-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .connection-status {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 10px;
+        display: none;
+    }
+
+    .connection-status.success {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .connection-status.error {
+        background: rgba(220, 53, 69, 0.2);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
     /* 3D Model Generation Section */
     .model-generation-section {
         background: linear-gradient(135deg, var(--accent-color) 0%, #d4a5a3 100%);
@@ -142,6 +200,7 @@
         color: white;
         text-align: center;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        display: none;
     }
 
     .generate-3d-btn {
@@ -245,6 +304,7 @@
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
+        justify-content: center;
     }
 
     .model-actions .btn {
@@ -252,260 +312,24 @@
         min-width: 120px;
         border-radius: 20px;
         padding: 8px 16px;
+        margin: 5px;
     }
 
-    /* 3D Clothes Viewer Styles - enhanced version */
-    #canvas-container {
-        width: 100%;
-        height: 450px;
-        background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-        border-radius: 15px;
-        overflow: hidden;
-        position: relative;
-        box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .viewer-controls {
-        background-color: var(--secondary-color);
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .material-preview {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-
-    .material-image {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 10px;
-        margin-right: 15px;
-        border: 2px solid #ddd;
-    }
-
-    .material-info {
-        flex: 1;
-    }
-
-    .material-name {
-        font-weight: bold;
-        margin-bottom: 5px;
-        color: var(--primary-color);
-    }
-
-    .material-type {
-        font-style: italic;
-        color: #666;
-    }
-
-    .pattern-preview {
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid #eee;
-    }
-
-    .pattern-badge {
+    /* Loader styles */
+    .loader {
         display: inline-block;
-        padding: 4px 10px;
-        background-color: var(--accent-color);
-        color: white;
-        border-radius: 15px;
-        font-size: 12px;
-        margin-right: 5px;
-    }
-
-    .material-settings {
-        margin-top: 15px;
-    }
-
-    .setting-group {
-        margin-bottom: 15px;
-    }
-
-    .setting-label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-
-    .slider-container {
-        display: flex;
-        align-items: center;
-    }
-
-    .slider {
-        flex: 1;
-        margin-right: 10px;
-        height: 6px;
-        border-radius: 3px;
-        background: #ddd;
-        outline: none;
-        -webkit-appearance: none;
-    }
-
-    .slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: var(--accent-color);
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    }
-
-    .slider::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: var(--accent-color);
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    }
-
-    .slider-value {
-        width: 50px;
-        text-align: right;
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-
-    #loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 100;
-        visibility: hidden;
-        opacity: 0;
-        transition: opacity 0.3s;
-        border-radius: 15px;
-    }
-
-    #loading-overlay.visible {
-        visibility: visible;
-        opacity: 1;
-    }
-
-    .spinner {
-        border: 4px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top: 4px solid white;
         width: 40px;
         height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--accent-color);
+        border-radius: 50%;
         animation: spin 1s linear infinite;
+        margin: 20px auto;
     }
 
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
-    }
-
-    #loading-text {
-        margin-top: 15px;
-        color: white;
-        font-weight: 600;
-        font-size: 16px;
-    }
-
-    .tab-nav {
-        display: flex;
-        border-bottom: 2px solid #ddd;
-        margin-bottom: 20px;
-        background: white;
-        border-radius: 10px 10px 0 0;
-        overflow: hidden;
-    }
-
-    .tab-button {
-        background: #f8f9fa;
-        border: none;
-        padding: 12px 20px;
-        cursor: pointer;
-        font-weight: 600;
-        color: #666;
-        transition: all 0.3s ease;
-        flex: 1;
-    }
-
-    .tab-button.active {
-        color: var(--accent-color);
-        background: white;
-        border-bottom: 3px solid var(--accent-color);
-    }
-
-    .tab-button:hover {
-        background: #e9ecef;
-    }
-
-    .tab-panel {
-        display: none;
-        background: white;
-        border-radius: 0 0 10px 10px;
-        padding: 20px;
-    }
-
-    .tab-panel.active {
-        display: block;
-    }
-
-    /* Toggle for upload/view modes */
-    .mode-toggle {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 25px;
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 25px;
-        padding: 5px;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .mode-toggle .btn {
-        border-radius: 20px;
-        border: none;
-        padding: 10px 25px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    /* Container modes */
-    .upload-container, .viewer-container {
-        display: none;
-    }
-
-    .upload-container.active, .viewer-container.active {
-        display: block;
-    }
-
-    /* Enhanced Action Buttons */
-    .action-buttons {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 20px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .action-buttons .btn {
-        margin: 5px;
-        min-width: 140px;
-        border-radius: 20px;
-        padding: 8px 16px;
-        font-weight: 600;
     }
 
     /* Toast Notification */
@@ -539,6 +363,10 @@
 
     .toast-notification.warning {
         border-left: 4px solid #ffc107;
+    }
+
+    .toast-notification.info {
+        border-left: 4px solid #17a2b8;
     }
 
     .toast-content {
@@ -578,150 +406,68 @@
         opacity: 1;
     }
 
-    /* View Mode Toggle */
-    .view-mode-toggle {
-        margin: 20px 0;
-        text-align: center;
-    }
-
-    .view-mode-button {
-        padding: 8px 16px;
-        margin: 0 5px;
-        border: 2px solid var(--accent-color);
-        background-color: white;
-        color: var(--accent-color);
-        border-radius: 20px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-weight: 600;
-    }
-
-    .view-mode-button.active {
-        background-color: var(--accent-color);
-        color: white;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .view-mode-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Enhanced Fabric Information Display */
-    .fabric-info-card {
-        border: 1px solid #eaeaea;
-        border-radius: 15px;
-        padding: 20px;
-        margin-top: 20px;
-        background: white;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-    }
-
-    .fabric-info-title {
-        font-weight: 600;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        color: var(--primary-color);
-    }
-
-    .fabric-sample {
-        display: inline-block;
-        width: 50px;
-        height: 50px;
-        margin-right: 15px;
+    /* Colab Instructions */
+    .colab-instructions {
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 10px;
-        background-size: cover;
-        background-position: center;
-        border: 2px solid #ddd;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .fabric-characteristics {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 15px;
-    }
-
-    .fabric-characteristic {
-        background: linear-gradient(45deg, var(--accent-color), #d4a5a3);
-        color: white;
-        padding: 5px 12px;
-        border-radius: 15px;
-        font-size: 0.85em;
-        font-weight: 500;
-    }
-
-    .material-properties-table {
-        width: 100%;
-        margin-top: 15px;
-        border-collapse: collapse;
-        background: white;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .material-properties-table th,
-    .material-properties-table td {
-        padding: 12px 15px;
-        text-align: left;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .material-properties-table th {
-        background: var(--secondary-color);
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-
-    .material-properties-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Normal Map Visualization */
-    .normal-map-preview {
-        margin-top: 15px;
         padding: 15px;
-        background: var(--secondary-color);
-        border-radius: 10px;
+        margin-top: 15px;
     }
 
-    .normal-map-preview h4 {
+    .colab-step {
         margin-bottom: 10px;
-        font-size: 1rem;
-        color: var(--primary-color);
+        font-size: 14px;
     }
 
-    .normal-map-img {
-        width: 100%;
-        max-width: 200px;
-        height: auto;
-        border-radius: 8px;
-        border: 2px solid #ddd;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    .colab-step strong {
+        color: #fff;
     }
 
-    /* Loader styles */
-    .loader {
-        display: inline-block;
-        width: 40px;
-        height: 40px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid var(--accent-color);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 20px auto;
+    /* Quick View Button */
+    .quick-view-floating {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        animation: fadeInBounce 0.8s ease-out;
+        display: none;
+    }
+
+    @keyframes fadeInBounce {
+        0% {
+            opacity: 0;
+            transform: translateY(50px) scale(0.8);
+        }
+        50% {
+            opacity: 1;
+            transform: translateY(-10px) scale(1.1);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .quick-view-floating .btn {
+        position: relative;
+        border-radius: 25px;
+        padding: 15px 25px;
+        font-size: 16px;
+        font-weight: 600;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        border: none;
+        background: linear-gradient(135deg, var(--accent-color) 0%, #d4a5a3 100%);
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .quick-view-floating .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
     }
 
     /* Responsive Design */
     @media (max-width: 768px) {
-        .mode-toggle .btn {
-            padding: 8px 16px;
-            font-size: 14px;
-        }
-
         .upload-area {
             padding: 25px 15px;
         }
@@ -735,13 +481,14 @@
             margin-bottom: 8px;
         }
 
-        .action-buttons {
-            flex-direction: column;
+        .quick-view-floating {
+            bottom: 20px;
+            right: 20px;
         }
 
-        .action-buttons .btn {
-            width: 100%;
-            margin: 5px 0;
+        .quick-view-floating .btn {
+            padding: 12px 20px;
+            font-size: 14px;
         }
     }
 </style>
@@ -749,327 +496,128 @@
 
 {% block content %}
 <div class="container">
-    <div class="mode-toggle">
-        <button class="btn btn-primary active" id="upload-mode-btn">
-            <i class="fas fa-upload"></i> Upload Clothes
-        </button>
-        <button class="btn btn-secondary" id="view-mode-btn">
-            <i class="fas fa-cube"></i> 3D Viewer
-        </button>
+    <!-- Google Colab Setup Card -->
+    <div class="colab-setup-card" id="colab-setup-card">
+        <h3><i class="fab fa-google"></i> Google Colab 3D Generation</h3>
+        <p>Connect to your Google Colab notebook to generate 3D models with free GPU power!</p>
+
+        <div class="colab-url-section">
+            <input type="url"
+                   class="colab-url-input"
+                   id="colab-url-input"
+                   placeholder="https://your-ngrok-url.ngrok.io"
+                   value="https://f606-34-72-94-244.ngrok-free.app/">
+            <button class="connect-btn" onclick="connectToColab()" id="connect-colab-btn">
+                <i class="fas fa-plug"></i> Connect to Colab
+            </button>
+        </div>
+
+        <div class="connection-status" id="colab-connection-status">
+            <!-- Connection status will be shown here -->
+        </div>
+
+        <div class="colab-instructions">
+            <div class="colab-step">
+                <strong>Quick Setup:</strong>
+                1. Run your Colab TripoSR notebook
+                2. Copy the ngrok URL
+                3. Paste it above and click Connect
+            </div>
+        </div>
     </div>
 
-    <!-- Upload Mode Content -->
-    <div class="upload-container active">
-        <div class="card">
-            <h1 class="center">
-                <i class="fas fa-tshirt"></i> Add clothes to your wardrobe
-            </h1>
+    <!-- Main Upload Section -->
+    <div class="card">
+        <h1 class="center">
+            <i class="fas fa-tshirt"></i> Add clothes to your wardrobe
+        </h1>
 
-            <!-- Enhanced Upload Area with Drag & Drop -->
-            <div class="upload-area" id="upload-area">
-                <div class="upload-content">
-                    <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: var(--accent-color);"></i>
-                    <h4>Drag & Drop or Click to Upload</h4>
-                    <p class="text-muted">Support for PNG, JPG, JPEG files</p>
-                    <label for="imageUpload" class="upload-label">
-                        <i class="fas fa-camera"></i> Choose Image
-                    </label>
-                    <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg" style="display: none;">
+        <!-- Enhanced Upload Area with Drag & Drop -->
+        <div class="upload-area" id="upload-area">
+            <div class="upload-content">
+                <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: var(--accent-color);"></i>
+                <h4>Drag & Drop or Click to Upload</h4>
+                <p class="text-muted">Support for PNG, JPG, JPEG files</p>
+                <label for="imageUpload" class="upload-label">
+                    <i class="fas fa-camera"></i> Choose Image
+                </label>
+                <input type="file" name="file" id="imageUpload" accept=".png, .jpg, .jpeg" style="display: none;">
+            </div>
+        </div>
+
+        <div class="image-section" style="display:none;">
+            <div class="img-preview text-center">
+                <div id="imagePreview"></div>
+            </div>
+            <div class="text-center mt-3">
+                <button type="button" class="btn btn-primary btn-lg" id="btn-predict">
+                    <i class="fas fa-magic"></i> Analyze & Save to Wardrobe
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    <div class="card">
+        <h2><i class="fas fa-chart-line"></i> Analysis Results</h2>
+        <div class="d-flex justify-content-center mb-3">
+            <div class="loader" id="loading-spinner" style="display:none;"></div>
+        </div>
+        <div id="result"></div>
+
+        <!-- 3D Model Generation Section -->
+        <div id="model-generation-section" class="model-generation-section">
+            <h3><i class="fas fa-cube"></i> AI-Powered 3D Model Generation</h3>
+            <p>Transform your 2D clothing image into a stunning 3D model using Google Colab GPU</p>
+
+            <button id="generate-3d-model-btn" class="generate-3d-btn">
+                <i class="fab fa-google"></i> Generate 3D Model with Colab
+            </button>
+
+            <div class="generation-progress" id="generation-progress">
+                <div class="generation-status" id="generation-status">Preparing...</div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar"></div>
                 </div>
+                <small>Using Google Colab GPU - This may take 2-4 minutes...</small>
             </div>
 
-            <div class="image-section" style="display:none;">
-                <div class="img-preview text-center">
-                    <div id="imagePreview"></div>
+            <!-- Model Preview Card -->
+            <div id="model-preview-card" class="model-preview-card">
+                <div class="model-info">
+                    <div class="model-thumbnail">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <div>
+                        <h4>3D Model Generated Successfully!</h4>
+                        <p class="text-muted">Your clothing item has been converted to a 3D model using Colab GPU</p>
+                        <span class="badge" style="background-color: #4285f4; color: white; padding: 4px 8px; border-radius: 10px; font-size: 12px;">
+                            <i class="fab fa-google"></i> Colab Generated
+                        </span>
+                    </div>
                 </div>
-                <div class="text-center mt-3">
-                    <button type="button" class="btn btn-primary btn-lg" id="btn-predict">
-                        <i class="fas fa-magic"></i> Analyze & Save to Wardrobe
+                <div class="model-actions">
+                    <button id="view-3d-model-btn" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> View in 3D
+                    </button>
+                    <button id="download-model-btn" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Download GLB
+                    </button>
+                    <button id="save-to-wardrobe-btn" class="btn btn-success">
+                        <i class="fas fa-save"></i> Save to Wardrobe
                     </button>
                 </div>
             </div>
         </div>
-
-        <div class="card">
-            <h2><i class="fas fa-chart-line"></i> Analysis Results</h2>
-            <div class="d-flex justify-content-center mb-3">
-                <div class="loader" id="loading-spinner" style="display:none;"></div>
-            </div>
-            <div id="result"></div>
-
-            <!-- Enhanced 3D Model Generation Section -->
-            <div id="model-generation-section" class="model-generation-section" style="display: none;">
-                <h3><i class="fas fa-cube"></i> AI-Powered 3D Model Generation</h3>
-                <p>Transform your 2D clothing image into a stunning 3D model using advanced AI</p>
-
-                <button id="generate-3d-model-btn" class="generate-3d-btn">
-                    <i class="fas fa-magic"></i> Generate 3D Model
-                </button>
-
-                <div class="generation-progress" id="generation-progress">
-                    <div class="generation-status" id="generation-status">Preparing...</div>
-                    <div class="progress-container">
-                        <div class="progress-bar" id="progress-bar"></div>
-                    </div>
-                    <small>This may take 30-90 seconds...</small>
-                </div>
-
-                <!-- Model Preview Card -->
-                <div id="model-preview-card" class="model-preview-card">
-                    <div class="model-info">
-                        <div class="model-thumbnail">
-                            <i class="fas fa-cube"></i>
-                        </div>
-                        <div>
-                            <h4>3D Model Generated Successfully!</h4>
-                            <p class="text-muted">Your clothing item has been converted to a 3D model</p>
-                            <span class="badge" style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 10px; font-size: 12px;">AI Generated</span>
-                        </div>
-                    </div>
-                    <div class="model-actions">
-                        <button id="view-3d-model-btn" class="btn btn-primary">
-                            <i class="fas fa-eye"></i> View in 3D
-                        </button>
-                        <button id="download-model-btn" class="btn btn-secondary">
-                            <i class="fas fa-download"></i> Download GLB
-                        </button>
-                        <button id="save-to-wardrobe-btn" class="btn btn-success">
-                            <i class="fas fa-save"></i> Save to Wardrobe
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
+</div>
 
-    <!-- Enhanced 3D Clothes Viewer Mode Content -->
-    <div class="viewer-container">
-        <div class="card">
-            <h1 class="center">
-                <i class="fas fa-cube"></i> Interactive 3D Clothes Viewer
-            </h1>
-            <p class="center">Experience your wardrobe in stunning 3D with realistic material properties</p>
-
-            <div class="view-mode-toggle">
-                <button class="view-mode-button active" data-mode="standard">
-                    <i class="fas fa-eye"></i> Standard View
-                </button>
-                <button class="view-mode-button" data-mode="fabric">
-                    <i class="fas fa-microscope"></i> Fabric Detail
-                </button>
-                <button class="view-mode-button" data-mode="realistic">
-                    <i class="fas fa-lightbulb"></i> Realistic Lighting
-                </button>
-            </div>
-
-            <div class="row">
-                <div class="col-md-8">
-                    <div id="canvas-container">
-                        <!-- 3D viewer will be inserted here -->
-                        <div id="loading-overlay">
-                            <div class="spinner"></div>
-                            <div id="loading-text">Loading 3D model...</div>
-                        </div>
-                    </div>
-
-                    <!-- Enhanced Fabric Information Display -->
-                    <div class="fabric-info-card" id="fabric-info-panel" style="display:none;">
-                        <div class="fabric-info-title">
-                            <div class="fabric-sample" id="fabric-sample"></div>
-                            <div>
-                                <h3 id="fabric-name">Select an item to view details</h3>
-                                <div id="fabric-type">Material information will appear here</div>
-                            </div>
-                        </div>
-
-                        <div class="normal-map-preview" id="normal-map-container" style="display:none;">
-                            <h4><i class="fas fa-layer-group"></i> Normal Map Visualization</h4>
-                            <img src="" alt="Normal Map" class="normal-map-img" id="normal-map-img">
-                            <p class="mt-2"><small>This visualization shows the texture depth map used for 3D rendering</small></p>
-                        </div>
-
-                        <h4 class="mt-3"><i class="fas fa-cogs"></i> Material Properties</h4>
-                        <table class="material-properties-table">
-                            <tr>
-                                <th>Property</th>
-                                <th>Value</th>
-                                <th>Visual Effect</th>
-                            </tr>
-                            <tr>
-                                <td>Texture Complexity</td>
-                                <td id="texture-complexity-value">--</td>
-                                <td>Determines fabric detail level</td>
-                            </tr>
-                            <tr>
-                                <td>Edge Density</td>
-                                <td id="edge-density-value">--</td>
-                                <td>Affects fabric roughness</td>
-                            </tr>
-                            <tr>
-                                <td>Pattern Strength</td>
-                                <td id="pattern-strength-value">--</td>
-                                <td>Controls pattern visibility</td>
-                            </tr>
-                        </table>
-
-                        <h4 class="mt-3"><i class="fas fa-tags"></i> Fabric Characteristics</h4>
-                        <div class="fabric-characteristics" id="fabric-characteristics">
-                            <span class="fabric-characteristic">Select an item to view characteristics</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="viewer-controls">
-                        <h3><i class="fas fa-list"></i> Select Clothing Item</h3>
-
-                        <div class="form-group mb-3">
-                            <label for="item-select">Choose a wardrobe item:</label>
-                            <select id="item-select" class="form-control">
-                                <option value="">-- Select an item --</option>
-                                <!-- Items will be populated dynamically -->
-                            </select>
-                        </div>
-
-                        <div id="material-preview" class="material-preview" style="display: none;">
-                            <!-- Material preview will be populated here -->
-                        </div>
-
-                        <div class="tab-nav">
-                            <button class="tab-button active" data-tab="material-tab">
-                                <i class="fas fa-palette"></i> Material
-                            </button>
-                            <button class="tab-button" data-tab="pattern-tab">
-                                <i class="fas fa-th"></i> Pattern
-                            </button>
-                            <button class="tab-button" data-tab="model-tab">
-                                <i class="fas fa-cube"></i> 3D Model
-                            </button>
-                        </div>
-
-                        <div id="material-tab" class="tab-panel active">
-                            <div class="material-settings">
-                                <div class="setting-group">
-                                    <label class="setting-label">
-                                        <i class="fas fa-adjust"></i> Roughness:
-                                        <span id="roughness-value" class="slider-value">0.5</span>
-                                    </label>
-                                    <div class="slider-container">
-                                        <input type="range" id="roughness-slider" class="slider" min="0" max="1" step="0.01" value="0.5">
-                                    </div>
-                                </div>
-
-                                <div class="setting-group">
-                                    <label class="setting-label">
-                                        <i class="fas fa-gem"></i> Metalness:
-                                        <span id="metalness-value" class="slider-value">0.1</span>
-                                    </label>
-                                    <div class="slider-container">
-                                        <input type="range" id="metalness-slider" class="slider" min="0" max="1" step="0.01" value="0.1">
-                                    </div>
-                                </div>
-
-                                <div class="setting-group">
-                                    <label class="setting-label">
-                                        <i class="fas fa-sun"></i> Color Intensity:
-                                        <span id="color-intensity-value" class="slider-value">1.0</span>
-                                    </label>
-                                    <div class="slider-container">
-                                        <input type="range" id="color-intensity-slider" class="slider" min="0" max="2" step="0.01" value="1.0">
-                                    </div>
-                                </div>
-
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="use-color-checkbox" checked>
-                                    <label class="form-check-label" for="use-color-checkbox">
-                                        <i class="fas fa-paint-brush"></i> Apply material color
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="pattern-tab" class="tab-panel">
-                            <div class="material-settings">
-                                <div class="setting-group">
-                                    <label class="setting-label">
-                                        <i class="fas fa-expand-arrows-alt"></i> Pattern Scale:
-                                        <span id="pattern-scale-value" class="slider-value">1.0</span>
-                                    </label>
-                                    <div class="slider-container">
-                                        <input type="range" id="pattern-scale-slider" class="slider" min="0.1" max="5" step="0.1" value="1.0">
-                                    </div>
-                                </div>
-
-                                <div class="setting-group">
-                                    <label class="setting-label">
-                                        <i class="fas fa-redo"></i> Pattern Rotation:
-                                        <span id="pattern-rotation-value" class="slider-value">0°</span>
-                                    </label>
-                                    <div class="slider-container">
-                                        <input type="range" id="pattern-rotation-slider" class="slider" min="0" max="360" step="1" value="0">
-                                    </div>
-                                </div>
-
-                                <div class="setting-group">
-                                    <label class="setting-label">
-                                        <i class="fas fa-layer-group"></i> Normal Map Strength:
-                                        <span id="normal-strength-value" class="slider-value">1.0</span>
-                                    </label>
-                                    <div class="slider-container">
-                                        <input type="range" id="normal-strength-slider" class="slider" min="0" max="3" step="0.1" value="1.0">
-                                    </div>
-                                </div>
-
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="use-normal-map-checkbox" checked>
-                                    <label class="form-check-label" for="use-normal-map-checkbox">
-                                        <i class="fas fa-mountain"></i> Use normal map (texture relief)
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="model-tab" class="tab-panel">
-                            <div class="material-settings">
-                                <div class="form-group mb-3">
-                                    <label for="model-select">
-                                        <i class="fas fa-shapes"></i> Choose a 3D model:
-                                    </label>
-                                    <select id="model-select" class="form-control">
-                                        <option value="tshirt" selected>T-shirt</option>
-                                        <option value="dress">Dress</option>
-                                        <option value="pants">Pants</option>
-                                        <option value="pullover">Pullover</option>
-                                        <option value="coat">Coat</option>
-                                        <option value="sphere">Sphere (Basic)</option>
-                                        <option value="cube">Cube (Basic)</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group mb-3">
-                                    <label for="model-upload">
-                                        <i class="fas fa-upload"></i> Or upload your own GLB model:
-                                    </label>
-                                    <input type="file" id="model-upload" class="form-control" accept=".glb,.gltf">
-                                </div>
-
-                                <div class="form-group mb-3">
-                                    <button id="load-generated-model-btn" class="btn btn-info" style="width: 100%;">
-                                        <i class="fas fa-robot"></i> Load Generated 3D Model
-                                    </button>
-                                    <small class="form-text text-muted">Load the AI-generated model from your recent upload</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button id="update-material-btn" class="btn btn-primary mt-3" style="width: 100%;">
-                            <i class="fas fa-sync"></i> Update Material
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Quick View Button (appears after generation) -->
+<div id="quick-view-button" class="quick-view-floating">
+    <button class="btn btn-primary btn-lg" onclick="view3DModel()" title="View 3D Model">
+        <i class="fas fa-cube"></i>
+        <span class="btn-text">View 3D Model</span>
+    </button>
 </div>
 
 <!-- Toast Notification Template -->
@@ -1085,6 +633,41 @@
         <button class="toast-close" onclick="hideToast(this.closest('.toast-notification'))">×</button>
     </div>
 </div>
+
+<!-- Simple 3D Viewer Modal -->
+<div class="modal fade" id="simple3DModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-cube"></i> 3D Model Viewer
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="simple-3d-viewer" style="width: 100%; height: 70vh; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+                    <!-- 3D viewer will be inserted here -->
+                    <div id="viewer-loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <div class="mt-3">Loading 3D model...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button type="button" class="btn btn-primary" onclick="downloadModel()">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -1098,1099 +681,26 @@
 let currentUploadedFile = null;
 let currentItemData = null;
 let generatedModelData = null;
-let fabricViewer = null;
-
-
-// Improved JavaScript with better timeout and error handling
-
-// Global variables for generation management
 let currentGenerationTaskId = null;
-let generationStartTime = null;
-let maxGenerationTime = 600000; // 10 minutes max
-let pollInterval = 3000; // 3 seconds between polls
-let consecutiveErrors = 0;
-let maxConsecutiveErrors = 5;
+let colabConnected = false;
+let simple3DViewer = null;
 
-
-// REPLACE your JavaScript generate3DModel function with this simplified version:
-
-function generate3DModel() {
-    if (!currentUploadedFile) {
-        showToast('Please upload an image first', 'warning');
-        return;
-    }
-
-    // Check if there's already a generation in progress
-    if (currentGenerationTaskId) {
-        showToast('3D generation already in progress. Please wait...', 'info');
-        return;
-    }
-
-    const generateBtn = document.getElementById('generate-3d-model-btn');
-    const progressDiv = document.getElementById('generation-progress');
-    const statusText = document.getElementById('generation-status');
-    const progressBar = document.getElementById('progress-bar');
-
-    // Show progress
-    generateBtn.disabled = true;
-    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
-    progressDiv.style.display = 'block';
-
-    // Reset progress
-    progressBar.style.width = '0%';
-    statusText.textContent = 'Preparing...';
-
-    // Create FormData with the image
-    const formData = new FormData();
-    formData.append('image', currentUploadedFile);
-
-    // Call the API with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-    fetch('/api/generate-3d-model', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
-    })
-    .then(response => {
-        clearTimeout(timeoutId);
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            currentGenerationTaskId = data.task_id;
-            showToast(`3D generation started! ${data.estimated_time}`, 'info');
-
-            // Start polling for status with simpler logic
-            startSimpleStatusPolling();
-        } else {
-            throw new Error(data.error || 'Failed to start generation');
-        }
-    })
-    .catch(error => {
-        clearTimeout(timeoutId);
-        console.error('Error:', error);
-
-        let errorMessage = 'Failed to start 3D generation';
-        if (error.name === 'AbortError') {
-            errorMessage = 'Request timeout. Please try again.';
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-
-        showToast(errorMessage, 'error');
-        resetGenerationUI();
-    });
-}
-
-// REPLACE your polling function with this simplified version:
-// REPLACE your startSimpleStatusPolling function with this:
-
-function startSimpleStatusPolling() {
-    if (!currentGenerationTaskId) return;
-
-    const statusText = document.getElementById('generation-status');
-    const progressBar = document.getElementById('progress-bar');
-
-    let pollCount = 0;
-    let consecutiveErrors = 0;
-    const maxPolls = 120; // 120 polls * 3 seconds = 6 minutes max
-    const maxErrors = 3;  // Allow 3 consecutive errors before giving up
-
-    const pollStatus = () => {
-        pollCount++;
-
-        // Check if we've exceeded maximum polls
-        if (pollCount > maxPolls) {
-            showToast('Generation timeout. Please try again.', 'error');
-            resetGenerationUI();
-            currentGenerationTaskId = null;
-            return;
-        }
-
-        fetch(`/api/check-generation-status?task_id=${currentGenerationTaskId}`)
-            .then(response => {
-                // Handle different response status codes
-                if (response.status === 410) {
-                    // Task expired
-                    throw new Error('Task expired on server');
-                } else if (response.status === 404) {
-                    // Task not found
-                    throw new Error('Task not found on server');
-                } else if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Reset error counter on successful response
-                consecutiveErrors = 0;
-
-                if (data.success) {
-                    // Update progress
-                    statusText.textContent = data.message;
-                    progressBar.style.width = (data.progress * 100) + '%';
-
-                    // Add debug info if available
-                    if (data.task_age !== undefined) {
-                        const debugInfo = ` (${Math.floor(data.task_age)}s/${Math.floor(data.max_age)}s)`;
-                        statusText.textContent += debugInfo;
-                    }
-
-                    if (data.status === 'completed') {
-                        handleGenerationSuccess(data);
-                    } else if (data.status === 'failed') {
-                        handleGenerationFailure(data);
-                    } else {
-                        // Still processing, schedule next poll
-                        setTimeout(pollStatus, 3000); // 3 seconds
-                    }
-                } else {
-                    throw new Error(data.error || 'Status check failed');
-                }
-            })
-            .catch(error => {
-                consecutiveErrors++;
-                console.error(`Polling error (${consecutiveErrors}/${maxErrors}):`, error);
-
-                // Handle specific error types
-                if (error.message.includes('Task expired')) {
-                    showToast('Task expired on server. This can happen if generation takes too long.', 'warning');
-                    resetGenerationUI();
-                    currentGenerationTaskId = null;
-                    return;
-                } else if (error.message.includes('Task not found')) {
-                    showToast('Task lost on server. Please try again.', 'error');
-                    resetGenerationUI();
-                    currentGenerationTaskId = null;
-                    return;
-                }
-
-                // For other errors, retry with backoff
-                if (consecutiveErrors >= maxErrors) {
-                    showToast('Lost connection to server. Generation may still be running in background.', 'warning');
-                    resetGenerationUI();
-                    currentGenerationTaskId = null;
-                } else {
-                    // Retry with exponential backoff
-                    const retryDelay = Math.min(5000 * Math.pow(2, consecutiveErrors - 1), 30000);
-                    statusText.textContent = `Connection issue, retrying in ${retryDelay/1000}s... (${consecutiveErrors}/${maxErrors})`;
-                    setTimeout(pollStatus, retryDelay);
-                }
-            });
-    };
-
-    // Start polling after 3 seconds
-    setTimeout(pollStatus, 3000);
-}
-
-// Also add this helper function for better error handling:
-function handleTaskExpiration() {
-    showToast('Task expired. This can happen due to:\n• Server restart\n• Long processing time\n• Network issues\n\nPlease try generating again.', 'warning');
-    resetGenerationUI();
-    currentGenerationTaskId = null;
-}
-
-// Update the resetGenerationUI function to be more robust:
-function resetGenerationUI() {
-    const generateBtn = document.getElementById('generate-3d-model-btn');
-    const progressDiv = document.getElementById('generation-progress');
-    const statusText = document.getElementById('generation-status');
-    const progressBar = document.getElementById('progress-bar');
-
-    if (generateBtn) {
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate 3D Model';
-    }
-
-    if (progressDiv) {
-        progressDiv.style.display = 'none';
-    }
-
-    if (statusText) {
-        statusText.textContent = 'Ready to generate...';
-    }
-
-    if (progressBar) {
-        progressBar.style.width = '0%';
-    }
-}
-
-function updateProgressDisplay(data, elapsed) {
-    const statusText = document.getElementById('generation-status');
-    const progressBar = document.getElementById('progress-bar');
-
-    // Update progress bar
-    progressBar.style.width = (data.progress * 100) + '%';
-
-    // Format elapsed time
-    const minutes = Math.floor(elapsed / 60000);
-    const seconds = Math.floor((elapsed % 60000) / 1000);
-    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-    // Update status with time and active generations info
-    let statusHtml = getStatusIcon(data.message) + ' ' + data.message;
-    statusHtml += `<br><small>Elapsed: ${timeStr}`;
-
-    if (data.active_generations > 1) {
-        statusHtml += ` | Queue: ${data.active_generations} active`;
-    }
-    statusHtml += '</small>';
-
-    statusText.innerHTML = statusHtml;
-
-    // Update progress bar color based on progress
-    if (data.progress < 0.3) {
-        progressBar.style.background = 'linear-gradient(90deg, #007bff, #0056b3)';
-    } else if (data.progress < 0.7) {
-        progressBar.style.background = 'linear-gradient(90deg, #ffc107, #e0a800)';
-    } else {
-        progressBar.style.background = 'linear-gradient(90deg, #28a745, #1e7e34)';
-    }
-}
-
-function getStatusIcon(message) {
-    const lowerMsg = message.toLowerCase();
-
-    if (lowerMsg.includes('segmentation')) {
-        return '<i class="fas fa-cut"></i>';
-    } else if (lowerMsg.includes('geometry') || lowerMsg.includes('3d')) {
-        return '<i class="fas fa-cube"></i>';
-    } else if (lowerMsg.includes('texture')) {
-        return '<i class="fas fa-paint-brush"></i>';
-    } else if (lowerMsg.includes('completed')) {
-        return '<i class="fas fa-check-circle"></i>';
-    } else if (lowerMsg.includes('failed') || lowerMsg.includes('error')) {
-        return '<i class="fas fa-exclamation-triangle"></i>';
-    } else {
-        return '<i class="fas fa-cog fa-spin"></i>';
-    }
-}
-
-function handleGenerationSuccess(data) {
-    generatedModelData = {
-        model_path: data.model_path,
-        task_id: currentGenerationTaskId,
-        file_size: data.file_size,
-        completed_at: data.completed_at
-    };
-
-    const progressDiv = document.getElementById('generation-progress');
-    const previewCard = document.getElementById('model-preview-card');
-
-    progressDiv.style.display = 'none';
-    previewCard.classList.add('visible');
-
-    // Update preview card with file info
-    const modelInfo = previewCard.querySelector('.model-info div:last-child p');
-    if (modelInfo && data.file_size) {
-        const sizeKB = Math.round(data.file_size / 1024);
-        modelInfo.textContent = `Your clothing item has been converted to a 3D model (${sizeKB} KB)`;
-    }
-
-    resetGenerationUI();
-    showToast('🎉 3D model generated successfully!', 'success');
-
-    // Auto-save to wardrobe if item exists
-    if (currentItemData && currentItemData._id) {
-        autoSave3DModel();
-    }
-
-    // Clear the task ID
-    currentGenerationTaskId = null;
-}
-
-function handleGenerationFailure(data) {
-    const errorMessage = data.error || data.message || 'Generation failed';
-    showToast(`Generation failed: ${errorMessage}`, 'error');
-    resetGenerationUI();
-    currentGenerationTaskId = null;
-}
-
-function resetGenerationUI() {
-    const generateBtn = document.getElementById('generate-3d-model-btn');
-    const progressDiv = document.getElementById('generation-progress');
-
-    if (generateBtn) {
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate 3D Model';
-    }
-
-    if (progressDiv) {
-        progressDiv.style.display = 'none';
-    }
-}
-
-// Enhanced auto-save function
-function autoSave3DModel() {
-    if (!generatedModelData || !currentItemData) return;
-
-    const saveBtn = document.getElementById('save-to-wardrobe-btn');
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Auto-saving...';
-    }
-
-    fetch('/api/save-3d-model', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            item_id: currentItemData._id || currentItemData.id,
-            model_path: generatedModelData.model_path
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update current item data
-            currentItemData.model_3d_path = generatedModelData.model_path;
-            currentItemData.has_3d_model = true;
-
-            showToast('✅ 3D model automatically saved to wardrobe', 'success');
-
-            // Update UI to reflect saved status
-            updateSaveButtonState(true);
-        } else {
-            showToast(data.error || 'Failed to auto-save model', 'warning');
-            updateSaveButtonState(false);
-        }
-    })
-    .catch(error => {
-        console.error('Auto-save error:', error);
-        showToast('Auto-save failed. You can manually save later.', 'warning');
-        updateSaveButtonState(false);
-    });
-}
-
-function updateSaveButtonState(saved) {
-    const saveBtn = document.getElementById('save-to-wardrobe-btn');
-    if (saveBtn) {
-        if (saved) {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved to Wardrobe';
-            saveBtn.classList.remove('btn-success');
-            saveBtn.classList.add('btn-secondary');
-        } else {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Wardrobe';
-        }
-    }
-}
-
-// Enhanced saveToWardrobe function for manual saving
-function saveToWardrobe() {
-    if (!currentItemData || !generatedModelData) {
-        showToast('No model data to save', 'warning');
-        return;
-    }
-
-    const saveBtn = document.getElementById('save-to-wardrobe-btn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-    fetch('/api/save-3d-model', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            item_id: currentItemData._id || currentItemData.id,
-            model_path: generatedModelData.model_path
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('3D model saved to wardrobe successfully!', 'success');
-            currentItemData.model_3d_path = generatedModelData.model_path;
-            currentItemData.has_3d_model = true;
-            updateSaveButtonState(true);
-        } else {
-            throw new Error(data.error || 'Failed to save model');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast(`Error saving to wardrobe: ${error.message}`, 'error');
-        updateSaveButtonState(false);
-    });
-}
-
-// Function to check generation statistics
-function checkGenerationStats() {
-    fetch('/api/generation-stats')
-        .then(response => response.json())
-        .then(data => {
-            console.log('Generation Stats:', data);
-
-            // Update UI based on stats
-            const generateBtn = document.getElementById('generate-3d-model-btn');
-            if (generateBtn && !data.can_start_new) {
-                generateBtn.disabled = true;
-                generateBtn.innerHTML = `<i class="fas fa-clock"></i> Server Busy (${data.active_generations}/${data.max_concurrent})`;
-
-                // Re-enable after a delay
-                setTimeout(() => {
-                    if (!currentGenerationTaskId) {
-                        generateBtn.disabled = false;
-                        generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate 3D Model';
-                    }
-                }, 30000); // Check again in 30 seconds
-            }
-        })
-        .catch(error => {
-            console.error('Error checking stats:', error);
-        });
-}
-
-// Enhanced page initialization
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
-
-    // Check generation stats on page load
-    checkGenerationStats();
-
-    // Periodically check stats
-    setInterval(checkGenerationStats, 60000); // Every minute
-
-    // Add page visibility handling to pause polling when tab is not active
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-});
-
-function handleVisibilityChange() {
-    if (document.hidden && currentGenerationTaskId) {
-        // Page is hidden, reduce polling frequency
-        pollInterval = 10000; // 10 seconds
-        console.log('Tab hidden, reducing poll frequency');
-    } else if (!document.hidden && currentGenerationTaskId) {
-        // Page is visible again, restore normal polling
-        pollInterval = 3000; // 3 seconds
-        console.log('Tab visible, restoring normal poll frequency');
+    // Auto-connect if URL is provided
+    const savedUrl = document.getElementById('colab-url-input').value;
+    if (savedUrl) {
+        connectToColab();
     }
-}
-
-// Handle page unload
-window.addEventListener('beforeunload', function(e) {
-    if (currentGenerationTaskId) {
-        const message = '3D model generation is in progress. Are you sure you want to leave?';
-        e.preventDefault();
-        e.returnValue = message;
-        return message;
-    }
-});
-
-// Export enhanced functions
-window.wardrobeApp = {
-    ...window.wardrobeApp,
-    checkGenerationStats,
-    resetGenerationUI,
-    currentGenerationTaskId: () => currentGenerationTaskId
-};
-
-
-
-
-// Enhanced 3D Fabric Viewer Class
-class Enhanced3DFabricViewer {
-    constructor(canvasContainer) {
-        this.container = canvasContainer;
-        this.scene = null;
-        this.camera = null;
-        this.renderer = null;
-        this.controls = null;
-        this.currentModel = null;
-        this.currentLights = [];
-        this.currentMaterial = null;
-        this.isInitialized = false;
-        this.loadingManager = new THREE.LoadingManager();
-        this.textureLoader = new THREE.TextureLoader(this.loadingManager);
-        this.gltfLoader = new THREE.GLTFLoader(this.loadingManager);
-
-        this.init();
-        window.addEventListener('resize', () => this.onWindowResize());
-    }
-
-    init() {
-        if (this.isInitialized) return;
-
-        // Create scene
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0xf5f5f5);
-
-        // Create camera
-        this.camera = new THREE.PerspectiveCamera(
-            45, this.container.clientWidth / this.container.clientHeight, 0.1, 1000
-        );
-        this.camera.position.set(0, 0, 4);
-
-        // Create renderer
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-        this.container.appendChild(this.renderer.domElement);
-
-        // Create orbit controls
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.05;
-        this.controls.minDistance = 1.5;
-        this.controls.maxDistance = 10;
-
-        // Add lights
-        this.setLightingMode('standard');
-
-        // Start animation loop
-        this.animate();
-        this.isInitialized = true;
-    }
-
-    setLightingMode(mode) {
-        // Remove existing lights
-        this.currentLights.forEach(light => this.scene.remove(light));
-        this.currentLights = [];
-
-        switch(mode) {
-            case 'standard':
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-                this.scene.add(ambientLight);
-                this.currentLights.push(ambientLight);
-
-                const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
-                mainLight.position.set(5, 5, 5);
-                mainLight.castShadow = true;
-                this.scene.add(mainLight);
-                this.currentLights.push(mainLight);
-
-                const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-                fillLight.position.set(-5, 2, -5);
-                this.scene.add(fillLight);
-                this.currentLights.push(fillLight);
-                break;
-
-            case 'fabric':
-                const fabricAmbient = new THREE.AmbientLight(0xffffff, 0.2);
-                this.scene.add(fabricAmbient);
-                this.currentLights.push(fabricAmbient);
-
-                const topLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                topLight.position.set(0, 10, 0);
-                topLight.castShadow = true;
-                this.scene.add(topLight);
-                this.currentLights.push(topLight);
-
-                const rimLight = new THREE.DirectionalLight(0xffffdd, 0.6);
-                rimLight.position.set(0, 0, 10);
-                this.scene.add(rimLight);
-                this.currentLights.push(rimLight);
-                break;
-
-            case 'realistic':
-                const studioAmbient = new THREE.AmbientLight(0xffffff, 0.3);
-                this.scene.add(studioAmbient);
-                this.currentLights.push(studioAmbient);
-
-                const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
-                keyLight.position.set(5, 8, 10);
-                keyLight.castShadow = true;
-                this.scene.add(keyLight);
-                this.currentLights.push(keyLight);
-
-                const softFill = new THREE.DirectionalLight(0xfffbf0, 0.5);
-                softFill.position.set(-5, 3, 0);
-                this.scene.add(softFill);
-                this.currentLights.push(softFill);
-                break;
-        }
-    }
-
-    animate() {
-        requestAnimationFrame(() => this.animate());
-        if (this.controls) this.controls.update();
-        this.render();
-    }
-
-    render() {
-        if (this.renderer && this.scene && this.camera) {
-            this.renderer.render(this.scene, this.camera);
-        }
-    }
-
-    onWindowResize() {
-        if (this.camera && this.renderer) {
-            this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
-            this.camera.updateProjectionMatrix();
-            this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        }
-    }
-
-    loadModel(modelPath) {
-        return new Promise((resolve, reject) => {
-            this.showLoading('Loading 3D model...');
-
-            if (this.currentModel) {
-                this.scene.remove(this.currentModel);
-                this.currentModel = null;
-            }
-
-            // Check if it's a generated GLB file
-            if (modelPath.includes('.glb')) {
-                this.gltfLoader.load(
-                    modelPath,
-                    (gltf) => {
-                        const model = gltf.scene;
-                        this.setupModel(model);
-                        resolve(model);
-                    },
-                    (xhr) => {
-                        const percent = Math.floor((xhr.loaded / xhr.total) * 100);
-                        this.updateLoading(`Loading 3D model... ${percent}%`);
-                    },
-                    (error) => {
-                        console.error('Error loading GLB model:', error);
-                        this.createFallbackModel(modelPath);
-                        resolve(this.currentModel);
-                    }
-                );
-            } else {
-                // Create basic geometry for non-GLB models
-                this.createFallbackModel(modelPath);
-                resolve(this.currentModel);
-            }
-        });
-    }
-
-    createFallbackModel(modelType) {
-        let geometry;
-
-        switch(modelType) {
-            case 'tshirt':
-                geometry = this.createTShirtGeometry();
-                break;
-            case 'dress':
-                geometry = this.createDressGeometry();
-                break;
-            case 'pants':
-                geometry = this.createPantsGeometry();
-                break;
-            case 'pullover':
-                geometry = this.createPulloverGeometry();
-                break;
-            case 'coat':
-                geometry = this.createCoatGeometry();
-                break;
-            case 'sphere':
-                geometry = new THREE.SphereGeometry(1, 32, 32);
-                break;
-            case 'cube':
-                geometry = new THREE.BoxGeometry(1.5, 2, 0.1);
-                break;
-            default:
-                geometry = new THREE.BoxGeometry(1.5, 2, 0.1);
-        }
-
-        const material = new THREE.MeshStandardMaterial({
-            color: 0x8B4513,
-            side: THREE.DoubleSide
-        });
-
-        const model = new THREE.Mesh(geometry, material);
-        this.setupModel(model);
-    }
-
-    createTShirtGeometry() {
-        const shape = new THREE.Shape();
-        // Create T-shirt outline
-        shape.moveTo(-0.8, -1.0);
-        shape.lineTo(-0.8, 0.8);
-        shape.lineTo(-1.2, 0.8);
-        shape.lineTo(-1.2, 1.0);
-        shape.lineTo(-0.6, 1.0);
-        shape.lineTo(-0.6, 1.2);
-        shape.lineTo(0.6, 1.2);
-        shape.lineTo(0.6, 1.0);
-        shape.lineTo(1.2, 1.0);
-        shape.lineTo(1.2, 0.8);
-        shape.lineTo(0.8, 0.8);
-        shape.lineTo(0.8, -1.0);
-        shape.lineTo(-0.8, -1.0);
-
-        return new THREE.ExtrudeGeometry(shape, { depth: 0.1, bevelEnabled: false });
-    }
-
-    createDressGeometry() {
-        const shape = new THREE.Shape();
-        // Create dress outline
-        shape.moveTo(-0.6, 1.2);
-        shape.lineTo(0.6, 1.2);
-        shape.lineTo(0.8, 0.0);
-        shape.lineTo(1.2, -1.5);
-        shape.lineTo(-1.2, -1.5);
-        shape.lineTo(-0.8, 0.0);
-        shape.lineTo(-0.6, 1.2);
-
-        return new THREE.ExtrudeGeometry(shape, { depth: 0.08, bevelEnabled: false });
-    }
-
-    createPantsGeometry() {
-        const geometry = new THREE.BoxGeometry(1.6, 1.8, 0.1);
-        return geometry;
-    }
-
-    createPulloverGeometry() {
-        const shape = new THREE.Shape();
-        // Create pullover outline (slightly larger than t-shirt)
-        shape.moveTo(-0.9, -1.1);
-        shape.lineTo(-0.9, 0.9);
-        shape.lineTo(-1.4, 0.9);
-        shape.lineTo(-1.4, 1.1);
-        shape.lineTo(-0.7, 1.1);
-        shape.lineTo(-0.7, 1.3);
-        shape.lineTo(0.7, 1.3);
-        shape.lineTo(0.7, 1.1);
-        shape.lineTo(1.4, 1.1);
-        shape.lineTo(1.4, 0.9);
-        shape.lineTo(0.9, 0.9);
-        shape.lineTo(0.9, -1.1);
-        shape.lineTo(-0.9, -1.1);
-
-        return new THREE.ExtrudeGeometry(shape, { depth: 0.15, bevelEnabled: false });
-    }
-
-    createCoatGeometry() {
-        const shape = new THREE.Shape();
-        // Create coat outline (longer and wider)
-        shape.moveTo(-1.0, -1.8);
-        shape.lineTo(-1.0, 1.0);
-        shape.lineTo(-1.6, 1.0);
-        shape.lineTo(-1.6, 1.2);
-        shape.lineTo(-0.8, 1.2);
-        shape.lineTo(-0.8, 1.4);
-        shape.lineTo(0.8, 1.4);
-        shape.lineTo(0.8, 1.2);
-        shape.lineTo(1.6, 1.2);
-        shape.lineTo(1.6, 1.0);
-        shape.lineTo(1.0, 1.0);
-        shape.lineTo(1.0, -1.8);
-        shape.lineTo(-1.0, -1.8);
-
-        return new THREE.ExtrudeGeometry(shape, { depth: 0.2, bevelEnabled: false });
-    }
-
-    setupModel(model) {
-        // Setup shadows and positioning
-        model.traverse((node) => {
-            if (node.isMesh) {
-                node.userData.originalMaterial = node.material;
-                node.castShadow = true;
-                node.receiveShadow = true;
-            }
-        });
-
-        // Center and scale the model
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.x = -center.x;
-        model.position.y = -center.y;
-        model.position.z = -center.z;
-
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 3 / maxDim;
-        model.scale.set(scale, scale, scale);
-
-        this.scene.add(model);
-        this.currentModel = model;
-
-        this.camera.position.set(0, 0, 4);
-        this.controls.target.set(0, 0, 0);
-        this.controls.update();
-
-        this.hideLoading();
-    }
-
-    applyMaterial(model, texturePath, materialProperties, normalMapPath = null) {
-        return new Promise((resolve, reject) => {
-            if (!model || !texturePath) {
-                reject(new Error('Missing model or texture'));
-                return;
-            }
-
-            this.showLoading('Applying material...');
-
-            this.textureLoader.load(
-                texturePath,
-                (texture) => {
-                    texture.wrapS = THREE.RepeatWrapping;
-                    texture.wrapT = THREE.RepeatWrapping;
-                    texture.repeat.set(1, 1);
-
-                    let normalMapPromise = Promise.resolve(null);
-
-                    if (normalMapPath) {
-                        normalMapPromise = new Promise((resolveNormal) => {
-                            this.textureLoader.load(
-                                normalMapPath,
-                                (normalMap) => {
-                                    normalMap.wrapS = THREE.RepeatWrapping;
-                                    normalMap.wrapT = THREE.RepeatWrapping;
-                                    normalMap.repeat.copy(texture.repeat);
-                                    resolveNormal(normalMap);
-                                },
-                                undefined,
-                                () => resolveNormal(null)
-                            );
-                        });
-                    }
-
-                    normalMapPromise.then((normalMap) => {
-                        const material = new THREE.MeshStandardMaterial({
-                            map: texture,
-                            normalMap: normalMap,
-                            normalScale: new THREE.Vector2(1.0, 1.0),
-                            roughness: 0.5,
-                            metalness: 0.1,
-                            side: THREE.DoubleSide
-                        });
-
-                        this.currentMaterial = material;
-
-                        model.traverse((node) => {
-                            if (node.isMesh) {
-                                node.material = material;
-                            }
-                        });
-
-                        this.updateNormalMapDisplay(normalMapPath);
-                        this.hideLoading();
-                        resolve(true);
-                    });
-                },
-                (xhr) => {
-                    const percent = Math.floor((xhr.loaded / xhr.total) * 100);
-                    this.updateLoading(`Loading texture... ${percent}%`);
-                },
-                (error) => {
-                    console.error('Error loading texture:', error);
-                    this.hideLoading();
-                    reject(error);
-                }
-            );
-        });
-    }
-
-    updateMaterialProperties(properties) {
-        if (!this.currentModel || !this.currentMaterial) return;
-
-        if (properties.roughness !== undefined) {
-            this.currentMaterial.roughness = properties.roughness;
-        }
-
-        if (properties.metalness !== undefined) {
-            this.currentMaterial.metalness = properties.metalness;
-        }
-
-        if (properties.normalScale !== undefined && this.currentMaterial.normalMap) {
-            this.currentMaterial.normalScale.set(properties.normalScale, properties.normalScale);
-        }
-
-        if (properties.textureScale !== undefined && this.currentMaterial.map) {
-            this.currentMaterial.map.repeat.set(properties.textureScale, properties.textureScale);
-            if (this.currentMaterial.normalMap) {
-                this.currentMaterial.normalMap.repeat.copy(this.currentMaterial.map.repeat);
-            }
-        }
-
-        this.currentMaterial.needsUpdate = true;
-    }
-
-    updateNormalMapDisplay(normalMapPath) {
-        const container = document.getElementById('normal-map-container');
-        const img = document.getElementById('normal-map-img');
-
-        if (container && img) {
-            if (normalMapPath) {
-                img.src = normalMapPath;
-                container.style.display = 'block';
-            } else {
-                container.style.display = 'none';
-            }
-        }
-    }
-
-    updateFabricInfoPanel(itemData) {
-        const fabricNameEl = document.getElementById('fabric-name');
-        const fabricTypeEl = document.getElementById('fabric-type');
-        const fabricSampleEl = document.getElementById('fabric-sample');
-        const textureComplexityEl = document.getElementById('texture-complexity-value');
-        const edgeDensityEl = document.getElementById('edge-density-value');
-        const patternStrengthEl = document.getElementById('pattern-strength-value');
-        const fabricCharacteristicsEl = document.getElementById('fabric-characteristics');
-        const fabricInfoPanel = document.getElementById('fabric-info-panel');
-
-        if (!fabricInfoPanel || !itemData) return;
-
-        fabricInfoPanel.style.display = 'block';
-
-        const materialProperties = itemData.material_properties || {};
-        const fabricType = this.getFabricType(itemData.label, materialProperties);
-
-        if (fabricNameEl) fabricNameEl.textContent = `${itemData.label} - ${fabricType}`;
-        if (fabricTypeEl) fabricTypeEl.textContent = `${materialProperties.estimated_material || 'Unknown'} material`;
-        if (fabricSampleEl) fabricSampleEl.style.backgroundImage = `url('${itemData.file_path}')`;
-        if (textureComplexityEl) textureComplexityEl.textContent = materialProperties.texture_variance ?
-            materialProperties.texture_variance.toFixed(2) : '0.00';
-        if (edgeDensityEl) edgeDensityEl.textContent = materialProperties.edge_density ?
-            materialProperties.edge_density.toFixed(4) : '0.0000';
-
-        let patternStrength = 0;
-        if (materialProperties.pattern_info && materialProperties.pattern_info.pattern_strength) {
-            patternStrength = materialProperties.pattern_info.pattern_strength;
-        }
-        if (patternStrengthEl) patternStrengthEl.textContent = `${(patternStrength * 100).toFixed(0)}%`;
-
-        if (fabricCharacteristicsEl) {
-            const characteristics = this.generateFabricCharacteristics(materialProperties);
-            fabricCharacteristicsEl.innerHTML = characteristics.map(
-                char => `<span class="fabric-characteristic">${char}</span>`
-            ).join('');
-        }
-    }
-
-    getFabricType(clothingType, materialProps) {
-        if (materialProps?.estimated_material) {
-            const materialMap = {
-                'smooth': 'Silk',
-                'textured': 'Denim',
-                'rough_textured': 'Tweed',
-                'patterned': 'Printed Fabric',
-                'medium': 'Cotton'
-            };
-            return materialMap[materialProps.estimated_material] || 'Fabric';
-        }
-
-        const clothingFabricMap = {
-            'T-shirt/top': 'Cotton',
-            'Trouser': 'Denim',
-            'Pullover': 'Wool',
-            'Dress': 'Polyester',
-            'Coat': 'Wool Blend',
-            'Shirt': 'Cotton'
-        };
-        return clothingFabricMap[clothingType] || 'Fabric';
-    }
-
-    generateFabricCharacteristics(materialProperties) {
-        if (!materialProperties) return ['Select an item to view characteristics'];
-
-        const characteristics = [];
-        const materialType = materialProperties.estimated_material || 'medium';
-        const textureVariance = materialProperties.texture_variance || 100;
-        const edgeDensity = materialProperties.edge_density || 0.1;
-
-        const materialCharacteristics = {
-            'smooth': ['Smooth surface', 'Low texture', 'Soft hand feel'],
-            'textured': ['Textured surface', 'Medium weight', 'Durable'],
-            'rough_textured': ['Heavy texture', 'Sturdy', 'Coarse hand feel'],
-            'patterned': ['Distinct pattern', 'Visual texture', 'Decorative'],
-            'medium': ['Medium texture', 'Balanced weight', 'Versatile']
-        };
-
-        characteristics.push(...(materialCharacteristics[materialType] || []));
-
-        if (textureVariance > 200) {
-            characteristics.push('High contrast texture');
-        } else if (textureVariance < 50) {
-            characteristics.push('Uniform appearance');
-        }
-
-        if (edgeDensity > 0.3) {
-            characteristics.push('Complex surface structure');
-        } else if (edgeDensity < 0.05) {
-            characteristics.push('Minimal surface detail');
-        }
-
-        return [...new Set(characteristics)];
-    }
-
-    loadClothingItem(itemData) {
-        if (!itemData) return Promise.reject(new Error('No item data provided'));
-
-        const modelType = this.getModelForClothingType(itemData.label);
-        const modelPath = itemData.model_3d_path || modelType;
-
-        this.updateFabricInfoPanel(itemData);
-
-        return this.loadModel(modelPath)
-            .then(model => {
-                if (itemData.file_path) {
-                    return this.applyMaterial(
-                        model,
-                        itemData.file_path,
-                        itemData.material_properties,
-                        itemData.normal_map_path
-                    );
-                }
-                return Promise.resolve();
-            });
-    }
-
-    getModelForClothingType(clothingType) {
-        const modelMap = {
-            'T-shirt/top': 'tshirt',
-            'Shirt': 'tshirt',
-            'Trouser': 'pants',
-            'Pullover': 'pullover',
-            'Dress': 'dress',
-            'Coat': 'coat'
-        };
-        return modelMap[clothingType] || 'tshirt';
-    }
-
-    showLoading(message = 'Loading...') {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-
-        if (loadingOverlay) loadingOverlay.classList.add('visible');
-        if (loadingText) loadingText.textContent = message;
-    }
-
-    updateLoading(message) {
-        const loadingText = document.getElementById('loading-text');
-        if (loadingText) loadingText.textContent = message;
-    }
-
-    hideLoading() {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        if (loadingOverlay) loadingOverlay.classList.remove('visible');
-    }
-
-    showError(message) {
-        showToast(message, 'error');
-    }
-}
-
-// Initialize everything when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
 });
 
 function initializeApp() {
     setupEventListeners();
     setupDragAndDrop();
-    initializeFabricViewer();
 }
 
 function setupEventListeners() {
-    // Mode toggle
-    document.getElementById('upload-mode-btn').addEventListener('click', () => switchMode('upload'));
-    document.getElementById('view-mode-btn').addEventListener('click', () => switchMode('view'));
-
     // Upload functionality
     document.getElementById('imageUpload').addEventListener('change', handleFileSelect);
     document.getElementById('btn-predict').addEventListener('click', analyzeImage);
@@ -2200,25 +710,6 @@ function setupEventListeners() {
     document.getElementById('view-3d-model-btn').addEventListener('click', view3DModel);
     document.getElementById('download-model-btn').addEventListener('click', downloadModel);
     document.getElementById('save-to-wardrobe-btn').addEventListener('click', saveToWardrobe);
-
-    // 3
-
-
-// 3D viewer controls
-    document.getElementById('item-select').addEventListener('change', loadSelectedItem);
-    document.getElementById('model-select').addEventListener('change', changeModel);
-    document.getElementById('model-upload').addEventListener('change', uploadCustomModel);
-    document.getElementById('load-generated-model-btn').addEventListener('click', loadGeneratedModel);
-    document.getElementById('update-material-btn').addEventListener('click', updateMaterial);
-
-    // Material controls
-    setupMaterialControls();
-
-    // Tab navigation
-    setupTabNavigation();
-
-    // View mode buttons
-    setupViewModeButtons();
 }
 
 function setupDragAndDrop() {
@@ -2291,6 +782,68 @@ function displayImagePreview(file) {
     reader.readAsDataURL(file);
 }
 
+// Colab Connection Functions
+function connectToColab() {
+    const urlInput = document.getElementById('colab-url-input');
+    const connectBtn = document.getElementById('connect-colab-btn');
+    const colabUrl = urlInput.value.trim();
+
+    if (!colabUrl) {
+        showToast('Please enter a Colab API URL', 'warning');
+        return;
+    }
+
+    // Show loading state
+    connectBtn.disabled = true;
+    connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+
+    fetch('/api/set-colab-url', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ colab_url: colabUrl })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✅ Connected to Colab API successfully!', 'success');
+            showColabConnectionStatus(true, 'Connected and ready for 3D generation');
+            colabConnected = true;
+
+            // Enable 3D generation
+            const generateBtn = document.getElementById('generate-3d-model-btn');
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="fab fa-google"></i> Generate 3D Model with Colab';
+        } else {
+            throw new Error(data.error || 'Failed to connect');
+        }
+    })
+    .catch(error => {
+        console.error('Error connecting to Colab:', error);
+        showToast('❌ Failed to connect to Colab API', 'error');
+        showColabConnectionStatus(false, error.message);
+        colabConnected = false;
+    })
+    .finally(() => {
+        connectBtn.disabled = false;
+        connectBtn.innerHTML = '<i class="fas fa-plug"></i> Connect to Colab';
+    });
+}
+
+function showColabConnectionStatus(success, message) {
+    const statusDiv = document.getElementById('colab-connection-status');
+    statusDiv.style.display = 'block';
+    statusDiv.className = `connection-status ${success ? 'success' : 'error'}`;
+    statusDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${success ? 'check-circle' : 'exclamation-triangle'} mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+}
+
+// Image Analysis Function
 function analyzeImage() {
     if (!currentUploadedFile) {
         showToast('Please select an image first', 'warning');
@@ -2324,13 +877,9 @@ function analyzeImage() {
 
         if (data.success) {
             currentItemData = data;
-            // Make sure we have an ID
-            if (data.item_id) {
-                currentItemData._id = data.item_id;
-            }
             displayAnalysisResults(data);
             showModelGenerationSection();
-            showToast('Image analyzed successfully!', 'success');
+            showToast('✅ Image analyzed successfully!', 'success');
         } else {
             showToast(data.error || 'Analysis failed', 'error');
         }
@@ -2381,64 +930,26 @@ function displayAnalysisResults(data) {
         `;
     }
 
-    if (data.material_properties) {
-        resultHTML += `
-            <div class="result-section">
-                <h3><i class="fas fa-microscope"></i> Material Analysis</h3>
-                <div class="result-row">
-                    <div class="result-label">Estimated Material:</div>
-                    <div class="result-value">${data.material_properties.estimated_material || 'Unknown'}</div>
-                </div>
-                <div class="result-row">
-                    <div class="result-label">Texture Variance:</div>
-                    <div class="result-value">${data.material_properties.texture_variance?.toFixed(2) || 'N/A'}</div>
-                </div>
-                <div class="result-row">
-                    <div class="result-label">Edge Density:</div>
-                    <div class="result-value">${data.material_properties.edge_density?.toFixed(4) || 'N/A'}</div>
-                </div>
-            </div>
-        `;
-
-        if (data.material_properties.pattern_info) {
-            resultHTML += `
-                <div class="result-section">
-                    <h3><i class="fas fa-th"></i> Pattern Analysis</h3>
-                    <div class="result-row">
-                        <div class="result-label">Pattern Detected:</div>
-                        <div class="result-value">${data.material_properties.pattern_info.has_pattern ? 'Yes' : 'No'}</div>
-                    </div>
-                    ${data.material_properties.pattern_info.has_pattern ? `
-                    <div class="result-row">
-                        <div class="result-label">Pattern Type:</div>
-                        <div class="result-value">${data.material_properties.pattern_info.pattern_type || 'Unknown'}</div>
-                    </div>
-                    <div class="result-row">
-                        <div class="result-label">Pattern Strength:</div>
-                        <div class="result-value">${(data.material_properties.pattern_info.pattern_strength * 100).toFixed(0)}%</div>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-    }
-
     resultHTML += '</div>';
     resultDiv.innerHTML = resultHTML;
 }
 
 function showModelGenerationSection() {
     const section = document.getElementById('model-generation-section');
-    if (section) {
-        section.style.display = 'block';
-        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+    section.style.display = 'block';
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// Updated generate3DModel function with TripoSG integration
+// 3D Model Generation with Colab
 function generate3DModel() {
     if (!currentUploadedFile) {
         showToast('Please upload an image first', 'warning');
+        return;
+    }
+
+    if (!colabConnected) {
+        showToast('Please connect to Colab first', 'warning');
+        document.getElementById('colab-setup-card').scrollIntoView({ behavior: 'smooth' });
         return;
     }
 
@@ -2449,19 +960,18 @@ function generate3DModel() {
 
     // Show progress
     generateBtn.disabled = true;
-    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating with Colab...';
     progressDiv.style.display = 'block';
 
     // Reset progress
     progressBar.style.width = '0%';
-    statusText.textContent = 'Preparing...';
+    statusText.textContent = 'Uploading to Colab GPU...';
 
     // Create FormData with the image
     const formData = new FormData();
     formData.append('image', currentUploadedFile);
-    formData.append('item_data', JSON.stringify(currentItemData || {}));
 
-    // Call the API
+    // Call the Colab-only API
     fetch('/api/generate-3d-model', {
         method: 'POST',
         body: formData
@@ -2469,31 +979,28 @@ function generate3DModel() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Start polling for status
-            pollGenerationStatus(data.task_id);
+            currentGenerationTaskId = data.task_id;
+            showToast(`🚀 3D generation started with Colab GPU! ${data.estimated_time}`, 'info');
+            startStatusPolling();
         } else {
             throw new Error(data.error || 'Failed to start generation');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast(`Error: ${error.message}`, 'error');
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate 3D Model';
-        progressDiv.style.display = 'none';
+        showToast(`❌ Error: ${error.message}`, 'error');
+        resetGenerationUI();
     });
 }
 
-// New function to poll generation status
-function pollGenerationStatus(taskId) {
+function startStatusPolling() {
+    if (!currentGenerationTaskId) return;
+
     const statusText = document.getElementById('generation-status');
     const progressBar = document.getElementById('progress-bar');
-    const generateBtn = document.getElementById('generate-3d-model-btn');
-    const progressDiv = document.getElementById('generation-progress');
-    const previewCard = document.getElementById('model-preview-card');
 
-    const checkStatus = () => {
-        fetch(`/api/check-generation-status?task_id=${taskId}`)
+    const pollStatus = () => {
+        fetch(`/api/check-generation-status?task_id=${currentGenerationTaskId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -2502,26 +1009,12 @@ function pollGenerationStatus(taskId) {
                     progressBar.style.width = (data.progress * 100) + '%';
 
                     if (data.status === 'completed') {
-                        // Success!
-                        generatedModelData = {
-                            model_path: data.model_path,
-                            task_id: taskId
-                        };
-
-                        progressDiv.style.display = 'none';
-                        previewCard.classList.add('visible');
-                        generateBtn.disabled = false;
-                        generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate 3D Model';
-
-                        showToast('3D model generated successfully!', 'success');
-
+                        handleGenerationSuccess(data);
                     } else if (data.status === 'failed') {
-                        // Failed
-                        throw new Error(data.error || 'Generation failed');
-
+                        handleGenerationFailure(data);
                     } else {
                         // Still processing, check again
-                        setTimeout(checkStatus, 2000);
+                        setTimeout(pollStatus, 3000);
                     }
                 } else {
                     throw new Error(data.error || 'Status check failed');
@@ -2529,81 +1022,66 @@ function pollGenerationStatus(taskId) {
             })
             .catch(error => {
                 console.error('Error checking status:', error);
-                showToast(`Error: ${error.message}`, 'error');
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate 3D Model';
-                progressDiv.style.display = 'none';
+                showToast(`❌ Error: ${error.message}`, 'error');
+                resetGenerationUI();
             });
     };
 
-    // Start checking
-    checkStatus();
+    // Start polling
+    setTimeout(pollStatus, 3000);
 }
 
-// Updated view3DModel function
-function view3DModel() {
-    if (!generatedModelData) {
-        showToast('No 3D model available', 'warning');
-        return;
+function handleGenerationSuccess(data) {
+    generatedModelData = {
+        model_path: data.model_path,
+        task_id: currentGenerationTaskId,
+        file_size: data.file_size,
+        completed_at: data.completed_at,
+        method: 'colab'
+    };
+
+    const progressDiv = document.getElementById('generation-progress');
+    const previewCard = document.getElementById('model-preview-card');
+
+    progressDiv.style.display = 'none';
+    previewCard.classList.add('visible');
+
+    resetGenerationUI();
+    showToast('🎉 3D model generated successfully with Colab!', 'success');
+    showQuickViewButton();
+
+    // Auto-save to wardrobe
+    if (currentItemData && currentItemData._id) {
+        autoSave3DModel();
     }
 
-    // Switch to viewer mode and load the model
-    switchMode('view');
-
-    setTimeout(() => {
-        if (fabricViewer && generatedModelData.model_path) {
-            fabricViewer.loadModel(generatedModelData.model_path)
-                .then(() => {
-                    if (currentItemData?.file_path) {
-                        return fabricViewer.applyMaterial(
-                            fabricViewer.currentModel,
-                            currentItemData.file_path,
-                            currentItemData.material_properties,
-                            currentItemData.normal_map_path
-                        );
-                    }
-                })
-                .then(() => {
-                    showToast('3D model loaded successfully', 'success');
-                })
-                .catch(error => {
-                    console.error('Error loading model:', error);
-                    showToast('Error loading 3D model', 'error');
-                });
-        }
-    }, 500);
+    currentGenerationTaskId = null;
 }
 
-// Updated downloadModel function
-function downloadModel() {
-    if (!generatedModelData || !generatedModelData.model_path) {
-        showToast('No 3D model available for download', 'warning');
-        return;
-    }
-
-    // Create download link
-    const link = document.createElement('a');
-    link.href = generatedModelData.model_path;
-    link.download = `wardrobe_model_${Date.now()}.glb`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    showToast('3D model download started', 'success');
+function handleGenerationFailure(data) {
+    const errorMessage = data.error || data.message || 'Generation failed';
+    showToast(`❌ Generation failed: ${errorMessage}`, 'error');
+    resetGenerationUI();
+    currentGenerationTaskId = null;
 }
 
-// Updated saveToWardrobe function
-function saveToWardrobe() {
-    if (!currentItemData || !generatedModelData) {
-        showToast('No model data to save', 'warning');
-        return;
+function resetGenerationUI() {
+    const generateBtn = document.getElementById('generate-3d-model-btn');
+    const progressDiv = document.getElementById('generation-progress');
+
+    if (generateBtn) {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<i class="fab fa-google"></i> Generate 3D Model with Colab';
     }
 
-    const saveBtn = document.getElementById('save-to-wardrobe-btn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    if (progressDiv) {
+        progressDiv.style.display = 'none';
+    }
+}
 
-    // Send to backend
+function autoSave3DModel() {
+    if (!generatedModelData || !currentItemData) return;
+
     fetch('/api/save-3d-model', {
         method: 'POST',
         headers: {
@@ -2617,17 +1095,184 @@ function saveToWardrobe() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('3D model saved to wardrobe successfully!', 'success');
-            // Update current item data
+            showToast('✅ 3D model automatically saved to wardrobe', 'success');
+        }
+    })
+    .catch(error => {
+        console.error('Auto-save error:', error);
+    });
+}
+
+// 3D Model Interaction Functions
+function view3DModel() {
+    if (!generatedModelData) {
+        showToast('No 3D model available', 'warning');
+        return;
+    }
+
+    // Show the modal
+    $('#simple3DModal').modal('show');
+
+    // Initialize viewer when modal is shown
+    $('#simple3DModal').on('shown.bs.modal', function () {
+        if (!simple3DViewer) {
+            initSimple3DViewer();
+        }
+        loadModelInViewer(generatedModelData.model_path);
+    });
+}
+
+function initSimple3DViewer() {
+    const container = document.getElementById('simple-3d-viewer');
+
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf5f7fa);
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(3, 3, 3);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    // Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 5);
+    scene.add(directionalLight);
+
+    // Animation loop
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Store viewer components
+    simple3DViewer = { scene, camera, renderer, controls };
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+}
+
+function loadModelInViewer(modelPath) {
+    const loadingDiv = document.getElementById('viewer-loading');
+    loadingDiv.style.display = 'block';
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+        modelPath,
+        (gltf) => {
+            // Clear existing models
+            const objectsToRemove = [];
+            simple3DViewer.scene.traverse((child) => {
+                if (child.isMesh) {
+                    objectsToRemove.push(child);
+                }
+            });
+            objectsToRemove.forEach(obj => {
+                simple3DViewer.scene.remove(obj);
+            });
+
+            // Add new model
+            const model = gltf.scene;
+
+            // Center and scale the model
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            model.position.x = -center.x;
+            model.position.y = -center.y;
+            model.position.z = -center.z;
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 2 / maxDim;
+            model.scale.setScalar(scale);
+
+            simple3DViewer.scene.add(model);
+
+            // Reset camera
+            simple3DViewer.camera.position.set(3, 3, 3);
+            simple3DViewer.controls.target.set(0, 0, 0);
+
+            loadingDiv.style.display = 'none';
+            showToast('✅ 3D model loaded successfully', 'success');
+        },
+        (progress) => {
+            // Progress callback
+        },
+        (error) => {
+            console.error('Error loading model:', error);
+            loadingDiv.style.display = 'none';
+            showToast('❌ Error loading 3D model', 'error');
+        }
+    );
+}
+
+function downloadModel() {
+    if (!generatedModelData || !generatedModelData.model_path) {
+        showToast('No 3D model available for download', 'warning');
+        return;
+    }
+
+    const link = document.createElement('a');
+    link.href = generatedModelData.model_path;
+    link.download = `colab_3d_model_${Date.now()}.glb`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('📥 3D model download started', 'success');
+}
+
+function saveToWardrobe() {
+    if (!currentItemData || !generatedModelData) {
+        showToast('No model data to save', 'warning');
+        return;
+    }
+
+    const saveBtn = document.getElementById('save-to-wardrobe-btn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    fetch('/api/save-3d-model', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            item_id: currentItemData._id || currentItemData.id,
+            model_path: generatedModelData.model_path
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('✅ 3D model saved to wardrobe successfully!', 'success');
             currentItemData.model_3d_path = generatedModelData.model_path;
             currentItemData.has_3d_model = true;
         } else {
-            showToast(data.error || 'Failed to save model', 'error');
+            throw new Error(data.error || 'Failed to save model');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Error saving to wardrobe', 'error');
+        showToast(`❌ Error saving to wardrobe: ${error.message}`, 'error');
     })
     .finally(() => {
         saveBtn.disabled = false;
@@ -2635,326 +1280,11 @@ function saveToWardrobe() {
     });
 }
 
-function switchMode(mode) {
-    const uploadContainer = document.querySelector('.upload-container');
-    const viewerContainer = document.querySelector('.viewer-container');
-    const uploadBtn = document.getElementById('upload-mode-btn');
-    const viewBtn = document.getElementById('view-mode-btn');
-
-    if (mode === 'upload') {
-        uploadContainer.classList.add('active');
-        viewerContainer.classList.remove('active');
-        uploadBtn.classList.add('active');
-        viewBtn.classList.remove('active');
-    } else {
-        uploadContainer.classList.remove('active');
-        viewerContainer.classList.add('active');
-        uploadBtn.classList.remove('active');
-        viewBtn.classList.add('active');
-
-        if (!fabricViewer) {
-            initializeFabricViewer();
-        }
-        loadWardrobeItems();
+function showQuickViewButton() {
+    if (generatedModelData && generatedModelData.model_path) {
+        const quickViewBtn = document.getElementById('quick-view-button');
+        quickViewBtn.style.display = 'block';
     }
-}
-
-function initializeFabricViewer() {
-    const canvasContainer = document.getElementById('canvas-container');
-    if (canvasContainer && !fabricViewer) {
-        fabricViewer = new Enhanced3DFabricViewer(canvasContainer);
-        setTimeout(() => {
-            loadWardrobeItems();
-        }, 100);
-    }
-}
-
-function loadWardrobeItems() {
-    const itemSelect = document.getElementById('item-select');
-
-    // Fetch real wardrobe items from backend
-    fetch('/api/wardrobe-items')
-        .then(response => response.json())
-        .then(data => {
-            itemSelect.innerHTML = '<option value="">-- Select an item --</option>';
-
-            // Add items from all categories
-            const categories = ['tops', 'bottoms', 'dresses', 'outerwear', 'shoes', 'accessories'];
-            categories.forEach(category => {
-                if (data[category] && data[category].length > 0) {
-                    const optgroup = document.createElement('optgroup');
-                    optgroup.label = category.charAt(0).toUpperCase() + category.slice(1);
-
-                    data[category].forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item._id;
-                        option.textContent = item.label;
-                        option.dataset.itemData = JSON.stringify(item);
-                        optgroup.appendChild(option);
-                    });
-
-                    itemSelect.appendChild(optgroup);
-                }
-            });
-        })
-        .catch(error => {
-            console.error('Error loading wardrobe items:', error);
-            showToast('Error loading wardrobe items', 'error');
-        });
-}
-
-function loadSelectedItem() {
-    const itemSelect = document.getElementById('item-select');
-    const selectedOption = itemSelect.selectedOptions[0];
-
-    if (selectedOption && selectedOption.dataset.itemData) {
-        const itemData = JSON.parse(selectedOption.dataset.itemData);
-        currentItemData = itemData;
-
-        // Fetch full item details with material properties
-        fetch(`/api/wardrobe/material/${itemData._id}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentItemData = {
-                        ...itemData,
-                        ...data
-                    };
-
-                    if (fabricViewer) {
-                        fabricViewer.loadClothingItem(currentItemData)
-                            .then(() => {
-                                showToast('Item loaded successfully', 'success');
-                            })
-                            .catch(error => {
-                                console.error('Error loading item:', error);
-                                showToast('Error loading item', 'error');
-                            });
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching item details:', error);
-                showToast('Error loading item details', 'error');
-            });
-    }
-}
-
-function changeModel() {
-    const modelSelect = document.getElementById('model-select');
-    const selectedModel = modelSelect.value;
-
-    if (fabricViewer && selectedModel) {
-        fabricViewer.loadModel(selectedModel)
-            .then(() => {
-                if (currentItemData?.file_path) {
-                    return fabricViewer.applyMaterial(
-                        fabricViewer.currentModel,
-                        currentItemData.file_path,
-                        currentItemData.material_properties
-                    );
-                }
-            })
-            .catch(error => {
-                console.error('Error changing model:', error);
-                showToast('Error loading model', 'error');
-            });
-    }
-}
-
-function uploadCustomModel() {
-    const fileInput = document.getElementById('model-upload');
-    const file = fileInput.files[0];
-
-    if (file && fabricViewer) {
-        const url = URL.createObjectURL(file);
-        fabricViewer.loadModel(url)
-            .then(() => {
-                showToast('Custom model loaded successfully', 'success');
-            })
-            .catch(error => {
-                console.error('Error loading custom model:', error);
-                showToast('Error loading custom model', 'error');
-            });
-    }
-}
-
-function loadGeneratedModel() {
-    if (!generatedModelData) {
-        showToast('No generated model available', 'warning');
-        return;
-    }
-
-    if (fabricViewer) {
-        fabricViewer.loadModel(generatedModelData.model_path)
-            .then(() => {
-                if (currentItemData?.file_path) {
-                    return fabricViewer.applyMaterial(
-                        fabricViewer.currentModel,
-                        currentItemData.file_path,
-                        currentItemData.material_properties
-                    );
-                }
-            })
-            .then(() => {
-                showToast('Generated model loaded successfully', 'success');
-            })
-            .catch(error => {
-                console.error('Error loading generated model:', error);
-                showToast('Error loading generated model', 'error');
-            });
-    }
-}
-
-function setupMaterialControls() {
-    // Roughness slider
-    const roughnessSlider = document.getElementById('roughness-slider');
-    const roughnessValue = document.getElementById('roughness-value');
-
-    if (roughnessSlider && roughnessValue) {
-        roughnessSlider.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            roughnessValue.textContent = value.toFixed(2);
-            if (fabricViewer) {
-                fabricViewer.updateMaterialProperties({ roughness: value });
-            }
-        });
-    }
-
-    // Metalness slider
-    const metalnessSlider = document.getElementById('metalness-slider');
-    const metalnessValue = document.getElementById('metalness-value');
-
-    if (metalnessSlider && metalnessValue) {
-        metalnessSlider.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            metalnessValue.textContent = value.toFixed(2);
-            if (fabricViewer) {
-                fabricViewer.updateMaterialProperties({ metalness: value });
-            }
-        });
-    }
-
-    // Color intensity slider
-    const colorIntensitySlider = document.getElementById('color-intensity-slider');
-    const colorIntensityValue = document.getElementById('color-intensity-value');
-
-    if (colorIntensitySlider && colorIntensityValue) {
-        colorIntensitySlider.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            colorIntensityValue.textContent = value.toFixed(1);
-            // Color intensity implementation would go here
-        });
-    }
-
-    // Pattern scale slider
-    const patternScaleSlider = document.getElementById('pattern-scale-slider');
-    const patternScaleValue = document.getElementById('pattern-scale-value');
-
-    if (patternScaleSlider && patternScaleValue) {
-        patternScaleSlider.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            patternScaleValue.textContent = value.toFixed(1);
-            if (fabricViewer) {
-                fabricViewer.updateMaterialProperties({ textureScale: value });
-            }
-        });
-    }
-
-    // Pattern rotation slider
-    const patternRotationSlider = document.getElementById('pattern-rotation-slider');
-    const patternRotationValue = document.getElementById('pattern-rotation-value');
-
-    if (patternRotationSlider && patternRotationValue) {
-        patternRotationSlider.addEventListener('input', (e) => {
-            const value = parseInt(e.target.value);
-            patternRotationValue.textContent = value + '°';
-            // Pattern rotation implementation would go here
-        });
-    }
-
-    // Normal strength slider
-    const normalStrengthSlider = document.getElementById('normal-strength-slider');
-    const normalStrengthValue = document.getElementById('normal-strength-value');
-
-    if (normalStrengthSlider && normalStrengthValue) {
-        normalStrengthSlider.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            normalStrengthValue.textContent = value.toFixed(1);
-            if (fabricViewer) {
-                fabricViewer.updateMaterialProperties({ normalScale: value });
-            }
-        });
-    }
-}
-
-function updateMaterial() {
-    if (!fabricViewer || !fabricViewer.currentModel || !currentItemData) {
-        showToast('No model or item loaded', 'warning');
-        return;
-    }
-
-    const useColor = document.getElementById('use-color-checkbox').checked;
-    const useNormalMap = document.getElementById('use-normal-map-checkbox').checked;
-
-    fabricViewer.applyMaterial(
-        fabricViewer.currentModel,
-        currentItemData.file_path,
-        currentItemData.material_properties,
-        useNormalMap ? currentItemData.normal_map_path : null
-    )
-    .then(() => {
-        showToast('Material updated successfully', 'success');
-    })
-    .catch(error => {
-        console.error('Error updating material:', error);
-        showToast('Error updating material', 'error');
-    });
-}
-
-function setupTabNavigation() {
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabPanels = document.querySelectorAll('.tab-panel');
-
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetTab = button.dataset.tab;
-
-            // Remove active class from all buttons and panels
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabPanels.forEach(panel => panel.classList.remove('active'));
-
-            // Add active class to clicked button and corresponding panel
-            button.classList.add('active');
-            document.getElementById(targetTab).classList.add('active');
-        });
-    });
-}
-
-function setupViewModeButtons() {
-    const viewModeButtons = document.querySelectorAll('.view-mode-button');
-
-    viewModeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const mode = button.dataset.mode;
-
-            // Remove active class from all buttons
-            viewModeButtons.forEach(btn => btn.classList.remove('active'));
-
-            // Add active class to clicked button
-            button.classList.add('active');
-
-            // Update lighting mode
-            if (fabricViewer) {
-                fabricViewer.setLightingMode(mode);
-            }
-        });
-    });
-}
-
-function updateWardrobeList() {
-    // Refresh the wardrobe items list
-    loadWardrobeItems();
 }
 
 // Toast notification system
@@ -3007,111 +1337,5 @@ function hideToast(toast) {
         }
     }, 300);
 }
-
-// Handle window resize for Three.js
-window.addEventListener('resize', () => {
-    if (fabricViewer) {
-        fabricViewer.onWindowResize();
-    }
-});
-
-// Export functions for global access if needed
-window.wardrobeApp = {
-    showToast,
-    hideToast,
-    switchMode,
-    analyzeImage,
-    generate3DModel,
-    view3DModel,
-    downloadModel,
-    saveToWardrobe
-};
 </script>
-
-
-    <!-- Generation Status Monitor (add this after the existing content) -->
-<div class="card mt-4" id="generation-monitor" style="display: none;">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5><i class="fas fa-tachometer-alt"></i> 3D Generation Monitor</h5>
-        <button class="btn btn-sm btn-outline-secondary" onclick="toggleMonitor()">
-            <i class="fas fa-eye"></i> Toggle
-        </button>
-    </div>
-    <div class="card-body" id="monitor-content">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="monitor-stats">
-                    <h6>Server Status</h6>
-                    <div class="stat-item">
-                        <span class="stat-label">Active Generations:</span>
-                        <span class="stat-value" id="active-count">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Queue Capacity:</span>
-                        <span class="stat-value" id="queue-capacity">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">TripoSG Status:</span>
-                        <span class="stat-value" id="triposg-status">
-                            <i class="fas fa-circle text-secondary"></i> Checking...
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="monitor-stats">
-                    <h6>Current Session</h6>
-                    <div class="stat-item">
-                        <span class="stat-label">Task ID:</span>
-                        <span class="stat-value" id="current-task">None</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Elapsed Time:</span>
-                        <span class="stat-value" id="elapsed-time">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Status:</span>
-                        <span class="stat-value" id="current-status">Idle</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Tasks -->
-        <div class="recent-tasks mt-3">
-            <h6>Recent Tasks</h6>
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Task ID</th>
-                            <th>Status</th>
-                            <th>Duration</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-tasks-body">
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">No recent tasks</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Debug Console -->
-        <div class="debug-console mt-3">
-            <h6>
-                Debug Console
-                <button class="btn btn-sm btn-outline-secondary" onclick="clearDebugLog()">
-                    <i class="fas fa-trash"></i> Clear
-                </button>
-            </h6>
-            <div class="console-output" id="debug-console">
-                <div class="console-line text-muted">Debug output will appear here...</div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

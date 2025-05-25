@@ -1522,6 +1522,7 @@ def normalize_path(file_path):
     return normalized
 
 
+
 @app.route('/recommendations', methods=['GET', 'POST'])
 @login_required
 def get_outfit():
@@ -3619,8 +3620,6 @@ def analyze_material():
 
 # 3d clothes
 
-
-# Improved TripoSG Integration with better error handling and timeouts
 from gradio_client import Client, handle_file
 import tempfile
 import threading
@@ -3635,326 +3634,257 @@ import json
 import uuid
 
 
-# inima meaaa
-# Global dictionary to store generation tasks
+# colab api api TRIPOSR
+# Add this to your existing run.py file
+
+import requests
+import time
+import uuid
+from datetime import datetime
+import threading
+import os
+
+# Clean Colab-Only 3D Generation System
+# Remove all Hugging Face Spaces / TripoSG integration
+
+import requests
+import time
+import uuid
+from datetime import datetime
+import threading
+import os
+import tempfile
+import shutil
+from werkzeug.utils import secure_filename
+import random
+
+# Global variables for Colab-only integration
+COLAB_API_URL = 'https://f606-34-72-94-244.ngrok-free.app/'
+colab_api_available = True
 generation_tasks = {}
-
-
-class RobustTripoSGGenerator:
-    def __init__(self):
-        self.client = None
-        self.is_busy = False
-        self.lock = threading.Lock()
-        self.max_retries = 3
-        self.retry_delay_base = 10  # Base delay in seconds
-
-    def initialize_client(self):
-        """Initialize the TripoSG client with retry logic"""
-        for attempt in range(3):
-            try:
-                print(f"Initializing TripoSG client (attempt {attempt + 1}/3)...")
-                self.client = Client("https://vast-ai-triposg.hf.space")
-                print("TripoSG client initialized successfully")
-                return True
-            except Exception as e:
-                print(f"Attempt {attempt + 1} failed: {str(e)}")
-                if attempt < 2:  # Don't sleep on the last attempt
-                    time.sleep(5 * (attempt + 1))  # Progressive delay
-
-        print("Failed to initialize TripoSG client after 3 attempts")
-        self.client = None
-        return False
-
-    def is_available(self):
-        """Check if the generator is available"""
-        return self.client is not None and not self.is_busy
-
-    def safe_predict_with_retry(self, func_name, max_retries=3, **kwargs):
-        """Execute a prediction with retry logic"""
-        for attempt in range(max_retries):
-            try:
-                if func_name == "segmentation":
-                    return self.client.predict(
-                        image=kwargs['image'],
-                        api_name="/run_segmentation"
-                    )
-                elif func_name == "seed":
-                    return self.client.predict(
-                        randomize_seed=True,
-                        seed=0,
-                        api_name="/get_random_seed"
-                    )
-                elif func_name == "3d_generation":
-                    return self.client.predict(
-                        image=kwargs['image'],
-                        seed=kwargs['seed'],
-                        num_inference_steps=kwargs.get('steps', 30),  # Reduced for reliability
-                        guidance_scale=kwargs.get('guidance', 6.0),  # Reduced for reliability
-                        simplify=True,
-                        target_face_num=kwargs.get('faces', 50000),  # Reduced for reliability
-                        api_name="/image_to_3d"
-                    )
-                elif func_name == "texture":
-                    return self.client.predict(
-                        image=kwargs['image'],
-                        mesh_path=kwargs['mesh_path'],
-                        seed=kwargs['seed'],
-                        api_name="/run_texture"
-                    )
-
-            except Exception as e:
-                error_msg = str(e)
-                print(f"{func_name} attempt {attempt + 1}/{max_retries} failed: {error_msg}")
-
-                # Check if it's a server overload error
-                if "exception" in error_msg.lower() or "error" in error_msg.lower():
-                    if attempt < max_retries - 1:
-                        # Progressive backoff: 10s, 20s, 30s
-                        delay = self.retry_delay_base * (attempt + 1) + random.randint(0, 5)
-                        print(f"Retrying {func_name} in {delay} seconds...")
-                        time.sleep(delay)
-                        continue
-
-                # If it's the last attempt or a different error, raise it
-                if attempt == max_retries - 1:
-                    raise e
-
-        raise Exception(f"All {max_retries} attempts failed for {func_name}")
-
-    def generate_3d_model_sync(self, image_path, task_id, user_id):
-        """Generate 3D model with robust error handling and fallbacks"""
-        with self.lock:
-            if self.is_busy:
-                raise Exception("Generator is currently busy")
-            self.is_busy = True
-
-        try:
-            if not self.client:
-                if not self.initialize_client():
-                    raise Exception("TripoSG client not available")
-
-            print(f"Starting robust 3D generation for task {task_id}")
-
-            # Step 1: Update task status
-            current_time = time.time()
-            generation_tasks[task_id].update({
-                'status': 'processing',
-                'message': 'Running image segmentation...',
-                'progress': 0.1,
-                'updated_at': current_time
-            })
-
-            # Step 2: Run segmentation with retry
-            print("Step 1: Running segmentation...")
-            try:
-                segmentation_result = self.safe_predict_with_retry(
-                    "segmentation",
-                    image=handle_file(image_path)
-                )
-                print("✅ Segmentation successful")
-            except Exception as e:
-                raise Exception(f"Segmentation failed: {str(e)}")
-
-            # Update progress
-            current_time = time.time()
-            generation_tasks[task_id].update({
-                'message': 'Generating random seed...',
-                'progress': 0.25,
-                'updated_at': current_time
-            })
-
-            # Step 3: Generate seed with fallback
-            print("Step 2: Generating seed...")
-            try:
-                seed = self.safe_predict_with_retry("seed")
-                print(f"✅ Generated seed: {seed}")
-            except Exception as e:
-                # Fallback to random seed
-                seed = random.randint(0, 2147483647)
-                print(f"⚠️ Seed generation failed, using fallback: {seed}")
-
-            # Update progress
-            current_time = time.time()
-            generation_tasks[task_id].update({
-                'message': 'Creating 3D geometry (this may take 1-2 minutes)...',
-                'progress': 0.4,
-                'updated_at': current_time
-            })
-
-            # Step 4: Generate 3D model with multiple retry strategies
-            print("Step 3: Generating 3D model...")
-            model_result = None
-
-            # Try different quality settings if the first one fails
-            quality_settings = [
-                {'steps': 25, 'guidance': 5.0, 'faces': 30000},  # Fast/low quality
-                {'steps': 30, 'guidance': 6.0, 'faces': 50000},  # Medium quality
-                {'steps': 40, 'guidance': 7.0, 'faces': 75000},  # Higher quality
-            ]
-
-            for i, settings in enumerate(quality_settings):
-                try:
-                    print(
-                        f"   Trying quality preset {i + 1}/3 (steps: {settings['steps']}, faces: {settings['faces']})")
-
-                    current_time = time.time()
-                    generation_tasks[task_id].update({
-                        'message': f'Generating 3D model (preset {i + 1}/3)...',
-                        'progress': 0.4 + (i * 0.1),
-                        'updated_at': current_time
-                    })
-
-                    model_result = self.safe_predict_with_retry(
-                        "3d_generation",
-                        max_retries=2,  # Fewer retries per preset
-                        image=segmentation_result,
-                        seed=seed,
-                        **settings
-                    )
-
-                    print(f"✅ 3D model generated successfully with preset {i + 1}")
-                    break
-
-                except Exception as e:
-                    print(f"   Preset {i + 1} failed: {str(e)}")
-                    if i == len(quality_settings) - 1:  # Last preset
-                        raise Exception(f"All quality presets failed. Last error: {str(e)}")
-                    else:
-                        print(f"   Trying next preset...")
-                        time.sleep(5)  # Brief pause before next preset
-
-            if not model_result:
-                raise Exception("Failed to generate 3D model with any quality preset")
-
-            # Update progress
-            current_time = time.time()
-            generation_tasks[task_id].update({
-                'message': 'Applying textures (optional)...',
-                'progress': 0.8,
-                'updated_at': current_time
-            })
-
-            # Step 5: Apply texture (optional, with graceful failure)
-            print("Step 4: Applying texture...")
-            final_result = model_result  # Default to untextured model
-
-            try:
-                textured_result = self.safe_predict_with_retry(
-                    "texture",
-                    max_retries=2,  # Fewer retries for texture
-                    image=handle_file(image_path),
-                    mesh_path=model_result,
-                    seed=seed
-                )
-                final_result = textured_result
-                print("✅ Texture applied successfully")
-            except Exception as texture_error:
-                print(f"⚠️ Texture application failed (continuing with untextured model): {texture_error}")
-                # Continue with untextured model
-
-            # Step 6: Save the generated model
-            user_model_dir = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
-            os.makedirs(user_model_dir, exist_ok=True)
-
-            model_filename = f"model_{task_id}_{int(time.time())}.glb"
-            user_model_path = os.path.join(user_model_dir, model_filename)
-
-            # Handle result saving with error handling
-            try:
-                if isinstance(final_result, str):
-                    if final_result.startswith('http'):
-                        # Download from URL
-                        print("Downloading generated model...")
-                        response = requests.get(final_result, timeout=120)
-                        response.raise_for_status()
-                        with open(user_model_path, 'wb') as f:
-                            f.write(response.content)
-                    else:
-                        # Copy local file
-                        print("Copying generated model...")
-                        shutil.copy2(final_result, user_model_path)
-                else:
-                    raise Exception(f"Unexpected result format: {type(final_result)}")
-
-                # Verify file was saved
-                if not os.path.exists(user_model_path) or os.path.getsize(user_model_path) == 0:
-                    raise Exception("Generated model file is empty or wasn't saved properly")
-
-            except Exception as save_error:
-                raise Exception(f"Failed to save generated model: {str(save_error)}")
-
-            # Step 7: Final success update
-            file_size = os.path.getsize(user_model_path)
-            current_time = time.time()
-            generation_tasks[task_id].update({
-                'status': 'completed',
-                'message': '3D model generated successfully!',
-                'progress': 1.0,
-                'updated_at': current_time,
-                'model_path': f'/static/models/generated/{user_id}/{model_filename}',
-                'local_path': user_model_path,
-                'file_size': file_size,
-                'completed_at': datetime.now().isoformat()
-            })
-
-            print(f"✅ Task {task_id} completed successfully. Model saved: {user_model_path} ({file_size:,} bytes)")
-            return True
-
-        except Exception as e:
-            error_message = f"3D generation failed: {str(e)}"
-            print(f"❌ Task {task_id} failed: {error_message}")
-
-            current_time = time.time()
-            generation_tasks[task_id].update({
-                'status': 'failed',
-                'message': error_message,
-                'error': error_message,
-                'updated_at': current_time,
-                'failed_at': datetime.now().isoformat()
-            })
-            return False
-
-        finally:
-            self.is_busy = False
-
-
-# Global TripoSG generator instance
-triposg_generator = None
 generation_lock = threading.Lock()
 active_generations = 0
-MAX_CONCURRENT_GENERATIONS = 1
+MAX_CONCURRENT_GENERATIONS = 2  # Allow more since we're only using Colab
 
 
-def initialize_triposg():
-    """Initialize TripoSG generator"""
-    global triposg_generator
-    if triposg_generator is None:
-        triposg_generator = RobustTripoSGGenerator()
-        print("Robust TripoSG generator created")
+class ColabTripoSRClient:
+    """Simplified Colab-only client"""
+
+    def __init__(self):
+        self.colab_url = None
+        self.session = requests.Session()
+        self.session.timeout = 60  # Longer timeout for 3D generation
+        self.available = False
+
+    def set_url(self, url):
+        """Set the Colab API URL"""
+        self.colab_url = url.rstrip('/')
+        self.check_availability()
+
+    def check_availability(self):
+        """Check if Colab API is available"""
+        if not self.colab_url:
+            self.available = False
+            return False
+
+        try:
+            print(f"🔍 Checking Colab API at: {self.colab_url}")
+            response = self.session.get(f"{self.colab_url}/health", timeout=15)
+            self.available = response.status_code == 200
+            print(f"✅ Colab API {'available' if self.available else 'unavailable'}")
+            return self.available
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Colab API check failed: {str(e)}")
+            self.available = False
+            return False
+
+    def generate_3d_model(self, image_path, task_id, user_id):
+        """Generate 3D model using Colab API only"""
+        if not self.available:
+            raise Exception("Colab API not available")
+
+        try:
+            print(f"🚀 Starting Colab 3D generation for task {task_id}")
+
+            # Update task status
+            generation_tasks[task_id].update({
+                'status': 'processing',
+                'message': 'Uploading image to Colab...',
+                'progress': 0.1,
+                'updated_at': time.time()
+            })
+
+            # Prepare file for upload
+            with open(image_path, 'rb') as f:
+                files = {'image': ('image.jpg', f, 'image/jpeg')}
+
+                # Update progress
+                generation_tasks[task_id].update({
+                    'message': 'Processing with Colab GPU...',
+                    'progress': 0.3,
+                    'updated_at': time.time()
+                })
+
+                print(f"📤 Uploading to Colab API: {self.colab_url}/generate")
+
+                # Call Colab API with longer timeout
+                response = self.session.post(
+                    f"{self.colab_url}/generate",
+                    files=files,
+                    timeout=300  # 5 minutes timeout for 3D generation
+                )
+
+            print(f"📥 Colab response: HTTP {response.status_code}")
+
+            if response.status_code == 200:
+                # Update progress
+                generation_tasks[task_id].update({
+                    'message': 'Saving generated model...',
+                    'progress': 0.9,
+                    'updated_at': time.time()
+                })
+
+                # Check if response contains actual file data
+                content_length = len(response.content)
+                print(f"📦 Response content length: {content_length:,} bytes")
+
+                if content_length < 1000:  # Less than 1KB suggests an error response
+                    # Try to parse as JSON error message
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get('message', error_data.get('error', 'Unknown error'))
+                        print(f"❌ Colab API returned error: {error_msg}")
+                        raise Exception(f"Colab processing failed: {error_msg}")
+                    except:
+                        print(f"❌ Colab API returned insufficient data: {response.text[:200]}...")
+                        raise Exception("Colab API returned insufficient data")
+
+                # Save the returned model file
+                user_model_dir = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
+                os.makedirs(user_model_dir, exist_ok=True)
+
+                # Determine file extension based on content type or default to OBJ
+                content_type = response.headers.get('content-type', '').lower()
+                if 'glb' in content_type or 'gltf' in content_type:
+                    file_extension = 'glb'
+                elif 'obj' in content_type or 'octet-stream' in content_type:
+                    file_extension = 'obj'
+                else:
+                    # Default to OBJ since that's what we expect
+                    file_extension = 'obj'
+
+                model_filename = f"colab_model_{task_id}_{int(time.time())}.{file_extension}"
+                model_path = os.path.join(user_model_dir, model_filename)
+
+                # Save the model file
+                with open(model_path, 'wb') as f:
+                    f.write(response.content)
+
+                file_size = len(response.content)
+                print(f"💾 Model saved: {model_path} ({file_size:,} bytes)")
+
+                # Verify the saved file exists and has content
+                if not os.path.exists(model_path) or os.path.getsize(model_path) == 0:
+                    print("❌ Saved model file is empty or doesn't exist")
+                    raise Exception("Failed to save model file properly")
+
+                # Update task as completed
+                generation_tasks[task_id].update({
+                    'status': 'completed',
+                    'message': f'3D model generated successfully via Colab! ({file_extension.upper()} format)',
+                    'progress': 1.0,
+                    'updated_at': time.time(),
+                    'model_path': f'/static/models/generated/{user_id}/{model_filename}',
+                    'local_path': model_path,
+                    'file_size': file_size,
+                    'file_format': file_extension.upper(),
+                    'completed_at': datetime.now().isoformat(),
+                    'method': 'colab'
+                })
+
+                print(f"✅ Task {task_id} completed successfully!")
+                return True
+
+            else:
+                error_msg = f"Colab API error: HTTP {response.status_code}"
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('error', error_data.get('message', error_msg))
+                    print(f"❌ Colab API error details: {error_data}")
+
+                    # Handle specific error cases
+                    if 'No OBJ file found' in str(error_data):
+                        error_msg = "3D model generation failed - TripoSR couldn't create the model file. This might be due to image quality or processing issues."
+                    elif 'timeout' in str(error_data).lower():
+                        error_msg = "3D model generation timed out - try with a simpler image"
+                    elif 'memory' in str(error_data).lower():
+                        error_msg = "Insufficient GPU memory for processing - try with a smaller image"
+
+                except:
+                    print(f"❌ Colab API error (raw response): {response.text[:500]}...")
+                    if response.status_code == 500:
+                        error_msg = "Colab server error - the 3D generation process failed. Try again or use a different image."
+                    elif response.status_code == 404:
+                        error_msg = "Colab API endpoint not found - make sure the Colab notebook is running properly"
+                    elif response.status_code == 413:
+                        error_msg = "Image file too large - please use a smaller image"
+
+                raise Exception(error_msg)
+
+        except requests.exceptions.Timeout:
+            error_msg = "Colab API timeout - 3D generation took too long (>5 minutes). Try with a simpler image or check if Colab is still running."
+            print(f"❌ {error_msg}")
+            raise Exception(error_msg)
+
+        except requests.exceptions.ConnectionError:
+            error_msg = "Cannot connect to Colab API. Make sure your Colab notebook is still running and the ngrok tunnel is active."
+            print(f"❌ {error_msg}")
+            raise Exception(error_msg)
+
+        except Exception as e:
+            error_str = str(e)
+            print(f"❌ Colab generation error: {error_str}")
+
+            # Provide more helpful error messages
+            if "No OBJ file found" in error_str:
+                raise Exception(
+                    "3D model generation failed - the AI couldn't process your image properly. Try a different image with clearer object details.")
+            elif "Processing failed" in error_str:
+                raise Exception(
+                    "3D model generation failed - there was an issue processing your image. Please try again or use a different image.")
+            else:
+                raise Exception(f"Colab API error: {error_str}")
+
+# Create global Colab client (ONLY client we need)
+colab_client = ColabTripoSRClient()
+
+# Auto-configure the Colab client
+if COLAB_API_URL:
+    colab_client.set_url(COLAB_API_URL)
+    print(f"🔗 Colab API configured: {COLAB_API_URL}")
+    print(f"✅ Colab available: {colab_client.available}")
 
 
-def generate_3d_model_thread(image_path, task_id, user_id):
-    """Thread function for 3D model generation"""
+def generate_3d_model_colab_thread(image_path, task_id, user_id):
+    """Thread function for Colab-only 3D model generation"""
     global active_generations
 
     try:
         with generation_lock:
             active_generations += 1
 
-        print(f"Starting 3D generation for task {task_id} (active: {active_generations})")
+        print(f"🔄 Starting Colab 3D generation for task {task_id} (active: {active_generations})")
 
-        # Use the robust generator
-        if not triposg_generator:
-            initialize_triposg()
+        success = colab_client.generate_3d_model(image_path, task_id, user_id)
 
-        success = triposg_generator.generate_3d_model_sync(image_path, task_id, user_id)
-
-        if not success:
-            print(f"Generation failed for task {task_id}")
+        if success:
+            print(f"✅ Task {task_id} completed successfully")
+        else:
+            print(f"❌ Task {task_id} failed")
 
     except Exception as e:
         error_message = str(e)
-        print(f"Task {task_id} thread failed: {error_message}")
+        print(f"❌ Task {task_id} thread failed: {error_message}")
 
         current_time = time.time()
         generation_tasks[task_id] = {
@@ -3974,94 +3904,36 @@ def generate_3d_model_thread(image_path, task_id, user_id):
         try:
             if os.path.exists(image_path):
                 os.remove(image_path)
+                print(f"🗑️ Cleaned up temp file: {image_path}")
         except Exception as e:
-            print(f"Failed to clean up temp file {image_path}: {str(e)}")
+            print(f"⚠️ Failed to clean up temp file {image_path}: {str(e)}")
 
 
-# Initialize when app starts
-def init_triposg_on_startup():
-    """Initialize TripoSG in a separate thread"""
-
-    def init_worker():
-        try:
-            print("Initializing robust TripoSG generator...")
-            initialize_triposg()
-            # Don't initialize client immediately to avoid startup delays
-            print("TripoSG generator ready (client will initialize on first use)")
-        except Exception as e:
-            print(f"Error initializing TripoSG generator: {str(e)}")
-
-    thread = threading.Thread(target=init_worker, name="TripoSG-Init")
-    thread.daemon = True
-    thread.start()
-
-
-# Call this at the end of your file
-init_triposg_on_startup()
-
-
-# Cleanup function
-def cleanup_old_generation_tasks():
-    """Clean up old generation tasks and files"""
-    try:
-        current_time = time.time()
-        tasks_to_remove = []
-
-        for task_id, task in list(generation_tasks.items()):
-            task_age = current_time - task.get('created_at', 0)
-
-            # Remove tasks older than 2 hours
-            if task_age > 7200:
-                tasks_to_remove.append(task_id)
-
-                # Clean up temporary files
-                temp_path = task.get('temp_image_path')
-                if temp_path and os.path.exists(temp_path):
-                    try:
-                        os.remove(temp_path)
-                    except Exception as e:
-                        print(f"Failed to remove temp file {temp_path}: {e}")
-
-        # Remove old tasks
-        for task_id in tasks_to_remove:
-            del generation_tasks[task_id]
-
-        if len(tasks_to_remove) > 0:
-            print(f"Cleaned up {len(tasks_to_remove)} old generation tasks")
-
-    except Exception as e:
-        print(f"Error in cleanup: {str(e)}")
-
-
-# Schedule cleanup
-def periodic_cleanup():
-    """Run cleanup periodically"""
-    while True:
-        time.sleep(3600)  # 1 hour
-        cleanup_old_generation_tasks()
-
-
-cleanup_thread = threading.Thread(target=periodic_cleanup, name="Cleanup-Thread")
-cleanup_thread.daemon = True
-cleanup_thread.start()
-
-
-# routeees
+# FLASK ROUTES - Simplified for Colab-only
 
 @app.route('/api/generate-3d-model', methods=['POST'])
 @login_required
-def api_generate_3d_model():
-    """
-    Generate 3D model from uploaded image using TripoSG
-    """
+def api_generate_3d_model_colab():
+    """Generate 3D model using Colab API only"""
     global active_generations
 
     try:
+        # Check if Colab is available
+        if not colab_client.available:
+            return jsonify({
+                'success': False,
+                'error': 'Colab API not available. Please check the Colab connection.',
+                'colab_url': COLAB_API_URL,
+                'setup_required': True
+            }), 503
+
         # Check concurrent generation limit
         if active_generations >= MAX_CONCURRENT_GENERATIONS:
             return jsonify({
                 'success': False,
-                'error': 'Server is busy processing another 3D model. Please wait and try again.'
+                'error': f'Server is busy processing {active_generations} models. Please wait and try again.',
+                'active_count': active_generations,
+                'max_count': MAX_CONCURRENT_GENERATIONS
             }), 429
 
         # Validate request
@@ -4072,13 +3944,13 @@ def api_generate_3d_model():
         if image_file.filename == '':
             return jsonify({'success': False, 'error': 'Empty file'}), 400
 
-        # Validate file size (10MB limit)
+        # Validate file size (15MB limit for Colab)
         image_file.seek(0, 2)
         file_size = image_file.tell()
         image_file.seek(0)
 
-        if file_size > 10 * 1024 * 1024:  # 10MB
-            return jsonify({'success': False, 'error': 'File too large. Maximum size is 10MB.'}), 400
+        if file_size > 15 * 1024 * 1024:  # 15MB
+            return jsonify({'success': False, 'error': 'File too large. Maximum size is 15MB.'}), 400
 
         # Validate file type
         allowed_types = ['image/jpeg', 'image/jpg', 'image/png']
@@ -4097,7 +3969,7 @@ def api_generate_3d_model():
         if not file_extension:
             file_extension = '.jpg'
 
-        temp_filename = f"{user_id}_{uuid.uuid4().hex[:8]}{file_extension}"
+        temp_filename = f"colab_{user_id}_{uuid.uuid4().hex[:8]}{file_extension}"
         temp_image_path = os.path.join(temp_dir, temp_filename)
         image_file.save(temp_image_path)
 
@@ -4112,20 +3984,21 @@ def api_generate_3d_model():
         current_time = time.time()
         generation_tasks[task_id] = {
             'status': 'started',
-            'message': 'Preparing 3D model generation...',
+            'message': 'Preparing 3D model generation with Colab GPU...',
             'progress': 0.0,
             'created_at': current_time,
             'updated_at': current_time,
             'user_id': user_id,
             'temp_image_path': temp_image_path,
+            'method': 'colab',
             'started_at': datetime.now().isoformat()
         }
 
         # Start generation in a separate thread
         thread = threading.Thread(
-            target=generate_3d_model_thread,
+            target=generate_3d_model_colab_thread,
             args=(temp_image_path, task_id, user_id),
-            name=f"3DGen-{task_id}"
+            name=f"ColabGen-{task_id}"
         )
         thread.daemon = True
         thread.start()
@@ -4133,21 +4006,21 @@ def api_generate_3d_model():
         return jsonify({
             'success': True,
             'task_id': task_id,
-            'message': '3D model generation started',
-            'estimated_time': '2-4 minutes'
+            'method': 'colab',
+            'message': '3D model generation started with Colab GPU',
+            'estimated_time': '2-4 minutes',
+            'colab_url': COLAB_API_URL
         })
 
     except Exception as e:
-        app.logger.error(f"Error starting 3D generation: {str(e)}")
+        app.logger.error(f"Error starting Colab 3D generation: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/check-generation-status', methods=['GET'])
 @login_required
-def api_check_generation_status():
-    """
-    Check the status of 3D model generation
-    """
+def api_check_colab_generation_status():
+    """Check the status of Colab 3D model generation"""
     try:
         task_id = request.args.get('task_id')
         if not task_id:
@@ -4168,7 +4041,7 @@ def api_check_generation_status():
         current_time = time.time()
         task_age = current_time - task.get('created_at', current_time)
 
-        if task_age > 3600:  # 1 hour
+        if task_age > 1800:  # 30 minutes max
             print(f"Task {task_id} expired after {task_age} seconds")
             del generation_tasks[task_id]
             return jsonify({'success': False, 'error': 'Task expired'}), 410
@@ -4183,9 +4056,10 @@ def api_check_generation_status():
             'message': task['message'],
             'progress': task['progress'],
             'task_id': task_id,
+            'method': 'colab',
             'active_generations': active_generations,
             'task_age': int(task_age),
-            'max_age': 3600
+            'colab_url': COLAB_API_URL
         }
 
         # Add additional data based on status
@@ -4204,149 +4078,184 @@ def api_check_generation_status():
         return jsonify(response_data)
 
     except Exception as e:
-        app.logger.error(f"Error checking generation status: {str(e)}")
+        app.logger.error(f"Error checking Colab generation status: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Add this route to save the generated model to wardrobe
-@app.route('/api/save-3d-model', methods=['POST'])
+@app.route('/api/generation-methods', methods=['GET'])
 @login_required
-def api_save_3d_model():
-    """
-    Save generated 3D model to wardrobe item
-    """
+def get_colab_only_methods():
+    """Get Colab-only generation method status"""
+    return jsonify({
+        'success': True,
+        'methods': {
+            'colab': {
+                'name': 'Google Colab API',
+                'available': colab_client.available,
+                'description': 'Generate 3D models using Google Colab with free GPU',
+                'url': COLAB_API_URL,
+                'pros': ['Free GPU access', 'No local hardware requirements', 'Always up-to-date'],
+                'cons': ['Requires internet', 'May have usage limits', 'Depends on external service']
+            }
+        },
+        'current_method': 'colab',
+        'active_generations': active_generations,
+        'max_concurrent': MAX_CONCURRENT_GENERATIONS
+    })
+
+
+@app.route('/api/set-colab-url', methods=['POST'])
+@login_required
+def set_colab_url():
+    """Update the Google Colab API URL"""
     try:
         data = request.json
-        item_id = data.get('item_id')
-        model_path = data.get('model_path')
+        new_colab_url = data.get('colab_url', '').strip()
 
-        if not item_id or not model_path:
-            return jsonify({'success': False, 'error': 'Missing item_id or model_path'}), 400
+        if not new_colab_url:
+            return jsonify({'success': False, 'error': 'No URL provided'}), 400
 
-        user_id = session['user']['_id']
+        # Validate URL format
+        if not new_colab_url.startswith(('http://', 'https://')):
+            return jsonify({'success': False, 'error': 'URL must start with http:// or https://'}), 400
 
-        # Update the wardrobe item with the 3D model path
-        from bson import ObjectId
-        result = db.wardrobe.update_one(
-            {'_id': ObjectId(item_id), 'userId': user_id},
-            {
-                '$set': {
-                    'model_3d_path': model_path,
-                    'has_3d_model': True,
-                    'model_updated_at': datetime.now()
-                }
-            }
-        )
+        # Update global URL
+        global COLAB_API_URL, colab_api_available
+        COLAB_API_URL = 'https://df44-34-72-94-244.ngrok-free.app/'
 
-        if result.modified_count > 0:
-            return jsonify({'success': True, 'message': '3D model saved to wardrobe'})
+        # Test the new URL
+        colab_client.set_url(new_colab_url)
+
+        if colab_client.available:
+            colab_api_available = True
+            return jsonify({
+                'success': True,
+                'message': 'Colab API connected successfully!',
+                'url': new_colab_url
+            })
         else:
-            return jsonify({'success': False, 'error': 'Failed to update wardrobe item'}), 500
+            colab_api_available = False
+            return jsonify({
+                'success': False,
+                'error': 'Could not connect to new Colab API URL. Make sure it\'s running and accessible.',
+                'url': new_colab_url
+            }), 400
 
     except Exception as e:
-        app.logger.error(f"Error saving 3D model: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-
-#         test test
-# ADD this test endpoint to your Flask app (in run.py):
-
-@app.route('/api/test-triposg', methods=['GET'])
+@app.route('/api/test-colab-connection', methods=['GET'])
 @login_required
-def test_triposg_endpoint():
-    """Test endpoint to verify TripoSG integration"""
+def test_colab_connection():
+    """Test current Colab connection"""
     try:
-        from PIL import Image, ImageDraw
-        import tempfile
-        import uuid
-
-        # Create a simple test image
-        img = Image.new('RGB', (200, 200), 'white')
-        draw = ImageDraw.Draw(img)
-        draw.rectangle([50, 50, 150, 150], fill='blue', outline='darkblue', width=2)
-
-        # Save to temp file
-        temp_dir = tempfile.gettempdir()
-        test_filename = f"test_triposg_{uuid.uuid4().hex[:8]}.png"
-        test_path = os.path.join(temp_dir, test_filename)
-        img.save(test_path)
-
-        # Initialize generator if needed
-        if not triposg_generator:
-            initialize_triposg()
-
-        if not triposg_generator.initialize_client():
+        if not COLAB_API_URL:
             return jsonify({
                 'success': False,
-                'error': 'Failed to initialize TripoSG client'
-            }), 500
+                'error': 'No Colab URL configured',
+                'connected': False
+            })
 
-        # Test segmentation only (fastest test)
-        from gradio_client import handle_file
-        result = triposg_generator.client.predict(
-            image=handle_file(test_path),
-            api_name="/run_segmentation"
-        )
-
-        # Clean up
-        if os.path.exists(test_path):
-            os.remove(test_path)
+        # Test the connection
+        is_available = colab_client.check_availability()
 
         return jsonify({
-            'success': True,
-            'message': 'TripoSG integration is working!',
-            'segmentation_result': str(type(result)),
-            'triposg_available': True
+            'success': is_available,
+            'connected': is_available,
+            'url': COLAB_API_URL,
+            'message': 'Colab API is responding normally' if is_available else 'Colab API is not responding'
         })
 
     except Exception as e:
-        # Clean up on error
-        if 'test_path' in locals() and os.path.exists(test_path):
-            os.remove(test_path)
-
         return jsonify({
             'success': False,
-            'error': str(e),
-            'triposg_available': False
-        }), 500
+            'connected': False,
+            'error': str(e)
+        })
 
 
-@app.route('/api/triposg-status', methods=['GET'])
+@app.route('/api/generation-stats', methods=['GET'])
 @login_required
-def triposg_status():
-    """Get TripoSG service status"""
+def get_colab_generation_stats():
+    """Get Colab generation statistics"""
     try:
-        status_info = {
-            'generator_initialized': triposg_generator is not None,
-            'client_available': triposg_generator.client is not None if triposg_generator else False,
-            'is_busy': triposg_generator.is_busy if triposg_generator else False,
+        return jsonify({
+            'success': True,
             'active_generations': active_generations,
             'max_concurrent': MAX_CONCURRENT_GENERATIONS,
             'can_start_new': active_generations < MAX_CONCURRENT_GENERATIONS,
-            'total_tasks': len(generation_tasks),
-            'recent_tasks': []
-        }
+            'method': 'colab',
+            'colab_available': colab_client.available,
+            'colab_url': COLAB_API_URL,
+            'total_tasks': len(generation_tasks)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-        # Add recent task info
+
+# Cleanup function for old tasks
+def cleanup_old_colab_tasks():
+    """Clean up old Colab generation tasks"""
+    try:
         current_time = time.time()
-        for task_id, task in list(generation_tasks.items())[-5:]:  # Last 5 tasks
-            task_age = current_time - task.get('created_at', current_time)
-            status_info['recent_tasks'].append({
-                'task_id': task_id[-8:],  # Last 8 chars
-                'status': task.get('status', 'unknown'),
-                'age_seconds': int(task_age),
-                'progress': task.get('progress', 0)
-            })
+        tasks_to_remove = []
 
-        return jsonify(status_info)
+        for task_id, task in list(generation_tasks.items()):
+            task_age = current_time - task.get('created_at', 0)
+
+            # Remove tasks older than 1 hour
+            if task_age > 3600:
+                tasks_to_remove.append(task_id)
+
+                # Clean up temporary files
+                temp_path = task.get('temp_image_path')
+                if temp_path and os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except Exception as e:
+                        print(f"Failed to remove temp file {temp_path}: {e}")
+
+        # Remove old tasks
+        for task_id in tasks_to_remove:
+            del generation_tasks[task_id]
+
+        if len(tasks_to_remove) > 0:
+            print(f"🧹 Cleaned up {len(tasks_to_remove)} old Colab tasks")
 
     except Exception as e:
-        return jsonify({
-            'error': str(e),
-            'generator_initialized': False,
-            'triposg_available': False
-        }), 500
+        print(f"Error in Colab cleanup: {str(e)}")
+
+
+# Periodic cleanup
+def periodic_colab_cleanup():
+    """Run Colab cleanup periodically"""
+    while True:
+        time.sleep(1800)  # 30 minutes
+        cleanup_old_colab_tasks()
+
+
+# Start cleanup thread
+cleanup_thread = threading.Thread(target=periodic_colab_cleanup, name="Colab-Cleanup")
+cleanup_thread.daemon = True
+cleanup_thread.start()
+
+print("🚀 Colab-only 3D Generation System initialized!")
+print(f"🔗 Colab URL: {COLAB_API_URL}")
+print(f"✅ Colab Available: {colab_client.available}")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
