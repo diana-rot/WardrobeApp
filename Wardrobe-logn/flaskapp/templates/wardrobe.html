@@ -1006,7 +1006,7 @@ class WardrobeViewer {
         this.container.appendChild(this.renderer.domElement);
 
         // Controls setup
-        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls = createOrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
         this.controls.autoRotate = false;
@@ -1262,6 +1262,102 @@ function initializeApp() {
     setupEventListeners();
     setupDragAndDrop();
     console.log('✅ App initialization complete');
+}
+// WORKING ORBITCONTROLS FUNCTION - ADD THIS
+function createOrbitControls(camera, domElement) {
+    const controls = {
+        camera: camera,
+        domElement: domElement,
+        target: new THREE.Vector3(0, 0, 0),
+        minDistance: 1,
+        maxDistance: 20,
+        enableDamping: true,
+        dampingFactor: 0.05,
+        autoRotate: false,
+        autoRotateSpeed: 2,
+
+        spherical: new THREE.Spherical(),
+        sphericalDelta: new THREE.Spherical(),
+
+        STATE: { NONE: -1, ROTATE: 0, PAN: 2 },
+        state: -1,
+
+        rotateStart: new THREE.Vector2(),
+        rotateEnd: new THREE.Vector2(),
+
+        update: function() {
+            if (this.autoRotate && this.state === this.STATE.NONE) {
+                this.sphericalDelta.theta += (2 * Math.PI / 60 / 60) * this.autoRotateSpeed;
+            }
+
+            this.spherical.theta += this.sphericalDelta.theta;
+            this.spherical.phi += this.sphericalDelta.phi;
+            this.spherical.radius *= this.scale || 1;
+
+            this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi));
+            this.spherical.radius = Math.max(this.minDistance, Math.min(this.maxDistance, this.spherical.radius));
+
+            const offset = new THREE.Vector3().setFromSpherical(this.spherical);
+            this.camera.position.copy(this.target).add(offset);
+            this.camera.lookAt(this.target);
+
+            if (this.enableDamping) {
+                this.sphericalDelta.theta *= (1 - this.dampingFactor);
+                this.sphericalDelta.phi *= (1 - this.dampingFactor);
+            }
+        },
+
+        dispose: function() {
+            this.domElement.removeEventListener('mousedown', this.onMouseDown);
+            this.domElement.removeEventListener('wheel', this.onMouseWheel);
+        }
+    };
+
+    controls.onMouseDown = function(event) {
+        event.preventDefault();
+        if (event.button === 0) {
+            this.state = this.STATE.ROTATE;
+            this.rotateStart.set(event.clientX, event.clientY);
+            document.addEventListener('mousemove', this.onMouseMove);
+            document.addEventListener('mouseup', this.onMouseUp);
+        }
+    }.bind(controls);
+
+    controls.onMouseMove = function(event) {
+        if (this.state === this.STATE.ROTATE) {
+            this.rotateEnd.set(event.clientX, event.clientY);
+            const delta = new THREE.Vector2().subVectors(this.rotateEnd, this.rotateStart);
+
+            this.sphericalDelta.theta -= delta.x * 0.01;
+            this.sphericalDelta.phi -= delta.y * 0.01;
+
+            this.rotateStart.copy(this.rotateEnd);
+        }
+    }.bind(controls);
+
+    controls.onMouseUp = function() {
+        this.state = this.STATE.NONE;
+        document.removeEventListener('mousemove', this.onMouseMove);
+        document.removeEventListener('mouseup', this.onMouseUp);
+    }.bind(controls);
+
+    controls.onMouseWheel = function(event) {
+        event.preventDefault();
+        const scale = event.deltaY > 0 ? 1.1 : 0.9;
+        controls.scale = (controls.scale || 1) * scale;
+    };
+
+    // Add event listeners
+    controls.domElement.addEventListener('mousedown', controls.onMouseDown);
+    controls.domElement.addEventListener('wheel', controls.onMouseWheel);
+    controls.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // Initialize
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    controls.spherical.setFromVector3(offset);
+    controls.scale = 1;
+
+    return controls;
 }
 
 function setupEventListeners() {
