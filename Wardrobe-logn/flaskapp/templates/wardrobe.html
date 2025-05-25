@@ -791,6 +791,7 @@
 console.log('🎯 Starting ENHANCED 3D Wardrobe System with WORKING Three.js...');
 
 // ENHANCED OBJ LOADER - BULLETPROOF IMPLEMENTATION
+// ENHANCED OBJ LOADER - REPLACE YOUR EXISTING BulletproofOBJLoader
 class BulletproofOBJLoader {
     constructor(manager) {
         this.manager = manager || new THREE.LoadingManager();
@@ -812,15 +813,18 @@ class BulletproofOBJLoader {
     }
 
     parse(text) {
-        console.log('🎯 Parsing OBJ with bulletproof loader...');
+        console.log('🎯 Parsing OBJ with color support...');
 
         const vertices = [];
         const normals = [];
         const uvs = [];
+        const vertexColors = []; // Store vertex colors
         const faces = [];
 
         const lines = text.split('\n');
         console.log(`📊 Processing ${lines.length} lines...`);
+
+        let colorCount = 0;
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -832,11 +836,29 @@ class BulletproofOBJLoader {
 
             switch (type) {
                 case 'v':
+                    // Parse vertices: v x y z [r g b]
                     vertices.push(
                         parseFloat(parts[1]) || 0,
                         parseFloat(parts[2]) || 0,
                         parseFloat(parts[3]) || 0
                     );
+
+                    // Check for color data (RGB values after XYZ)
+                    if (parts.length >= 7) {
+                        const r = parseFloat(parts[4]) || 0.8;
+                        const g = parseFloat(parts[5]) || 0.8;
+                        const b = parseFloat(parts[6]) || 0.8;
+
+                        vertexColors.push(r, g, b);
+                        colorCount++;
+
+                        if (colorCount <= 5) { // Log first few for debugging
+                            console.log(`🎨 Vertex ${Math.floor(vertices.length/3)}: color(${r.toFixed(3)}, ${g.toFixed(3)}, ${b.toFixed(3)})`);
+                        }
+                    } else {
+                        // Default gray if no color
+                        vertexColors.push(0.8, 0.8, 0.8);
+                    }
                     break;
 
                 case 'vn':
@@ -861,7 +883,9 @@ class BulletproofOBJLoader {
         }
 
         console.log(`✅ Parsed: ${vertices.length/3} vertices, ${faces.length} faces`);
-        return this.buildGeometry(vertices, normals, uvs, faces);
+        console.log(`🎨 Found ${colorCount} vertices with color data`);
+
+        return this.buildGeometry(vertices, normals, uvs, faces, vertexColors);
     }
 
     parseFace(faceData, faces) {
@@ -884,11 +908,15 @@ class BulletproofOBJLoader {
         }
     }
 
-    buildGeometry(vertices, normals, uvs, faces) {
+    buildGeometry(vertices, normals, uvs, faces, vertexColors = []) {
         const geometry = new THREE.BufferGeometry();
         const positions = [];
         const normalsArray = [];
         const uvsArray = [];
+        const colorsArray = [];
+
+        const hasColors = vertexColors.length > 0;
+        console.log(`🎨 Building geometry - Has colors: ${hasColors}, Color count: ${vertexColors.length/3}`);
 
         for (let i = 0; i < faces.length; i++) {
             const face = faces[i];
@@ -929,6 +957,17 @@ class BulletproofOBJLoader {
                 } else {
                     uvsArray.push(0, 0);
                 }
+
+                // Colors
+                if (hasColors && vertexIndex >= 0 && vertexIndex < vertexColors.length / 3) {
+                    colorsArray.push(
+                        vertexColors[vertexIndex * 3] || 0.8,
+                        vertexColors[vertexIndex * 3 + 1] || 0.8,
+                        vertexColors[vertexIndex * 3 + 2] || 0.8
+                    );
+                } else {
+                    colorsArray.push(0.8, 0.8, 0.8);
+                }
             }
         }
 
@@ -936,14 +975,21 @@ class BulletproofOBJLoader {
         geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normalsArray, 3));
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvsArray, 2));
 
+        // Add color attribute if we have colors
+        if (hasColors) {
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colorsArray, 3));
+            console.log('🎨 ✅ Added color attribute to geometry!');
+        }
+
         // Compute normals if not provided
         if (normals.length === 0) {
             geometry.computeVertexNormals();
         }
 
-        // Create enhanced material
+        // Create material with color support
         const material = new THREE.MeshLambertMaterial({
-            color: 0xcccccc,
+            color: hasColors ? 0xffffff : 0xcccccc, // White if using vertex colors, gray otherwise
+            vertexColors: hasColors, // Enable vertex colors if available
             side: THREE.DoubleSide,
             transparent: false
         });
@@ -955,7 +1001,12 @@ class BulletproofOBJLoader {
         const group = new THREE.Group();
         group.add(mesh);
 
-        console.log('🎉 OBJ geometry built successfully!');
+        if (hasColors) {
+            console.log('🎉 ✅ COLORED OBJ geometry built successfully!');
+        } else {
+            console.log('🎯 Standard OBJ geometry built (no colors found)');
+        }
+
         return group;
     }
 }
