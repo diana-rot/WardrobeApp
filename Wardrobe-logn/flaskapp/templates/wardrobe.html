@@ -315,7 +315,7 @@
         margin: 5px;
     }
 
-    /* Enhanced 3D Viewer Modal */
+    /* Enhanced 3D Viewer Modal - CLEAN WHITE THEME */
     .modal-xl {
         max-width: 90vw;
     }
@@ -324,54 +324,71 @@
         width: 100%;
         height: 70vh;
         position: relative;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        border-radius: 10px;
+        background: #ffffff !important; /* Pure white */
+        border-radius: 0;
         overflow: hidden;
+        border: 1px solid #e0e0e0;
     }
 
     .simple-viewer-header {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: white;
-        padding: 15px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+        color: #333 !important;
+        padding: 10px 20px;
         text-align: center;
-        font-weight: 600;
+        font-weight: 500;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 14px;
     }
 
     #threejs-viewer-container {
         width: 100%;
-        height: calc(100% - 120px);
+        height: calc(100% - 45px);
         position: absolute;
-        top: 60px;
+        top: 45px;
         left: 0;
-        background: #2c3e50;
+        background: #ffffff !important;
     }
 
+    /* Clean white controls styling */
     .simple-viewer-controls {
         position: absolute;
-        bottom: 10px;
+        bottom: 15px;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
-        gap: 8px;
-        background: rgba(0,0,0,0.7);
-        padding: 8px;
-        border-radius: 20px;
+        flex-wrap: wrap;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 8px 16px;
+        border-radius: 25px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e0e0e0;
+        max-width: 90%;
+        justify-content: center;
     }
 
     .simple-control-btn {
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        padding: 8px 12px;
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        color: #333;
+        padding: 6px 12px;
         border-radius: 15px;
         cursor: pointer;
-        font-size: 12px;
-        transition: all 0.3s ease;
+        font-size: 11px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        font-weight: 500;
     }
 
     .simple-control-btn:hover {
-        background: rgba(255,255,255,0.3);
-        transform: scale(1.05);
+        background: #f8f9fa;
+        border-color: #ccc;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .simple-control-btn:active {
+        transform: translateY(0);
     }
 
     /* Loader styles */
@@ -525,30 +542,55 @@
         box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
     }
 
-    /* Loading overlay for viewer */
+    /* Loading overlay for white background */
     .viewer-loading-overlay {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(44, 62, 80, 0.9);
+        background: rgba(255, 255, 255, 0.95) !important;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-direction: column;
         z-index: 10;
-        color: white;
+        color: #333 !important;
     }
 
     .viewer-loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 3px solid rgba(255, 255, 255, 0.3);
-        border-top: 3px solid #4facfe;
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f0f0f0;
+        border-top: 3px solid #007bff;
         border-radius: 50%;
         animation: spin 1s linear infinite;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
+    }
+
+    /* Modal styling for clean look */
+    .modal-content {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        background: #ffffff;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 15px 20px;
+    }
+
+    .modal-footer {
+        background: #ffffff;
+        border-top: 1px solid #e0e0e0;
+        padding: 15px 20px;
+    }
+
+    .modal-title {
+        color: #333;
+        font-weight: 500;
+        font-size: 16px;
     }
 
     /* Responsive Design */
@@ -582,6 +624,17 @@
 
         .simple-viewer-container {
             height: 50vh !important;
+        }
+
+        .simple-viewer-controls {
+            bottom: 5px;
+            padding: 6px;
+            gap: 4px;
+        }
+
+        .simple-control-btn {
+            padding: 5px 8px;
+            font-size: 10px;
         }
     }
 </style>
@@ -727,13 +780,13 @@
     </div>
 </div>
 
-<!-- Enhanced 3D Viewer Modal -->
+<!-- Enhanced 3D Viewer Modal with Clean White Background -->
 <div class="modal fade" id="simple3DModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-cube"></i> 🎯 Enhanced 3D Model Viewer - Three.js
+                    <i class="fas fa-cube"></i> ✨ Clean 3D Model Viewer - Clothing Optimized
                 </h5>
                 <button type="button" class="close" onclick="closeModal()">
                     <span>&times;</span>
@@ -742,25 +795,45 @@
             <div class="modal-body p-0">
                 <div class="simple-viewer-container">
                     <div class="simple-viewer-header">
-                        <div>Your 3D Model - Interactive Three.js Viewer</div>
-                        <small>🖱️ Left Click: Rotate | 🖱️ Right Click: Pan | 🖱️ Scroll: Zoom | Full GPU Acceleration</small>
+                        <div>Your 3D Clothing Model - Clean White Background</div>
+                        <small>🖱️ Left Click: Rotate | 🖱️ Right Click: Pan | 🖱️ Scroll: Zoom | Optimized for Clothing</small>
                     </div>
 
                     <!-- Three.js will render here -->
                     <div id="threejs-viewer-container"></div>
 
                     <div class="simple-viewer-controls">
-                        <button class="simple-control-btn" onclick="resetView()">🏠 Reset</button>
-                        <button class="simple-control-btn" onclick="toggleWireframe()">📐 Wire</button>
-                        <button class="simple-control-btn" onclick="toggleAutoRotate()">🔄 Rotate</button>
-                        <button class="simple-control-btn" onclick="fitToView()">🎯 Fit</button>
+                        <!-- Basic Controls -->
+                        <button class="simple-control-btn" onclick="resetView()" title="Reset to optimal clothing view">
+                            🏠 Reset
+                        </button>
+                        <button class="simple-control-btn" onclick="toggleWireframe()" title="Toggle wireframe mode">
+                            📐 Wire
+                        </button>
+                        <button class="simple-control-btn" onclick="toggleAutoRotate()" title="Toggle auto rotation">
+                            🔄 Rotate
+                        </button>
+
+                        <!-- Clothing-Specific View Controls -->
+                        <button class="simple-control-btn" onclick="setClothingView('front')" title="Front view">
+                            👕 Front
+                        </button>
+                        <button class="simple-control-btn" onclick="setClothingView('back')" title="Back view">
+                            🔄 Back
+                        </button>
+                        <button class="simple-control-btn" onclick="setClothingView('side')" title="Side view">
+                            👈 Side
+                        </button>
+                        <button class="simple-control-btn" onclick="setClothingView('detail')" title="Detail view">
+                            🔍 Detail
+                        </button>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <div class="mr-auto">
                     <small class="text-muted">
-                        <i class="fab fa-google"></i> Generated with Colab GPU • <i class="fas fa-cube"></i> Three.js Powered
+                        <i class="fab fa-google"></i> Generated with Colab GPU • <i class="fas fa-cube"></i> Three.js Powered • ✨ Clean White Background
                     </small>
                 </div>
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">
@@ -788,10 +861,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.min.js"></script>
 
 <script>
-console.log('🎯 Starting ENHANCED 3D Wardrobe System with WORKING Three.js...');
+console.log('🎯 Starting ENHANCED 3D Wardrobe System with Clean White Background & Color Support...');
 
-// ENHANCED OBJ LOADER - BULLETPROOF IMPLEMENTATION
-// ENHANCED OBJ LOADER - REPLACE YOUR EXISTING BulletproofOBJLoader
+// ENHANCED OBJ LOADER WITH COLOR SUPPORT
 class BulletproofOBJLoader {
     constructor(manager) {
         this.manager = manager || new THREE.LoadingManager();
@@ -1011,8 +1083,8 @@ class BulletproofOBJLoader {
     }
 }
 
-// ENHANCED WARDROBE 3D VIEWER CLASS
-class WardrobeViewer {
+// CLEAN WHITE BACKGROUND CLOTHING VIEWER
+class CleanWhiteClothingViewer {
     constructor(container) {
         this.container = container;
         this.scene = null;
@@ -1020,90 +1092,96 @@ class WardrobeViewer {
         this.renderer = null;
         this.controls = null;
         this.model = null;
-        this.loadingManager = null;
+        this.clothingType = 'unknown';
 
         this.init();
     }
 
     init() {
-        console.log('🚀 Initializing Wardrobe 3D Viewer...');
+        console.log('🚀 Initializing Clean White Clothing Viewer...');
 
-        // Scene setup
+        // Scene with pure white background
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x2c3e50);
+        this.scene.background = new THREE.Color(0xffffff); // Pure white
 
-        // Camera setup
+        // Camera setup optimized for clothing
         this.camera = new THREE.PerspectiveCamera(
-            45,
+            35, // Narrow FOV for clothing
             this.container.clientWidth / this.container.clientHeight,
-            0.1,
-            1000
+            0.01,
+            100
         );
-        this.camera.position.set(2, 2, 4);
+        this.camera.position.set(0, 1, 3);
 
-        // Renderer setup
+        // Renderer with white background
         this.renderer = new THREE.WebGLRenderer({
             antialias: true,
-            alpha: true,
+            alpha: false,
             preserveDrawingBuffer: true
         });
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        this.renderer.setClearColor(0xffffff, 1.0); // White backup
 
-        // Clear and add renderer
         this.container.innerHTML = '';
         this.container.appendChild(this.renderer.domElement);
 
-        // Controls setup
+        // Controls optimized for clothing
         this.controls = createOrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
-        this.controls.autoRotate = false;
-        this.controls.autoRotateSpeed = 2;
-        this.controls.minDistance = 1;
-        this.controls.maxDistance = 20;
+        this.controls.minDistance = 0.5; // Can get close to see fabric details
+        this.controls.maxDistance = 8;
 
-        // Lighting setup
-        this.setupLighting();
+        // Limit vertical rotation for clothing
+        this.controls.maxPolarAngle = Math.PI * 0.8;
+        this.controls.minPolarAngle = Math.PI * 0.1;
 
-        // Animation loop
+        // White background lighting
+        this.setupCleanWhiteLighting();
         this.animate();
-
-        // Resize handler
         window.addEventListener('resize', () => this.onWindowResize());
 
-        console.log('✅ Wardrobe 3D Viewer initialized');
+        console.log('✅ Clean White Clothing Viewer ready');
     }
 
-    setupLighting() {
-        // Ambient light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        this.scene.add(ambientLight);
+    setupCleanWhiteLighting() {
+        // Clear existing lights
+        const lights = [];
+        this.scene.traverse(child => {
+            if (child.isLight) lights.push(child);
+        });
+        lights.forEach(light => this.scene.remove(light));
 
-        // Main light
-        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        mainLight.position.set(10, 10, 5);
-        mainLight.castShadow = true;
-        mainLight.shadow.mapSize.width = 2048;
-        mainLight.shadow.mapSize.height = 2048;
-        this.scene.add(mainLight);
+        // Studio white background lighting
+        const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambient);
 
-        // Fill light
-        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-        fillLight.position.set(-5, 5, -5);
-        this.scene.add(fillLight);
+        const key = new THREE.DirectionalLight(0xffffff, 0.8);
+        key.position.set(3, 5, 4);
+        key.castShadow = true;
+        key.shadow.mapSize.setScalar(2048);
+        key.shadow.radius = 4;
+        key.shadow.blurSamples = 25;
+        this.scene.add(key);
 
-        // Hemisphere light
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-        hemiLight.position.set(0, 20, 0);
-        this.scene.add(hemiLight);
+        const fill = new THREE.DirectionalLight(0xffffff, 0.4);
+        fill.position.set(-2, 3, 2);
+        this.scene.add(fill);
+
+        const rim = new THREE.DirectionalLight(0xffffff, 0.2);
+        rim.position.set(0, 2, -3);
+        this.scene.add(rim);
+
+        console.log('💡 Clean white studio lighting setup complete');
     }
 
     async loadOBJModel(objUrl) {
         try {
-            console.log(`🔄 Loading OBJ model: ${objUrl}`);
+            console.log(`🔄 Loading colored clothing model: ${objUrl}`);
             this.showLoadingState();
 
             const loader = new BulletproofOBJLoader();
@@ -1112,8 +1190,8 @@ class WardrobeViewer {
                 loader.load(
                     objUrl,
                     (object) => {
-                        console.log('✅ OBJ loaded successfully!');
-                        this.processLoadedModel(object);
+                        console.log('✅ Colored clothing model loaded successfully!');
+                        this.processColoredClothingModel(object);
                         this.hideLoadingState();
                         resolve(object);
                     },
@@ -1124,9 +1202,9 @@ class WardrobeViewer {
                         }
                     },
                     (error) => {
-                        console.error('❌ Error loading OBJ:', error);
+                        console.error('❌ Error loading colored clothing model:', error);
                         this.hideLoadingState();
-                        this.showErrorState('Failed to load 3D model');
+                        this.showErrorState('Failed to load colored clothing model');
                         reject(error);
                     }
                 );
@@ -1134,66 +1212,213 @@ class WardrobeViewer {
         } catch (error) {
             console.error('❌ Error in loadOBJModel:', error);
             this.hideLoadingState();
-            this.showErrorState('Failed to initialize model loader');
+            this.showErrorState('Failed to initialize colored clothing model loader');
             throw error;
         }
     }
 
-    processLoadedModel(object) {
+    processColoredClothingModel(object) {
         // Remove previous model
         if (this.model) {
             this.scene.remove(this.model);
         }
 
         this.model = object;
+        this.detectClothingType();
 
-        // Apply wardrobe-specific styling
+        // Enhanced processing for colored clothing models
         this.model.traverse((child) => {
             if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
 
-                // Enhanced material for clothing
-                if (!child.material) {
-                    child.material = new THREE.MeshLambertMaterial({
-                        color: 0xcccccc,
-                        side: THREE.DoubleSide
-                    });
+                // Optimize material for clothing with colors
+                if (child.material) {
+                    child.material.side = THREE.DoubleSide; // Important for fabric
+                    child.material.needsUpdate = true;
+
+                    // Ensure vertex colors are enabled if available
+                    if (child.geometry.attributes.color) {
+                        child.material.vertexColors = true;
+                        console.log('🎨 Enabled vertex colors for clothing mesh');
+                    }
+
+                    // Add slight roughness for fabric appearance
+                    if (child.material.roughness !== undefined) {
+                        child.material.roughness = 0.8;
+                    }
                 }
 
-                child.material.side = THREE.DoubleSide;
-                child.material.needsUpdate = true;
+                console.log(`🎨 Processed clothing mesh: ${child.name}, has colors: ${!!child.geometry.attributes.color}`);
             }
         });
 
         this.scene.add(this.model);
-        this.fitCameraToModel();
+        this.fitCameraToClothing();
 
-        console.log('🎯 Model processed and styled for wardrobe');
+        console.log(`🎯 Colored clothing model processed (type: ${this.clothingType})`);
     }
 
-    fitCameraToModel() {
+    detectClothingType() {
+        // Analyze model dimensions to guess clothing type
+        const box = new THREE.Box3().setFromObject(this.model);
+        const size = box.getSize(new THREE.Vector3());
+
+        const width = size.x;
+        const height = size.y;
+        const depth = size.z;
+
+        console.log(`📏 Clothing dimensions: ${width.toFixed(2)} x ${height.toFixed(2)} x ${depth.toFixed(2)}`);
+
+        // Simple heuristics for clothing type detection
+        if (height > width * 1.5 && height > depth * 2) {
+            this.clothingType = 'dress_or_long';
+        } else if (width > height && depth < width * 0.3) {
+            this.clothingType = 'pants';
+        } else if (height > width && width > depth) {
+            this.clothingType = 'shirt_or_top';
+        } else if (width > height * 1.2) {
+            this.clothingType = 'jacket_or_wide';
+        } else {
+            this.clothingType = 'general_clothing';
+        }
+
+        console.log(`👕 Detected clothing type: ${this.clothingType}`);
+    }
+
+    fitCameraToClothing() {
         if (!this.model) return;
 
         const box = new THREE.Box3().setFromObject(this.model);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = this.camera.fov * (Math.PI / 180);
-        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.2;
+        // Calculate optimal distance based on clothing type
+        let cameraDistance;
+        let cameraHeight;
+        let cameraAngle;
 
-        cameraDistance = Math.max(cameraDistance, 2);
-        cameraDistance = Math.min(cameraDistance, 20);
+        switch (this.clothingType) {
+            case 'dress_or_long':
+                cameraDistance = Math.max(size.y * 0.8, 2.5);
+                cameraHeight = center.y;
+                cameraAngle = 0.2;
+                break;
 
+            case 'shirt_or_top':
+                cameraDistance = Math.max(size.x * 1.2, 2.0);
+                cameraHeight = center.y + size.y * 0.1;
+                cameraAngle = 0.3;
+                break;
+
+            case 'pants':
+                cameraDistance = Math.max(size.y * 0.9, 2.2);
+                cameraHeight = center.y - size.y * 0.1;
+                cameraAngle = 0.1;
+                break;
+
+            case 'jacket_or_wide':
+                cameraDistance = Math.max(size.x * 1.1, 2.3);
+                cameraHeight = center.y + size.y * 0.05;
+                cameraAngle = 0.25;
+                break;
+
+            default:
+                cameraDistance = Math.max(Math.max(size.x, size.y, size.z) * 1.2, 2.0);
+                cameraHeight = center.y;
+                cameraAngle = 0.3;
+        }
+
+        // Ensure reasonable bounds
+        cameraDistance = Math.max(1.5, Math.min(6, cameraDistance));
+
+        // Position camera
         this.camera.position.set(
-            center.x + cameraDistance * 0.5,
-            center.y + cameraDistance * 0.3,
-            center.z + cameraDistance
+            cameraDistance * Math.sin(cameraAngle),
+            cameraHeight,
+            cameraDistance * Math.cos(cameraAngle)
         );
 
+        // Update controls
         this.controls.target.copy(center);
         this.controls.update();
+
+        console.log(`📸 Camera positioned for ${this.clothingType}: distance=${cameraDistance.toFixed(2)}, height=${cameraHeight.toFixed(2)}`);
+    }
+
+    // Preset camera positions for different clothing views
+    setClothingView(viewType) {
+        if (!this.model) return;
+
+        const box = new THREE.Box3().setFromObject(this.model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+
+        let position, target;
+
+        switch (viewType) {
+            case 'front':
+                position = new THREE.Vector3(0, center.y, maxDim * 1.5);
+                target = center.clone();
+                break;
+
+            case 'back':
+                position = new THREE.Vector3(0, center.y, -maxDim * 1.5);
+                target = center.clone();
+                break;
+
+            case 'side':
+                position = new THREE.Vector3(maxDim * 1.5, center.y, 0);
+                target = center.clone();
+                break;
+
+            case 'detail':
+                position = new THREE.Vector3(
+                    maxDim * 0.3,
+                    center.y + size.y * 0.2,
+                    maxDim * 0.8
+                );
+                target = new THREE.Vector3(center.x, center.y + size.y * 0.1, center.z);
+                break;
+
+            default: // 'overview'
+                position = new THREE.Vector3(
+                    maxDim * 0.8,
+                    center.y + maxDim * 0.3,
+                    maxDim * 1.2
+                );
+                target = center.clone();
+        }
+
+        // Smooth camera transition
+        this.animateCameraTo(position, target);
+    }
+
+    animateCameraTo(targetPosition, targetLookAt, duration = 1000) {
+        const startPosition = this.camera.position.clone();
+        const startTarget = this.controls.target.clone();
+        const startTime = Date.now();
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Smooth easing
+            const eased = progress * progress * (3 - 2 * progress);
+
+            // Interpolate position
+            this.camera.position.lerpVectors(startPosition, targetPosition, eased);
+            this.controls.target.lerpVectors(startTarget, targetLookAt, eased);
+
+            this.controls.update();
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        animate();
     }
 
     showLoadingState() {
@@ -1203,8 +1428,8 @@ class WardrobeViewer {
             loadingDiv.className = 'viewer-loading-overlay';
             loadingDiv.innerHTML = `
                 <div class="viewer-loading-spinner"></div>
-                <div style="font-size: 18px; font-weight: 600;">Loading 3D Model...</div>
-                <div class="loading-progress" style="margin-top: 10px; font-size: 14px; opacity: 0.8;">0%</div>
+                <div style="font-size: 18px; font-weight: 600; color: #333;">Loading Colored 3D Model...</div>
+                <div class="loading-progress" style="margin-top: 10px; font-size: 14px; opacity: 0.8; color: #666;">0%</div>
             `;
             this.container.appendChild(loadingDiv);
         }
@@ -1244,13 +1469,7 @@ class WardrobeViewer {
     }
 
     resetCamera() {
-        if (this.model) {
-            this.fitCameraToModel();
-        } else {
-            this.camera.position.set(2, 2, 4);
-            this.controls.target.set(0, 0, 0);
-            this.controls.update();
-        }
+        this.fitCameraToClothing();
     }
 
     toggleWireframe() {
@@ -1284,11 +1503,11 @@ class WardrobeViewer {
         if (this.renderer) this.renderer.dispose();
         if (this.controls) this.controls.dispose();
         window.removeEventListener('resize', this.onWindowResize);
-        console.log('🗑️ Wardrobe viewer disposed');
+        console.log('🗑️ Clean white clothing viewer disposed');
     }
 }
 
-// Global variables (same as your original)
+// Global variables
 let currentUploadedFile = null;
 let currentItemData = null;
 let generatedModelData = null;
@@ -1314,7 +1533,8 @@ function initializeApp() {
     setupDragAndDrop();
     console.log('✅ App initialization complete');
 }
-// WORKING ORBITCONTROLS FUNCTION - ADD THIS
+
+// WORKING ORBITCONTROLS FUNCTION
 function createOrbitControls(camera, domElement) {
     const controls = {
         camera: camera,
@@ -1495,7 +1715,7 @@ function displayImagePreview(file) {
     reader.readAsDataURL(file);
 }
 
-// === COLAB CONNECTION FUNCTIONS (same as your original) ===
+// COLAB CONNECTION FUNCTIONS
 function connectToColab() {
     const urlInput = document.getElementById('colab-url-input');
     const connectBtn = document.getElementById('connect-colab-btn');
@@ -1554,7 +1774,7 @@ function showColabConnectionStatus(success, message) {
     `;
 }
 
-// === IMAGE ANALYSIS FUNCTION (same as your original) ===
+// IMAGE ANALYSIS FUNCTION
 function analyzeImage() {
     if (!currentUploadedFile) {
         showToast('Please select an image first', 'warning');
@@ -1653,7 +1873,7 @@ function showModelGenerationSection() {
     section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// === 3D MODEL GENERATION (same as your original) ===
+// 3D MODEL GENERATION
 function generate3DModel() {
     if (!currentUploadedFile) {
         showToast('Please upload an image first', 'warning');
@@ -1846,24 +2066,24 @@ function autoSave3DModel() {
     });
 }
 
-// === ENHANCED VIEW 3D MODEL FUNCTION ===
+// ENHANCED VIEW 3D MODEL FUNCTION WITH CLEAN WHITE BACKGROUND
 function view3DModel() {
     if (!generatedModelData) {
         showToast('No 3D model available', 'warning');
         return;
     }
 
-    console.log('🎯 Opening enhanced wardrobe 3D viewer with:', generatedModelData.model_path);
+    console.log('🎯 Opening clean white clothing 3D viewer with:', generatedModelData.model_path);
 
     $('#simple3DModal').modal('show');
 
     $('#simple3DModal').on('shown.bs.modal', function () {
-        console.log('📺 Modal shown, initializing wardrobe viewer...');
-        initWardrobeViewer();
+        console.log('📺 Modal shown, initializing clean white clothing viewer...');
+        initCleanWhiteClothingViewer();
     });
 
     $('#simple3DModal').on('hidden.bs.modal', function () {
-        console.log('🗑️ Modal hidden, cleaning up wardrobe viewer...');
+        console.log('🗑️ Modal hidden, cleaning up viewer...');
         if (wardrobeViewer) {
             wardrobeViewer.dispose();
             wardrobeViewer = null;
@@ -1871,8 +2091,8 @@ function view3DModel() {
     });
 }
 
-function initWardrobeViewer() {
-    console.log('🎯 Initializing Wardrobe 3D Viewer...');
+function initCleanWhiteClothingViewer() {
+    console.log('🎯 Initializing Clean White Clothing 3D Viewer...');
 
     const threejsContainer = document.getElementById('threejs-viewer-container');
     if (!threejsContainer) {
@@ -1880,20 +2100,20 @@ function initWardrobeViewer() {
         return;
     }
 
-    // Initialize the enhanced wardrobe viewer
-    wardrobeViewer = new WardrobeViewer(threejsContainer);
+    // Initialize the clean white clothing viewer
+    wardrobeViewer = new CleanWhiteClothingViewer(threejsContainer);
 
     // Load the model
     if (generatedModelData && generatedModelData.model_path) {
-        console.log(`🔥 LOADING WARDROBE MODEL: ${generatedModelData.model_path}`);
+        console.log(`🔥 LOADING COLORED CLOTHING MODEL: ${generatedModelData.model_path}`);
 
         wardrobeViewer.loadOBJModel(generatedModelData.model_path)
             .then((result) => {
-                console.log('🎉 SUCCESS! Wardrobe model loaded:', result);
-                showToast('🎯 3D model loaded successfully in wardrobe viewer!', 'success');
+                console.log('🎉 SUCCESS! Colored clothing model loaded:', result);
+                showToast('✨ 3D clothing model loaded with clean white background!', 'success');
             })
             .catch(error => {
-                console.error('💥 FAILED to load wardrobe model:', error);
+                console.error('💥 FAILED to load colored clothing model:', error);
                 showToast('❌ Failed to load 3D model', 'error');
             });
     } else {
@@ -1901,11 +2121,11 @@ function initWardrobeViewer() {
         showToast('❌ No model data available', 'error');
     }
 
-    // Update control functions with wardrobe viewer
+    // Update control functions with clothing viewer
     window.resetView = () => {
         if (wardrobeViewer) {
             wardrobeViewer.resetCamera();
-            showToast('🏠 View reset', 'success');
+            showToast('🏠 View reset to optimal clothing angle', 'success');
         }
     };
 
@@ -1923,17 +2143,17 @@ function initWardrobeViewer() {
         }
     };
 
-    window.fitToView = () => {
-        if (wardrobeViewer) {
-            wardrobeViewer.fitCameraToModel();
-            showToast('🎯 Camera fitted to model', 'success');
+    window.setClothingView = (viewType) => {
+        if (wardrobeViewer && wardrobeViewer.setClothingView) {
+            wardrobeViewer.setClothingView(viewType);
+            showToast(`📸 ${viewType.charAt(0).toUpperCase() + viewType.slice(1)} view`, 'success');
         }
     };
 
     return wardrobeViewer;
 }
 
-// === DOWNLOAD AND SAVE FUNCTIONS ===
+// DOWNLOAD AND SAVE FUNCTIONS
 function downloadModel() {
     if (!generatedModelData || !generatedModelData.model_path) {
         showToast('No 3D model available for download', 'warning');
@@ -2037,7 +2257,7 @@ function showQuickViewButton() {
     }
 }
 
-// === MODAL CONTROL FUNCTIONS ===
+// MODAL CONTROL FUNCTIONS
 function closeModal() {
     try {
         $('#simple3DModal').modal('hide');
@@ -2061,7 +2281,7 @@ function closeModal() {
     }
 }
 
-// === EVENT HANDLERS ===
+// EVENT HANDLERS
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         const modal = document.getElementById('simple3DModal');
@@ -2080,7 +2300,7 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// === TOAST NOTIFICATION SYSTEM ===
+// TOAST NOTIFICATION SYSTEM
 function showToast(message, type = 'success', title = '') {
     const toastTemplate = document.getElementById('toast-template');
     const toast = toastTemplate.cloneNode(true);
@@ -2129,51 +2349,44 @@ function hideToast(toast) {
     }, 300);
 }
 
-// === CLEANUP ===
+// CLEANUP
 window.addEventListener('beforeunload', function() {
     if (wardrobeViewer) {
         wardrobeViewer.dispose();
     }
 });
 
-// === TESTING FUNCTIONS ===
-window.testViewer = function() {
-    const cubeOBJ = `# Test Cube for Wardrobe
-v -1 -1 -1
-v 1 -1 -1
-v 1 1 -1
-v -1 1 -1
-v -1 -1 1
-v 1 -1 1
-v 1 1 1
-v -1 1 1
+// TESTING FUNCTIONS
+window.testCleanWhiteViewer = function() {
+    const coloredCubeOBJ = `# Colored Test Cube for Clean White Background
+v -1 -1 -1 1.0 0.0 0.0
+v 1 -1 -1 0.0 1.0 0.0
+v 1 1 -1 0.0 0.0 1.0
+v -1 1 -1 1.0 1.0 0.0
+v -1 -1 1 1.0 0.0 1.0
+v 1 -1 1 0.0 1.0 1.0
+v 1 1 1 0.5 0.5 0.5
+v -1 1 1 0.8 0.8 0.8
 
-vn 0 0 -1
-vn 0 0 1
-vn 0 -1 0
-vn 0 1 0
-vn -1 0 0
-vn 1 0 0
-
-f 1//1 2//1 3//1 4//1
-f 5//2 8//2 7//2 6//2
-f 1//3 5//3 6//3 2//3
-f 2//4 6//4 7//4 3//4
-f 3//5 7//5 8//5 4//5
-f 5//6 1//6 4//6 8//6`;
+f 1 2 3 4
+f 5 8 7 6
+f 1 5 6 2
+f 2 6 7 3
+f 3 7 8 4
+f 5 1 4 8`;
 
     generatedModelData = {
-        model_path: 'data:text/plain;base64,' + btoa(cubeOBJ),
+        model_path: 'data:text/plain;base64,' + btoa(coloredCubeOBJ),
         method: 'test',
         file_format: 'OBJ',
-        file_size: cubeOBJ.length
+        file_size: coloredCubeOBJ.length
     };
 
-    console.log('🧪 Test data set for wardrobe viewer:', generatedModelData);
+    console.log('🧪 Test data set for clean white clothing viewer:', generatedModelData);
     view3DModel();
 };
 
-window.testWithActualModel = function(modelPath) {
+window.testWithActualColoredModel = function(modelPath) {
     if (!modelPath) {
         modelPath = '/static/models/generated/a1f71ebb37914b739fa02333ed8a4672/colab_model_task_a1f71ebb37914b739fa02333ed8a4672_46bca89f_1748192740_1748192762.obj';
     }
@@ -2185,12 +2398,50 @@ window.testWithActualModel = function(modelPath) {
         file_size: 6085950
     };
 
-    console.log('🔥 TESTING WITH ACTUAL WARDROBE MODEL:', generatedModelData);
+    console.log('🔥 TESTING WITH ACTUAL COLORED CLOTHING MODEL:', generatedModelData);
     view3DModel();
 };
 
+// Debug function for OBJ color analysis
+window.debugOBJColors = async function(objUrl) {
+    try {
+        const response = await fetch(objUrl);
+        const objText = await response.text();
+
+        const lines = objText.split('\n');
+        let coloredVertices = 0;
+        let totalVertices = 0;
+
+        console.log('🔍 Analyzing OBJ file for colors...');
+
+        for (const line of lines.slice(0, 50)) { // Check first 50 lines
+            if (line.startsWith('v ')) {
+                totalVertices++;
+                const parts = line.split(/\s+/);
+                if (parts.length >= 7) {
+                    coloredVertices++;
+                    console.log(`🎨 Vertex ${totalVertices}: ${line}`);
+                } else {
+                    console.log(`⚪ Vertex ${totalVertices}: ${line} (no colors)`);
+                }
+            }
+        }
+
+        console.log(`📊 Summary: ${coloredVertices}/${totalVertices} vertices have colors`);
+
+        if (coloredVertices === 0) {
+            console.log('❌ No colored vertices found in this OBJ file');
+        } else {
+            console.log('✅ This OBJ file contains color data!');
+        }
+
+    } catch (error) {
+        console.error('Error analyzing OBJ:', error);
+    }
+};
+
 // Quick access functions for debugging
-window.loadWardrobe3D = function(path) {
+window.loadCleanWhiteClothing3D = function(path) {
     generatedModelData = {
         model_path: path,
         method: 'manual',
@@ -2200,12 +2451,20 @@ window.loadWardrobe3D = function(path) {
     view3DModel();
 };
 
-console.log('🎉 ENHANCED WARDROBE 3D VIEWER LOADED!');
+console.log('🎉 ENHANCED WARDROBE 3D VIEWER WITH CLEAN WHITE BACKGROUND & COLOR SUPPORT LOADED!');
+console.log('✨ Features:');
+console.log('   🎨 Full color support from OBJ vertex colors');
+console.log('   🤍 Clean white professional background');
+console.log('   👕 Clothing-optimized camera positioning');
+console.log('   🔄 Clothing-specific view presets (Front, Back, Side, Detail)');
+console.log('   💡 Studio-quality lighting for fashion display');
+console.log('');
 console.log('🧪 Test commands:');
-console.log('   window.testViewer() - Load test cube');
-console.log('   window.testWithActualModel() - Load your actual model');
-console.log('   window.loadWardrobe3D("path") - Load specific model path');
-console.log('✅ Bulletproof OBJ loader with wardrobe styling ready!');
+console.log('   window.testCleanWhiteViewer() - Load colored test cube with white background');
+console.log('   window.testWithActualColoredModel() - Load your actual colored model');
+console.log('   window.debugOBJColors("path") - Analyze OBJ file for color data');
+console.log('   window.loadCleanWhiteClothing3D("path") - Load specific model path');
+console.log('✅ Clean white clothing viewer with full color support ready!');
 
 </script>
 {% endblock %}
