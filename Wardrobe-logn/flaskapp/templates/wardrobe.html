@@ -315,6 +315,65 @@
         margin: 5px;
     }
 
+    /* Enhanced 3D Viewer Modal */
+    .modal-xl {
+        max-width: 90vw;
+    }
+
+    .simple-viewer-container {
+        width: 100%;
+        height: 70vh;
+        position: relative;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .simple-viewer-header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    #threejs-viewer-container {
+        width: 100%;
+        height: calc(100% - 120px);
+        position: absolute;
+        top: 60px;
+        left: 0;
+        background: #2c3e50;
+    }
+
+    .simple-viewer-controls {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        background: rgba(0,0,0,0.7);
+        padding: 8px;
+        border-radius: 20px;
+    }
+
+    .simple-control-btn {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 15px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .simple-control-btn:hover {
+        background: rgba(255,255,255,0.3);
+        transform: scale(1.05);
+    }
+
     /* Loader styles */
     .loader {
         display: inline-block;
@@ -466,6 +525,32 @@
         box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
     }
 
+    /* Loading overlay for viewer */
+    .viewer-loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(44, 62, 80, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 10;
+        color: white;
+    }
+
+    .viewer-loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid #4facfe;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .upload-area {
@@ -489,6 +574,14 @@
         .quick-view-floating .btn {
             padding: 12px 20px;
             font-size: 14px;
+        }
+
+        .modal-xl {
+            max-width: 95vw;
+        }
+
+        .simple-viewer-container {
+            height: 50vh !important;
         }
     }
 </style>
@@ -601,7 +694,7 @@
                         <i class="fas fa-eye"></i> View in 3D
                     </button>
                     <button id="download-model-btn" class="btn btn-secondary">
-                        <i class="fas fa-download"></i> Download GLB
+                        <i class="fas fa-download"></i> Download OBJ
                     </button>
                     <button id="save-to-wardrobe-btn" class="btn btn-success">
                         <i class="fas fa-save"></i> Save to Wardrobe
@@ -612,7 +705,7 @@
     </div>
 </div>
 
-<!-- Quick View Button (appears after generation) -->
+<!-- Quick View Button -->
 <div id="quick-view-button" class="quick-view-floating">
     <button class="btn btn-primary btn-lg" onclick="view3DModel()" title="View 3D Model">
         <i class="fas fa-cube"></i>
@@ -634,35 +727,50 @@
     </div>
 </div>
 
-<!-- Simple 3D Viewer Modal -->
+<!-- Enhanced 3D Viewer Modal -->
 <div class="modal fade" id="simple3DModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-cube"></i> 3D Model Viewer
+                    <i class="fas fa-cube"></i> 🎯 Enhanced 3D Model Viewer - Three.js
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">
+                <button type="button" class="close" onclick="closeModal()">
                     <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body p-0">
-                <div id="simple-3d-viewer" style="width: 100%; height: 70vh; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
-                    <!-- 3D viewer will be inserted here -->
-                    <div id="viewer-loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666;">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
-                        </div>
-                        <div class="mt-3">Loading 3D model...</div>
+                <div class="simple-viewer-container">
+                    <div class="simple-viewer-header">
+                        <div>Your 3D Model - Interactive Three.js Viewer</div>
+                        <small>🖱️ Left Click: Rotate | 🖱️ Right Click: Pan | 🖱️ Scroll: Zoom | Full GPU Acceleration</small>
+                    </div>
+
+                    <!-- Three.js will render here -->
+                    <div id="threejs-viewer-container"></div>
+
+                    <div class="simple-viewer-controls">
+                        <button class="simple-control-btn" onclick="resetView()">🏠 Reset</button>
+                        <button class="simple-control-btn" onclick="toggleWireframe()">📐 Wire</button>
+                        <button class="simple-control-btn" onclick="toggleAutoRotate()">🔄 Rotate</button>
+                        <button class="simple-control-btn" onclick="fitToView()">🎯 Fit</button>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                <div class="mr-auto">
+                    <small class="text-muted">
+                        <i class="fab fa-google"></i> Generated with Colab GPU • <i class="fas fa-cube"></i> Three.js Powered
+                    </small>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">
                     <i class="fas fa-times"></i> Close
                 </button>
                 <button type="button" class="btn btn-primary" onclick="downloadModel()">
-                    <i class="fas fa-download"></i> Download
+                    <i class="fas fa-download"></i> Download OBJ
+                </button>
+                <button type="button" class="btn btn-success" onclick="saveToWardrobe()">
+                    <i class="fas fa-save"></i> Save to Wardrobe
                 </button>
             </div>
         </div>
@@ -671,33 +779,489 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Three.js libraries -->
+<!-- Three.js with Known Working CDN URLs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three-orbitcontrols@2.110.3/OrbitControls.js"></script>
+
+<!-- Bootstrap and jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.min.js"></script>
 
 <script>
-// Global variables
+console.log('🎯 Starting ENHANCED 3D Wardrobe System with WORKING Three.js...');
+
+// ENHANCED OBJ LOADER - BULLETPROOF IMPLEMENTATION
+class BulletproofOBJLoader {
+    constructor(manager) {
+        this.manager = manager || new THREE.LoadingManager();
+    }
+
+    load(url, onLoad, onProgress, onError) {
+        const loader = new THREE.FileLoader(this.manager);
+        loader.setResponseType('text');
+
+        loader.load(url, (text) => {
+            try {
+                const object = this.parse(text);
+                if (onLoad) onLoad(object);
+            } catch (error) {
+                console.error('🔥 OBJ Parse Error:', error);
+                if (onError) onError(error);
+            }
+        }, onProgress, onError);
+    }
+
+    parse(text) {
+        console.log('🎯 Parsing OBJ with bulletproof loader...');
+
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
+        const faces = [];
+
+        const lines = text.split('\n');
+        console.log(`📊 Processing ${lines.length} lines...`);
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+
+            if (line.length === 0 || line.charAt(0) === '#') continue;
+
+            const parts = line.split(/\s+/);
+            const type = parts[0];
+
+            switch (type) {
+                case 'v':
+                    vertices.push(
+                        parseFloat(parts[1]) || 0,
+                        parseFloat(parts[2]) || 0,
+                        parseFloat(parts[3]) || 0
+                    );
+                    break;
+
+                case 'vn':
+                    normals.push(
+                        parseFloat(parts[1]) || 0,
+                        parseFloat(parts[2]) || 0,
+                        parseFloat(parts[3]) || 0
+                    );
+                    break;
+
+                case 'vt':
+                    uvs.push(
+                        parseFloat(parts[1]) || 0,
+                        parseFloat(parts[2]) || 0
+                    );
+                    break;
+
+                case 'f':
+                    this.parseFace(parts.slice(1), faces);
+                    break;
+            }
+        }
+
+        console.log(`✅ Parsed: ${vertices.length/3} vertices, ${faces.length} faces`);
+        return this.buildGeometry(vertices, normals, uvs, faces);
+    }
+
+    parseFace(faceData, faces) {
+        const face = [];
+
+        for (let i = 0; i < faceData.length; i++) {
+            const vertex = faceData[i];
+            const indices = vertex.split('/');
+
+            face.push({
+                vertex: indices[0] ? parseInt(indices[0]) - 1 : 0,
+                uv: indices[1] ? parseInt(indices[1]) - 1 : null,
+                normal: indices[2] ? parseInt(indices[2]) - 1 : null
+            });
+        }
+
+        // Triangulate face (convert quads to triangles)
+        for (let i = 1; i < face.length - 1; i++) {
+            faces.push([face[0], face[i], face[i + 1]]);
+        }
+    }
+
+    buildGeometry(vertices, normals, uvs, faces) {
+        const geometry = new THREE.BufferGeometry();
+        const positions = [];
+        const normalsArray = [];
+        const uvsArray = [];
+
+        for (let i = 0; i < faces.length; i++) {
+            const face = faces[i];
+
+            for (let j = 0; j < 3; j++) {
+                const vertexIndex = face[j].vertex;
+                const normalIndex = face[j].normal;
+                const uvIndex = face[j].uv;
+
+                // Positions
+                if (vertexIndex >= 0 && vertexIndex < vertices.length / 3) {
+                    positions.push(
+                        vertices[vertexIndex * 3] || 0,
+                        vertices[vertexIndex * 3 + 1] || 0,
+                        vertices[vertexIndex * 3 + 2] || 0
+                    );
+                } else {
+                    positions.push(0, 0, 0);
+                }
+
+                // Normals
+                if (normalIndex !== null && normalIndex >= 0 && normalIndex < normals.length / 3) {
+                    normalsArray.push(
+                        normals[normalIndex * 3] || 0,
+                        normals[normalIndex * 3 + 1] || 1,
+                        normals[normalIndex * 3 + 2] || 0
+                    );
+                } else {
+                    normalsArray.push(0, 1, 0);
+                }
+
+                // UVs
+                if (uvIndex !== null && uvIndex >= 0 && uvIndex < uvs.length / 2) {
+                    uvsArray.push(
+                        uvs[uvIndex * 2] || 0,
+                        uvs[uvIndex * 2 + 1] || 0
+                    );
+                } else {
+                    uvsArray.push(0, 0);
+                }
+            }
+        }
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normalsArray, 3));
+        geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvsArray, 2));
+
+        // Compute normals if not provided
+        if (normals.length === 0) {
+            geometry.computeVertexNormals();
+        }
+
+        // Create enhanced material
+        const material = new THREE.MeshLambertMaterial({
+            color: 0xcccccc,
+            side: THREE.DoubleSide,
+            transparent: false
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        const group = new THREE.Group();
+        group.add(mesh);
+
+        console.log('🎉 OBJ geometry built successfully!');
+        return group;
+    }
+}
+
+// ENHANCED WARDROBE 3D VIEWER CLASS
+class WardrobeViewer {
+    constructor(container) {
+        this.container = container;
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.controls = null;
+        this.model = null;
+        this.loadingManager = null;
+
+        this.init();
+    }
+
+    init() {
+        console.log('🚀 Initializing Wardrobe 3D Viewer...');
+
+        // Scene setup
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x2c3e50);
+
+        // Camera setup
+        this.camera = new THREE.PerspectiveCamera(
+            45,
+            this.container.clientWidth / this.container.clientHeight,
+            0.1,
+            1000
+        );
+        this.camera.position.set(2, 2, 4);
+
+        // Renderer setup
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true,
+            preserveDrawingBuffer: true
+        });
+        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Clear and add renderer
+        this.container.innerHTML = '';
+        this.container.appendChild(this.renderer.domElement);
+
+        // Controls setup
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+        this.controls.autoRotate = false;
+        this.controls.autoRotateSpeed = 2;
+        this.controls.minDistance = 1;
+        this.controls.maxDistance = 20;
+
+        // Lighting setup
+        this.setupLighting();
+
+        // Animation loop
+        this.animate();
+
+        // Resize handler
+        window.addEventListener('resize', () => this.onWindowResize());
+
+        console.log('✅ Wardrobe 3D Viewer initialized');
+    }
+
+    setupLighting() {
+        // Ambient light
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+
+        // Main light
+        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        mainLight.position.set(10, 10, 5);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+        this.scene.add(mainLight);
+
+        // Fill light
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-5, 5, -5);
+        this.scene.add(fillLight);
+
+        // Hemisphere light
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        hemiLight.position.set(0, 20, 0);
+        this.scene.add(hemiLight);
+    }
+
+    async loadOBJModel(objUrl) {
+        try {
+            console.log(`🔄 Loading OBJ model: ${objUrl}`);
+            this.showLoadingState();
+
+            const loader = new BulletproofOBJLoader();
+
+            return new Promise((resolve, reject) => {
+                loader.load(
+                    objUrl,
+                    (object) => {
+                        console.log('✅ OBJ loaded successfully!');
+                        this.processLoadedModel(object);
+                        this.hideLoadingState();
+                        resolve(object);
+                    },
+                    (progress) => {
+                        if (progress.total > 0) {
+                            const percent = Math.floor((progress.loaded / progress.total) * 100);
+                            this.updateLoadingProgress(percent);
+                        }
+                    },
+                    (error) => {
+                        console.error('❌ Error loading OBJ:', error);
+                        this.hideLoadingState();
+                        this.showErrorState('Failed to load 3D model');
+                        reject(error);
+                    }
+                );
+            });
+        } catch (error) {
+            console.error('❌ Error in loadOBJModel:', error);
+            this.hideLoadingState();
+            this.showErrorState('Failed to initialize model loader');
+            throw error;
+        }
+    }
+
+    processLoadedModel(object) {
+        // Remove previous model
+        if (this.model) {
+            this.scene.remove(this.model);
+        }
+
+        this.model = object;
+
+        // Apply wardrobe-specific styling
+        this.model.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+
+                // Enhanced material for clothing
+                if (!child.material) {
+                    child.material = new THREE.MeshLambertMaterial({
+                        color: 0xcccccc,
+                        side: THREE.DoubleSide
+                    });
+                }
+
+                child.material.side = THREE.DoubleSide;
+                child.material.needsUpdate = true;
+            }
+        });
+
+        this.scene.add(this.model);
+        this.fitCameraToModel();
+
+        console.log('🎯 Model processed and styled for wardrobe');
+    }
+
+    fitCameraToModel() {
+        if (!this.model) return;
+
+        const box = new THREE.Box3().setFromObject(this.model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = this.camera.fov * (Math.PI / 180);
+        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.2;
+
+        cameraDistance = Math.max(cameraDistance, 2);
+        cameraDistance = Math.min(cameraDistance, 20);
+
+        this.camera.position.set(
+            center.x + cameraDistance * 0.5,
+            center.y + cameraDistance * 0.3,
+            center.z + cameraDistance
+        );
+
+        this.controls.target.copy(center);
+        this.controls.update();
+    }
+
+    showLoadingState() {
+        let loadingDiv = this.container.querySelector('.viewer-loading-overlay');
+        if (!loadingDiv) {
+            loadingDiv = document.createElement('div');
+            loadingDiv.className = 'viewer-loading-overlay';
+            loadingDiv.innerHTML = `
+                <div class="viewer-loading-spinner"></div>
+                <div style="font-size: 18px; font-weight: 600;">Loading 3D Model...</div>
+                <div class="loading-progress" style="margin-top: 10px; font-size: 14px; opacity: 0.8;">0%</div>
+            `;
+            this.container.appendChild(loadingDiv);
+        }
+        loadingDiv.style.display = 'flex';
+    }
+
+    updateLoadingProgress(percent) {
+        const progressDiv = this.container.querySelector('.loading-progress');
+        if (progressDiv) {
+            progressDiv.textContent = `${percent}%`;
+        }
+    }
+
+    hideLoadingState() {
+        const loadingDiv = this.container.querySelector('.viewer-loading-overlay');
+        if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+        }
+    }
+
+    showErrorState(message) {
+        this.hideLoadingState();
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'viewer-loading-overlay';
+        errorDiv.style.background = 'rgba(220, 53, 69, 0.1)';
+        errorDiv.innerHTML = `
+            <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+            <div style="font-size: 16px; font-weight: 600; margin-bottom: 10px; color: #dc3545;">3D Viewer Error</div>
+            <div style="font-size: 14px; color: #dc3545;">${message}</div>
+        `;
+        this.container.appendChild(errorDiv);
+    }
+
+    toggleAutoRotate() {
+        this.controls.autoRotate = !this.controls.autoRotate;
+        return this.controls.autoRotate;
+    }
+
+    resetCamera() {
+        if (this.model) {
+            this.fitCameraToModel();
+        } else {
+            this.camera.position.set(2, 2, 4);
+            this.controls.target.set(0, 0, 0);
+            this.controls.update();
+        }
+    }
+
+    toggleWireframe() {
+        if (!this.model) return false;
+        let wireframeEnabled = false;
+        this.model.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.wireframe = !child.material.wireframe;
+                wireframeEnabled = child.material.wireframe;
+            }
+        });
+        return wireframeEnabled;
+    }
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        if (this.controls) this.controls.update();
+        if (this.renderer && this.scene && this.camera) {
+            this.renderer.render(this.scene, this.camera);
+        }
+    }
+
+    onWindowResize() {
+        if (!this.camera || !this.renderer) return;
+        this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    }
+
+    dispose() {
+        if (this.renderer) this.renderer.dispose();
+        if (this.controls) this.controls.dispose();
+        window.removeEventListener('resize', this.onWindowResize);
+        console.log('🗑️ Wardrobe viewer disposed');
+    }
+}
+
+// Global variables (same as your original)
 let currentUploadedFile = null;
 let currentItemData = null;
 let generatedModelData = null;
 let currentGenerationTaskId = null;
 let colabConnected = false;
-let simple3DViewer = null;
+let wardrobeViewer = null;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 DOM loaded, initializing enhanced wardrobe app...');
     initializeApp();
-    // Auto-connect if URL is provided
+
     const savedUrl = document.getElementById('colab-url-input').value;
     if (savedUrl) {
+        console.log('🔗 Auto-connecting to saved Colab URL...');
         connectToColab();
     }
 });
 
 function initializeApp() {
+    console.log('🚀 Initializing enhanced wardrobe app...');
     setupEventListeners();
     setupDragAndDrop();
+    console.log('✅ App initialization complete');
 }
 
 function setupEventListeners() {
@@ -710,6 +1274,8 @@ function setupEventListeners() {
     document.getElementById('view-3d-model-btn').addEventListener('click', view3DModel);
     document.getElementById('download-model-btn').addEventListener('click', downloadModel);
     document.getElementById('save-to-wardrobe-btn').addEventListener('click', saveToWardrobe);
+
+    console.log('🎯 Event listeners attached');
 }
 
 function setupDragAndDrop() {
@@ -782,7 +1348,7 @@ function displayImagePreview(file) {
     reader.readAsDataURL(file);
 }
 
-// Colab Connection Functions
+// === COLAB CONNECTION FUNCTIONS (same as your original) ===
 function connectToColab() {
     const urlInput = document.getElementById('colab-url-input');
     const connectBtn = document.getElementById('connect-colab-btn');
@@ -793,7 +1359,6 @@ function connectToColab() {
         return;
     }
 
-    // Show loading state
     connectBtn.disabled = true;
     connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
 
@@ -811,7 +1376,6 @@ function connectToColab() {
             showColabConnectionStatus(true, 'Connected and ready for 3D generation');
             colabConnected = true;
 
-            // Enable 3D generation
             const generateBtn = document.getElementById('generate-3d-model-btn');
             generateBtn.disabled = false;
             generateBtn.innerHTML = '<i class="fab fa-google"></i> Generate 3D Model with Colab';
@@ -843,7 +1407,7 @@ function showColabConnectionStatus(success, message) {
     `;
 }
 
-// Image Analysis Function
+// === IMAGE ANALYSIS FUNCTION (same as your original) ===
 function analyzeImage() {
     if (!currentUploadedFile) {
         showToast('Please select an image first', 'warning');
@@ -854,17 +1418,14 @@ function analyzeImage() {
     const resultDiv = document.getElementById('result');
     const btnPredict = document.getElementById('btn-predict');
 
-    // Show loading state
     loadingSpinner.style.display = 'block';
     btnPredict.disabled = true;
     btnPredict.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
     resultDiv.innerHTML = '';
 
-    // Create FormData
     const formData = new FormData();
     formData.append('file', currentUploadedFile);
 
-    // Send to backend
     fetch('/wardrobe', {
         method: 'POST',
         body: formData
@@ -877,9 +1438,10 @@ function analyzeImage() {
 
         if (data.success) {
             currentItemData = data;
+            console.log('🎯 Current item data with ID:', currentItemData);
             displayAnalysisResults(data);
             showModelGenerationSection();
-            showToast('✅ Image analyzed successfully!', 'success');
+            showToast('✅ Image analyzed and saved to wardrobe!', 'success');
         } else {
             showToast(data.error || 'Analysis failed', 'error');
         }
@@ -907,6 +1469,10 @@ function displayAnalysisResults(data) {
                 <div class="result-row">
                     <div class="result-label">Confidence:</div>
                     <div class="result-value">${(data.confidence * 100).toFixed(1)}%</div>
+                </div>
+                <div class="result-row">
+                    <div class="result-label">Item ID:</div>
+                    <div class="result-value"><code>${data.item_id}</code></div>
                 </div>
             </div>
     `;
@@ -940,7 +1506,7 @@ function showModelGenerationSection() {
     section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// 3D Model Generation with Colab
+// === 3D MODEL GENERATION (same as your original) ===
 function generate3DModel() {
     if (!currentUploadedFile) {
         showToast('Please upload an image first', 'warning');
@@ -958,20 +1524,18 @@ function generate3DModel() {
     const statusText = document.getElementById('generation-status');
     const progressBar = document.getElementById('progress-bar');
 
-    // Show progress
     generateBtn.disabled = true;
     generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating with Colab...';
     progressDiv.style.display = 'block';
 
-    // Reset progress
     progressBar.style.width = '0%';
     statusText.textContent = 'Uploading to Colab GPU...';
 
-    // Create FormData with the image
     const formData = new FormData();
     formData.append('image', currentUploadedFile);
 
-    // Call the Colab-only API
+    console.log('🚀 Starting 3D generation...');
+
     fetch('/api/generate-3d-model', {
         method: 'POST',
         body: formData
@@ -980,6 +1544,7 @@ function generate3DModel() {
     .then(data => {
         if (data.success) {
             currentGenerationTaskId = data.task_id;
+            console.log('✅ Generation started, task ID:', currentGenerationTaskId);
             showToast(`🚀 3D generation started with Colab GPU! ${data.estimated_time}`, 'info');
             startStatusPolling();
         } else {
@@ -999,21 +1564,23 @@ function startStatusPolling() {
     const statusText = document.getElementById('generation-status');
     const progressBar = document.getElementById('progress-bar');
 
+    console.log('🔍 Starting status polling for task:', currentGenerationTaskId);
+
     const pollStatus = () => {
         fetch(`/api/check-generation-status?task_id=${currentGenerationTaskId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update progress
                     statusText.textContent = data.message;
                     progressBar.style.width = (data.progress * 100) + '%';
+
+                    console.log(`🔄 Status: ${data.status}, Progress: ${(data.progress * 100).toFixed(1)}%`);
 
                     if (data.status === 'completed') {
                         handleGenerationSuccess(data);
                     } else if (data.status === 'failed') {
                         handleGenerationFailure(data);
                     } else {
-                        // Still processing, check again
                         setTimeout(pollStatus, 3000);
                     }
                 } else {
@@ -1027,18 +1594,23 @@ function startStatusPolling() {
             });
     };
 
-    // Start polling
-    setTimeout(pollStatus, 3000);
+    setTimeout(pollStatus, 2000);
 }
 
 function handleGenerationSuccess(data) {
+    console.log('🎉 Generation completed with data:', data);
+
     generatedModelData = {
         model_path: data.model_path,
-        task_id: currentGenerationTaskId,
+        local_path: data.local_path,
         file_size: data.file_size,
+        file_format: data.file_format || 'OBJ',
+        method: data.method || 'colab',
         completed_at: data.completed_at,
-        method: 'colab'
+        task_id: currentGenerationTaskId
     };
+
+    console.log('💾 Stored model data:', generatedModelData);
 
     const progressDiv = document.getElementById('generation-progress');
     const previewCard = document.getElementById('model-preview-card');
@@ -1050,8 +1622,8 @@ function handleGenerationSuccess(data) {
     showToast('🎉 3D model generated successfully with Colab!', 'success');
     showQuickViewButton();
 
-    // Auto-save to wardrobe
-    if (currentItemData && currentItemData._id) {
+    if (currentItemData && currentItemData.item_id) {
+        console.log('🔄 Auto-saving 3D model to database...');
         autoSave3DModel();
     }
 
@@ -1060,6 +1632,7 @@ function handleGenerationSuccess(data) {
 
 function handleGenerationFailure(data) {
     const errorMessage = data.error || data.message || 'Generation failed';
+    console.error('❌ Generation failed:', errorMessage);
     showToast(`❌ Generation failed: ${errorMessage}`, 'error');
     resetGenerationUI();
     currentGenerationTaskId = null;
@@ -1080,7 +1653,19 @@ function resetGenerationUI() {
 }
 
 function autoSave3DModel() {
-    if (!generatedModelData || !currentItemData) return;
+    if (!generatedModelData || !currentItemData) {
+        console.log('❌ Cannot auto-save: missing data');
+        return;
+    }
+
+    const itemId = currentItemData.item_id || currentItemData._id || currentItemData.id;
+
+    if (!itemId) {
+        console.log('❌ No valid item ID found:', currentItemData);
+        return;
+    }
+
+    console.log('💾 Auto-saving 3D model for item:', itemId);
 
     fetch('/api/save-3d-model', {
         method: 'POST',
@@ -1088,156 +1673,154 @@ function autoSave3DModel() {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            item_id: currentItemData._id || currentItemData.id,
-            model_path: generatedModelData.model_path
+            item_id: itemId,
+            model_path: generatedModelData.model_path,
+            method: generatedModelData.method,
+            file_format: generatedModelData.file_format,
+            file_size: generatedModelData.file_size
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            console.log('✅ 3D model auto-saved to database');
             showToast('✅ 3D model automatically saved to wardrobe', 'success');
+
+            currentItemData.has_3d_model = true;
+            currentItemData.model_3d_path = generatedModelData.model_path;
+        } else {
+            console.log('❌ Auto-save failed:', data.error);
+            showToast('⚠️ Model generated but not saved to wardrobe. Use Save button.', 'warning');
         }
     })
     .catch(error => {
-        console.error('Auto-save error:', error);
+        console.error('❌ Auto-save error:', error);
+        showToast('⚠️ Model generated but auto-save failed. Use Save button.', 'warning');
     });
 }
 
-// 3D Model Interaction Functions
+// === ENHANCED VIEW 3D MODEL FUNCTION ===
 function view3DModel() {
     if (!generatedModelData) {
         showToast('No 3D model available', 'warning');
         return;
     }
 
-    // Show the modal
+    console.log('🎯 Opening enhanced wardrobe 3D viewer with:', generatedModelData.model_path);
+
     $('#simple3DModal').modal('show');
 
-    // Initialize viewer when modal is shown
     $('#simple3DModal').on('shown.bs.modal', function () {
-        if (!simple3DViewer) {
-            initSimple3DViewer();
+        console.log('📺 Modal shown, initializing wardrobe viewer...');
+        initWardrobeViewer();
+    });
+
+    $('#simple3DModal').on('hidden.bs.modal', function () {
+        console.log('🗑️ Modal hidden, cleaning up wardrobe viewer...');
+        if (wardrobeViewer) {
+            wardrobeViewer.dispose();
+            wardrobeViewer = null;
         }
-        loadModelInViewer(generatedModelData.model_path);
     });
 }
 
-function initSimple3DViewer() {
-    const container = document.getElementById('simple-3d-viewer');
+function initWardrobeViewer() {
+    console.log('🎯 Initializing Wardrobe 3D Viewer...');
 
-    // Scene setup
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f7fa);
-
-    // Camera
-    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(3, 3, 3);
-
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-
-    // Controls
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
-    scene.add(directionalLight);
-
-    // Animation loop
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
+    const threejsContainer = document.getElementById('threejs-viewer-container');
+    if (!threejsContainer) {
+        console.error('❌ Viewer container not found!');
+        return;
     }
-    animate();
 
-    // Store viewer components
-    simple3DViewer = { scene, camera, renderer, controls };
+    // Initialize the enhanced wardrobe viewer
+    wardrobeViewer = new WardrobeViewer(threejsContainer);
 
-    // Handle resize
-    window.addEventListener('resize', () => {
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
-    });
-}
+    // Load the model
+    if (generatedModelData && generatedModelData.model_path) {
+        console.log(`🔥 LOADING WARDROBE MODEL: ${generatedModelData.model_path}`);
 
-function loadModelInViewer(modelPath) {
-    const loadingDiv = document.getElementById('viewer-loading');
-    loadingDiv.style.display = 'block';
-
-    const loader = new THREE.GLTFLoader();
-    loader.load(
-        modelPath,
-        (gltf) => {
-            // Clear existing models
-            const objectsToRemove = [];
-            simple3DViewer.scene.traverse((child) => {
-                if (child.isMesh) {
-                    objectsToRemove.push(child);
-                }
+        wardrobeViewer.loadOBJModel(generatedModelData.model_path)
+            .then((result) => {
+                console.log('🎉 SUCCESS! Wardrobe model loaded:', result);
+                showToast('🎯 3D model loaded successfully in wardrobe viewer!', 'success');
+            })
+            .catch(error => {
+                console.error('💥 FAILED to load wardrobe model:', error);
+                showToast('❌ Failed to load 3D model', 'error');
             });
-            objectsToRemove.forEach(obj => {
-                simple3DViewer.scene.remove(obj);
-            });
+    } else {
+        console.error('❌ No model path provided!');
+        showToast('❌ No model data available', 'error');
+    }
 
-            // Add new model
-            const model = gltf.scene;
-
-            // Center and scale the model
-            const box = new THREE.Box3().setFromObject(model);
-            const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-
-            model.position.x = -center.x;
-            model.position.y = -center.y;
-            model.position.z = -center.z;
-
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 2 / maxDim;
-            model.scale.setScalar(scale);
-
-            simple3DViewer.scene.add(model);
-
-            // Reset camera
-            simple3DViewer.camera.position.set(3, 3, 3);
-            simple3DViewer.controls.target.set(0, 0, 0);
-
-            loadingDiv.style.display = 'none';
-            showToast('✅ 3D model loaded successfully', 'success');
-        },
-        (progress) => {
-            // Progress callback
-        },
-        (error) => {
-            console.error('Error loading model:', error);
-            loadingDiv.style.display = 'none';
-            showToast('❌ Error loading 3D model', 'error');
+    // Update control functions with wardrobe viewer
+    window.resetView = () => {
+        if (wardrobeViewer) {
+            wardrobeViewer.resetCamera();
+            showToast('🏠 View reset', 'success');
         }
-    );
+    };
+
+    window.toggleWireframe = () => {
+        if (wardrobeViewer) {
+            const enabled = wardrobeViewer.toggleWireframe();
+            showToast(`📐 Wireframe ${enabled ? 'ON' : 'OFF'}`, 'success');
+        }
+    };
+
+    window.toggleAutoRotate = () => {
+        if (wardrobeViewer) {
+            const enabled = wardrobeViewer.toggleAutoRotate();
+            showToast(`🔄 Auto-rotate ${enabled ? 'ON' : 'OFF'}`, 'success');
+        }
+    };
+
+    window.fitToView = () => {
+        if (wardrobeViewer) {
+            wardrobeViewer.fitCameraToModel();
+            showToast('🎯 Camera fitted to model', 'success');
+        }
+    };
+
+    return wardrobeViewer;
 }
 
+// === DOWNLOAD AND SAVE FUNCTIONS ===
 function downloadModel() {
     if (!generatedModelData || !generatedModelData.model_path) {
         showToast('No 3D model available for download', 'warning');
         return;
     }
 
-    const link = document.createElement('a');
-    link.href = generatedModelData.model_path;
-    link.download = `colab_3d_model_${Date.now()}.glb`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    console.log(`📥 Downloading model from: ${generatedModelData.model_path}`);
 
-    showToast('📥 3D model download started', 'success');
+    try {
+        const link = document.createElement('a');
+        link.href = generatedModelData.model_path;
+
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        const extension = generatedModelData.file_format ? generatedModelData.file_format.toLowerCase() : 'obj';
+        link.download = `wardrobe_3d_model_${timestamp}.${extension}`;
+
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast(`📥 3D model download started (${generatedModelData.file_format || 'OBJ'} format)`, 'success');
+        console.log('✅ Download initiated');
+    } catch (error) {
+        console.error('❌ Download error:', error);
+
+        try {
+            window.open(generatedModelData.model_path, '_blank');
+            showToast('📥 Opening model file in new tab', 'success');
+        } catch (error2) {
+            console.error('❌ Fallback download failed:', error2);
+            showToast(`❌ Download failed. Model path: ${generatedModelData.model_path}`, 'error');
+        }
+    }
 }
 
 function saveToWardrobe() {
@@ -1246,9 +1829,21 @@ function saveToWardrobe() {
         return;
     }
 
+    const itemId = currentItemData.item_id || currentItemData._id || currentItemData.id;
+
+    if (!itemId) {
+        showToast('No valid item ID found', 'warning');
+        console.log('❌ Current item data:', currentItemData);
+        return;
+    }
+
     const saveBtn = document.getElementById('save-to-wardrobe-btn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    }
+
+    console.log('💾 Manually saving 3D model to wardrobe...');
 
     fetch('/api/save-3d-model', {
         method: 'POST',
@@ -1256,8 +1851,11 @@ function saveToWardrobe() {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            item_id: currentItemData._id || currentItemData.id,
-            model_path: generatedModelData.model_path
+            item_id: itemId,
+            model_path: generatedModelData.model_path,
+            method: generatedModelData.method,
+            file_format: generatedModelData.file_format,
+            file_size: generatedModelData.file_size
         })
     })
     .then(response => response.json())
@@ -1266,28 +1864,76 @@ function saveToWardrobe() {
             showToast('✅ 3D model saved to wardrobe successfully!', 'success');
             currentItemData.model_3d_path = generatedModelData.model_path;
             currentItemData.has_3d_model = true;
+            console.log('✅ Manual save completed');
         } else {
             throw new Error(data.error || 'Failed to save model');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('❌ Manual save error:', error);
         showToast(`❌ Error saving to wardrobe: ${error.message}`, 'error');
     })
     .finally(() => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Wardrobe';
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Wardrobe';
+        }
     });
 }
 
 function showQuickViewButton() {
     if (generatedModelData && generatedModelData.model_path) {
         const quickViewBtn = document.getElementById('quick-view-button');
-        quickViewBtn.style.display = 'block';
+        if (quickViewBtn) {
+            quickViewBtn.style.display = 'block';
+        }
     }
 }
 
-// Toast notification system
+// === MODAL CONTROL FUNCTIONS ===
+function closeModal() {
+    try {
+        $('#simple3DModal').modal('hide');
+    } catch (error) {
+        const modal = document.getElementById('simple3DModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            document.body.classList.remove('modal-open');
+
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+        }
+    }
+
+    if (wardrobeViewer) {
+        wardrobeViewer.dispose();
+        wardrobeViewer = null;
+    }
+}
+
+// === EVENT HANDLERS ===
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('simple3DModal');
+        if (modal && (modal.classList.contains('show') || modal.style.display === 'block')) {
+            closeModal();
+        }
+    }
+});
+
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('simple3DModal');
+    if (modal && (modal.classList.contains('show') || modal.style.display === 'block')) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    }
+});
+
+// === TOAST NOTIFICATION SYSTEM ===
 function showToast(message, type = 'success', title = '') {
     const toastTemplate = document.getElementById('toast-template');
     const toast = toastTemplate.cloneNode(true);
@@ -1318,12 +1964,10 @@ function showToast(message, type = 'success', title = '') {
 
     document.body.appendChild(toast);
 
-    // Show toast
     setTimeout(() => {
         toast.classList.add('show');
     }, 100);
 
-    // Auto hide after 5 seconds
     setTimeout(() => {
         hideToast(toast);
     }, 5000);
@@ -1337,5 +1981,84 @@ function hideToast(toast) {
         }
     }, 300);
 }
+
+// === CLEANUP ===
+window.addEventListener('beforeunload', function() {
+    if (wardrobeViewer) {
+        wardrobeViewer.dispose();
+    }
+});
+
+// === TESTING FUNCTIONS ===
+window.testViewer = function() {
+    const cubeOBJ = `# Test Cube for Wardrobe
+v -1 -1 -1
+v 1 -1 -1
+v 1 1 -1
+v -1 1 -1
+v -1 -1 1
+v 1 -1 1
+v 1 1 1
+v -1 1 1
+
+vn 0 0 -1
+vn 0 0 1
+vn 0 -1 0
+vn 0 1 0
+vn -1 0 0
+vn 1 0 0
+
+f 1//1 2//1 3//1 4//1
+f 5//2 8//2 7//2 6//2
+f 1//3 5//3 6//3 2//3
+f 2//4 6//4 7//4 3//4
+f 3//5 7//5 8//5 4//5
+f 5//6 1//6 4//6 8//6`;
+
+    generatedModelData = {
+        model_path: 'data:text/plain;base64,' + btoa(cubeOBJ),
+        method: 'test',
+        file_format: 'OBJ',
+        file_size: cubeOBJ.length
+    };
+
+    console.log('🧪 Test data set for wardrobe viewer:', generatedModelData);
+    view3DModel();
+};
+
+window.testWithActualModel = function(modelPath) {
+    if (!modelPath) {
+        modelPath = '/static/models/generated/a1f71ebb37914b739fa02333ed8a4672/colab_model_task_a1f71ebb37914b739fa02333ed8a4672_46bca89f_1748192740_1748192762.obj';
+    }
+
+    generatedModelData = {
+        model_path: modelPath,
+        method: 'colab',
+        file_format: 'OBJ',
+        file_size: 6085950
+    };
+
+    console.log('🔥 TESTING WITH ACTUAL WARDROBE MODEL:', generatedModelData);
+    view3DModel();
+};
+
+// Quick access functions for debugging
+window.loadWardrobe3D = function(path) {
+    generatedModelData = {
+        model_path: path,
+        method: 'manual',
+        file_format: 'OBJ',
+        file_size: 0
+    };
+    view3DModel();
+};
+
+console.log('🎉 ENHANCED WARDROBE 3D VIEWER LOADED!');
+console.log('🧪 Test commands:');
+console.log('   window.testViewer() - Load test cube');
+console.log('   window.testWithActualModel() - Load your actual model');
+console.log('   window.loadWardrobe3D("path") - Load specific model path');
+console.log('✅ Bulletproof OBJ loader with wardrobe styling ready!');
+
 </script>
 {% endblock %}

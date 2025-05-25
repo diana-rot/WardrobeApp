@@ -2008,9 +2008,11 @@ def get_outfit():
 #             city3={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}
 #         )
 
+
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
 def add_wardrobe():
+    """Enhanced wardrobe route with better item_id handling"""
     if request.method == 'POST':
         try:
             # Check if the post request has the file part
@@ -2039,7 +2041,7 @@ def add_wardrobe():
                 # Make prediction
                 preds = model_predict(file_path, model)
                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                              'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
                 # Get predicted label and confidence scores
                 predicted_label = np.argmax(preds)
@@ -2047,66 +2049,72 @@ def add_wardrobe():
 
                 # Get color prediction using the improved function
                 color_result = improved_predict_color(file_path)
-                # color_result is a tuple of (percentage, RGB array)
                 color_percentage = float(color_result[0])
-                color_rgb = color_result[1].tolist()  # Convert numpy array to list
+                color_rgb = color_result[1].tolist()
 
                 # Extract material properties
                 material_properties = extract_material_properties(file_path)
 
                 # Generate normal map for textured materials
                 normal_map_path = None
-                # Check if material_properties contains pattern_info before accessing it
                 has_pattern = False
                 pattern_strength = 0.0
 
                 if material_properties:
-                    # Safely check for pattern_info
                     if 'pattern_info' in material_properties:
                         pattern_info = material_properties['pattern_info']
                         has_pattern = pattern_info.get('has_pattern', False)
                         pattern_strength = pattern_info.get('pattern_strength', 0.0)
 
-                    # Determine if we should generate a normal map based on material type and pattern
                     if (material_properties.get('estimated_material') in ['textured', 'rough_textured',
                                                                           'woven_patterned'] or
                             (has_pattern and pattern_strength > 0.3)):
                         try:
                             normal_map_path = generate_normal_map(file_path)
                             if normal_map_path:
-                                # Convert to database path format
                                 normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
                         except Exception as e:
                             print(f"Error generating normal map: {str(e)}")
-                            # Continue even if normal map generation fails
 
-                # Set texture preview path (explicitly store it)
                 texture_preview_path = file_path_db
 
-                # Save image data
-                userId = session['user']['_id']
-                db.wardrobe.insert_one({
-                    'userId': userId,
+                # Save image data to database
+                wardrobe_item = {
+                    'userId': user_id,
                     'label': clothing_type,
                     'confidence': float(preds[0][predicted_label]),
                     'color': {
                         'percentage': color_percentage,
                         'rgb': color_rgb
                     },
-                    # Add material properties
                     'material_properties': material_properties,
                     'normal_map_path': normal_map_path,
                     'filename': secure_filename(f.filename),
                     'file_path': file_path_db,
-                    'texture_preview_path': texture_preview_path,  # Add this for UI display
+                    'texture_preview_path': texture_preview_path,
                     'created_at': datetime.now(),
                     'last_worn': None,
-                    'times_worn': 0
-                })
+                    'times_worn': 0,
+                    # 3D MODEL FIELDS
+                    'has_3d_model': False,
+                    'model_3d_path': None,
+                    'model_generated_at': None,
+                    'model_method': None,
+                    'model_file_format': None,
+                    'model_file_size': None,
+                    'model_last_updated': None
+                }
 
-                # Return success response with all needed data for UI display
+                # INSERT AND GET THE ID - THIS IS CRUCIAL!
+                insert_result = db.wardrobe.insert_one(wardrobe_item)
+                item_id = str(insert_result.inserted_id)
+
+                print(f"✅ Created wardrobe item with ID: {item_id}")
+
+                # Return success response with the item_id - VERY IMPORTANT!
                 return jsonify({
                     'success': True,
+                    'item_id': item_id,  # THIS IS THE KEY FIELD FOR AUTO-SAVE!
                     'prediction': clothing_type,
                     'confidence': float(preds[0][predicted_label]),
                     'color': {
@@ -2115,11 +2123,11 @@ def add_wardrobe():
                     },
                     'material_properties': material_properties,
                     'normal_map_path': normal_map_path,
-                    'texture_preview_path': texture_preview_path  # Important: Include this
+                    'texture_preview_path': texture_preview_path
                 })
 
             except Exception as e:
-                print(f"Error in prediction: {str(e)}")
+                print(f"Prediction error: {str(e)}")
                 if os.path.exists(file_path):
                     os.remove(file_path)
                 return jsonify({'error': f'Error processing image: {str(e)}'}), 500
@@ -2130,6 +2138,128 @@ def add_wardrobe():
 
     # GET request
     return render_template('wardrobe.html')
+# @app.route('/wardrobe', methods=['GET', 'POST'])
+# @login_required
+# def add_wardrobe():
+#     if request.method == 'POST':
+#         try:
+#             # Check if the post request has the file part
+#             if 'file' not in request.files:
+#                 return jsonify({'error': 'No file part'}), 400
+#
+#             f = request.files['file']
+#             if f.filename == '':
+#                 return jsonify({'error': 'No selected file'}), 400
+#
+#             # Check if the file is allowed
+#             allowed_extensions = {'png', 'jpg', 'jpeg'}
+#             if not '.' in f.filename or \
+#                     f.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+#                 return jsonify({'error': 'Invalid file type'}), 400
+#
+#             # Save the file
+#             user_id = session['user']['_id']
+#             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
+#             os.makedirs(upload_dir, exist_ok=True)
+#             file_path = os.path.join(upload_dir, secure_filename(f.filename))
+#             f.save(file_path)
+#             file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+#
+#             try:
+#                 # Make prediction
+#                 preds = model_predict(file_path, model)
+#                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+#                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+#
+#                 # Get predicted label and confidence scores
+#                 predicted_label = np.argmax(preds)
+#                 clothing_type = class_names[predicted_label]
+#
+#                 # Get color prediction using the improved function
+#                 color_result = improved_predict_color(file_path)
+#                 # color_result is a tuple of (percentage, RGB array)
+#                 color_percentage = float(color_result[0])
+#                 color_rgb = color_result[1].tolist()  # Convert numpy array to list
+#
+#                 # Extract material properties
+#                 material_properties = extract_material_properties(file_path)
+#
+#                 # Generate normal map for textured materials
+#                 normal_map_path = None
+#                 # Check if material_properties contains pattern_info before accessing it
+#                 has_pattern = False
+#                 pattern_strength = 0.0
+#
+#                 if material_properties:
+#                     # Safely check for pattern_info
+#                     if 'pattern_info' in material_properties:
+#                         pattern_info = material_properties['pattern_info']
+#                         has_pattern = pattern_info.get('has_pattern', False)
+#                         pattern_strength = pattern_info.get('pattern_strength', 0.0)
+#
+#                     # Determine if we should generate a normal map based on material type and pattern
+#                     if (material_properties.get('estimated_material') in ['textured', 'rough_textured',
+#                                                                           'woven_patterned'] or
+#                             (has_pattern and pattern_strength > 0.3)):
+#                         try:
+#                             normal_map_path = generate_normal_map(file_path)
+#                             if normal_map_path:
+#                                 # Convert to database path format
+#                                 normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
+#                         except Exception as e:
+#                             print(f"Error generating normal map: {str(e)}")
+#                             # Continue even if normal map generation fails
+#
+#                 # Set texture preview path (explicitly store it)
+#                 texture_preview_path = file_path_db
+#
+#                 # Save image data
+#                 userId = session['user']['_id']
+#                 db.wardrobe.insert_one({
+#                     'userId': userId,
+#                     'label': clothing_type,
+#                     'confidence': float(preds[0][predicted_label]),
+#                     'color': {
+#                         'percentage': color_percentage,
+#                         'rgb': color_rgb
+#                     },
+#                     # Add material properties
+#                     'material_properties': material_properties,
+#                     'normal_map_path': normal_map_path,
+#                     'filename': secure_filename(f.filename),
+#                     'file_path': file_path_db,
+#                     'texture_preview_path': texture_preview_path,  # Add this for UI display
+#                     'created_at': datetime.now(),
+#                     'last_worn': None,
+#                     'times_worn': 0
+#                 })
+#
+#                 # Return success response with all needed data for UI display
+#                 return jsonify({
+#                     'success': True,
+#                     'prediction': clothing_type,
+#                     'confidence': float(preds[0][predicted_label]),
+#                     'color': {
+#                         'percentage': color_percentage,
+#                         'rgb': color_rgb
+#                     },
+#                     'material_properties': material_properties,
+#                     'normal_map_path': normal_map_path,
+#                     'texture_preview_path': texture_preview_path  # Important: Include this
+#                 })
+#
+#             except Exception as e:
+#                 print(f"Error in prediction: {str(e)}")
+#                 if os.path.exists(file_path):
+#                     os.remove(file_path)
+#                 return jsonify({'error': f'Error processing image: {str(e)}'}), 500
+#
+#         except Exception as e:
+#             print(f"Error in file upload: {str(e)}")
+#             return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
+#
+#     # GET request
+#     return render_template('wardrobe.html')
 
 # @app.route('/api/wardrobe/material/<item_id>', methods=['GET'])
 # @login_required
@@ -4244,18 +4374,334 @@ print("🚀 Colab-only 3D Generation System initialized!")
 print(f"🔗 Colab URL: {COLAB_API_URL}")
 print(f"✅ Colab Available: {colab_client.available}")
 
+@app.route('/api/save-3d-model', methods=['POST'])
+@login_required
+def save_3d_model_to_wardrobe():
+    """Save generated 3D model to wardrobe item with enhanced validation"""
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+        model_path = data.get('model_path')
+        method = data.get('method', 'colab')
+        file_format = data.get('file_format', 'OBJ')
+        file_size = data.get('file_size', 0)
+
+        print(f"💾 Saving 3D model to wardrobe:")
+        print(f"   Item ID: {item_id}")
+        print(f"   Model Path: {model_path}")
+        print(f"   Method: {method}")
+        print(f"   Format: {file_format}")
+        print(f"   Size: {file_size}")
+
+        if not item_id or not model_path:
+            return jsonify({
+                'success': False,
+                'error': 'Missing item_id or model_path'
+            }), 400
+
+        user_id = session['user']['_id']
+
+        # Verify the model file exists
+        if model_path.startswith('/'):
+            full_model_path = os.path.join('flaskapp', model_path.lstrip('/'))
+        else:
+            full_model_path = os.path.join('flaskapp', model_path)
+
+        if not os.path.exists(full_model_path):
+            print(f"❌ Model file not found at: {full_model_path}")
+            return jsonify({
+                'success': False,
+                'error': f'Model file not found at path: {model_path}'
+            }), 404
+
+        # Get actual file size if not provided
+        if file_size == 0:
+            try:
+                file_size = os.path.getsize(full_model_path)
+            except:
+                file_size = 0
+
+        print(f"✅ Model file verified: {full_model_path} ({file_size} bytes)")
+
+        # Update the wardrobe item with 3D model info
+        update_data = {
+            'model_3d_path': model_path,
+            'has_3d_model': True,
+            'model_generated_at': datetime.now(),
+            'model_method': method,
+            'model_file_format': file_format,
+            'model_file_size': file_size,
+            'model_last_updated': datetime.now()
+        }
+
+        result = db.wardrobe.update_one(
+            {'_id': ObjectId(item_id), 'userId': user_id},
+            {'$set': update_data}
+        )
+
+        if result.modified_count > 0:
+            print(f"✅ Successfully updated wardrobe item {item_id}")
+            return jsonify({
+                'success': True,
+                'message': '3D model saved to wardrobe successfully',
+                'model_info': {
+                    'path': model_path,
+                    'format': file_format,
+                    'size': file_size,
+                    'method': method
+                }
+            })
+        elif result.matched_count > 0:
+            # Item exists but wasn't modified (maybe already had the same data)
+            print(f"⚠️ Wardrobe item {item_id} found but not modified (already up to date?)")
+            return jsonify({
+                'success': True,
+                'message': '3D model info already up to date',
+                'model_info': {
+                    'path': model_path,
+                    'format': file_format,
+                    'size': file_size,
+                    'method': method
+                }
+            })
+        else:
+            print(f"❌ Wardrobe item {item_id} not found for user {user_id}")
+            return jsonify({
+                'success': False,
+                'error': 'Wardrobe item not found'
+            }), 404
+
+    except Exception as e:
+        print(f"❌ Error saving 3D model: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/wardrobe/3d-model/<item_id>', methods=['GET'])
+@login_required
+def get_wardrobe_3d_model(item_id):
+    """Get 3D model info for a wardrobe item"""
+    try:
+        user_id = session['user']['_id']
+        item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+
+        if not item:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+        if not item.get('has_3d_model') or not item.get('model_3d_path'):
+            return jsonify({'success': False, 'error': 'No 3D model available for this item'}), 404
+
+        return jsonify({
+            'success': True,
+            'model_path': item['model_3d_path'],
+            'generated_at': item.get('model_generated_at'),
+            'method': item.get('model_method', 'unknown'),
+            'item_label': item.get('label', 'Unknown'),
+            'has_3d_model': True
+        })
+
+    except Exception as e:
+        print(f"Error getting 3D model: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
+def handle_colab_generation_success(data, task_id, user_id):
+    """Enhanced success handler with automatic database saving"""
+    try:
+        print(f"🎉 Colab generation completed for task {task_id}")
+
+        # Update task status
+        generation_tasks[task_id].update({
+            'status': 'completed',
+            'message': f'3D model generated successfully via Colab! ({data.get("file_format", "OBJ")} format)',
+            'progress': 1.0,
+            'updated_at': time.time(),
+            'model_path': data['model_path'],
+            'local_path': data['local_path'],
+            'file_size': data['file_size'],
+            'file_format': data.get('file_format', 'OBJ'),
+            'completed_at': datetime.now().isoformat(),
+            'method': 'colab'
+        })
+
+        print(f"✅ Task {task_id} marked as completed")
+        return True
+
+    except Exception as e:
+        print(f"❌ Error in success handler: {str(e)}")
+        return False
 
 
+# Enhanced Colab generation method in your existing ColabTripoSRClient class
+def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
+    """Enhanced Colab generation with better error handling and validation"""
+    if not self.available:
+        raise Exception("Colab API not available")
+
+    try:
+        print(f"🚀 Starting enhanced Colab 3D generation for task {task_id}")
+
+        # Update task status
+        generation_tasks[task_id].update({
+            'status': 'processing',
+            'message': 'Uploading image to Colab GPU...',
+            'progress': 0.1,
+            'updated_at': time.time()
+        })
+
+        # Prepare file for upload
+        with open(image_path, 'rb') as f:
+            files = {'image': ('image.jpg', f, 'image/jpeg')}
+
+            # Update progress
+            generation_tasks[task_id].update({
+                'message': 'Processing with Colab TripoSR...',
+                'progress': 0.3,
+                'updated_at': time.time()
+            })
+
+            print(f"📤 Uploading to enhanced Colab API: {self.colab_url}/generate")
+
+            # Call Colab API with extended timeout
+            response = self.session.post(
+                f"{self.colab_url}/generate",
+                files=files,
+                timeout=400  # Extended to 6+ minutes for complex models
+            )
+
+        print(f"📥 Colab response: HTTP {response.status_code}")
+        print(f"📦 Response headers: {dict(response.headers)}")
+
+        if response.status_code == 200:
+            # Update progress
+            generation_tasks[task_id].update({
+                'message': 'Saving and validating 3D model...',
+                'progress': 0.9,
+                'updated_at': time.time()
+            })
+
+            # Validate response content
+            content_length = len(response.content)
+            print(f"📦 Response content length: {content_length:,} bytes")
+
+            # More lenient validation - allow smaller OBJ files
+            if content_length < 500:  # Changed from 1000 to 500
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('message', error_data.get('error', 'Unknown error'))
+                    print(f"❌ Colab API returned error: {error_msg}")
+                    raise Exception(f"Colab processing failed: {error_msg}")
+                except:
+                    print(f"❌ Colab API returned insufficient data: {response.text[:200]}...")
+                    raise Exception("Colab API returned insufficient data - model may be too simple")
+
+            # Create user model directory
+            user_model_dir = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
+            os.makedirs(user_model_dir, exist_ok=True)
+
+            # Determine file format
+            content_type = response.headers.get('content-type', '').lower()
+            if 'glb' in content_type or 'gltf' in content_type:
+                file_extension = 'glb'
+            elif 'obj' in content_type or 'octet-stream' in content_type:
+                file_extension = 'obj'
+            else:
+                # Check content for OBJ markers
+                content_sample = response.content[:1000].decode('utf-8', errors='ignore')
+                if 'v ' in content_sample and 'f ' in content_sample:
+                    file_extension = 'obj'
+                else:
+                    file_extension = 'obj'  # Default assumption
+
+            # Generate unique filename
+            timestamp = int(time.time())
+            model_filename = f"colab_model_{task_id}_{timestamp}.{file_extension}"
+            model_path = os.path.join(user_model_dir, model_filename)
+
+            # Save the model file
+            with open(model_path, 'wb') as f:
+                f.write(response.content)
+
+            file_size = len(response.content)
+            print(f"💾 Model saved: {model_path} ({file_size:,} bytes)")
+
+            # Verify saved file
+            if not os.path.exists(model_path) or os.path.getsize(model_path) == 0:
+                print("❌ Saved model file is empty or doesn't exist")
+                raise Exception("Failed to save model file properly")
+
+            # Additional validation for OBJ files
+            if file_extension == 'obj':
+                try:
+                    with open(model_path, 'r') as f:
+                        content_check = f.read(1000)
+                        if not ('v ' in content_check or 'f ' in content_check):
+                            print("⚠️ OBJ file may not contain valid geometry data")
+                            print(f"Content preview: {content_check[:200]}...")
+                except Exception as e:
+                    print(f"⚠️ Could not validate OBJ content: {e}")
+
+            # Success data
+            success_data = {
+                'model_path': f'/static/models/generated/{user_id}/{model_filename}',
+                'local_path': model_path,
+                'file_size': file_size,
+                'file_format': file_extension.upper(),
+                'method': 'colab'
+            }
+
+            # Update task as completed
+            generation_tasks[task_id].update({
+                'status': 'completed',
+                'message': f'3D model generated successfully! ({file_extension.upper()}, {(file_size / 1024 / 1024):.1f}MB)',
+                'progress': 1.0,
+                'updated_at': time.time(),
+                **success_data,
+                'completed_at': datetime.now().isoformat()
+            })
+
+            print(f"✅ Enhanced task {task_id} completed successfully!")
+            return True
+
+        else:
+            # Enhanced error handling
+            error_msg = f"Colab API error: HTTP {response.status_code}"
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('error', error_data.get('message', error_msg))
+                print(f"❌ Colab API error details: {error_data}")
+            except:
+                print(f"❌ Colab API error (raw): {response.text[:500]}...")
+
+            # Provide specific error messages
+            if response.status_code == 500:
+                error_msg = "Colab server error during 3D generation. The image may be too complex or the server is overloaded."
+            elif response.status_code == 404:
+                error_msg = "Colab API endpoint not found. Please check if the Colab notebook is running properly."
+            elif response.status_code == 413:
+                error_msg = "Image file too large for Colab processing. Please use a smaller image."
+            elif response.status_code == 408:
+                error_msg = "Colab processing timeout. Try with a simpler image or check server load."
+
+            raise Exception(error_msg)
+
+    except requests.exceptions.Timeout:
+        error_msg = "Colab processing timeout (>6 minutes). The 3D generation is taking too long - try with a simpler image."
+        print(f"❌ {error_msg}")
+        raise Exception(error_msg)
+
+    except requests.exceptions.ConnectionError:
+        error_msg = "Cannot connect to Colab API. Please verify the Colab notebook is running and ngrok tunnel is active."
+        print(f"❌ {error_msg}")
+        raise Exception(error_msg)
+
+    except Exception as e:
+        error_str = str(e)
+        print(f"❌ Enhanced Colab generation error: {error_str}")
+        raise Exception(f"3D generation failed: {error_str}")
 
 
-
-
-
-
-
-
+print("🚀 Enhanced Auto-Save 3D Model System loaded!")
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)
