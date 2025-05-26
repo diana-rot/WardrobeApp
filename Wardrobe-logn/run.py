@@ -2009,10 +2009,11 @@ def get_outfit():
 #         )
 
 
+# FIXED: Enhanced wardrobe route with proper 3D model fields
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
 def add_wardrobe():
-    """Enhanced wardrobe route with better item_id handling"""
+    """Enhanced wardrobe route with proper 3D model database integration"""
     if request.method == 'POST':
         try:
             # Check if the post request has the file part
@@ -2078,7 +2079,7 @@ def add_wardrobe():
 
                 texture_preview_path = file_path_db
 
-                # Save image data to database
+                # FIXED: Save image data to database with complete 3D model fields
                 wardrobe_item = {
                     'userId': user_id,
                     'label': clothing_type,
@@ -2095,23 +2096,26 @@ def add_wardrobe():
                     'created_at': datetime.now(),
                     'last_worn': None,
                     'times_worn': 0,
-                    # 3D MODEL FIELDS
+                    # CRITICAL: 3D MODEL FIELDS - PROPERLY INITIALIZED
                     'has_3d_model': False,
-                    'model_3d_path': None,
-                    'model_generated_at': None,
-                    'model_method': None,
-                    'model_file_format': None,
-                    'model_file_size': None,
-                    'model_last_updated': None
+                    'model_3d_path': None,           # Will store the OBJ/GLB file path
+                    'model_generated_at': None,      # When the 3D model was created
+                    'model_method': None,            # 'colab', 'triposr', etc.
+                    'model_file_format': None,       # 'OBJ', 'GLB', etc.
+                    'model_file_size': None,         # File size in bytes
+                    'model_last_updated': None,      # Last time the 3D model was updated
+                    'model_generation_status': None, # 'generating', 'completed', 'failed'
+                    'model_task_id': None           # Generation task ID for tracking
                 }
 
-                # INSERT AND GET THE ID - THIS IS CRUCIAL!
+                # INSERT AND GET THE ID - THIS IS CRUCIAL FOR AUTO-SAVE!
+                print(f"💾 Inserting wardrobe item to database...")
                 insert_result = db.wardrobe.insert_one(wardrobe_item)
                 item_id = str(insert_result.inserted_id)
 
                 print(f"✅ Created wardrobe item with ID: {item_id}")
 
-                # Return success response with the item_id - VERY IMPORTANT!
+                # CRITICAL: Return success response with the item_id for auto-save!
                 return jsonify({
                     'success': True,
                     'item_id': item_id,  # THIS IS THE KEY FIELD FOR AUTO-SAVE!
@@ -2138,6 +2142,8 @@ def add_wardrobe():
 
     # GET request
     return render_template('wardrobe.html')
+
+
 # @app.route('/wardrobe', methods=['GET', 'POST'])
 # @login_required
 # def add_wardrobe():
@@ -4374,6 +4380,8 @@ print("🚀 Colab-only 3D Generation System initialized!")
 print(f"🔗 Colab URL: {COLAB_API_URL}")
 print(f"✅ Colab Available: {colab_client.available}")
 
+
+# FIXED: Enhanced save 3D model route with better error handling
 @app.route('/api/save-3d-model', methods=['POST'])
 @login_required
 def save_3d_model_to_wardrobe():
@@ -4423,7 +4431,7 @@ def save_3d_model_to_wardrobe():
 
         print(f"✅ Model file verified: {full_model_path} ({file_size} bytes)")
 
-        # Update the wardrobe item with 3D model info
+        # FIXED: Update the wardrobe item with comprehensive 3D model info
         update_data = {
             'model_3d_path': model_path,
             'has_3d_model': True,
@@ -4431,7 +4439,8 @@ def save_3d_model_to_wardrobe():
             'model_method': method,
             'model_file_format': file_format,
             'model_file_size': file_size,
-            'model_last_updated': datetime.now()
+            'model_last_updated': datetime.now(),
+            'model_generation_status': 'completed'
         }
 
         result = db.wardrobe.update_one(
@@ -4440,19 +4449,28 @@ def save_3d_model_to_wardrobe():
         )
 
         if result.modified_count > 0:
-            print(f"✅ Successfully updated wardrobe item {item_id}")
-            return jsonify({
-                'success': True,
-                'message': '3D model saved to wardrobe successfully',
-                'model_info': {
-                    'path': model_path,
-                    'format': file_format,
-                    'size': file_size,
-                    'method': method
-                }
-            })
+            print(f"✅ Successfully updated wardrobe item {item_id} with 3D model")
+
+            # VERIFY the update worked by fetching the item
+            updated_item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+            if updated_item and updated_item.get('has_3d_model'):
+                print(f"✅ Database verification successful - 3D model saved!")
+                return jsonify({
+                    'success': True,
+                    'message': '3D model saved to wardrobe successfully',
+                    'model_info': {
+                        'path': model_path,
+                        'format': file_format,
+                        'size': file_size,
+                        'method': method,
+                        'item_label': updated_item.get('label', 'Unknown')
+                    }
+                })
+            else:
+                print(f"❌ Database verification failed - 3D model not properly saved")
+                raise Exception("Database update verification failed")
+
         elif result.matched_count > 0:
-            # Item exists but wasn't modified (maybe already had the same data)
             print(f"⚠️ Wardrobe item {item_id} found but not modified (already up to date?)")
             return jsonify({
                 'success': True,
@@ -4476,6 +4494,7 @@ def save_3d_model_to_wardrobe():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/wardrobe/3d-model/<item_id>', methods=['GET'])
 @login_required
@@ -4702,6 +4721,46 @@ def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
 
 
 print("🚀 Enhanced Auto-Save 3D Model System loaded!")
+
+
+# FIXED: Route to get all wardrobe items WITH 3D model info
+@app.route('/api/wardrobe/all-with-3d', methods=['GET'])
+@login_required
+def get_all_wardrobe_with_3d():
+    """Get all wardrobe items including 3D model information"""
+    try:
+        user_id = session['user']['_id']
+        items_cursor = db.wardrobe.find({'userId': user_id})
+
+        items_with_3d = []
+        for item in items_cursor:
+            item_data = {
+                'id': str(item['_id']),
+                'label': item.get('label', ''),
+                'file_path': normalize_path(item.get('file_path', '')),
+                'color': item.get('color', ''),
+                'created_at': item.get('created_at'),
+                # 3D MODEL INFO
+                'has_3d_model': item.get('has_3d_model', False),
+                'model_3d_path': normalize_path(item.get('model_3d_path', '')) if item.get('model_3d_path') else None,
+                'model_method': item.get('model_method'),
+                'model_file_format': item.get('model_file_format'),
+                'model_file_size': item.get('model_file_size'),
+                'model_generated_at': item.get('model_generated_at'),
+                'model_generation_status': item.get('model_generation_status', 'none')
+            }
+            items_with_3d.append(item_data)
+
+        return jsonify({
+            'success': True,
+            'items': items_with_3d,
+            'total_items': len(items_with_3d),
+            'items_with_3d': len([item for item in items_with_3d if item['has_3d_model']])
+        })
+
+    except Exception as e:
+        print(f"Error getting wardrobe with 3D: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

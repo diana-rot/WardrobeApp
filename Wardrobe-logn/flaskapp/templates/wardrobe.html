@@ -1083,7 +1083,10 @@ class BulletproofOBJLoader {
     }
 }
 
-// CLEAN WHITE BACKGROUND CLOTHING VIEWER
+
+
+
+// FIXED: Enhanced CleanWhiteClothingViewer class with better method validation
 class CleanWhiteClothingViewer {
     constructor(container) {
         this.container = container;
@@ -1132,15 +1135,14 @@ class CleanWhiteClothingViewer {
         // Controls optimized for clothing
         this.controls = createOrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.05;
-        this.controls.minDistance = 0.5; // Can get close to see fabric details
+        this.controls.dampingFactor = 0.08; // FIXED: Less sensitive
+        this.controls.minDistance = 0.5;
         this.controls.maxDistance = 8;
 
         // Limit vertical rotation for clothing
         this.controls.maxPolarAngle = Math.PI * 0.8;
         this.controls.minPolarAngle = Math.PI * 0.1;
 
-        // White background lighting
         this.setupCleanWhiteLighting();
         this.animate();
         window.addEventListener('resize', () => this.onWindowResize());
@@ -1234,7 +1236,7 @@ class CleanWhiteClothingViewer {
 
                 // Optimize material for clothing with colors
                 if (child.material) {
-                    child.material.side = THREE.DoubleSide; // Important for fabric
+                    child.material.side = THREE.DoubleSide;
                     child.material.needsUpdate = true;
 
                     // Ensure vertex colors are enabled if available
@@ -1346,9 +1348,14 @@ class CleanWhiteClothingViewer {
         console.log(`📸 Camera positioned for ${this.clothingType}: distance=${cameraDistance.toFixed(2)}, height=${cameraHeight.toFixed(2)}`);
     }
 
-    // Preset camera positions for different clothing views
+    // FIXED: Clothing view presets
     setClothingView(viewType) {
-        if (!this.model) return;
+        console.log(`📸 Setting clothing view: ${viewType}`);
+
+        if (!this.model) {
+            console.error('❌ No model loaded for view change');
+            return;
+        }
 
         const box = new THREE.Box3().setFromObject(this.model);
         const center = box.getCenter(new THREE.Vector3());
@@ -1421,6 +1428,39 @@ class CleanWhiteClothingViewer {
         animate();
     }
 
+    // FIXED: Control methods
+    toggleAutoRotate() {
+        if (this.controls) {
+            this.controls.autoRotate = !this.controls.autoRotate;
+            console.log(`🔄 Auto-rotate: ${this.controls.autoRotate ? 'ON' : 'OFF'}`);
+            return this.controls.autoRotate;
+        }
+        return false;
+    }
+
+    resetCamera() {
+        console.log('🏠 Resetting camera to optimal clothing position');
+        this.fitCameraToClothing();
+    }
+
+    toggleWireframe() {
+        if (!this.model) {
+            console.error('❌ No model available for wireframe toggle');
+            return false;
+        }
+
+        let wireframeEnabled = false;
+        this.model.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.wireframe = !child.material.wireframe;
+                wireframeEnabled = child.material.wireframe;
+            }
+        });
+
+        console.log(`📐 Wireframe: ${wireframeEnabled ? 'ON' : 'OFF'}`);
+        return wireframeEnabled;
+    }
+
     showLoadingState() {
         let loadingDiv = this.container.querySelector('.viewer-loading-overlay');
         if (!loadingDiv) {
@@ -1463,27 +1503,6 @@ class CleanWhiteClothingViewer {
         this.container.appendChild(errorDiv);
     }
 
-    toggleAutoRotate() {
-        this.controls.autoRotate = !this.controls.autoRotate;
-        return this.controls.autoRotate;
-    }
-
-    resetCamera() {
-        this.fitCameraToClothing();
-    }
-
-    toggleWireframe() {
-        if (!this.model) return false;
-        let wireframeEnabled = false;
-        this.model.traverse((child) => {
-            if (child.isMesh && child.material) {
-                child.material.wireframe = !child.material.wireframe;
-                wireframeEnabled = child.material.wireframe;
-            }
-        });
-        return wireframeEnabled;
-    }
-
     animate() {
         requestAnimationFrame(() => this.animate());
         if (this.controls) this.controls.update();
@@ -1506,6 +1525,47 @@ class CleanWhiteClothingViewer {
         console.log('🗑️ Clean white clothing viewer disposed');
     }
 }
+
+// FIXED: Debug functions
+window.testModalButtons = function() {
+    console.log('🧪 Testing modal button functions...');
+
+    // Test each function
+    console.log('Testing resetView...');
+    if (typeof window.resetView === 'function') {
+        console.log('✅ resetView function exists');
+    } else {
+        console.error('❌ resetView function missing');
+    }
+
+    console.log('Testing toggleWireframe...');
+    if (typeof window.toggleWireframe === 'function') {
+        console.log('✅ toggleWireframe function exists');
+    } else {
+        console.error('❌ toggleWireframe function missing');
+    }
+
+    console.log('Testing toggleAutoRotate...');
+    if (typeof window.toggleAutoRotate === 'function') {
+        console.log('✅ toggleAutoRotate function exists');
+    } else {
+        console.error('❌ toggleAutoRotate function missing');
+    }
+
+    console.log('Testing setClothingView...');
+    if (typeof window.setClothingView === 'function') {
+        console.log('✅ setClothingView function exists');
+    } else {
+        console.error('❌ setClothingView function missing');
+    }
+
+    console.log('wardrobeViewer status:', wardrobeViewer ? 'Available' : 'Not available');
+};
+
+console.log('🔧 Fixed button control functions loaded!');
+console.log('🧪 Test with: window.testModalButtons()');
+// CLEAN WHITE BACKGROUND CLOTHING VIEWER
+
 
 // Global variables
 let currentUploadedFile = null;
@@ -1535,6 +1595,7 @@ function initializeApp() {
 }
 
 // WORKING ORBITCONTROLS FUNCTION
+// WORKING ORBITCONTROLS FUNCTION - FIXED SENSITIVITY
 function createOrbitControls(camera, domElement) {
     const controls = {
         camera: camera,
@@ -1543,9 +1604,9 @@ function createOrbitControls(camera, domElement) {
         minDistance: 1,
         maxDistance: 20,
         enableDamping: true,
-        dampingFactor: 0.05,
+        dampingFactor: 0.08, // Increased for smoother movement
         autoRotate: false,
-        autoRotateSpeed: 2,
+        autoRotateSpeed: 1, // Reduced from 2
 
         spherical: new THREE.Spherical(),
         sphericalDelta: new THREE.Spherical(),
@@ -1555,6 +1616,11 @@ function createOrbitControls(camera, domElement) {
 
         rotateStart: new THREE.Vector2(),
         rotateEnd: new THREE.Vector2(),
+
+        // Add sensitivity controls
+        rotateSpeed: 0.3, // NEW: Much lower sensitivity (was effectively 1.0)
+        panSpeed: 0.5,    // NEW: Pan sensitivity
+        zoomSpeed: 0.8,   // NEW: Zoom sensitivity
 
         update: function() {
             if (this.autoRotate && this.state === this.STATE.NONE) {
@@ -1599,8 +1665,9 @@ function createOrbitControls(camera, domElement) {
             this.rotateEnd.set(event.clientX, event.clientY);
             const delta = new THREE.Vector2().subVectors(this.rotateEnd, this.rotateStart);
 
-            this.sphericalDelta.theta -= delta.x * 0.01;
-            this.sphericalDelta.phi -= delta.y * 0.01;
+            // FIXED: Apply rotation speed multiplier - much more sensitive control
+            this.sphericalDelta.theta -= delta.x * 0.01 * this.rotateSpeed; // Was 0.01, now 0.01 * 0.3 = 0.003
+            this.sphericalDelta.phi -= delta.y * 0.01 * this.rotateSpeed;   // Much less sensitive
 
             this.rotateStart.copy(this.rotateEnd);
         }
@@ -1614,7 +1681,8 @@ function createOrbitControls(camera, domElement) {
 
     controls.onMouseWheel = function(event) {
         event.preventDefault();
-        const scale = event.deltaY > 0 ? 1.1 : 0.9;
+        // FIXED: Apply zoom speed and make it less sensitive
+        const scale = event.deltaY > 0 ? (1 + (0.05 * controls.zoomSpeed)) : (1 - (0.05 * controls.zoomSpeed));
         controls.scale = (controls.scale || 1) * scale;
     };
 
@@ -1775,6 +1843,7 @@ function showColabConnectionStatus(success, message) {
 }
 
 // IMAGE ANALYSIS FUNCTION
+// FIXED: Enhanced analyze image function to properly store item_id
 function analyzeImage() {
     if (!currentUploadedFile) {
         showToast('Please select an image first', 'warning');
@@ -1804,13 +1873,25 @@ function analyzeImage() {
         btnPredict.innerHTML = '<i class="fas fa-magic"></i> Analyze & Save to Wardrobe';
 
         if (data.success) {
-            currentItemData = data;
-            console.log('🎯 Current item data with ID:', currentItemData);
+            // CRITICAL: Store the complete response data including item_id
+            currentItemData = {
+                item_id: data.item_id,  // This is the key field from the backend
+                prediction: data.prediction,
+                confidence: data.confidence,
+                color: data.color,
+                material_properties: data.material_properties,
+                normal_map_path: data.normal_map_path,
+                texture_preview_path: data.texture_preview_path
+            };
+
+            console.log('🎯 Stored item data with ID:', currentItemData);
+
             displayAnalysisResults(data);
             showModelGenerationSection();
             showToast('✅ Image analyzed and saved to wardrobe!', 'success');
         } else {
             showToast(data.error || 'Analysis failed', 'error');
+            currentItemData = null; // Clear on error
         }
     })
     .catch(error => {
@@ -1819,6 +1900,7 @@ function analyzeImage() {
         btnPredict.disabled = false;
         btnPredict.innerHTML = '<i class="fas fa-magic"></i> Analyze & Save to Wardrobe';
         showToast('Error analyzing image', 'error');
+        currentItemData = null; // Clear on error
     });
 }
 
@@ -1989,9 +2071,15 @@ function handleGenerationSuccess(data) {
     showToast('🎉 3D model generated successfully with Colab!', 'success');
     showQuickViewButton();
 
-    if (currentItemData && currentItemData.item_id) {
+    // CRITICAL: Auto-save only if we have current item data with valid ID
+    if (currentItemData && (currentItemData.item_id || currentItemData._id || currentItemData.id)) {
         console.log('🔄 Auto-saving 3D model to database...');
-        autoSave3DModel();
+        setTimeout(() => {
+            autoSave3DModel();
+        }, 1000); // Small delay to ensure UI updates complete
+    } else {
+        console.log('⚠️ No valid item data for auto-save:', currentItemData);
+        showToast('⚠️ 3D model generated but not auto-saved. Use Save button.', 'warning');
     }
 
     currentGenerationTaskId = null;
@@ -2019,20 +2107,29 @@ function resetGenerationUI() {
     }
 }
 
+// FIXED: Auto-save function with better validation and error handling
 function autoSave3DModel() {
     if (!generatedModelData || !currentItemData) {
         console.log('❌ Cannot auto-save: missing data');
+        console.log('generatedModelData:', generatedModelData);
+        console.log('currentItemData:', currentItemData);
         return;
     }
 
+    // CRITICAL: Get the item_id that was returned from the /wardrobe POST
     const itemId = currentItemData.item_id || currentItemData._id || currentItemData.id;
 
     if (!itemId) {
         console.log('❌ No valid item ID found:', currentItemData);
+        showToast('⚠️ Cannot auto-save 3D model - no item ID found', 'warning');
         return;
     }
 
     console.log('💾 Auto-saving 3D model for item:', itemId);
+    console.log('Model data:', generatedModelData);
+
+    // Show saving indicator
+    showToast('💾 Auto-saving 3D model to wardrobe...', 'info');
 
     fetch('/api/save-3d-model', {
         method: 'POST',
@@ -2042,27 +2139,37 @@ function autoSave3DModel() {
         body: JSON.stringify({
             item_id: itemId,
             model_path: generatedModelData.model_path,
-            method: generatedModelData.method,
-            file_format: generatedModelData.file_format,
-            file_size: generatedModelData.file_size
+            method: generatedModelData.method || 'colab',
+            file_format: generatedModelData.file_format || 'OBJ',
+            file_size: generatedModelData.file_size || 0
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            console.log('✅ 3D model auto-saved to database');
-            showToast('✅ 3D model automatically saved to wardrobe', 'success');
+            console.log('✅ 3D model auto-saved to database successfully');
+            showToast('✅ 3D model automatically saved to wardrobe!', 'success');
 
+            // Update currentItemData to reflect the saved state
             currentItemData.has_3d_model = true;
             currentItemData.model_3d_path = generatedModelData.model_path;
+            currentItemData.model_method = generatedModelData.method;
+            currentItemData.model_file_format = generatedModelData.file_format;
+
+            console.log('Updated currentItemData:', currentItemData);
+
         } else {
-            console.log('❌ Auto-save failed:', data.error);
-            showToast('⚠️ Model generated but not saved to wardrobe. Use Save button.', 'warning');
+            throw new Error(data.error || 'Unknown error occurred');
         }
     })
     .catch(error => {
         console.error('❌ Auto-save error:', error);
-        showToast('⚠️ Model generated but auto-save failed. Use Save button.', 'warning');
+        showToast(`⚠️ Auto-save failed: ${error.message}. Use the Save button manually.`, 'warning');
     });
 }
 
@@ -2091,6 +2198,73 @@ function view3DModel() {
     });
 }
 
+// FIXED: Setup control functions that the HTML buttons can call
+function setupModalControlFunctions() {
+    console.log('🔧 Setting up modal control functions...');
+
+    // Reset view function
+    window.resetView = function() {
+        console.log('🏠 Reset view clicked');
+        if (wardrobeViewer && wardrobeViewer.resetCamera) {
+            wardrobeViewer.resetCamera();
+            showToast('🏠 View reset to optimal clothing angle', 'success');
+        } else {
+            console.error('❌ wardrobeViewer or resetCamera not available');
+            showToast('❌ Reset function not available', 'error');
+        }
+    };
+      // Toggle wireframe function
+    window.toggleWireframe = function() {
+        console.log('📐 Toggle wireframe clicked');
+        if (wardrobeViewer && wardrobeViewer.toggleWireframe) {
+            const enabled = wardrobeViewer.toggleWireframe();
+            showToast(`📐 Wireframe ${enabled ? 'ON' : 'OFF'}`, 'success');
+        } else {
+            console.error('❌ wardrobeViewer or toggleWireframe not available');
+            showToast('❌ Wireframe function not available', 'error');
+        }
+    };
+
+    // Toggle auto-rotate function
+    window.toggleAutoRotate = function() {
+        console.log('🔄 Toggle auto-rotate clicked');
+        if (wardrobeViewer && wardrobeViewer.toggleAutoRotate) {
+            const enabled = wardrobeViewer.toggleAutoRotate();
+            showToast(`🔄 Auto-rotate ${enabled ? 'ON' : 'OFF'}`, 'success');
+        } else {
+            console.error('❌ wardrobeViewer or toggleAutoRotate not available');
+            showToast('❌ Auto-rotate function not available', 'error');
+        }
+    };
+
+    // Set clothing view function
+    window.setClothingView = function(viewType) {
+        console.log(`📸 Set clothing view clicked: ${viewType}`);
+        if (wardrobeViewer && wardrobeViewer.setClothingView) {
+            wardrobeViewer.setClothingView(viewType);
+            showToast(`📸 ${viewType.charAt(0).toUpperCase() + viewType.slice(1)} view`, 'success');
+        } else {
+            console.error('❌ wardrobeViewer or setClothingView not available');
+            showToast('❌ View change function not available', 'error');
+        }
+    };
+
+    // Modal footer button functions
+    window.downloadModel = function() {
+        console.log('📥 Download model clicked from modal');
+        downloadModel(); // Call the existing function
+    };
+
+    window.saveToWardrobe = function() {
+        console.log('💾 Save to wardrobe clicked from modal');
+        saveToWardrobe(); // Call the existing function
+    };
+
+    console.log('✅ Modal control functions set up successfully');
+}
+
+
+// Initialize control functions properly when viewer is created
 function initCleanWhiteClothingViewer() {
     console.log('🎯 Initializing Clean White Clothing 3D Viewer...');
 
@@ -2121,37 +2295,13 @@ function initCleanWhiteClothingViewer() {
         showToast('❌ No model data available', 'error');
     }
 
-    // Update control functions with clothing viewer
-    window.resetView = () => {
-        if (wardrobeViewer) {
-            wardrobeViewer.resetCamera();
-            showToast('🏠 View reset to optimal clothing angle', 'success');
-        }
-    };
-
-    window.toggleWireframe = () => {
-        if (wardrobeViewer) {
-            const enabled = wardrobeViewer.toggleWireframe();
-            showToast(`📐 Wireframe ${enabled ? 'ON' : 'OFF'}`, 'success');
-        }
-    };
-
-    window.toggleAutoRotate = () => {
-        if (wardrobeViewer) {
-            const enabled = wardrobeViewer.toggleAutoRotate();
-            showToast(`🔄 Auto-rotate ${enabled ? 'ON' : 'OFF'}`, 'success');
-        }
-    };
-
-    window.setClothingView = (viewType) => {
-        if (wardrobeViewer && wardrobeViewer.setClothingView) {
-            wardrobeViewer.setClothingView(viewType);
-            showToast(`📸 ${viewType.charAt(0).toUpperCase() + viewType.slice(1)} view`, 'success');
-        }
-    };
+    // FIXED: Properly define global functions for the modal buttons
+    setupModalControlFunctions();
 
     return wardrobeViewer;
 }
+
+
 
 // DOWNLOAD AND SAVE FUNCTIONS
 function downloadModel() {
