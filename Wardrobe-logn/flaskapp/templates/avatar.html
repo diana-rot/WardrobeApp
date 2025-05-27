@@ -31,14 +31,6 @@
         min-width: 600px;
     }
 
-    /* Right Panel - Debug Viewer */
-    .test-viewer-panel {
-        width: 250px;
-        background: #fff;
-        padding: 15px;
-        border-left: 1px solid #ddd;
-    }
-
     /* Loading & Feedback */
     .loading-overlay {
         position: absolute;
@@ -172,15 +164,6 @@
 
     .btn-info:hover {
         background: #138496;
-    }
-
-    .btn-danger {
-        background: #e74c3c;
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background: #c0392b;
     }
 
     /* RPM Specific Button Styling */
@@ -379,28 +362,7 @@
         font-size: 18px;
     }
 
-    /* Debug Panel */
-    .glb-viewer {
-        width: 100%;
-        height: 300px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        border: 1px solid #e9ecef;
-    }
-
     /* Responsive Design */
-    @media (max-width: 1200px) {
-        .test-viewer-panel {
-            display: none;
-        }
-
-        .avatar-container {
-            flex: 1;
-            min-width: auto;
-        }
-    }
-
     @media (max-width: 768px) {
         .avatar-page-content {
             flex-direction: column;
@@ -483,14 +445,6 @@
                        placeholder="https://models.readyplayer.me/...">
                 <button id="load-rpm-url" class="btn btn-primary mt-2">
                     <i class="bi bi-link"></i> Load Avatar
-                </button>
-            </div>
-
-            <!-- Debug Test Buttons -->
-            <div class="debug-controls mt-4">
-                <h5>Test Controls</h5>
-                <button id="load-top-rpm" class="btn btn-info rpm-button">
-                    <i class="bi bi-file-code"></i> Load Test Top
                 </button>
             </div>
         </div>
@@ -581,9 +535,6 @@
             <button class="btn" id="rotate-right-btn" title="Rotate Right">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
-            <button class="btn" id="debug-btn" title="Toggle Debug View">
-                <i class="bi bi-bug"></i>
-            </button>
             <button class="btn" id="fullscreen-btn" title="Fullscreen">
                 <i class="bi bi-fullscreen"></i>
             </button>
@@ -597,31 +548,18 @@
             </div>
         </div>
     </div>
-
-    <!-- Right Panel: Debug Tools -->
-    <div class="test-viewer-panel">
-        <h4>Debug Tools</h4>
-        <p class="text-muted">3D model testing utilities</p>
-
-        <div id="glb-test-container" class="glb-viewer"></div>
-
-        <button id="load-test-model" class="btn btn-primary" style="width: 100%; margin-bottom: 8px;">
-            <i class="bi bi-box"></i> Load Test Model
-        </button>
-        <button id="test-rpm-top-btn" class="btn btn-primary" style="width: 100%;">
-            <i class="bi bi-shirt"></i> Test RPM Top
-        </button>
-    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- External 3D Graphics Libraries -->
+<!-- Three.js MUST be loaded first -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
 
-<!-- Custom Clothing System Modules -->
+<!-- Custom modules AFTER Three.js -->
 <script src="{{ url_for('static', filename='js/clothing-obj-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-mapper.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
@@ -646,6 +584,40 @@
     /* Dependency Verification */
     console.log('🔍 Verifying dependencies...');
 
+    // Function to wait for ClothingOBJRenderer
+    function waitForClothingOBJRenderer() {
+        return new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+                if (window.clothingOBJRenderer) {
+                    clearInterval(checkInterval);
+                    console.log('✅ ClothingOBJRenderer loaded successfully');
+                    resolve(true);
+                } else {
+                    console.log('⏳ Waiting for ClothingOBJRenderer...');
+                }
+            }, 100);
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.error('❌ ClothingOBJRenderer failed to load after 10 seconds');
+                resolve(false);
+            }, 10000);
+        });
+    }
+
+    // Initialize ClothingOBJRenderer when dependencies are ready
+    async function initializeClothingSystem() {
+        const objRendererReady = await waitForClothingOBJRenderer();
+
+        if (!objRendererReady) {
+            console.error('❌ ClothingOBJRenderer not available - falling back to old method');
+            return false;
+        }
+
+        return true;
+    }
+
     if (!window.ClothingMapper) {
         console.error('❌ ClothingMapper failed to load properly');
         return;
@@ -653,6 +625,12 @@
 
     if (typeof THREE === 'undefined') {
         console.error('❌ Three.js failed to load properly');
+        return;
+    }
+
+    // Verify OBJ loader
+    if (typeof THREE.OBJLoader === 'undefined') {
+        console.error('❌ OBJLoader failed to load properly');
         return;
     }
 
@@ -665,7 +643,7 @@
         /* Initialize RPM Avatar Manager */
         const rpmManager = new RPMAvatarManager({
             container: document.getElementById('avatar-container'),
-            debug: true,
+            debug: false, // Disabled debug mode
             enableStats: true,
             enableAutoSave: true
         });
@@ -724,8 +702,16 @@
             }
         }, 1000);
 
+        /* Initialize OBJ Clothing Renderer */
+        let objRenderer = null;
+        if (window.clothingOBJRenderer) {
+            objRenderer = window.clothingOBJRenderer;
+            objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+        }
+
         /* Make globally available for debugging */
         window.rpmManager = rpmManager;
+        window.objRenderer = objRenderer;
 
         /* Auto-load saved avatar on startup */
         initializeAvatar();
@@ -740,13 +726,37 @@
                     rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
                     rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
                     updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
+
+                    // Wait for OBJ renderer to be available before setting references
+                    let attempts = 0;
+                    const maxAttempts = 50; // 5 seconds
+
+                    while (!window.clothingOBJRenderer && attempts < maxAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        attempts++;
+                    }
+
+                    if (window.clothingOBJRenderer) {
+                        console.log('🔄 Setting OBJ renderer references...');
+                        window.clothingOBJRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+
+                        // Verify references were set
+                        setTimeout(() => {
+                            console.log('🔍 Reference verification:');
+                            console.log(`  - Scene set: ${!!window.clothingOBJRenderer.scene}`);
+                            console.log(`  - Avatar set: ${!!window.clothingOBJRenderer.avatar}`);
+                            console.log('✅ OBJ renderer ready for colored clothing!');
+                        }, 100);
+                    } else {
+                        console.log('❌ ClothingOBJRenderer not available after 5 seconds');
+                    }
                 }
 
                 updateAvatarStats();
                 console.log('✅ Avatar loaded successfully');
-                showMessage('Avatar loaded and ready for clothing', 'success');
+                showMessage('Avatar loaded and ready for colored clothing', 'success');
             } catch (error) {
-                console.error('⚠️ Error loading avatar:', error);
+                console.log(`⚠️ Error loading avatar: ${error.message}`);
                 showMessage('No saved avatar found. Create or load one to get started.', 'info');
             }
         }
@@ -789,6 +799,15 @@
                     });
                 }
 
+                // Also scale OBJ clothing items
+                if (objRenderer && objRenderer.currentClothing) {
+                    objRenderer.currentClothing.forEach((item) => {
+                        if (item.mesh) {
+                            item.mesh.scale.setScalar(scale);
+                        }
+                    });
+                }
+
                 console.log(`📏 Avatar scaled to: ${scale}`);
                 updateAvatarStats();
 
@@ -805,7 +824,7 @@
             }
         }
 
-        /* Wardrobe System */
+        /* Wardrobe System with Enhanced Color Support */
         document.getElementById('category-rpm').addEventListener('change', function() {
             const category = this.value;
             console.log(`👕 Loading wardrobe category: ${category}`);
@@ -848,11 +867,13 @@
             }
         }
 
+        // Enhanced wardrobe item creation with color support
         function createWardrobeItem(item, category) {
             const itemElement = document.createElement('div');
             itemElement.className = 'wardrobe-item';
             itemElement.dataset.itemId = item._id;
             itemElement.dataset.category = category;
+            itemElement.dataset.itemType = item.type || item.label || 'unknown';
 
             const itemName = item.label || 'Unnamed Item';
 
@@ -869,40 +890,94 @@
                 <div class="item-name">${itemName}</div>
             `;
 
+            // Enhanced click handler with color support
             itemElement.addEventListener('click', async function() {
-                const isSelected = this.classList.toggle('selected');
+                console.log('🎯 Wardrobe item clicked:', itemName, item._id);
+
+                if (!rpmManager.avatarModel) {
+                    showMessage('Please load an avatar first', 'error');
+                    return;
+                }
+
+                // Ensure OBJ renderer is available and has references
+                if (!window.clothingOBJRenderer) {
+                    console.error('❌ ClothingOBJRenderer not available');
+                    showMessage('OBJ Renderer not initialized', 'error');
+                    return;
+                }
+
+                // Set references if missing
+                if (!window.clothingOBJRenderer.scene || !window.clothingOBJRenderer.avatar) {
+                    console.log('🔄 Setting OBJ renderer references...');
+                    window.clothingOBJRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+                }
+
+                const isSelected = this.classList.contains('selected');
                 const itemId = this.dataset.itemId;
-                const imagePath = this.querySelector('img')?.src;
 
-                if (isSelected) {
-                    if (imagePath && rpmManager.loadClothing) {
-                        try {
-                            console.log(`👕 Trying on item: ${itemName}`);
-                            await rpmManager.loadClothing(itemId, imagePath, itemName);
+                try {
+                    if (isSelected) {
+                        // Remove clothing
+                        console.log('🗑️ Removing clothing:', itemId);
+                        const success = await window.clothingOBJRenderer.removeClothing(itemId);
 
-                            const currentScale = rpmManager.avatarModel?.scale.x || 1.0;
-                            if (AVATAR_CONFIG.CLOTHING_SCALE_MATCH && rpmManager.clothingItems.has(itemId)) {
-                                const clothingItem = rpmManager.clothingItems.get(itemId);
-                                if (clothingItem.model) {
-                                    clothingItem.model.scale.setScalar(currentScale);
-                                }
-                            }
-
-                            updateActiveOutfitList();
-                            showMessage(`${itemName} applied successfully`, 'success');
-                        } catch (error) {
-                            console.error('❌ Error applying clothing:', error);
-                            showMessage('Failed to apply clothing', 'error');
+                        if (success) {
                             this.classList.remove('selected');
+                            updateActiveOutfitList();
+                            showMessage(`${itemName} removed`, 'info');
+                        } else {
+                            showMessage(`Failed to remove ${itemName}`, 'error');
+                        }
+                    } else {
+                        // Add clothing with color
+                        console.log('👕 Adding colored clothing:', itemId, itemName);
+                        showLoading(`Applying ${itemName} with color...`);
+
+                        let success = false;
+
+                        // Try database loading first
+                        try {
+                            success = await window.clothingOBJRenderer.loadClothingFromDatabase(itemId);
+                            if (success) {
+                                console.log('✅ Colored database loading successful');
+                            }
+                        } catch (error) {
+                            console.warn('⚠️ Database loading failed, trying fallback:', error.message);
+                        }
+
+                        // If database loading failed, try fallback with color
+                        if (!success) {
+                            try {
+                                const fallbackData = {
+                                    _id: itemId,
+                                    type: category,
+                                    label: itemName,
+                                    file_path: item.file_path,
+                                    category: category,
+                                    color: item.color // Include color data
+                                };
+                                success = await window.clothingOBJRenderer.createFallbackClothing(fallbackData);
+                                if (success) {
+                                    console.log('✅ Colored fallback creation successful');
+                                }
+                            } catch (fallbackError) {
+                                console.error('❌ Colored fallback creation failed:', fallbackError);
+                            }
+                        }
+
+                        if (success) {
+                            this.classList.add('selected');
+                            updateActiveOutfitList();
+                            showMessage(`${itemName} applied with color successfully`, 'success');
+                        } else {
+                            showMessage(`Failed to apply ${itemName}`, 'error');
                         }
                     }
-                } else {
-                    if (rpmManager.removeClothing) {
-                        console.log(`🗑️ Removing item: ${itemName}`);
-                        rpmManager.removeClothing(itemId);
-                        updateActiveOutfitList();
-                        showMessage(`${itemName} removed`, 'info');
-                    }
+                } catch (error) {
+                    console.error('❌ Error in click handler:', error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                } finally {
+                    hideLoading();
                 }
             });
 
@@ -935,6 +1010,11 @@
                         rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
                         rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
                         updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
+
+                        // Update OBJ renderer references
+                        if (objRenderer) {
+                            objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+                        }
                     }
 
                     await saveRPMAvatarUrlIfPresent(data.avatarUrl);
@@ -969,6 +1049,11 @@
                     rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
                     rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
                     updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
+
+                    // Update OBJ renderer references
+                    if (objRenderer) {
+                        objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+                    }
                 }
 
                 await saveRPMAvatarUrlIfPresent(avatarUrl);
@@ -982,7 +1067,7 @@
             }
         });
 
-        /* Outfit Management */
+        /* Outfit Management with Color Support */
         document.getElementById('try-on-rpm').addEventListener('click', async function() {
             const selectedItems = document.querySelectorAll('#wardrobe-items-rpm .wardrobe-item.selected');
 
@@ -992,33 +1077,33 @@
             }
 
             try {
-                showLoading('Applying outfit...');
-                console.log(`👕 Trying on ${selectedItems.length} items...`);
+                showLoading('Applying colored outfit...');
+                console.log(`👕 Trying on ${selectedItems.length} colored items...`);
 
-                if (rpmManager.clearAllClothing) {
+                // Clear all clothing first
+                if (objRenderer) {
+                    await objRenderer.clearAllClothing();
+                } else if (rpmManager.clearAllClothing) {
                     rpmManager.clearAllClothing();
                 }
 
                 for (const item of selectedItems) {
                     const itemId = item.dataset.itemId;
                     const itemName = item.querySelector('.item-name').textContent;
-                    const imagePath = item.querySelector('img')?.src;
 
-                    if (imagePath) {
-                        await rpmManager.loadClothing(itemId, imagePath, itemName);
-
-                        const currentScale = rpmManager.avatarModel?.scale.x || 1.0;
-                        if (AVATAR_CONFIG.CLOTHING_SCALE_MATCH && rpmManager.clothingItems.has(itemId)) {
-                            const clothingItem = rpmManager.clothingItems.get(itemId);
-                            if (clothingItem.model) {
-                                clothingItem.model.scale.setScalar(currentScale);
-                            }
+                    if (objRenderer) {
+                        await objRenderer.loadClothingFromDatabase(itemId);
+                    } else {
+                        // Fallback to original method
+                        const imagePath = item.querySelector('img')?.src;
+                        if (imagePath && rpmManager.loadClothing) {
+                            await rpmManager.loadClothing(itemId, imagePath, itemName);
                         }
                     }
                 }
 
                 updateActiveOutfitList();
-                showMessage(`Outfit applied with ${selectedItems.length} items`, 'success');
+                showMessage(`Colored outfit applied with ${selectedItems.length} items`, 'success');
             } catch (error) {
                 console.error('❌ Error applying outfit:', error);
                 showMessage('Failed to apply complete outfit', 'error');
@@ -1028,7 +1113,19 @@
         });
 
         document.getElementById('save-outfit-btn').addEventListener('click', async function() {
-            if (!rpmManager.clothingItems || rpmManager.clothingItems.size === 0) {
+            let itemCount = 0;
+            let itemIds = [];
+
+            // Count items from both systems
+            if (objRenderer && objRenderer.currentClothing) {
+                itemCount += objRenderer.currentClothing.size;
+                itemIds = Array.from(objRenderer.currentClothing.keys());
+            } else if (rpmManager.clothingItems) {
+                itemCount += rpmManager.clothingItems.size;
+                itemIds = Array.from(rpmManager.clothingItems.keys());
+            }
+
+            if (itemCount === 0) {
                 showMessage('No outfit to save', 'error');
                 return;
             }
@@ -1038,7 +1135,6 @@
                 if (!outfitName) return;
 
                 console.log('💾 Saving outfit:', outfitName);
-                const itemIds = Array.from(rpmManager.clothingItems.keys());
 
                 const response = await fetch('/api/outfits/save', {
                     method: 'POST',
@@ -1066,17 +1162,30 @@
             }
         });
 
-        document.getElementById('clear-outfit-btn').addEventListener('click', function() {
-            if (rpmManager.clearAllClothing) {
+        document.getElementById('clear-outfit-btn').addEventListener('click', async function() {
+            try {
                 console.log('🗑️ Clearing all clothing...');
-                rpmManager.clearAllClothing();
 
+                // Clear from OBJ renderer
+                if (objRenderer) {
+                    await objRenderer.clearAllClothing();
+                }
+
+                // Clear from RPM manager as backup
+                if (rpmManager.clearAllClothing) {
+                    rpmManager.clearAllClothing();
+                }
+
+                // Clear UI selections
                 document.querySelectorAll('#wardrobe-items-rpm .wardrobe-item.selected').forEach(item => {
                     item.classList.remove('selected');
                 });
 
                 updateActiveOutfitList();
                 showMessage('All clothing cleared', 'info');
+            } catch (error) {
+                console.error('❌ Error clearing clothing:', error);
+                showMessage('Error clearing clothing', 'error');
             }
         });
 
@@ -1101,15 +1210,6 @@
             }
         });
 
-        document.getElementById('debug-btn').addEventListener('click', function() {
-            if (rpmManager.toggleDebug) {
-                rpmManager.toggleDebug();
-                const isDebug = rpmManager.debugMode || false;
-                console.log('🐛 Debug mode:', isDebug ? 'ON' : 'OFF');
-                showMessage(`Debug mode ${isDebug ? 'enabled' : 'disabled'}`, 'info');
-            }
-        });
-
         document.getElementById('fullscreen-btn').addEventListener('click', function() {
             const container = document.getElementById('avatar-container');
             if (!document.fullscreenElement) {
@@ -1121,185 +1221,81 @@
             }
         });
 
-        /* Debug & Testing Tools */
-        class GLBTestViewer {
-            constructor(container) {
-                this.container = container;
-                this.scene = new THREE.Scene();
-                this.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-                this.renderer = new THREE.WebGLRenderer({ antialias: true });
-                this.controls = null;
-                this.model = null;
-                this.init();
-            }
-
-            init() {
-                this.scene.background = new THREE.Color(0xf8f9fa);
-                this.camera.position.set(0, 0, 2);
-
-                this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-                this.renderer.setPixelRatio(window.devicePixelRatio);
-                this.container.appendChild(this.renderer.domElement);
-
-                this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-                this.controls.enableDamping = true;
-
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-                this.scene.add(ambientLight);
-
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(5, 5, 5);
-                this.scene.add(directionalLight);
-
-                this.animate();
-            }
-
-            animate() {
-                requestAnimationFrame(() => this.animate());
-                this.controls.update();
-                this.renderer.render(this.scene, this.camera);
-            }
-
-            async loadModel(modelPath = '/static/models/clothing/top.glb') {
-                try {
-                    const loader = new THREE.GLTFLoader();
-                    const gltf = await new Promise((resolve, reject) => {
-                        loader.load(modelPath, resolve,
-                            (xhr) => console.log(`Loading: ${(xhr.loaded / xhr.total * 100)}%`),
-                            reject
-                        );
-                    });
-
-                    if (this.model) {
-                        this.scene.remove(this.model);
-                    }
-
-                    this.model = gltf.scene;
-                    this.scene.add(this.model);
-
-                    const box = new THREE.Box3().setFromObject(this.model);
-                    const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 1.5 / maxDim;
-                    this.model.scale.setScalar(scale);
-                    this.model.position.sub(center.multiplyScalar(scale));
-
-                    this.camera.position.set(0, 0, 2);
-                    this.controls.target.set(0, 0, 0);
-                    this.controls.update();
-
-                    return true;
-                } catch (error) {
-                    console.error('Error loading test model:', error);
-                    return false;
-                }
-            }
-        }
-
-        /* Initialize test viewer */
-        const testContainer = document.getElementById('glb-test-container');
-        if (testContainer) {
-            window.testViewer = new GLBTestViewer(testContainer);
-
-            document.getElementById('load-test-model').addEventListener('click', async () => {
-                const success = await window.testViewer.loadModel();
-                showMessage(success ? 'Test model loaded' : 'Failed to load test model',
-                          success ? 'success' : 'error');
-            });
-        }
-
-        document.getElementById('load-top-rpm').addEventListener('click', async function() {
-            console.log('🧪 Loading test top on RPM avatar...');
-            try {
-                showLoading('Loading test clothing...');
-
-                if (!rpmManager.avatarModel) {
-                    await rpmManager.loadSavedAvatar();
-                }
-
-                await rpmManager.loadClothing('test-top', '/static/models/clothing/top.glb', 'Test Top');
-
-                const currentScale = rpmManager.avatarModel?.scale.x || 1.0;
-                if (AVATAR_CONFIG.CLOTHING_SCALE_MATCH && rpmManager.clothingItems.has('test-top')) {
-                    const clothingItem = rpmManager.clothingItems.get('test-top');
-                    if (clothingItem.model) {
-                        clothingItem.model.scale.setScalar(currentScale);
-                    }
-                }
-
-                updateActiveOutfitList();
-                showMessage('Test top loaded successfully', 'success');
-            } catch (error) {
-                console.error('❌ Error loading test top:', error);
-                showMessage('Failed to load test top: ' + error.message, 'error');
-            } finally {
-                hideLoading();
-            }
-        });
-
-        document.getElementById('test-rpm-top-btn').addEventListener('click', async function() {
-            console.log('🧪 [DEBUG] Test RPM Top button clicked');
-            if (rpmManager?.loadClothing) {
-                try {
-                    await rpmManager.loadClothing('debug-top', '/static/models/clothing/top.glb', 'Debug Top');
-
-                    const currentScale = rpmManager.avatarModel?.scale.x || 1.0;
-                    if (AVATAR_CONFIG.CLOTHING_SCALE_MATCH && rpmManager.clothingItems.has('debug-top')) {
-                        const clothingItem = rpmManager.clothingItems.get('debug-top');
-                        if (clothingItem.model) {
-                            clothingItem.model.scale.setScalar(currentScale);
-                        }
-                    }
-
-                    updateActiveOutfitList();
-                    showMessage('Debug top loaded', 'success');
-                } catch (err) {
-                    console.error('❌ [DEBUG] Error loading debug top:', err);
-                    showMessage('Debug top failed to load', 'error');
-                }
-            } else {
-                showMessage('RPM Avatar Manager not ready!', 'error');
-            }
-        });
-
         /* UI Update Functions */
         function updateActiveOutfitList() {
             const listContainer = document.getElementById('active-outfit-items');
             if (!listContainer) return;
 
-            if (!rpmManager.clothingItems || rpmManager.clothingItems.size === 0) {
+            let totalItems = 0;
+            let itemsHtml = '';
+
+            // Get items from OBJ renderer
+            if (objRenderer && objRenderer.currentClothing) {
+                for (const [itemId, clothingData] of objRenderer.currentClothing.entries()) {
+                    const itemName = clothingData.itemData?.label || clothingData.category || 'OBJ Item';
+                    const source = clothingData.source || 'obj';
+                    itemsHtml += `
+                        <div class="active-item" data-item-id="${itemId}" data-source="obj">
+                            <span class="active-item-name">${itemName} (${source})</span>
+                            <span class="active-item-remove" title="Remove ${itemName}">
+                                <i class="bi bi-x-circle"></i>
+                            </span>
+                        </div>
+                    `;
+                    totalItems++;
+                }
+            }
+
+            // Get items from RPM manager (fallback)
+            if (rpmManager.clothingItems) {
+                for (const [itemId, item] of rpmManager.clothingItems.entries()) {
+                    const itemName = item.data?.itemType || item.type || 'GLB Item';
+                    itemsHtml += `
+                        <div class="active-item" data-item-id="${itemId}" data-source="rpm">
+                            <span class="active-item-name">${itemName} (GLB)</span>
+                            <span class="active-item-remove" title="Remove ${itemName}">
+                                <i class="bi bi-x-circle"></i>
+                            </span>
+                        </div>
+                    `;
+                    totalItems++;
+                }
+            }
+
+            if (totalItems === 0) {
                 listContainer.innerHTML = '<p class="text-muted">No items selected</p>';
                 return;
             }
 
-            let html = '';
-            for (const [itemId, item] of rpmManager.clothingItems.entries()) {
-                const itemName = item.data?.itemType || item.type || 'Item';
-                html += `
-                    <div class="active-item" data-item-id="${itemId}">
-                        <span class="active-item-name">${itemName}</span>
-                        <span class="active-item-remove" title="Remove ${itemName}">
-                            <i class="bi bi-x-circle"></i>
-                        </span>
-                    </div>
-                `;
-            }
+            listContainer.innerHTML = itemsHtml;
 
-            listContainer.innerHTML = html;
-
+            // Add remove event listeners
             listContainer.querySelectorAll('.active-item-remove').forEach(button => {
-                button.addEventListener('click', function(e) {
+                button.addEventListener('click', async function(e) {
                     e.stopPropagation();
-                    const itemId = this.closest('.active-item').dataset.itemId;
-                    const itemName = this.closest('.active-item').querySelector('.active-item-name').textContent;
+                    const itemElement = this.closest('.active-item');
+                    const itemId = itemElement.dataset.itemId;
+                    const source = itemElement.dataset.source;
+                    const itemName = itemElement.querySelector('.active-item-name').textContent;
 
-                    if (rpmManager.removeClothing) {
-                        rpmManager.removeClothing(itemId);
-                        document.querySelector(`[data-item-id="${itemId}"]`)?.classList.remove('selected');
+                    try {
+                        if (source === 'obj' && objRenderer) {
+                            await objRenderer.removeClothing(itemId);
+                        } else if (source === 'rpm' && rpmManager.removeClothing) {
+                            rpmManager.removeClothing(itemId);
+                        }
+
+                        // Remove UI selection
+                        const wardrobeItem = document.querySelector(`[data-item-id="${itemId}"]`);
+                        if (wardrobeItem) {
+                            wardrobeItem.classList.remove('selected');
+                        }
+
                         updateActiveOutfitList();
                         showMessage(`${itemName} removed`, 'info');
+                    } catch (error) {
+                        console.error('Error removing item:', error);
+                        showMessage(`Failed to remove ${itemName}`, 'error');
                     }
                 });
             });
@@ -1319,8 +1315,18 @@
                 'Scale': Math.round((rpmManager.avatarModel.scale.x || 1.0) * 100) + '%',
                 'Polygons': 'Calculating...',
                 'Materials': 'Calculating...',
-                'Clothing': rpmManager.clothingItems?.size || 0
+                'Clothing': 0
             };
+
+            // Count clothing from both systems
+            let clothingCount = 0;
+            if (objRenderer && objRenderer.currentClothing) {
+                clothingCount += objRenderer.currentClothing.size;
+            }
+            if (rpmManager.clothingItems) {
+                clothingCount += rpmManager.clothingItems.size;
+            }
+            stats['Clothing'] = clothingCount;
 
             if (rpmManager.avatarModel) {
                 let polyCount = 0;
@@ -1405,10 +1411,11 @@
         /* Initialization Completion */
         loadWardrobeItems('tops');
 
-        console.log('✅ RPM Avatar Application initialized successfully');
+        console.log('✅ Clean RPM Avatar Application initialized successfully');
         showMessage('Application ready! Create or load an avatar to get started.', 'info');
     });
 
 })();
 </script>
+
 {% endblock %}

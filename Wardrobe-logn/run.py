@@ -2144,278 +2144,49 @@ def add_wardrobe():
     return render_template('wardrobe.html')
 
 
-# @app.route('/wardrobe', methods=['GET', 'POST'])
-# @login_required
-# def add_wardrobe():
-#     if request.method == 'POST':
-#         try:
-#             # Check if the post request has the file part
-#             if 'file' not in request.files:
-#                 return jsonify({'error': 'No file part'}), 400
-#
-#             f = request.files['file']
-#             if f.filename == '':
-#                 return jsonify({'error': 'No selected file'}), 400
-#
-#             # Check if the file is allowed
-#             allowed_extensions = {'png', 'jpg', 'jpeg'}
-#             if not '.' in f.filename or \
-#                     f.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-#                 return jsonify({'error': 'Invalid file type'}), 400
-#
-#             # Save the file
-#             user_id = session['user']['_id']
-#             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
-#             os.makedirs(upload_dir, exist_ok=True)
-#             file_path = os.path.join(upload_dir, secure_filename(f.filename))
-#             f.save(file_path)
-#             file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
-#
-#             try:
-#                 # Make prediction
-#                 preds = model_predict(file_path, model)
-#                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-#                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-#
-#                 # Get predicted label and confidence scores
-#                 predicted_label = np.argmax(preds)
-#                 clothing_type = class_names[predicted_label]
-#
-#                 # Get color prediction using the improved function
-#                 color_result = improved_predict_color(file_path)
-#                 # color_result is a tuple of (percentage, RGB array)
-#                 color_percentage = float(color_result[0])
-#                 color_rgb = color_result[1].tolist()  # Convert numpy array to list
-#
-#                 # Extract material properties
-#                 material_properties = extract_material_properties(file_path)
-#
-#                 # Generate normal map for textured materials
-#                 normal_map_path = None
-#                 # Check if material_properties contains pattern_info before accessing it
-#                 has_pattern = False
-#                 pattern_strength = 0.0
-#
-#                 if material_properties:
-#                     # Safely check for pattern_info
-#                     if 'pattern_info' in material_properties:
-#                         pattern_info = material_properties['pattern_info']
-#                         has_pattern = pattern_info.get('has_pattern', False)
-#                         pattern_strength = pattern_info.get('pattern_strength', 0.0)
-#
-#                     # Determine if we should generate a normal map based on material type and pattern
-#                     if (material_properties.get('estimated_material') in ['textured', 'rough_textured',
-#                                                                           'woven_patterned'] or
-#                             (has_pattern and pattern_strength > 0.3)):
-#                         try:
-#                             normal_map_path = generate_normal_map(file_path)
-#                             if normal_map_path:
-#                                 # Convert to database path format
-#                                 normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
-#                         except Exception as e:
-#                             print(f"Error generating normal map: {str(e)}")
-#                             # Continue even if normal map generation fails
-#
-#                 # Set texture preview path (explicitly store it)
-#                 texture_preview_path = file_path_db
-#
-#                 # Save image data
-#                 userId = session['user']['_id']
-#                 db.wardrobe.insert_one({
-#                     'userId': userId,
-#                     'label': clothing_type,
-#                     'confidence': float(preds[0][predicted_label]),
-#                     'color': {
-#                         'percentage': color_percentage,
-#                         'rgb': color_rgb
-#                     },
-#                     # Add material properties
-#                     'material_properties': material_properties,
-#                     'normal_map_path': normal_map_path,
-#                     'filename': secure_filename(f.filename),
-#                     'file_path': file_path_db,
-#                     'texture_preview_path': texture_preview_path,  # Add this for UI display
-#                     'created_at': datetime.now(),
-#                     'last_worn': None,
-#                     'times_worn': 0
-#                 })
-#
-#                 # Return success response with all needed data for UI display
-#                 return jsonify({
-#                     'success': True,
-#                     'prediction': clothing_type,
-#                     'confidence': float(preds[0][predicted_label]),
-#                     'color': {
-#                         'percentage': color_percentage,
-#                         'rgb': color_rgb
-#                     },
-#                     'material_properties': material_properties,
-#                     'normal_map_path': normal_map_path,
-#                     'texture_preview_path': texture_preview_path  # Important: Include this
-#                 })
-#
-#             except Exception as e:
-#                 print(f"Error in prediction: {str(e)}")
-#                 if os.path.exists(file_path):
-#                     os.remove(file_path)
-#                 return jsonify({'error': f'Error processing image: {str(e)}'}), 500
-#
-#         except Exception as e:
-#             print(f"Error in file upload: {str(e)}")
-#             return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
-#
-#     # GET request
-#     return render_template('wardrobe.html')
+     # FIXED: Add this route to update existing items that don't have model_task_id
+    @app.route('/api/wardrobe/fix-missing-task-ids', methods=['POST'])
+    @login_required
+    def fix_missing_task_ids():
+        """Fix existing wardrobe items that are missing model_task_id"""
+        try:
+            user_id = session['user']['_id']
 
-# @app.route('/api/wardrobe/material/<item_id>', methods=['GET'])
-# @login_required
-# def get_material_properties(item_id):
-#     try:
-#         userId = session['user']['_id']
-#         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': userId})
-#
-#         if not item:
-#             return jsonify({'error': 'Item not found'}), 404
-#
-#         # If material properties don't exist yet, extract them now
-#         if 'material_properties' not in item:
-#             file_path = os.path.join('flaskapp', item['file_path'].lstrip('/'))
-#             if os.path.exists(file_path):
-#                 material_properties = extract_material_properties(file_path)
-#
-#                 # Generate normal map if appropriate
-#                 normal_map_path = None
-#                 if material_properties and (
-#                         material_properties['estimated_material'] in ['textured', 'rough_textured',
-#                                                                       'woven_patterned'] or
-#                         (material_properties['pattern_info']['has_pattern'] and
-#                          material_properties['pattern_info']['pattern_strength'] > 0.3)
-#                 ):
-#                     normal_map_path = generate_normal_map(file_path)
-#                     if normal_map_path:
-#                         # Convert to database path format
-#                         normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
-#
-#                 update_data = {'material_properties': material_properties}
-#                 if normal_map_path:
-#                     update_data['normal_map_path'] = normal_map_path
-#
-#                 db.wardrobe.update_one(
-#                     {'_id': ObjectId(item_id)},
-#                     {'$set': update_data}
-#                 )
-#
-#                 item['material_properties'] = material_properties
-#                 item['normal_map_path'] = normal_map_path
-#             else:
-#                 return jsonify({'error': 'Image file not found'}), 404
-#
-#         # Get normalized paths
-#         texture_path = normalize_path(item.get('file_path', ''))
-#         normal_map_path = normalize_path(item.get('normal_map_path', '')) if item.get('normal_map_path') else None
-#
-#         return jsonify({
-#             'success': True,
-#             'itemId': str(item['_id']),
-#             'label': item['label'],
-#             'materialProperties': item['material_properties'],
-#             'texturePath': texture_path,
-#             'normalMapPath': normal_map_path
-#         })
-#
-#     except Exception as e:
-#         print(f"Error getting material properties: {str(e)}")
-#         return jsonify({'error': str(e)}), 500
-# @app.route('/wardrobe', methods=['GET', 'POST'])
-# @login_required
-# def add_wardrobe():
-#     if request.method == 'POST':
-#         try:
-#             # Check if the post request has the file part
-#             if 'file' not in request.files:
-#                 return jsonify({'error': 'No file part'}), 400
-#
-#             f = request.files['file']
-#             if f.filename == '':
-#                 return jsonify({'error': 'No selected file'}), 400
-#
-#             # Check if the file is allowed
-#             allowed_extensions = {'png', 'jpg', 'jpeg'}
-#             if not '.' in f.filename or \
-#                     f.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-#                 return jsonify({'error': 'Invalid file type'}), 400
-#
-#             # Save the file
-#             user_id = session['user']['_id']
-#             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
-#             print('dir' + upload_dir);
-#             os.makedirs(upload_dir, exist_ok=True)
-#             file_path = os.path.join(upload_dir, secure_filename(f.filename))
-#             f.save(file_path)
-#             print(file_path + 'fsss')
-#             file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
-#             print('fileeeDB'+ file_path_db);
-#             # Rest of the code remains the same...
-#
-#             try:
-#                 # Make prediction
-#                 preds = model_predict(file_path, model)
-#                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-#                                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-#
-#                 # Get predicted label and confidence scores
-#                 predicted_label = np.argmax(preds)
-#                 clothing_type = class_names[predicted_label]
-#
-#                 # Get color prediction
-#                 color_result = predict_color(file_path)
-#                 # color_result is a tuple of (percentage, RGB array)
-#                 color_percentage = float(color_result[0])
-#                 color_rgb = color_result[1].tolist()  # Convert numpy array to list
-#
-#                 # Save image data
-#                 userId = session['user']['_id']
-#                 db.wardrobe.insert_one({
-#                     'userId': userId,
-#                     'label': clothing_type,
-#                     'confidence': float(preds[0][predicted_label]),
-#                     'color': {
-#                         'percentage': color_percentage,
-#                         'rgb': color_rgb
-#                     },
-#                     'filename': secure_filename(f.filename),
-#                     'file_path': file_path_db,
-#                     'created_at': datetime.now(),
-#                     'last_worn': None,
-#                     'times_worn': 0
-#                 })
-#
-#                 # # Clean up the uploaded file
-#                 # os.remove(file_path)
-#
-#                 # Return success response
-#                 return jsonify({
-#                     'success': True,
-#                     'prediction': clothing_type,
-#                     'confidence': float(preds[0][predicted_label]),
-#                     'color': {
-#                         'percentage': color_percentage,
-#                         'rgb': color_rgb
-#                     }
-#                 })
-#
-#             except Exception as e:
-#                 print(f"Error in prediction: {str(e)}")
-#                 if os.path.exists(file_path):
-#                     os.remove(file_path)
-#                 return jsonify({'error': f'Error processing image: {str(e)}'}), 500
-#
-#         except Exception as e:
-#             print(f"Error in file upload: {str(e)}")
-#             return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
-#
-#     # GET request
-#     return render_template('wardrobe.html')
+            # Find items without model_task_id
+            items_without_task_id = list(db.wardrobe.find({
+                'userId': user_id,
+                '$or': [
+                    {'model_task_id': None},
+                    {'model_task_id': {'$exists': False}}
+                ]
+            }))
+
+            updated_count = 0
+
+            for item in items_without_task_id:
+                # Generate a new model_task_id
+                import uuid
+                new_task_id = f"item_{user_id}_{uuid.uuid4().hex[:8]}"
+
+                # Update the item
+                result = db.wardrobe.update_one(
+                    {'_id': item['_id']},
+                    {'$set': {'model_task_id': new_task_id}}
+                )
+
+                if result.modified_count > 0:
+                    updated_count += 1
+                    print(f"✅ Updated item {item['_id']} with task_id: {new_task_id}")
+
+            return jsonify({
+                'success': True,
+                'message': f'Updated {updated_count} items with model_task_id',
+                'updated_count': updated_count
+            })
+
+        except Exception as e:
+            print(f"❌ Error fixing task IDs: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/wardrobe/all', methods=['GET', 'POST'])
 @login_required
@@ -3162,49 +2933,89 @@ def process_clothing():
 # Add this to your Flask app (run.py or wherever your routes are)
 # Add this to your Flask app (run.py)
 
+
 @app.route('/api/wardrobe/item/<item_id>')
 def get_wardrobe_item(item_id):
-    """Get individual wardrobe item with 3D model information"""
+    """Get individual wardrobe item with 3D model information - FIXED"""
     try:
         from bson import ObjectId
 
-        # Get item from your database
-        item = db.wardrobe_items.find_one({"_id": ObjectId(item_id)})
+        print(f"🔍 Looking for item {item_id}")
+
+        # Use correct collection name 'wardrobe'
+        item = db.wardrobe.find_one({"_id": ObjectId(item_id)})
 
         if not item:
+            print(f"❌ Item {item_id} not found in 'wardrobe' collection")
             return jsonify({"success": False, "error": "Item not found"})
 
-        # Convert ObjectId to string for JSON serialization
+        print(f"✅ Found item {item_id}: {item.get('label', 'Unknown')}")
+
+        # Ensure all required fields exist with proper defaults
         item_data = {
             "success": True,
             "_id": str(item["_id"]),
-            "type": item.get("type", "unknown"),
+            "type": item.get("type", item.get("label", "tops")),
             "label": item.get("label", "Clothing Item"),
             "userId": item.get("userId"),
-            "user_id": item.get("user_id"),  # Alternative field name
-            "model_task_id": item.get("model_task_id"),
-            "modelTaskId": item.get("modelTaskId"),  # Alternative field name
+            "user_id": item.get("userId"),
+
+            # Always provide model_task_id (auto-generate if missing)
+            "model_task_id": item.get("model_task_id") or f"auto_{str(item['_id'])[:8]}",
+            "modelTaskId": item.get("model_task_id") or f"auto_{str(item['_id'])[:8]}",
+
             "file_path": item.get("file_path"),
-            "texture_preview_path": item.get("texture_preview_path"),
+            "texture_preview_path": item.get("texture_preview_path", item.get("file_path")),
             "color": item.get("color"),
             "material_properties": item.get("material_properties"),
-            "has_3d_model": item.get("has_3d_model", True),
+            "has_3d_model": item.get("has_3d_model", False),
+            "model_3d_path": item.get("model_3d_path"),
             "model_generated_at": item.get("model_generated_at"),
-            "model_generation_status": item.get("model_generation_status", "completed")
+            "model_generation_status": item.get("model_generation_status", "none"),
+
+            # Add category mapping
+            "category": item.get("category") or get_item_category(item.get("label", ""))
         }
 
-        # Check if explicit model_3d_path exists
-        if item.get("model_3d_path"):
-            item_data["model_3d_path"] = item["model_3d_path"]
-
+        print(f"✅ Returning item data with model_task_id: {item_data['model_task_id']}")
         return jsonify(item_data)
 
     except Exception as e:
-        print(f"Error getting wardrobe item {item_id}: {str(e)}")
+        print(f"❌ Error getting wardrobe item {item_id}: {str(e)}")
         return jsonify({"success": False, "error": str(e)})
 
 
-# Helper endpoint to check which OBJ files exist
+# 3. ADD this helper function if it doesn't exist:
+def get_item_category(label):
+    """Determine category from item label"""
+    label_lower = label.lower()
+
+    if any(word in label_lower for word in ['shirt', 'top', 'pullover']):
+        return 'tops'
+    elif any(word in label_lower for word in ['trouser', 'pant']):
+        return 'bottoms'
+    elif 'dress' in label_lower:
+        return 'dresses'
+    elif any(word in label_lower for word in ['coat', 'jacket']):
+        return 'outerwear'
+    elif any(word in label_lower for word in ['shoe', 'sandal', 'boot']):
+        return 'shoes'
+    elif 'bag' in label_lower:
+        return 'accessories'
+    else:
+        return 'tops'  # Default
+
+
+
+
+
+
+
+
+
+
+
+
 @app.route('/api/wardrobe/check-obj/<user_id>/<model_task_id>')
 def check_obj_files(user_id, model_task_id):
     """Check which OBJ files exist for a given user and model task"""
@@ -4903,6 +4714,174 @@ def get_all_wardrobe_with_3d():
     except Exception as e:
         print(f"Error getting wardrobe with 3D: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+        @app.route('/api/debug/wardrobe-items', methods=['GET'])
+        @login_required
+        def debug_wardrobe_items():
+            """Debug endpoint to see what wardrobe items exist"""
+            try:
+                user_id = session['user']['_id']
+
+                # Get all items for the user
+                items = list(db.wardrobe.find({'userId': user_id}))
+
+                debug_info = {
+                    'user_id': user_id,
+                    'total_items': len(items),
+                    'collection_name': 'wardrobe',
+                    'sample_items': []
+                }
+
+                # Add sample items for debugging
+                for item in items[:5]:  # First 5 items
+                    debug_info['sample_items'].append({
+                        'id': str(item['_id']),
+                        'label': item.get('label', 'No label'),
+                        'type': item.get('type', 'No type'),
+                        'file_path': item.get('file_path', 'No file_path'),
+                        'has_model_task_id': 'model_task_id' in item,
+                        'model_task_id': item.get('model_task_id', 'None'),
+                        'has_3d_model': item.get('has_3d_model', False)
+                    })
+
+                return jsonify(debug_info)
+
+            except Exception as e:
+                return jsonify({'error': str(e)})
+
+
+# ADD this route to your run.py to help find OBJ files
+
+# ADD this route to your run.py to help match specific OBJ files to items
+
+@app.route('/api/find-obj-for-item/<item_id>')
+@login_required
+def find_obj_for_item(item_id):
+    """Find the specific OBJ file for a wardrobe item"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get the item from database
+        item = db.wardrobe.find_one({"_id": ObjectId(item_id)})
+        if not item:
+            return jsonify({"success": False, "error": "Item not found"})
+
+        model_task_id = item.get('model_task_id')
+        if not model_task_id:
+            return jsonify({"success": False, "error": "No model_task_id found"})
+
+        import os
+        import glob
+
+        base_path = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
+
+        if not os.path.exists(base_path):
+            return jsonify({"success": False, "error": "No models directory"})
+
+        # Look for files matching this specific model_task_id
+        patterns = [
+            f"colab_model_task_{model_task_id}_*.obj",
+            f"colab_model_task_{model_task_id}.obj",
+            f"*{model_task_id}*.obj",
+            f"*{item_id[-8:]}*.obj"  # Last 8 chars of item ID
+        ]
+
+        found_files = []
+        for pattern in patterns:
+            pattern_path = os.path.join(base_path, pattern)
+            matches = glob.glob(pattern_path)
+            for match in matches:
+                filename = os.path.basename(match)
+                if filename not in [f['filename'] for f in found_files]:
+                    found_files.append({
+                        'filename': filename,
+                        'path': f'/static/models/generated/{user_id}/{filename}',
+                        'size': os.path.getsize(match),
+                        'pattern_matched': pattern
+                    })
+
+        return jsonify({
+            "success": True,
+            "item_id": item_id,
+            "model_task_id": model_task_id,
+            "found_files": found_files,
+            "total_matches": len(found_files)
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+def calculate_match_score(filename, item_id, model_task_id):
+    """Calculate how well a filename matches an item"""
+    score = 0
+
+    # Exact model_task_id match gets highest score
+    if model_task_id and model_task_id in filename:
+        score += 100
+
+    # Item ID matches
+    if item_id in filename:
+        score += 80
+
+    # Partial item ID matches
+    item_id_short = item_id[-8:]
+    if item_id_short in filename:
+        score += 60
+
+    # File recency (newer files get slightly higher score)
+    # This is a simple heuristic based on filename patterns
+    if '_174826' in filename:  # Recent timestamp pattern
+        score += 5
+
+    return score
+
+
+# ALSO ADD: Route to check all wardrobe items and their OBJ matches
+@app.route('/api/debug/check-obj-matches')
+@login_required
+def debug_check_obj_matches():
+    """Debug route to check OBJ matches for all wardrobe items"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get all wardrobe items
+        items = list(db.wardrobe.find({'userId': user_id}))
+
+        results = []
+        for item in items:
+            item_id = str(item['_id'])
+
+            # Find matches for this item
+            match_response = find_obj_for_item(item_id)
+            match_data = match_response.get_json()
+
+            results.append({
+                'item_id': item_id,
+                'label': item.get('label', 'Unknown'),
+                'model_task_id': item.get('model_task_id'),
+                'has_matches': match_data.get('success', False),
+                'match_count': match_data.get('total_matches', 0),
+                'best_match': match_data.get('best_match')
+            })
+
+        # Summary statistics
+        total_items = len(results)
+        items_with_matches = len([r for r in results if r['has_matches'] and r['match_count'] > 0])
+
+        return jsonify({
+            'success': True,
+            'total_items': total_items,
+            'items_with_matches': items_with_matches,
+            'match_percentage': round((items_with_matches / total_items * 100), 1) if total_items > 0 else 0,
+            'results': results
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=False)

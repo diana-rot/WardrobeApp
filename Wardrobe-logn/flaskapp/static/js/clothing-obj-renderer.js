@@ -1,684 +1,735 @@
-// Enhanced Clothing Renderer for OBJ Files
+// clothing-obj-renderer.js - FIXED VERSION: No duplicate functions, proper rotation
+// This file should be placed at: flaskapp/static/js/clothing-obj-renderer.js
+
 class ClothingOBJRenderer {
-    constructor(options = {}) {
-        console.log('[ClothingOBJRenderer] Initializing...');
+    constructor() {
+        console.log('🧥 Initializing Fixed ClothingOBJRenderer...');
 
-        this.scene = options.scene || null;
-        this.avatar = options.avatar || null;
-        this.currentClothing = new Map(); // Map of itemId -> clothing mesh
-        this.debug = options.debug || false;
+        this.scene = null;
+        this.avatar = null;
+        this.currentClothing = new Map();
+        this.objLoader = null;
+        this.mtlLoader = null;
 
-        // Initialize loaders
-        this.objLoader = new THREE.OBJLoader();
-        this.textureLoader = new THREE.TextureLoader();
-        this.mtlLoader = new THREE.MTLLoader();
-
-        // Clothing categories and their positioning
-        this.categoryPositions = {
-            'tops': { position: [0, 1.4, 0], scale: [0.8, 0.8, 0.8] },
-            'bottoms': { position: [0, 0.6, 0], scale: [0.8, 0.8, 0.8] },
-            'dresses': { position: [0, 1.0, 0], scale: [0.8, 0.8, 0.8] },
-            'skirts': { position: [0, 0.8, 0], scale: [0.8, 0.8, 0.8] },
-            'outerwear': { position: [0, 1.3, 0], scale: [0.85, 0.85, 0.85] },
-            'shoes': { position: [0, 0.1, 0], scale: [0.6, 0.6, 0.6] },
-            'accessories': { position: [0, 1.5, 0], scale: [0.5, 0.5, 0.5] }
-        };
-
-        // Category mapping for Fashion-MNIST and other datasets
-        this.categoryMapping = {
-            'T-shirt/top': 'tops',
-            'Shirt': 'tops',
-            'Pullover': 'tops',
-            'Top': 'tops',
-            'tshirt': 'tops',
-            'Trouser': 'bottoms',
-            'Pants': 'bottoms',
-            'pants': 'bottoms',
-            'Jeans': 'bottoms',
-            'jeans': 'bottoms',
-            'Dress': 'dresses',
-            'dress': 'dresses',
-            'Skirt': 'skirts',
-            'skirt': 'skirts',
-            'maxi_skirt': 'skirts',
-            'Jacket': 'outerwear',
-            'Coat': 'outerwear',
-            'Sandal': 'shoes',
-            'Sneaker': 'shoes',
-            'Ankle boot': 'shoes',
-            'Bag': 'accessories'
-        };
+        this.initializeLoaders();
+        console.log('✅ Fixed ClothingOBJRenderer initialized');
     }
 
-    // Set scene and avatar references
+    initializeLoaders() {
+        try {
+            if (typeof THREE === 'undefined') {
+                throw new Error('THREE.js not loaded');
+            }
+
+            this.objLoader = new THREE.OBJLoader();
+
+            if (THREE.MTLLoader) {
+                this.mtlLoader = new THREE.MTLLoader();
+            }
+
+            console.log('✅ OBJ/MTL loaders initialized');
+        } catch (error) {
+            console.error('❌ Failed to initialize loaders:', error);
+        }
+    }
+
     setReferences(scene, avatar) {
+        console.log('🔄 Setting OBJ renderer references...');
         this.scene = scene;
         this.avatar = avatar;
-        console.log('[ClothingOBJRenderer] References set:', {
-            hasScene: !!this.scene,
-            hasAvatar: !!this.avatar
-        });
-    }
 
-    // Main function to handle clothing item clicks
-    async handleClothingItemClick(itemElement) {
-        try {
-            const itemId = itemElement.dataset.itemId;
-            const itemType = itemElement.dataset.itemType || itemElement.dataset.category;
-
-            if (!itemId) {
-                console.error('[ClothingOBJRenderer] No item ID found');
-                return false;
-            }
-
-            console.log(`[ClothingOBJRenderer] Handling click for item: ${itemId}, type: ${itemType}`);
-
-            // Toggle selection
-            const isSelected = itemElement.classList.contains('selected');
-
-            if (isSelected) {
-                // Remove clothing
-                await this.removeClothing(itemId);
-                itemElement.classList.remove('selected');
-                this.showMessage(`Removed ${itemType}`, 'info');
-            } else {
-                // Load clothing
-                const success = await this.loadClothingFromDatabase(itemId);
-                if (success) {
-                    itemElement.classList.add('selected');
-                    this.showMessage(`Applied ${itemType}`, 'success');
-                } else {
-                    this.showMessage(`Failed to load ${itemType}`, 'error');
-                }
-            }
-
+        if (this.scene && this.avatar) {
+            console.log('✅ OBJ renderer references set successfully');
             return true;
-        } catch (error) {
-            console.error('[ClothingOBJRenderer] Error handling click:', error);
-            this.showMessage('Error loading clothing item', 'error');
+        } else {
+            console.warn('⚠️ Invalid references provided to OBJ renderer');
             return false;
         }
     }
 
-    // Load clothing from database using the item ID
+    // Load clothing from database with improved fallback logic
     async loadClothingFromDatabase(itemId) {
-        if (!this.scene) {
-            console.error('[ClothingOBJRenderer] Scene not set');
-            return false;
+        console.log(`👕 Loading clothing from database: ${itemId}`);
+
+        if (!this.scene || !this.avatar) {
+            console.error('❌ Scene or avatar not set');
+            throw new Error('Scene or avatar not set in OBJ renderer');
         }
 
-        this.showLoading('Loading clothing...');
-
         try {
-            // Fetch item data from database
-            console.log(`[ClothingOBJRenderer] Fetching item data for ID: ${itemId}`);
+            // Fetch item data using existing endpoint
             const response = await fetch(`/api/wardrobe/item/${itemId}`);
 
             if (!response.ok) {
-                throw new Error(`Failed to fetch item data: ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
             const itemData = await response.json();
-            console.log('[ClothingOBJRenderer] Item data received:', itemData);
+            console.log('📦 Item data received:', itemData);
 
             if (!itemData.success) {
-                throw new Error(itemData.error || 'Failed to load item data');
+                throw new Error(itemData.error || 'Failed to fetch item data');
             }
 
-            // Build the OBJ file path from the generated models
-            const objPath = this.buildOBJPath(itemData);
+            // PRIORITY 1: Check if item already has a saved 3D model path
+            if (itemData.has_3d_model && itemData.model_3d_path) {
+                console.log(`🎯 Found saved 3D model: ${itemData.model_3d_path}`);
 
+                try {
+                    const checkResponse = await fetch(itemData.model_3d_path, { method: 'HEAD' });
+                    if (checkResponse.ok) {
+                        console.log(`✅ Loading saved OBJ file: ${itemData.model_3d_path}`);
+                        return await this.loadOBJFile(itemData.model_3d_path, itemData);
+                    }
+                } catch (e) {
+                    console.warn(`⚠️ Saved model not accessible: ${e.message}`);
+                }
+            }
+
+            // PRIORITY 2: Try to find OBJ files by model_task_id
+            const userId = itemData.userId || itemData.user_id;
+            const modelTaskId = itemData.model_task_id || itemData.modelTaskId;
+
+            let objPath = null;
+
+            // Look for OBJ files with the model_task_id
+            if (modelTaskId && !modelTaskId.startsWith('auto_') && !modelTaskId.startsWith('fallback_')) {
+                console.log(`🔍 Searching for OBJ files with model_task_id: ${modelTaskId}`);
+
+                const patterns = [
+                    `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_0.obj`,
+                    `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_1.obj`,
+                    `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_2.obj`,
+                    `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_3.obj`,
+                    `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_4.obj`,
+                    `/static/models/generated/${userId}/colab_model_task_${modelTaskId}.obj`
+                ];
+
+                for (const pattern of patterns) {
+                    try {
+                        const checkResponse = await fetch(pattern, { method: 'HEAD' });
+                        if (checkResponse.ok) {
+                            objPath = pattern;
+                            console.log(`✅ Found OBJ file: ${objPath}`);
+                            break;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+            }
+
+            // PRIORITY 3: Try to use the texture as a plane if available
+            if (!objPath && (itemData.file_path || itemData.texture_preview_path)) {
+                console.log(`🖼️ No OBJ found, creating textured plane from image...`);
+                return await this.createTexturedPlaneClothing(itemData);
+            }
+
+            // PRIORITY 4: Last resort - colored fallback
             if (!objPath) {
-                console.warn(`[ClothingOBJRenderer] Cannot build OBJ path for item ${itemId}, creating fallback`);
+                console.warn(`⚠️ No OBJ file found, creating colored fallback...`);
                 return await this.createFallbackClothing(itemData);
             }
 
-            console.log(`[ClothingOBJRenderer] Loading OBJ from: ${objPath}`);
-
-            const clothingMesh = await this.loadOBJFile(objPath, itemData);
-
-            if (clothingMesh) {
-                // Remove any existing clothing of the same category
-                const category = this.getItemCategory(itemData.type || itemData.label);
-                await this.removeClothingByCategory(category);
-
-                // Position and add to scene
-                this.positionClothing(clothingMesh, category);
-                this.scene.add(clothingMesh);
-
-                // Store reference
-                this.currentClothing.set(itemId, {
-                    mesh: clothingMesh,
-                    category: category,
-                    itemData: itemData
-                });
-
-                console.log(`[ClothingOBJRenderer] Successfully loaded clothing: ${itemId}`);
-                return true;
-            }
-
-            return false;
+            // Load the found OBJ file
+            console.log(`📥 Loading OBJ file: ${objPath}`);
+            return await this.loadOBJFile(objPath, itemData);
 
         } catch (error) {
-            console.error('[ClothingOBJRenderer] Error loading from database:', error);
+            console.error('❌ Database loading failed:', error);
+            console.log('🔄 Creating textured plane fallback...');
 
-            // Try to create fallback clothing
-            try {
-                const fallbackData = {
-                    _id: itemId,
-                    type: 'unknown',
-                    label: 'Clothing Item'
-                };
-                return await this.createFallbackClothing(fallbackData);
-            } catch (fallbackError) {
-                console.error('[ClothingOBJRenderer] Fallback creation failed:', fallbackError);
-                return false;
-            }
-        } finally {
-            this.hideLoading();
-        }
-    }
-
-    // Build OBJ file path based on the database item structure
-    buildOBJPath(itemData) {
-        try {
-            // Check if explicit model_3d_path exists
-            if (itemData.model_3d_path) {
-                return itemData.model_3d_path;
-            }
-
-            // Extract user ID from the data
-            const userId = itemData.userId || itemData.user_id;
-            if (!userId) {
-                console.error('[ClothingOBJRenderer] No userId found in item data');
-                return null;
-            }
-
-            // Get the model task ID
-            const modelTaskId = itemData.model_task_id || itemData.modelTaskId;
-            if (!modelTaskId) {
-                console.error('[ClothingOBJRenderer] No model_task_id found in item data');
-                return null;
-            }
-
-            // Try different file variations - the system might generate multiple files
-            const possibleFiles = [
-                `colab_model_task_${modelTaskId}_0.obj`,
-                `colab_model_task_${modelTaskId}_1.obj`,
-                `colab_model_task_${modelTaskId}_2.obj`,
-                `colab_model_task_${modelTaskId}_3.obj`,
-                `colab_model_task_${modelTaskId}_4.obj`,
-                `colab_model_task_${modelTaskId}.obj`
-            ];
-
-            // Build the path with the first possible file
-            const basePath = `/static/models/generated/${userId}`;
-            const objPath = `${basePath}/${possibleFiles[0]}`;
-
-            console.log(`[ClothingOBJRenderer] Built OBJ path: ${objPath}`);
-            console.log(`[ClothingOBJRenderer] Alternative paths available:`, possibleFiles.map(f => `${basePath}/${f}`));
-
-            // Store alternative paths for fallback
-            this.alternativePaths = possibleFiles.slice(1).map(f => `${basePath}/${f}`);
-
-            return objPath;
-
-        } catch (error) {
-            console.error('[ClothingOBJRenderer] Error building OBJ path:', error);
-            return null;
-        }
-    }
-
-    // Load OBJ file with proper error handling and multiple path attempts
-    async loadOBJFile(objPath, itemData) {
-        return new Promise((resolve, reject) => {
-            console.log(`[ClothingOBJRenderer] Starting OBJ load: ${objPath}`);
-
-            // Try to load the primary path first
-            this.attemptOBJLoad(objPath, itemData, resolve, reject, 0);
-        });
-    }
-
-    // Attempt to load OBJ file with fallback to alternative paths
-    attemptOBJLoad(objPath, itemData, resolve, reject, attemptIndex = 0) {
-        // Check if there's an associated MTL file
-        const mtlPath = objPath.replace('.obj', '.mtl');
-
-        // Try to load MTL first, then OBJ
-        this.mtlLoader.load(
-            mtlPath,
-            (materials) => {
-                console.log(`[ClothingOBJRenderer] MTL loaded successfully: ${mtlPath}`);
-                materials.preload();
-                this.objLoader.setMaterials(materials);
-                this.loadOBJWithLoader(objPath, itemData, resolve, reject, attemptIndex);
-            },
-            (progress) => {
-                if (this.debug) {
-                    console.log(`[ClothingOBJRenderer] MTL loading progress:`, progress);
-                }
-            },
-            (error) => {
-                console.warn(`[ClothingOBJRenderer] MTL not found or failed to load: ${mtlPath}`, error);
-                // Continue without materials
-                this.loadOBJWithLoader(objPath, itemData, resolve, reject, attemptIndex);
-            }
-        );
-    }
-
-    // Helper function to load OBJ with the loader and handle fallbacks
-    loadOBJWithLoader(objPath, itemData, resolve, reject, attemptIndex) {
-        this.objLoader.load(
-            objPath,
-            (object) => {
-                console.log(`[ClothingOBJRenderer] OBJ loaded successfully: ${objPath}`);
-
-                // Apply textures and materials
-                this.applyClothingTextures(object, itemData);
-
-                // Set up shadows and properties
-                object.traverse((child) => {
-                    if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-
-                        // Ensure material exists
-                        if (!child.material) {
-                            child.material = new THREE.MeshStandardMaterial({
-                                color: 0xcccccc,
-                                roughness: 0.7,
-                                metalness: 0.1
-                            });
-                        }
-                    }
-                });
-
-                // Store metadata
-                object.userData = {
-                    itemId: itemData._id,
-                    type: itemData.type,
-                    label: itemData.label,
-                    category: this.getItemCategory(itemData.type || itemData.label),
-                    loadedFrom: objPath
-                };
-
-                resolve(object);
-            },
-            (progress) => {
-                if (this.debug) {
-                    const percent = (progress.loaded / progress.total) * 100;
-                    console.log(`[ClothingOBJRenderer] OBJ loading: ${percent.toFixed(2)}%`);
-                }
-            },
-            (error) => {
-                console.error(`[ClothingOBJRenderer] Failed to load OBJ: ${objPath}`, error);
-
-                // Try alternative paths if available
-                if (this.alternativePaths && attemptIndex < this.alternativePaths.length) {
-                    const nextPath = this.alternativePaths[attemptIndex];
-                    console.log(`[ClothingOBJRenderer] Trying alternative path: ${nextPath}`);
-                    this.attemptOBJLoad(nextPath, itemData, resolve, reject, attemptIndex + 1);
-                } else {
-                    console.error(`[ClothingOBJRenderer] All OBJ loading attempts failed for item: ${itemData._id}`);
-                    reject(error);
-                }
-            }
-        );
-    }
-
-    // Apply textures and colors to clothing
-    applyClothingTextures(object, itemData) {
-        try {
-            // Apply color if available
-            if (itemData.color && itemData.color.rgb) {
-                const color = new THREE.Color(
-                    itemData.color.rgb[0] / 255,
-                    itemData.color.rgb[1] / 255,
-                    itemData.color.rgb[2] / 255
-                );
-
-                object.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach(mat => {
-                                mat.color = color;
-                                mat.needsUpdate = true;
-                            });
-                        } else {
-                            child.material.color = color;
-                            child.material.needsUpdate = true;
-                        }
-                    }
-                });
-            }
-
-            // Apply texture if available
-            if (itemData.texture_preview_path) {
-                this.textureLoader.load(
-                    itemData.texture_preview_path,
-                    (texture) => {
-                        object.traverse((child) => {
-                            if (child.isMesh && child.material) {
-                                if (Array.isArray(child.material)) {
-                                    child.material.forEach(mat => {
-                                        mat.map = texture;
-                                        mat.needsUpdate = true;
-                                    });
-                                } else {
-                                    child.material.map = texture;
-                                    child.material.needsUpdate = true;
-                                }
-                            }
-                        });
-                    },
-                    undefined,
-                    (error) => {
-                        console.warn('[ClothingOBJRenderer] Failed to load texture:', error);
-                    }
-                );
-            }
-
-        } catch (error) {
-            console.error('[ClothingOBJRenderer] Error applying textures:', error);
-        }
-    }
-
-    // Position clothing on avatar
-    positionClothing(clothingMesh, category) {
-        const position = this.categoryPositions[category] || this.categoryPositions['tops'];
-
-        clothingMesh.position.set(...position.position);
-        clothingMesh.scale.set(...position.scale);
-
-        // Additional adjustments based on avatar size
-        if (this.avatar) {
-            const avatarBox = new THREE.Box3().setFromObject(this.avatar);
-            const avatarHeight = avatarBox.max.y - avatarBox.min.y;
-
-            // Scale clothing relative to avatar size
-            const scaleFactor = avatarHeight / 1.8; // Assuming 1.8m average height
-            clothingMesh.scale.multiplyScalar(scaleFactor);
-        }
-    }
-
-    // Create fallback clothing when OBJ fails to load
-    async createFallbackClothing(itemData) {
-        try {
-            console.log(`[ClothingOBJRenderer] Creating fallback clothing for: ${itemData._id}`);
-
-            const category = this.getItemCategory(itemData.type || itemData.label);
-            const position = this.categoryPositions[category] || this.categoryPositions['tops'];
-
-            let geometry;
-            switch (category) {
-                case 'tops':
-                    geometry = new THREE.CylinderGeometry(0.3, 0.25, 0.5, 16);
-                    break;
-                case 'bottoms':
-                    geometry = new THREE.CylinderGeometry(0.25, 0.2, 0.8, 16);
-                    break;
-                case 'dresses':
-                    geometry = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 16);
-                    break;
-                case 'shoes':
-                    geometry = new THREE.BoxGeometry(0.2, 0.1, 0.3);
-                    break;
-                default:
-                    geometry = new THREE.BoxGeometry(0.3, 0.4, 0.2);
-            }
-
-            // Create material with color if available
-            let color = 0xcccccc;
-            if (itemData.color && itemData.color.rgb) {
-                color = new THREE.Color(
-                    itemData.color.rgb[0] / 255,
-                    itemData.color.rgb[1] / 255,
-                    itemData.color.rgb[2] / 255
-                );
-            }
-
-            const material = new THREE.MeshStandardMaterial({
-                color: color,
-                roughness: 0.7,
-                metalness: 0.1
-            });
-
-            const clothingMesh = new THREE.Mesh(geometry, material);
-            clothingMesh.position.set(...position.position);
-            clothingMesh.scale.set(...position.scale);
-
-            // Set up shadows
-            clothingMesh.castShadow = true;
-            clothingMesh.receiveShadow = true;
-
-            // Store metadata
-            clothingMesh.userData = {
-                itemId: itemData._id,
-                type: itemData.type,
-                label: itemData.label,
-                category: category,
-                isFallback: true
+            const fallbackData = {
+                _id: itemId,
+                type: itemData?.type || 'tops',
+                label: itemData?.label || 'Clothing Item',
+                model_task_id: `fallback_${itemId}`,
+                file_path: itemData?.file_path,
+                color: itemData?.color
             };
 
-            // Remove existing clothing of same category
-            await this.removeClothingByCategory(category);
+            // Try textured plane first, then colored fallback
+            if (itemData?.file_path || itemData?.texture_preview_path) {
+                return await this.createTexturedPlaneClothing(fallbackData);
+            } else {
+                return await this.createFallbackClothing(fallbackData);
+            }
+        }
+    }
 
-            // Add to scene
-            this.scene.add(clothingMesh);
+    // NEW: Create textured plane clothing from image
+    async createTexturedPlaneClothing(itemData) {
+        console.log('🖼️ Creating textured plane clothing from image...');
 
-            // Store reference
-            this.currentClothing.set(itemData._id, {
-                mesh: clothingMesh,
-                category: category,
-                itemData: itemData
-            });
+        if (!this.scene || !this.avatar) {
+            console.error('❌ Scene or avatar not set for textured plane');
+            return false;
+        }
 
-            console.log(`[ClothingOBJRenderer] Fallback clothing created for: ${itemData._id}`);
+        try {
+            const clothingType = this.determineClothingType(itemData);
+            const texturePath = itemData.file_path || itemData.texture_preview_path;
+
+            if (!texturePath) {
+                throw new Error('No texture path available');
+            }
+
+            // Create appropriate geometry for textured plane
+            const geometry = this.createPlaneGeometry(clothingType);
+
+            // Load texture and create material
+            const material = await this.createTexturedPlaneMaterial(texturePath, itemData.color);
+
+            const mesh = new THREE.Mesh(geometry, material);
+
+            // Apply rotation
+            this.applyClothingRotation(mesh, itemData);
+
+            // Position on avatar
+            this.positionClothingOnAvatar(mesh, clothingType);
+
+            this.scene.add(mesh);
+
+            const clothingData = {
+                mesh: mesh,
+                itemData: itemData,
+                type: clothingType,
+                category: itemData.type || clothingType,
+                source: 'textured_plane'
+            };
+
+            this.currentClothing.set(itemData._id, clothingData);
+
+            console.log(`✅ Textured plane ${clothingType} created successfully`);
             return true;
 
         } catch (error) {
-            console.error('[ClothingOBJRenderer] Error creating fallback clothing:', error);
+            console.error('❌ Textured plane creation failed:', error);
+            return await this.createFallbackClothing(itemData);
+        }
+    }
+
+    // Create plane geometry for different clothing types
+    createPlaneGeometry(clothingType) {
+        switch (clothingType) {
+            case 'top':
+                return new THREE.PlaneGeometry(1.2, 1.0);
+            case 'bottom':
+                return new THREE.PlaneGeometry(1.0, 1.2);
+            case 'dress':
+                return new THREE.PlaneGeometry(1.2, 1.8);
+            case 'outerwear':
+                return new THREE.PlaneGeometry(1.3, 1.1);
+            case 'shoes':
+                return new THREE.PlaneGeometry(0.6, 0.8);
+            default:
+                return new THREE.PlaneGeometry(1.0, 1.0);
+        }
+    }
+
+    // Create material for textured plane
+    async createTexturedPlaneMaterial(texturePath, colorData) {
+        return new Promise((resolve) => {
+            const loader = new THREE.TextureLoader();
+            loader.load(
+                texturePath,
+                (texture) => {
+                    console.log('✅ Texture loaded for plane:', texturePath);
+
+                    // Extract color for tinting
+                    let materialColor = 0xffffff;
+                    if (colorData) {
+                        if (typeof colorData === 'object' && colorData.rgb) {
+                            const [r, g, b] = colorData.rgb;
+                            materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                        } else if (typeof colorData === 'string' && colorData.includes(' ')) {
+                            const colorValues = colorData.split(' ').map(v => parseInt(v.trim()));
+                            if (colorValues.length >= 3) {
+                                const [r, g, b] = colorValues;
+                                materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                            }
+                        }
+                    }
+
+                    const material = new THREE.MeshLambertMaterial({
+                        map: texture,
+                        color: materialColor,
+                        transparent: true,
+                        opacity: 0.95,
+                        side: THREE.DoubleSide // Show both sides of the plane
+                    });
+
+                    resolve(material);
+                },
+                undefined,
+                (error) => {
+                    console.warn('⚠️ Texture loading failed for plane:', error);
+                    resolve(new THREE.MeshLambertMaterial({
+                        color: 0x808080,
+                        transparent: false,
+                        opacity: 1.0
+                    }));
+                }
+            );
+        });
+    }
+
+    // Load OBJ file with color and rotation
+    async loadOBJFile(objPath, itemData) {
+        return new Promise((resolve, reject) => {
+            console.log(`📥 Loading OBJ file: ${objPath}`);
+
+            this.objLoader.load(
+                objPath,
+                (object) => {
+                    console.log('✅ OBJ loaded, applying color and rotation...');
+                    this.processLoadedObjectWithColor(object, itemData);
+                    resolve(true);
+                },
+                (progress) => {
+                    if (progress.lengthComputable) {
+                        const percent = (progress.loaded / progress.total * 100).toFixed(1);
+                        console.log(`📥 Loading progress: ${percent}%`);
+                    }
+                },
+                (error) => {
+                    console.error('❌ OBJ loading failed:', error);
+                    reject(error);
+                }
+            );
+        });
+    }
+
+    // Process loaded OBJ with existing color format support
+    processLoadedObjectWithColor(object, itemData) {
+        console.log('🎨 Processing OBJ with existing color format...');
+
+        // Apply color using your existing format
+        this.applyExistingColorFormat(object, itemData);
+
+        // Apply rotation based on clothing type
+        this.applyClothingRotation(object, itemData);
+
+        // Position on avatar
+        const clothingType = this.determineClothingType(itemData);
+        this.positionClothingOnAvatar(object, clothingType);
+
+        // Add to scene
+        this.scene.add(object);
+
+        // Store clothing data
+        const clothingData = {
+            mesh: object,
+            itemData: itemData,
+            type: clothingType,
+            category: itemData.type || clothingType,
+            source: 'real_obj_colored'
+        };
+
+        this.currentClothing.set(itemData._id, clothingData);
+        console.log('✅ Colored OBJ processed and added to scene');
+    }
+
+    // Apply color using your EXISTING color format
+    applyExistingColorFormat(object, itemData) {
+        console.log('🎨 Applying color using existing format...');
+
+        // Extract color using YOUR existing format
+        let materialColor = 0x808080; // Default gray
+
+        if (itemData.color) {
+            console.log('🎨 Found color data:', itemData.color);
+
+            if (typeof itemData.color === 'object') {
+                if (itemData.color.rgb && Array.isArray(itemData.color.rgb)) {
+                    const [r, g, b] = itemData.color.rgb;
+                    materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                    console.log(`🎨 Using object format RGB(${r}, ${g}, ${b})`);
+                }
+            }
+            else if (typeof itemData.color === 'string') {
+                if (itemData.color.includes(' ')) {
+                    const colorValues = itemData.color.split(' ').map(v => parseInt(v.trim()));
+                    if (colorValues.length >= 3) {
+                        const [r, g, b] = colorValues;
+                        materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                        console.log(`🎨 Using string format RGB(${r}, ${g}, ${b})`);
+                    }
+                } else if (itemData.color.startsWith('#')) {
+                    materialColor = new THREE.Color(itemData.color);
+                    console.log(`🎨 Using hex format: ${itemData.color}`);
+                }
+            }
+        }
+
+        // Apply texture if available, with color tinting
+        if (itemData.file_path || itemData.texture_preview_path) {
+            const texturePath = itemData.file_path || itemData.texture_preview_path;
+
+            const loader = new THREE.TextureLoader();
+            loader.load(
+                texturePath,
+                (texture) => {
+                    console.log('✅ Texture loaded, applying with color tint');
+
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshLambertMaterial({
+                                map: texture,
+                                color: materialColor,
+                                transparent: false,
+                                opacity: 1.0
+                            });
+                        }
+                    });
+                },
+                undefined,
+                (error) => {
+                    console.warn('⚠️ Texture loading failed, using color only:', error);
+                    this.applyColorOnlyToObject(object, materialColor);
+                }
+            );
+        } else {
+            this.applyColorOnlyToObject(object, materialColor);
+        }
+    }
+
+    // Apply color only to object
+    applyColorOnlyToObject(object, color) {
+        console.log('🎨 Applying color-only material');
+
+        object.traverse((child) => {
+            if (child.isMesh) {
+                child.material = new THREE.MeshLambertMaterial({
+                    color: color,
+                    transparent: false,
+                    opacity: 1.0
+                });
+            }
+        });
+    }
+
+    // FIXED: Apply rotation based on clothing type - SINGLE FUNCTION, NO DUPLICATES
+// REPLACE the applyClothingRotation function in your clothing-obj-renderer.js with this FORCED version:
+// REPLACE the applyClothingRotation function with this version:
+applyClothingRotation(object, itemData) {
+    const clothingType = this.determineClothingType(itemData);
+    console.log(`🔄 Applying CORRECTIVE rotation for ${clothingType}...`);
+
+    // Reset all rotations first
+    object.rotation.set(0, 0, 0);
+
+    // Apply corrective rotations based on common export issues
+    switch (clothingType) {
+ case 'top':
+            object.rotation.set(-Math.PI / 2, 0, Math.PI/2); // X=-90°, Y=180°, Z=0°
+            break;
+        case 'bottom':
+            object.rotation.set(-Math.PI / 2, 0, Math.PI/2); // X=-90°, Y=180°, Z=0°
+            break;
+        case 'dress':
+           object.rotation.set(-Math.PI / 2, 0, Math.PI/2); // X=-90°, Y=180°, Z=0°
+            break;
+        case 'outerwear':
+            object.rotation.set(-Math.PI / 2, 0, Math.PI/2); // X=-90°, Y=180°, Z=0°
+            break;
+        case 'shoes':
+             object.rotation.set(-Math.PI / 2, 0, Math.PI/2); // Only Y=180° for shoes
+            break;
+        default:
+             object.rotation.set(-Math.PI / 2, 0, Math.PI/2);
+    }
+
+    console.log(`✅ CORRECTIVE rotation applied: x=${object.rotation.x.toFixed(2)}, y=${object.rotation.y.toFixed(2)}, z=${object.rotation.z.toFixed(2)}`);
+}
+// FORCED rotation - applies rotation AFTER positioning to ensure it sticks
+
+
+    // Create fallback clothing with existing color format
+    async createFallbackClothing(itemData) {
+        console.log('🎯 Creating improved fallback clothing for:', itemData.label || itemData._id);
+
+        if (!this.scene || !this.avatar) {
+            console.error('❌ Scene or avatar not set for fallback');
+            return false;
+        }
+
+        try {
+            const clothingType = this.determineClothingType(itemData);
+
+            // Use plane geometry instead of 3D shapes for better appearance
+            const geometry = this.createPlaneGeometry(clothingType);
+
+            let material;
+            if (itemData.file_path || itemData.texture_preview_path) {
+                const texturePath = itemData.file_path || itemData.texture_preview_path;
+                material = await this.createTexturedPlaneMaterial(texturePath, itemData.color);
+            } else {
+                material = this.createColoredMaterialWithExistingFormat(clothingType, itemData.color);
+            }
+
+            const mesh = new THREE.Mesh(geometry, material);
+
+            this.applyClothingRotation(mesh, itemData);
+            this.positionClothingOnAvatar(mesh, clothingType);
+
+            this.scene.add(mesh);
+
+            const clothingData = {
+                mesh: mesh,
+                itemData: itemData,
+                type: clothingType,
+                category: itemData.type || clothingType,
+                source: 'improved_fallback'
+            };
+
+            this.currentClothing.set(itemData._id, clothingData);
+
+            console.log(`✅ Improved fallback ${clothingType} created successfully`);
+            return true;
+
+        } catch (error) {
+            console.error('❌ Fallback creation failed:', error);
             return false;
         }
     }
 
-    // Remove clothing by item ID
+    // Create colored materials using existing format
+    createColoredMaterialWithExistingFormat(clothingType, colorData) {
+        let materialColor = this.getDefaultColorForType(clothingType);
+
+        if (colorData) {
+            if (typeof colorData === 'object' && colorData.rgb) {
+                const [r, g, b] = colorData.rgb;
+                materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                console.log(`🎨 Using existing object format for ${clothingType}: RGB(${r}, ${g}, ${b})`);
+            } else if (typeof colorData === 'string' && colorData.includes(' ')) {
+                const colorValues = colorData.split(' ').map(v => parseInt(v.trim()));
+                if (colorValues.length >= 3) {
+                    const [r, g, b] = colorValues;
+                    materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                    console.log(`🎨 Using existing string format for ${clothingType}: RGB(${r}, ${g}, ${b})`);
+                }
+            }
+        }
+
+        return new THREE.MeshLambertMaterial({
+            color: materialColor,
+            transparent: false,
+            opacity: 1.0,
+            side: THREE.DoubleSide
+        });
+    }
+
+    // Get default colors for different clothing types
+    getDefaultColorForType(clothingType) {
+        const defaultColors = {
+            'top': 0x4CAF50,
+            'bottom': 0x2196F3,
+            'dress': 0xE91E63,
+            'outerwear': 0x795548,
+            'shoes': 0x424242,
+            'default': 0x9E9E9E
+        };
+
+        return defaultColors[clothingType] || defaultColors.default;
+    }
+
+    // Determine clothing type
+    determineClothingType(itemData) {
+        const label = (itemData.label || itemData.type || '').toLowerCase();
+        const category = (itemData.category || itemData.type || '').toLowerCase();
+
+        if (label.includes('shirt') || label.includes('top') || label.includes('pullover') || category === 'tops') {
+            return 'top';
+        } else if (label.includes('trouser') || label.includes('pant') || category === 'bottoms') {
+            return 'bottom';
+        } else if (label.includes('dress') || category === 'dresses') {
+            return 'dress';
+        } else if (label.includes('coat') || label.includes('jacket') || category === 'outerwear') {
+            return 'outerwear';
+        } else if (label.includes('shoe') || label.includes('sandal') || label.includes('boot') || category === 'shoes') {
+            return 'shoes';
+        } else {
+            return 'top';
+        }
+    }
+
+    // Position clothing on avatar with better scaling
+    positionClothingOnAvatar(mesh, clothingType) {
+        if (!this.avatar) {
+            console.warn('⚠️ No avatar available for positioning');
+            return;
+        }
+
+        const avatarBox = new THREE.Box3().setFromObject(this.avatar);
+        const avatarHeight = avatarBox.max.y - avatarBox.min.y;
+        const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+
+        switch (clothingType) {
+            case 'top':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarCenter.y + avatarHeight * 0.15,
+                    avatarCenter.z + 0.1
+                );
+                break;
+            case 'bottom':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarCenter.y - avatarHeight * 0.15,
+                    avatarCenter.z + 0.1
+                );
+                break;
+            case 'dress':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarCenter.y - avatarHeight * 0.05,
+                    avatarCenter.z + 0.1
+                );
+                break;
+            case 'outerwear':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarCenter.y + avatarHeight * 0.15,
+                    avatarCenter.z + 0.15
+                );
+                break;
+            case 'shoes':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarBox.min.y + 0.05,
+                    avatarCenter.z + 0.05
+                );
+                break;
+            default:
+                mesh.position.copy(avatarCenter);
+                mesh.position.z += 0.1;
+        }
+
+        // Better scaling for different clothing types
+        let scale;
+        switch (clothingType) {
+            case 'dress':
+                scale = avatarHeight / 2.2;
+                break;
+            case 'top':
+                scale = avatarHeight / 2.8;
+                break;
+            case 'bottom':
+                scale = avatarHeight / 3.0;
+                break;
+            default:
+                scale = avatarHeight / 2.5;
+        }
+
+        mesh.scale.setScalar(scale);
+        console.log(`📏 Applied scale: ${scale.toFixed(2)} for ${clothingType}`);
+    }
+
+    // Remove clothing
     async removeClothing(itemId) {
+        console.log(`🗑️ Removing clothing: ${itemId}`);
+
         if (!this.currentClothing.has(itemId)) {
-            console.warn(`[ClothingOBJRenderer] No clothing found with ID: ${itemId}`);
+            console.warn(`⚠️ Clothing ${itemId} not found`);
             return false;
         }
 
-        const clothingData = this.currentClothing.get(itemId);
-        const mesh = clothingData.mesh;
+        try {
+            const clothingData = this.currentClothing.get(itemId);
 
-        // Remove from scene
-        this.scene.remove(mesh);
+            if (clothingData.mesh && this.scene) {
+                this.scene.remove(clothingData.mesh);
 
-        // Dispose geometry and materials
-        mesh.traverse((child) => {
-            if (child.isMesh) {
-                if (child.geometry) {
-                    child.geometry.dispose();
+                if (clothingData.mesh.geometry) {
+                    clothingData.mesh.geometry.dispose();
                 }
-                if (child.material) {
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach(mat => {
-                            if (mat.map) mat.map.dispose();
-                            mat.dispose();
-                        });
+
+                if (clothingData.mesh.material) {
+                    if (Array.isArray(clothingData.mesh.material)) {
+                        clothingData.mesh.material.forEach(mat => mat.dispose());
                     } else {
-                        if (child.material.map) child.material.map.dispose();
-                        child.material.dispose();
+                        clothingData.mesh.material.dispose();
                     }
                 }
             }
-        });
 
-        // Remove from tracking
-        this.currentClothing.delete(itemId);
+            this.currentClothing.delete(itemId);
+            console.log(`✅ Clothing ${itemId} removed successfully`);
+            return true;
 
-        console.log(`[ClothingOBJRenderer] Removed clothing: ${itemId}`);
-        return true;
-    }
-
-    // Remove clothing by category
-    async removeClothingByCategory(category) {
-        const itemsToRemove = [];
-
-        for (const [itemId, clothingData] of this.currentClothing.entries()) {
-            if (clothingData.category === category) {
-                itemsToRemove.push(itemId);
-            }
+        } catch (error) {
+            console.error('❌ Error removing clothing:', error);
+            return false;
         }
-
-        for (const itemId of itemsToRemove) {
-            await this.removeClothing(itemId);
-        }
-
-        return itemsToRemove.length > 0;
     }
 
     // Clear all clothing
     async clearAllClothing() {
-        const allItems = Array.from(this.currentClothing.keys());
+        console.log('🗑️ Clearing all clothing...');
 
-        for (const itemId of allItems) {
-            await this.removeClothing(itemId);
-        }
+        const itemIds = Array.from(this.currentClothing.keys());
+        let removedCount = 0;
 
-        // Also clear UI selections
-        document.querySelectorAll('.wardrobe-item.selected').forEach(item => {
-            item.classList.remove('selected');
-        });
-
-        console.log('[ClothingOBJRenderer] All clothing cleared');
-        return true;
-    }
-
-    // Get category from item type
-    getItemCategory(itemType) {
-        if (!itemType) return 'tops';
-
-        const lowerType = itemType.toLowerCase();
-
-        // Direct mapping
-        if (this.categoryMapping[lowerType]) {
-            return this.categoryMapping[lowerType];
-        }
-
-        // Partial matching
-        for (const [key, category] of Object.entries(this.categoryMapping)) {
-            if (lowerType.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerType)) {
-                return category;
+        for (const itemId of itemIds) {
+            const success = await this.removeClothing(itemId);
+            if (success) {
+                removedCount++;
             }
         }
 
-        return 'tops'; // Default fallback
+        console.log(`✅ Cleared ${removedCount} clothing items`);
+        return removedCount;
     }
 
-    // Utility functions
-    showLoading(message = 'Loading...') {
-        if (typeof window.showLoading === 'function') {
-            window.showLoading(message);
-        }
-    }
+    // Get active clothing info
+    getActiveClothing() {
+        const activeItems = [];
 
-    hideLoading() {
-        if (typeof window.hideLoading === 'function') {
-            window.hideLoading();
+        for (const [itemId, clothingData] of this.currentClothing.entries()) {
+            activeItems.push({
+                id: itemId,
+                name: clothingData.itemData?.label || 'Unknown Item',
+                type: clothingData.type,
+                category: clothingData.category,
+                source: clothingData.source
+            });
         }
-    }
 
-    showMessage(message, type = 'info') {
-        if (typeof window.showMessage === 'function') {
-            window.showMessage(message, type);
-        } else {
-            console.log(`[${type.toUpperCase()}] ${message}`);
-        }
+        return activeItems;
     }
 }
 
-// Integration with existing system
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('[ClothingOBJRenderer] Initializing OBJ clothing renderer...');
+// Initialize and make globally available
+console.log('🚀 Fixed ClothingOBJRenderer class defined (no duplicates)');
 
-    // Wait for dependencies
-    const initializeRenderer = () => {
-        if (typeof THREE !== 'undefined' && THREE.OBJLoader) {
-            // Create global instance
-            window.clothingOBJRenderer = new ClothingOBJRenderer({
-                debug: true
-            });
-
-            // Set up event listeners for wardrobe items
-            setupOBJClothingEventListeners();
-
-            console.log('[ClothingOBJRenderer] Initialization complete');
-        } else {
-            console.log('[ClothingOBJRenderer] Waiting for THREE.js and OBJLoader...');
-            setTimeout(initializeRenderer, 100);
-        }
-    };
-
-    initializeRenderer();
-});
-
-// Set up event listeners for clothing items
-function setupOBJClothingEventListeners() {
-    // Update references when avatar or scene changes
-    const updateReferences = () => {
-        if (window.clothingOBJRenderer) {
-            const scene = window.scene || (window.avatarManager && window.avatarManager.scene);
-            const avatar = window.avatar || (window.avatarManager && window.avatarManager.avatarModel);
-
-            if (scene) {
-                window.clothingOBJRenderer.setReferences(scene, avatar);
-            }
-        }
-    };
-
-    // Initial reference update
-    updateReferences();
-
-    // Update references periodically (in case avatar loads after this script)
-    const referenceInterval = setInterval(() => {
-        updateReferences();
-
-        // Stop checking after 30 seconds
-        setTimeout(() => clearInterval(referenceInterval), 30000);
-    }, 1000);
-
-    // Handle tab switching
-    document.addEventListener('click', function(e) {
-        if (e.target.matches('.avatar-tab[data-tab="custom"]')) {
-            setTimeout(updateReferences, 100);
-        }
-    });
-
-    // Handle wardrobe item clicks
-    document.addEventListener('click', async function(e) {
-        const wardrobeItem = e.target.closest('.wardrobe-item');
-        if (!wardrobeItem) return;
-
-        // Check if we're on the custom avatar tab
-        const customSection = document.querySelector('#custom-avatar-section');
-        const isCustomTabActive = customSection && customSection.classList.contains('active');
-
-        if (isCustomTabActive && window.clothingOBJRenderer) {
-            e.preventDefault();
-            await window.clothingOBJRenderer.handleClothingItemClick(wardrobeItem);
-        }
-    });
-
-    // Handle clear outfit button
-    const clearButton = document.getElementById('clear-outfit-custom-btn');
-    if (clearButton) {
-        clearButton.addEventListener('click', async function() {
-            if (window.clothingOBJRenderer) {
-                await window.clothingOBJRenderer.clearAllClothing();
-                window.clothingOBJRenderer.showMessage('Outfit cleared', 'info');
-            }
-        });
+function initializeClothingOBJRenderer() {
+    if (typeof THREE !== 'undefined' && THREE.OBJLoader) {
+        window.clothingOBJRenderer = new ClothingOBJRenderer();
+        console.log('✅ Fixed ClothingOBJRenderer instance created globally');
+        return true;
+    } else {
+        console.log('⏳ Waiting for THREE.js...');
+        return false;
     }
+}
+
+if (!initializeClothingOBJRenderer()) {
+    const initInterval = setInterval(() => {
+        if (initializeClothingOBJRenderer()) {
+            clearInterval(initInterval);
+        }
+    }, 100);
+
+    setTimeout(() => {
+        clearInterval(initInterval);
+        if (!window.clothingOBJRenderer) {
+            console.error('❌ Failed to initialize Fixed ClothingOBJRenderer after 10 seconds');
+        }
+    }, 10000);
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ClothingOBJRenderer;
 }
