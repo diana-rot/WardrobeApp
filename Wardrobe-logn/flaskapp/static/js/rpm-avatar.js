@@ -114,7 +114,7 @@ class RPMAvatarManager {
         this.setupLighting();
 
         // Add ground plane
-        this.addGroundPlane();
+
         
         // Handle window resize
         window.addEventListener('resize', () => this.onWindowResize());

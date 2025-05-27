@@ -3158,30 +3158,172 @@ def process_clothing():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-    @app.route('/api/wardrobe/item/<item_id>', methods=['GET'])
-    @login_required
-    def get_wardrobe_item(item_id):
-        try:
-            user_id = session['user']['_id']
 
-            # Find the item in the database
-            item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+# Add this to your Flask app (run.py or wherever your routes are)
+# Add this to your Flask app (run.py)
 
-            if not item:
-                return jsonify({'success': False, 'error': 'Item not found'}), 404
+@app.route('/api/wardrobe/item/<item_id>')
+def get_wardrobe_item(item_id):
+    """Get individual wardrobe item with 3D model information"""
+    try:
+        from bson import ObjectId
 
-            # Convert ObjectId to string for JSON serialization
-            item['_id'] = str(item['_id'])
+        # Get item from your database
+        item = db.wardrobe_items.find_one({"_id": ObjectId(item_id)})
 
-            # Normalize file path
-            if 'file_path' in item:
-                item['file_path'] = normalize_path(item['file_path'])
+        if not item:
+            return jsonify({"success": False, "error": "Item not found"})
 
-            return jsonify(item)
+        # Convert ObjectId to string for JSON serialization
+        item_data = {
+            "success": True,
+            "_id": str(item["_id"]),
+            "type": item.get("type", "unknown"),
+            "label": item.get("label", "Clothing Item"),
+            "userId": item.get("userId"),
+            "user_id": item.get("user_id"),  # Alternative field name
+            "model_task_id": item.get("model_task_id"),
+            "modelTaskId": item.get("modelTaskId"),  # Alternative field name
+            "file_path": item.get("file_path"),
+            "texture_preview_path": item.get("texture_preview_path"),
+            "color": item.get("color"),
+            "material_properties": item.get("material_properties"),
+            "has_3d_model": item.get("has_3d_model", True),
+            "model_generated_at": item.get("model_generated_at"),
+            "model_generation_status": item.get("model_generation_status", "completed")
+        }
 
-        except Exception as e:
-            print(f"Error getting wardrobe item: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
+        # Check if explicit model_3d_path exists
+        if item.get("model_3d_path"):
+            item_data["model_3d_path"] = item["model_3d_path"]
+
+        return jsonify(item_data)
+
+    except Exception as e:
+        print(f"Error getting wardrobe item {item_id}: {str(e)}")
+        return jsonify({"success": False, "error": str(e)})
+
+
+# Helper endpoint to check which OBJ files exist
+@app.route('/api/wardrobe/check-obj/<user_id>/<model_task_id>')
+def check_obj_files(user_id, model_task_id):
+    """Check which OBJ files exist for a given user and model task"""
+    import os
+
+    try:
+        base_path = os.path.join('static', 'models', 'generated', user_id)
+
+        # Check for different file variations
+        possible_files = [
+            f'colab_model_task_{model_task_id}_0.obj',
+            f'colab_model_task_{model_task_id}_1.obj',
+            f'colab_model_task_{model_task_id}_2.obj',
+            f'colab_model_task_{model_task_id}_3.obj',
+            f'colab_model_task_{model_task_id}_4.obj',
+            f'colab_model_task_{model_task_id}.obj'
+        ]
+
+        existing_files = []
+        for filename in possible_files:
+            file_path = os.path.join(base_path, filename)
+            if os.path.exists(file_path):
+                existing_files.append({
+                    'filename': filename,
+                    'path': f'/static/models/generated/{user_id}/{filename}',
+                    'size': os.path.getsize(file_path)
+                })
+
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "model_task_id": model_task_id,
+            "existing_files": existing_files,
+            "total_files": len(existing_files)
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# Alternative endpoint to check if a specific OBJ file exists
+@app.route('/api/wardrobe/check-model/<user_id>/<model_task_id>')
+def check_model_file(user_id, model_task_id):
+    """Check which model files exist for a given user and model task"""
+    import os
+
+    try:
+        base_path = os.path.join('static', 'models', 'generated', user_id)
+
+        # Check for different file variations
+        possible_files = [
+            f'colab_model_task_{model_task_id}_0.obj',
+            f'colab_model_task_{model_task_id}_1.obj',
+            f'colab_model_task_{model_task_id}_2.obj',
+            f'colab_model_task_{model_task_id}_3.obj',
+            f'colab_model_task_{model_task_id}_4.obj',
+            f'colab_model_task_{model_task_id}.obj'
+        ]
+
+        existing_files = []
+        for filename in possible_files:
+            file_path = os.path.join(base_path, filename)
+            if os.path.exists(file_path):
+                existing_files.append(f'/static/models/generated/{user_id}/{filename}')
+
+        return jsonify({
+            "success": True,
+            "existing_files": existing_files,
+            "base_path": f'/static/models/generated/{user_id}',
+            "checked_files": possible_files
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# Helper function to update existing items with model task IDs if missing
+@app.route('/api/wardrobe/update-model-paths', methods=['POST'])
+def update_model_paths():
+    """Update existing wardrobe items with proper model paths"""
+    try:
+        # Update items that have generated models but missing model_task_id
+        updated_count = 0
+
+        # Find items that might need updating
+        items = db.wardrobe_items.find({
+            "has_3d_model": True,
+            "$or": [
+                {"model_task_id": {"$exists": False}},
+                {"model_task_id": None}
+            ]
+        })
+
+        for item in items:
+            # Try to extract model_task_id from existing file paths or other fields
+            # This is a heuristic approach - adjust based on your data structure
+
+            if item.get("file_path"):
+                # If the file path contains a pattern we can extract
+                import re
+                match = re.search(r'colab_model_task_([a-f0-9]+)', item.get("file_path", ""))
+                if match:
+                    model_task_id = match.group(1)
+
+                    # Update the item
+                    db.wardrobe_items.update_one(
+                        {"_id": item["_id"]},
+                        {"$set": {"model_task_id": model_task_id}}
+                    )
+                    updated_count += 1
+
+        return jsonify({
+            "success": True,
+            "updated_count": updated_count,
+            "message": f"Updated {updated_count} items with model task IDs"
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 # === Ready Player Me (RPM) API Integration ===
 import requests
