@@ -1522,6 +1522,7 @@ def normalize_path(file_path):
     return normalized
 
 
+
 @app.route('/recommendations', methods=['GET', 'POST'])
 @login_required
 def get_outfit():
@@ -2007,9 +2008,12 @@ def get_outfit():
 #             city3={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}
 #         )
 
+
+# FIXED: Enhanced wardrobe route with proper 3D model fields
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
 def add_wardrobe():
+    """Enhanced wardrobe route with proper 3D model database integration"""
     if request.method == 'POST':
         try:
             # Check if the post request has the file part
@@ -2038,7 +2042,7 @@ def add_wardrobe():
                 # Make prediction
                 preds = model_predict(file_path, model)
                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                              'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
                 # Get predicted label and confidence scores
                 predicted_label = np.argmax(preds)
@@ -2046,66 +2050,75 @@ def add_wardrobe():
 
                 # Get color prediction using the improved function
                 color_result = improved_predict_color(file_path)
-                # color_result is a tuple of (percentage, RGB array)
                 color_percentage = float(color_result[0])
-                color_rgb = color_result[1].tolist()  # Convert numpy array to list
+                color_rgb = color_result[1].tolist()
 
                 # Extract material properties
                 material_properties = extract_material_properties(file_path)
 
                 # Generate normal map for textured materials
                 normal_map_path = None
-                # Check if material_properties contains pattern_info before accessing it
                 has_pattern = False
                 pattern_strength = 0.0
 
                 if material_properties:
-                    # Safely check for pattern_info
                     if 'pattern_info' in material_properties:
                         pattern_info = material_properties['pattern_info']
                         has_pattern = pattern_info.get('has_pattern', False)
                         pattern_strength = pattern_info.get('pattern_strength', 0.0)
 
-                    # Determine if we should generate a normal map based on material type and pattern
                     if (material_properties.get('estimated_material') in ['textured', 'rough_textured',
                                                                           'woven_patterned'] or
                             (has_pattern and pattern_strength > 0.3)):
                         try:
                             normal_map_path = generate_normal_map(file_path)
                             if normal_map_path:
-                                # Convert to database path format
                                 normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
                         except Exception as e:
                             print(f"Error generating normal map: {str(e)}")
-                            # Continue even if normal map generation fails
 
-                # Set texture preview path (explicitly store it)
                 texture_preview_path = file_path_db
 
-                # Save image data
-                userId = session['user']['_id']
-                db.wardrobe.insert_one({
-                    'userId': userId,
+                # FIXED: Save image data to database with complete 3D model fields
+                wardrobe_item = {
+                    'userId': user_id,
                     'label': clothing_type,
                     'confidence': float(preds[0][predicted_label]),
                     'color': {
                         'percentage': color_percentage,
                         'rgb': color_rgb
                     },
-                    # Add material properties
                     'material_properties': material_properties,
                     'normal_map_path': normal_map_path,
                     'filename': secure_filename(f.filename),
                     'file_path': file_path_db,
-                    'texture_preview_path': texture_preview_path,  # Add this for UI display
+                    'texture_preview_path': texture_preview_path,
                     'created_at': datetime.now(),
                     'last_worn': None,
-                    'times_worn': 0
-                })
+                    'times_worn': 0,
+                    # CRITICAL: 3D MODEL FIELDS - PROPERLY INITIALIZED
+                    'has_3d_model': False,
+                    'model_3d_path': None,           # Will store the OBJ/GLB file path
+                    'model_generated_at': None,      # When the 3D model was created
+                    'model_method': None,            # 'colab', 'triposr', etc.
+                    'model_file_format': None,       # 'OBJ', 'GLB', etc.
+                    'model_file_size': None,         # File size in bytes
+                    'model_last_updated': None,      # Last time the 3D model was updated
+                    'model_generation_status': None, # 'generating', 'completed', 'failed'
+                    'model_task_id': None           # Generation task ID for tracking
+                }
 
-                # Return success response with all needed data for UI display
+                # INSERT AND GET THE ID - THIS IS CRUCIAL FOR AUTO-SAVE!
+                print(f"💾 Inserting wardrobe item to database...")
+                insert_result = db.wardrobe.insert_one(wardrobe_item)
+                item_id = str(insert_result.inserted_id)
+
+                print(f"✅ Created wardrobe item with ID: {item_id}")
+
+                # CRITICAL: Return success response with the item_id for auto-save!
                 return jsonify({
                     'success': True,
+                    'item_id': item_id,  # THIS IS THE KEY FIELD FOR AUTO-SAVE!
                     'prediction': clothing_type,
                     'confidence': float(preds[0][predicted_label]),
                     'color': {
@@ -2114,11 +2127,11 @@ def add_wardrobe():
                     },
                     'material_properties': material_properties,
                     'normal_map_path': normal_map_path,
-                    'texture_preview_path': texture_preview_path  # Important: Include this
+                    'texture_preview_path': texture_preview_path
                 })
 
             except Exception as e:
-                print(f"Error in prediction: {str(e)}")
+                print(f"Prediction error: {str(e)}")
                 if os.path.exists(file_path):
                     os.remove(file_path)
                 return jsonify({'error': f'Error processing image: {str(e)}'}), 500
@@ -2130,155 +2143,50 @@ def add_wardrobe():
     # GET request
     return render_template('wardrobe.html')
 
-# @app.route('/api/wardrobe/material/<item_id>', methods=['GET'])
-# @login_required
-# def get_material_properties(item_id):
-#     try:
-#         userId = session['user']['_id']
-#         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': userId})
-#
-#         if not item:
-#             return jsonify({'error': 'Item not found'}), 404
-#
-#         # If material properties don't exist yet, extract them now
-#         if 'material_properties' not in item:
-#             file_path = os.path.join('flaskapp', item['file_path'].lstrip('/'))
-#             if os.path.exists(file_path):
-#                 material_properties = extract_material_properties(file_path)
-#
-#                 # Generate normal map if appropriate
-#                 normal_map_path = None
-#                 if material_properties and (
-#                         material_properties['estimated_material'] in ['textured', 'rough_textured',
-#                                                                       'woven_patterned'] or
-#                         (material_properties['pattern_info']['has_pattern'] and
-#                          material_properties['pattern_info']['pattern_strength'] > 0.3)
-#                 ):
-#                     normal_map_path = generate_normal_map(file_path)
-#                     if normal_map_path:
-#                         # Convert to database path format
-#                         normal_map_path = normal_map_path.replace(os.path.join('flaskapp', ''), '/')
-#
-#                 update_data = {'material_properties': material_properties}
-#                 if normal_map_path:
-#                     update_data['normal_map_path'] = normal_map_path
-#
-#                 db.wardrobe.update_one(
-#                     {'_id': ObjectId(item_id)},
-#                     {'$set': update_data}
-#                 )
-#
-#                 item['material_properties'] = material_properties
-#                 item['normal_map_path'] = normal_map_path
-#             else:
-#                 return jsonify({'error': 'Image file not found'}), 404
-#
-#         # Get normalized paths
-#         texture_path = normalize_path(item.get('file_path', ''))
-#         normal_map_path = normalize_path(item.get('normal_map_path', '')) if item.get('normal_map_path') else None
-#
-#         return jsonify({
-#             'success': True,
-#             'itemId': str(item['_id']),
-#             'label': item['label'],
-#             'materialProperties': item['material_properties'],
-#             'texturePath': texture_path,
-#             'normalMapPath': normal_map_path
-#         })
-#
-#     except Exception as e:
-#         print(f"Error getting material properties: {str(e)}")
-#         return jsonify({'error': str(e)}), 500
-# @app.route('/wardrobe', methods=['GET', 'POST'])
-# @login_required
-# def add_wardrobe():
-#     if request.method == 'POST':
-#         try:
-#             # Check if the post request has the file part
-#             if 'file' not in request.files:
-#                 return jsonify({'error': 'No file part'}), 400
-#
-#             f = request.files['file']
-#             if f.filename == '':
-#                 return jsonify({'error': 'No selected file'}), 400
-#
-#             # Check if the file is allowed
-#             allowed_extensions = {'png', 'jpg', 'jpeg'}
-#             if not '.' in f.filename or \
-#                     f.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-#                 return jsonify({'error': 'Invalid file type'}), 400
-#
-#             # Save the file
-#             user_id = session['user']['_id']
-#             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
-#             print('dir' + upload_dir);
-#             os.makedirs(upload_dir, exist_ok=True)
-#             file_path = os.path.join(upload_dir, secure_filename(f.filename))
-#             f.save(file_path)
-#             print(file_path + 'fsss')
-#             file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
-#             print('fileeeDB'+ file_path_db);
-#             # Rest of the code remains the same...
-#
-#             try:
-#                 # Make prediction
-#                 preds = model_predict(file_path, model)
-#                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-#                                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-#
-#                 # Get predicted label and confidence scores
-#                 predicted_label = np.argmax(preds)
-#                 clothing_type = class_names[predicted_label]
-#
-#                 # Get color prediction
-#                 color_result = predict_color(file_path)
-#                 # color_result is a tuple of (percentage, RGB array)
-#                 color_percentage = float(color_result[0])
-#                 color_rgb = color_result[1].tolist()  # Convert numpy array to list
-#
-#                 # Save image data
-#                 userId = session['user']['_id']
-#                 db.wardrobe.insert_one({
-#                     'userId': userId,
-#                     'label': clothing_type,
-#                     'confidence': float(preds[0][predicted_label]),
-#                     'color': {
-#                         'percentage': color_percentage,
-#                         'rgb': color_rgb
-#                     },
-#                     'filename': secure_filename(f.filename),
-#                     'file_path': file_path_db,
-#                     'created_at': datetime.now(),
-#                     'last_worn': None,
-#                     'times_worn': 0
-#                 })
-#
-#                 # # Clean up the uploaded file
-#                 # os.remove(file_path)
-#
-#                 # Return success response
-#                 return jsonify({
-#                     'success': True,
-#                     'prediction': clothing_type,
-#                     'confidence': float(preds[0][predicted_label]),
-#                     'color': {
-#                         'percentage': color_percentage,
-#                         'rgb': color_rgb
-#                     }
-#                 })
-#
-#             except Exception as e:
-#                 print(f"Error in prediction: {str(e)}")
-#                 if os.path.exists(file_path):
-#                     os.remove(file_path)
-#                 return jsonify({'error': f'Error processing image: {str(e)}'}), 500
-#
-#         except Exception as e:
-#             print(f"Error in file upload: {str(e)}")
-#             return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
-#
-#     # GET request
-#     return render_template('wardrobe.html')
+
+     # FIXED: Add this route to update existing items that don't have model_task_id
+    @app.route('/api/wardrobe/fix-missing-task-ids', methods=['POST'])
+    @login_required
+    def fix_missing_task_ids():
+        """Fix existing wardrobe items that are missing model_task_id"""
+        try:
+            user_id = session['user']['_id']
+
+            # Find items without model_task_id
+            items_without_task_id = list(db.wardrobe.find({
+                'userId': user_id,
+                '$or': [
+                    {'model_task_id': None},
+                    {'model_task_id': {'$exists': False}}
+                ]
+            }))
+
+            updated_count = 0
+
+            for item in items_without_task_id:
+                # Generate a new model_task_id
+                import uuid
+                new_task_id = f"item_{user_id}_{uuid.uuid4().hex[:8]}"
+
+                # Update the item
+                result = db.wardrobe.update_one(
+                    {'_id': item['_id']},
+                    {'$set': {'model_task_id': new_task_id}}
+                )
+
+                if result.modified_count > 0:
+                    updated_count += 1
+                    print(f"✅ Updated item {item['_id']} with task_id: {new_task_id}")
+
+            return jsonify({
+                'success': True,
+                'message': f'Updated {updated_count} items with model_task_id',
+                'updated_count': updated_count
+            })
+
+        except Exception as e:
+            print(f"❌ Error fixing task IDs: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/wardrobe/all', methods=['GET', 'POST'])
 @login_required
@@ -3021,30 +2929,212 @@ def process_clothing():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-    @app.route('/api/wardrobe/item/<item_id>', methods=['GET'])
-    @login_required
-    def get_wardrobe_item(item_id):
-        try:
-            user_id = session['user']['_id']
 
-            # Find the item in the database
-            item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+# Add this to your Flask app (run.py or wherever your routes are)
+# Add this to your Flask app (run.py)
 
-            if not item:
-                return jsonify({'success': False, 'error': 'Item not found'}), 404
 
-            # Convert ObjectId to string for JSON serialization
-            item['_id'] = str(item['_id'])
+@app.route('/api/wardrobe/item/<item_id>')
+def get_wardrobe_item(item_id):
+    """Get individual wardrobe item with 3D model information - FIXED"""
+    try:
+        from bson import ObjectId
 
-            # Normalize file path
-            if 'file_path' in item:
-                item['file_path'] = normalize_path(item['file_path'])
+        print(f"🔍 Looking for item {item_id}")
 
-            return jsonify(item)
+        # Use correct collection name 'wardrobe'
+        item = db.wardrobe.find_one({"_id": ObjectId(item_id)})
 
-        except Exception as e:
-            print(f"Error getting wardrobe item: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
+        if not item:
+            print(f"❌ Item {item_id} not found in 'wardrobe' collection")
+            return jsonify({"success": False, "error": "Item not found"})
+
+        print(f"✅ Found item {item_id}: {item.get('label', 'Unknown')}")
+
+        # Ensure all required fields exist with proper defaults
+        item_data = {
+            "success": True,
+            "_id": str(item["_id"]),
+            "type": item.get("type", item.get("label", "tops")),
+            "label": item.get("label", "Clothing Item"),
+            "userId": item.get("userId"),
+            "user_id": item.get("userId"),
+
+            # Always provide model_task_id (auto-generate if missing)
+            "model_task_id": item.get("model_task_id") or f"auto_{str(item['_id'])[:8]}",
+            "modelTaskId": item.get("model_task_id") or f"auto_{str(item['_id'])[:8]}",
+
+            "file_path": item.get("file_path"),
+            "texture_preview_path": item.get("texture_preview_path", item.get("file_path")),
+            "color": item.get("color"),
+            "material_properties": item.get("material_properties"),
+            "has_3d_model": item.get("has_3d_model", False),
+            "model_3d_path": item.get("model_3d_path"),
+            "model_generated_at": item.get("model_generated_at"),
+            "model_generation_status": item.get("model_generation_status", "none"),
+
+            # Add category mapping
+            "category": item.get("category") or get_item_category(item.get("label", ""))
+        }
+
+        print(f"✅ Returning item data with model_task_id: {item_data['model_task_id']}")
+        return jsonify(item_data)
+
+    except Exception as e:
+        print(f"❌ Error getting wardrobe item {item_id}: {str(e)}")
+        return jsonify({"success": False, "error": str(e)})
+
+
+# 3. ADD this helper function if it doesn't exist:
+def get_item_category(label):
+    """Determine category from item label"""
+    label_lower = label.lower()
+
+    if any(word in label_lower for word in ['shirt', 'top', 'pullover']):
+        return 'tops'
+    elif any(word in label_lower for word in ['trouser', 'pant']):
+        return 'bottoms'
+    elif 'dress' in label_lower:
+        return 'dresses'
+    elif any(word in label_lower for word in ['coat', 'jacket']):
+        return 'outerwear'
+    elif any(word in label_lower for word in ['shoe', 'sandal', 'boot']):
+        return 'shoes'
+    elif 'bag' in label_lower:
+        return 'accessories'
+    else:
+        return 'tops'  # Default
+
+
+
+
+
+
+
+
+
+
+
+
+@app.route('/api/wardrobe/check-obj/<user_id>/<model_task_id>')
+def check_obj_files(user_id, model_task_id):
+    """Check which OBJ files exist for a given user and model task"""
+    import os
+
+    try:
+        base_path = os.path.join('static', 'models', 'generated', user_id)
+
+        # Check for different file variations
+        possible_files = [
+            f'colab_model_task_{model_task_id}_0.obj',
+            f'colab_model_task_{model_task_id}_1.obj',
+            f'colab_model_task_{model_task_id}_2.obj',
+            f'colab_model_task_{model_task_id}_3.obj',
+            f'colab_model_task_{model_task_id}_4.obj',
+            f'colab_model_task_{model_task_id}.obj'
+        ]
+
+        existing_files = []
+        for filename in possible_files:
+            file_path = os.path.join(base_path, filename)
+            if os.path.exists(file_path):
+                existing_files.append({
+                    'filename': filename,
+                    'path': f'/static/models/generated/{user_id}/{filename}',
+                    'size': os.path.getsize(file_path)
+                })
+
+        return jsonify({
+            "success": True,
+            "user_id": user_id,
+            "model_task_id": model_task_id,
+            "existing_files": existing_files,
+            "total_files": len(existing_files)
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# Alternative endpoint to check if a specific OBJ file exists
+@app.route('/api/wardrobe/check-model/<user_id>/<model_task_id>')
+def check_model_file(user_id, model_task_id):
+    """Check which model files exist for a given user and model task"""
+    import os
+
+    try:
+        base_path = os.path.join('static', 'models', 'generated', user_id)
+
+        # Check for different file variations
+        possible_files = [
+            f'colab_model_task_{model_task_id}_0.obj',
+            f'colab_model_task_{model_task_id}_1.obj',
+            f'colab_model_task_{model_task_id}_2.obj',
+            f'colab_model_task_{model_task_id}_3.obj',
+            f'colab_model_task_{model_task_id}_4.obj',
+            f'colab_model_task_{model_task_id}.obj'
+        ]
+
+        existing_files = []
+        for filename in possible_files:
+            file_path = os.path.join(base_path, filename)
+            if os.path.exists(file_path):
+                existing_files.append(f'/static/models/generated/{user_id}/{filename}')
+
+        return jsonify({
+            "success": True,
+            "existing_files": existing_files,
+            "base_path": f'/static/models/generated/{user_id}',
+            "checked_files": possible_files
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+# Helper function to update existing items with model task IDs if missing
+@app.route('/api/wardrobe/update-model-paths', methods=['POST'])
+def update_model_paths():
+    """Update existing wardrobe items with proper model paths"""
+    try:
+        # Update items that have generated models but missing model_task_id
+        updated_count = 0
+
+        # Find items that might need updating
+        items = db.wardrobe_items.find({
+            "has_3d_model": True,
+            "$or": [
+                {"model_task_id": {"$exists": False}},
+                {"model_task_id": None}
+            ]
+        })
+
+        for item in items:
+            # Try to extract model_task_id from existing file paths or other fields
+            # This is a heuristic approach - adjust based on your data structure
+
+            if item.get("file_path"):
+                # If the file path contains a pattern we can extract
+                import re
+                match = re.search(r'colab_model_task_([a-f0-9]+)', item.get("file_path", ""))
+                if match:
+                    model_task_id = match.group(1)
+
+                    # Update the item
+                    db.wardrobe_items.update_one(
+                        {"_id": item["_id"]},
+                        {"$set": {"model_task_id": model_task_id}}
+                    )
+                    updated_count += 1
+
+        return jsonify({
+            "success": True,
+            "updated_count": updated_count,
+            "message": f"Updated {updated_count} items with model task IDs"
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 # === Ready Player Me (RPM) API Integration ===
 import requests
@@ -3617,7 +3707,1178 @@ def analyze_material():
         print(f"Error analyzing material: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+# 3d clothes
 
+from gradio_client import Client, handle_file
+import tempfile
+import threading
+import queue
+import time
+import requests
+import os
+import shutil
+from werkzeug.utils import secure_filename
+from datetime import datetime
+import json
+import uuid
+
+
+# colab api api TRIPOSR
+# Add this to your existing run.py file
+
+import requests
+import time
+import uuid
+from datetime import datetime
+import threading
+import os
+
+# Clean Colab-Only 3D Generation System
+# Remove all Hugging Face Spaces / TripoSG integration
+
+import requests
+import time
+import uuid
+from datetime import datetime
+import threading
+import os
+import tempfile
+import shutil
+from werkzeug.utils import secure_filename
+import random
+
+# Global variables for Colab-only integration
+COLAB_API_URL = 'https://f606-34-72-94-244.ngrok-free.app/'
+colab_api_available = True
+generation_tasks = {}
+generation_lock = threading.Lock()
+active_generations = 0
+MAX_CONCURRENT_GENERATIONS = 2  # Allow more since we're only using Colab
+
+
+class ColabTripoSRClient:
+    """Simplified Colab-only client"""
+
+    def __init__(self):
+        self.colab_url = None
+        self.session = requests.Session()
+        self.session.timeout = 60  # Longer timeout for 3D generation
+        self.available = False
+
+    def set_url(self, url):
+        """Set the Colab API URL"""
+        self.colab_url = url.rstrip('/')
+        self.check_availability()
+
+    def check_availability(self):
+        """Check if Colab API is available"""
+        if not self.colab_url:
+            self.available = False
+            return False
+
+        try:
+            print(f"🔍 Checking Colab API at: {self.colab_url}")
+            response = self.session.get(f"{self.colab_url}/health", timeout=15)
+            self.available = response.status_code == 200
+            print(f"✅ Colab API {'available' if self.available else 'unavailable'}")
+            return self.available
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Colab API check failed: {str(e)}")
+            self.available = False
+            return False
+
+    def generate_3d_model(self, image_path, task_id, user_id):
+        """Generate 3D model using Colab API only"""
+        if not self.available:
+            raise Exception("Colab API not available")
+
+        try:
+            print(f"🚀 Starting Colab 3D generation for task {task_id}")
+
+            # Update task status
+            generation_tasks[task_id].update({
+                'status': 'processing',
+                'message': 'Uploading image to Colab...',
+                'progress': 0.1,
+                'updated_at': time.time()
+            })
+
+            # Prepare file for upload
+            with open(image_path, 'rb') as f:
+                files = {'image': ('image.jpg', f, 'image/jpeg')}
+
+                # Update progress
+                generation_tasks[task_id].update({
+                    'message': 'Processing with Colab GPU...',
+                    'progress': 0.3,
+                    'updated_at': time.time()
+                })
+
+                print(f"📤 Uploading to Colab API: {self.colab_url}/generate")
+
+                # Call Colab API with longer timeout
+                response = self.session.post(
+                    f"{self.colab_url}/generate",
+                    files=files,
+                    timeout=300  # 5 minutes timeout for 3D generation
+                )
+
+            print(f"📥 Colab response: HTTP {response.status_code}")
+
+            if response.status_code == 200:
+                # Update progress
+                generation_tasks[task_id].update({
+                    'message': 'Saving generated model...',
+                    'progress': 0.9,
+                    'updated_at': time.time()
+                })
+
+                # Check if response contains actual file data
+                content_length = len(response.content)
+                print(f"📦 Response content length: {content_length:,} bytes")
+
+                if content_length < 1000:  # Less than 1KB suggests an error response
+                    # Try to parse as JSON error message
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get('message', error_data.get('error', 'Unknown error'))
+                        print(f"❌ Colab API returned error: {error_msg}")
+                        raise Exception(f"Colab processing failed: {error_msg}")
+                    except:
+                        print(f"❌ Colab API returned insufficient data: {response.text[:200]}...")
+                        raise Exception("Colab API returned insufficient data")
+
+                # Save the returned model file
+                user_model_dir = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
+                os.makedirs(user_model_dir, exist_ok=True)
+
+                # Determine file extension based on content type or default to OBJ
+                content_type = response.headers.get('content-type', '').lower()
+                if 'glb' in content_type or 'gltf' in content_type:
+                    file_extension = 'glb'
+                elif 'obj' in content_type or 'octet-stream' in content_type:
+                    file_extension = 'obj'
+                else:
+                    # Default to OBJ since that's what we expect
+                    file_extension = 'obj'
+
+                model_filename = f"colab_model_{task_id}_{int(time.time())}.{file_extension}"
+                model_path = os.path.join(user_model_dir, model_filename)
+
+                # Save the model file
+                with open(model_path, 'wb') as f:
+                    f.write(response.content)
+
+                file_size = len(response.content)
+                print(f"💾 Model saved: {model_path} ({file_size:,} bytes)")
+
+                # Verify the saved file exists and has content
+                if not os.path.exists(model_path) or os.path.getsize(model_path) == 0:
+                    print("❌ Saved model file is empty or doesn't exist")
+                    raise Exception("Failed to save model file properly")
+
+                # Update task as completed
+                generation_tasks[task_id].update({
+                    'status': 'completed',
+                    'message': f'3D model generated successfully via Colab! ({file_extension.upper()} format)',
+                    'progress': 1.0,
+                    'updated_at': time.time(),
+                    'model_path': f'/static/models/generated/{user_id}/{model_filename}',
+                    'local_path': model_path,
+                    'file_size': file_size,
+                    'file_format': file_extension.upper(),
+                    'completed_at': datetime.now().isoformat(),
+                    'method': 'colab'
+                })
+
+                print(f"✅ Task {task_id} completed successfully!")
+                return True
+
+            else:
+                error_msg = f"Colab API error: HTTP {response.status_code}"
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('error', error_data.get('message', error_msg))
+                    print(f"❌ Colab API error details: {error_data}")
+
+                    # Handle specific error cases
+                    if 'No OBJ file found' in str(error_data):
+                        error_msg = "3D model generation failed - TripoSR couldn't create the model file. This might be due to image quality or processing issues."
+                    elif 'timeout' in str(error_data).lower():
+                        error_msg = "3D model generation timed out - try with a simpler image"
+                    elif 'memory' in str(error_data).lower():
+                        error_msg = "Insufficient GPU memory for processing - try with a smaller image"
+
+                except:
+                    print(f"❌ Colab API error (raw response): {response.text[:500]}...")
+                    if response.status_code == 500:
+                        error_msg = "Colab server error - the 3D generation process failed. Try again or use a different image."
+                    elif response.status_code == 404:
+                        error_msg = "Colab API endpoint not found - make sure the Colab notebook is running properly"
+                    elif response.status_code == 413:
+                        error_msg = "Image file too large - please use a smaller image"
+
+                raise Exception(error_msg)
+
+        except requests.exceptions.Timeout:
+            error_msg = "Colab API timeout - 3D generation took too long (>5 minutes). Try with a simpler image or check if Colab is still running."
+            print(f"❌ {error_msg}")
+            raise Exception(error_msg)
+
+        except requests.exceptions.ConnectionError:
+            error_msg = "Cannot connect to Colab API. Make sure your Colab notebook is still running and the ngrok tunnel is active."
+            print(f"❌ {error_msg}")
+            raise Exception(error_msg)
+
+        except Exception as e:
+            error_str = str(e)
+            print(f"❌ Colab generation error: {error_str}")
+
+            # Provide more helpful error messages
+            if "No OBJ file found" in error_str:
+                raise Exception(
+                    "3D model generation failed - the AI couldn't process your image properly. Try a different image with clearer object details.")
+            elif "Processing failed" in error_str:
+                raise Exception(
+                    "3D model generation failed - there was an issue processing your image. Please try again or use a different image.")
+            else:
+                raise Exception(f"Colab API error: {error_str}")
+
+# Create global Colab client (ONLY client we need)
+colab_client = ColabTripoSRClient()
+
+# Auto-configure the Colab client
+if COLAB_API_URL:
+    colab_client.set_url(COLAB_API_URL)
+    print(f"🔗 Colab API configured: {COLAB_API_URL}")
+    print(f"✅ Colab available: {colab_client.available}")
+
+
+def generate_3d_model_colab_thread(image_path, task_id, user_id):
+    """Thread function for Colab-only 3D model generation"""
+    global active_generations
+
+    try:
+        with generation_lock:
+            active_generations += 1
+
+        print(f"🔄 Starting Colab 3D generation for task {task_id} (active: {active_generations})")
+
+        success = colab_client.generate_3d_model(image_path, task_id, user_id)
+
+        if success:
+            print(f"✅ Task {task_id} completed successfully")
+        else:
+            print(f"❌ Task {task_id} failed")
+
+    except Exception as e:
+        error_message = str(e)
+        print(f"❌ Task {task_id} thread failed: {error_message}")
+
+        current_time = time.time()
+        generation_tasks[task_id] = {
+            **generation_tasks.get(task_id, {}),
+            'status': 'failed',
+            'message': error_message,
+            'error': error_message,
+            'user_id': user_id,
+            'updated_at': current_time,
+            'failed_at': datetime.now().isoformat()
+        }
+    finally:
+        with generation_lock:
+            active_generations -= 1
+
+        # Clean up temporary image file
+        try:
+            if os.path.exists(image_path):
+                os.remove(image_path)
+                print(f"🗑️ Cleaned up temp file: {image_path}")
+        except Exception as e:
+            print(f"⚠️ Failed to clean up temp file {image_path}: {str(e)}")
+
+
+# FLASK ROUTES - Simplified for Colab-only
+
+@app.route('/api/generate-3d-model', methods=['POST'])
+@login_required
+def api_generate_3d_model_colab():
+    """Generate 3D model using Colab API only"""
+    global active_generations
+
+    try:
+        # Check if Colab is available
+        if not colab_client.available:
+            return jsonify({
+                'success': False,
+                'error': 'Colab API not available. Please check the Colab connection.',
+                'colab_url': COLAB_API_URL,
+                'setup_required': True
+            }), 503
+
+        # Check concurrent generation limit
+        if active_generations >= MAX_CONCURRENT_GENERATIONS:
+            return jsonify({
+                'success': False,
+                'error': f'Server is busy processing {active_generations} models. Please wait and try again.',
+                'active_count': active_generations,
+                'max_count': MAX_CONCURRENT_GENERATIONS
+            }), 429
+
+        # Validate request
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'error': 'No image provided'}), 400
+
+        image_file = request.files['image']
+        if image_file.filename == '':
+            return jsonify({'success': False, 'error': 'Empty file'}), 400
+
+        # Validate file size (15MB limit for Colab)
+        image_file.seek(0, 2)
+        file_size = image_file.tell()
+        image_file.seek(0)
+
+        if file_size > 15 * 1024 * 1024:  # 15MB
+            return jsonify({'success': False, 'error': 'File too large. Maximum size is 15MB.'}), 400
+
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/jpg', 'image/png']
+        if image_file.content_type not in allowed_types:
+            return jsonify({'success': False, 'error': 'Invalid file type. Please use JPEG or PNG.'}), 400
+
+        # Get user ID
+        user_id = session['user']['_id']
+
+        # Save uploaded image temporarily
+        temp_dir = os.path.join('flaskapp', 'static', 'temp_3d_generation')
+        os.makedirs(temp_dir, exist_ok=True)
+
+        # Create unique filename
+        file_extension = os.path.splitext(image_file.filename)[1].lower()
+        if not file_extension:
+            file_extension = '.jpg'
+
+        temp_filename = f"colab_{user_id}_{uuid.uuid4().hex[:8]}{file_extension}"
+        temp_image_path = os.path.join(temp_dir, temp_filename)
+        image_file.save(temp_image_path)
+
+        # Verify file was saved
+        if not os.path.exists(temp_image_path):
+            return jsonify({'success': False, 'error': 'Failed to save uploaded image'}), 500
+
+        # Generate unique task ID
+        task_id = f"task_{user_id}_{uuid.uuid4().hex[:8]}_{int(time.time())}"
+
+        # Initialize task status
+        current_time = time.time()
+        generation_tasks[task_id] = {
+            'status': 'started',
+            'message': 'Preparing 3D model generation with Colab GPU...',
+            'progress': 0.0,
+            'created_at': current_time,
+            'updated_at': current_time,
+            'user_id': user_id,
+            'temp_image_path': temp_image_path,
+            'method': 'colab',
+            'started_at': datetime.now().isoformat()
+        }
+
+        # Start generation in a separate thread
+        thread = threading.Thread(
+            target=generate_3d_model_colab_thread,
+            args=(temp_image_path, task_id, user_id),
+            name=f"ColabGen-{task_id}"
+        )
+        thread.daemon = True
+        thread.start()
+
+        return jsonify({
+            'success': True,
+            'task_id': task_id,
+            'method': 'colab',
+            'message': '3D model generation started with Colab GPU',
+            'estimated_time': '2-4 minutes',
+            'colab_url': COLAB_API_URL
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error starting Colab 3D generation: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/check-generation-status', methods=['GET'])
+@login_required
+def api_check_colab_generation_status():
+    """Check the status of Colab 3D model generation"""
+    try:
+        task_id = request.args.get('task_id')
+        if not task_id:
+            return jsonify({'success': False, 'error': 'No task ID provided'}), 400
+
+        # Check if task exists
+        if task_id not in generation_tasks:
+            return jsonify({'success': False, 'error': 'Task not found'}), 404
+
+        task = generation_tasks[task_id]
+
+        # Verify user owns this task
+        user_id = session['user']['_id']
+        if task.get('user_id') != user_id:
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+        # Check if task is too old
+        current_time = time.time()
+        task_age = current_time - task.get('created_at', current_time)
+
+        if task_age > 1800:  # 30 minutes max
+            print(f"Task {task_id} expired after {task_age} seconds")
+            del generation_tasks[task_id]
+            return jsonify({'success': False, 'error': 'Task expired'}), 410
+
+        # Update the task's last access time
+        task['updated_at'] = current_time
+
+        # Prepare response
+        response_data = {
+            'success': True,
+            'status': task['status'],
+            'message': task['message'],
+            'progress': task['progress'],
+            'task_id': task_id,
+            'method': 'colab',
+            'active_generations': active_generations,
+            'task_age': int(task_age),
+            'colab_url': COLAB_API_URL
+        }
+
+        # Add additional data based on status
+        if task['status'] == 'completed':
+            response_data.update({
+                'model_path': task.get('model_path'),
+                'file_size': task.get('file_size'),
+                'completed_at': task.get('completed_at')
+            })
+        elif task['status'] == 'failed':
+            response_data.update({
+                'error': task.get('error'),
+                'failed_at': task.get('failed_at')
+            })
+
+        return jsonify(response_data)
+
+    except Exception as e:
+        app.logger.error(f"Error checking Colab generation status: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/generation-methods', methods=['GET'])
+@login_required
+def get_colab_only_methods():
+    """Get Colab-only generation method status"""
+    return jsonify({
+        'success': True,
+        'methods': {
+            'colab': {
+                'name': 'Google Colab API',
+                'available': colab_client.available,
+                'description': 'Generate 3D models using Google Colab with free GPU',
+                'url': COLAB_API_URL,
+                'pros': ['Free GPU access', 'No local hardware requirements', 'Always up-to-date'],
+                'cons': ['Requires internet', 'May have usage limits', 'Depends on external service']
+            }
+        },
+        'current_method': 'colab',
+        'active_generations': active_generations,
+        'max_concurrent': MAX_CONCURRENT_GENERATIONS
+    })
+
+
+@app.route('/api/set-colab-url', methods=['POST'])
+@login_required
+def set_colab_url():
+    """Update the Google Colab API URL"""
+    try:
+        data = request.json
+        new_colab_url = data.get('colab_url', '').strip()
+
+        if not new_colab_url:
+            return jsonify({'success': False, 'error': 'No URL provided'}), 400
+
+        # Validate URL format
+        if not new_colab_url.startswith(('http://', 'https://')):
+            return jsonify({'success': False, 'error': 'URL must start with http:// or https://'}), 400
+
+        # Update global URL
+        global COLAB_API_URL, colab_api_available
+        COLAB_API_URL = 'https://df44-34-72-94-244.ngrok-free.app/'
+
+        # Test the new URL
+        colab_client.set_url(new_colab_url)
+
+        if colab_client.available:
+            colab_api_available = True
+            return jsonify({
+                'success': True,
+                'message': 'Colab API connected successfully!',
+                'url': new_colab_url
+            })
+        else:
+            colab_api_available = False
+            return jsonify({
+                'success': False,
+                'error': 'Could not connect to new Colab API URL. Make sure it\'s running and accessible.',
+                'url': new_colab_url
+            }), 400
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/test-colab-connection', methods=['GET'])
+@login_required
+def test_colab_connection():
+    """Test current Colab connection"""
+    try:
+        if not COLAB_API_URL:
+            return jsonify({
+                'success': False,
+                'error': 'No Colab URL configured',
+                'connected': False
+            })
+
+        # Test the connection
+        is_available = colab_client.check_availability()
+
+        return jsonify({
+            'success': is_available,
+            'connected': is_available,
+            'url': COLAB_API_URL,
+            'message': 'Colab API is responding normally' if is_available else 'Colab API is not responding'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'connected': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/generation-stats', methods=['GET'])
+@login_required
+def get_colab_generation_stats():
+    """Get Colab generation statistics"""
+    try:
+        return jsonify({
+            'success': True,
+            'active_generations': active_generations,
+            'max_concurrent': MAX_CONCURRENT_GENERATIONS,
+            'can_start_new': active_generations < MAX_CONCURRENT_GENERATIONS,
+            'method': 'colab',
+            'colab_available': colab_client.available,
+            'colab_url': COLAB_API_URL,
+            'total_tasks': len(generation_tasks)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Cleanup function for old tasks
+def cleanup_old_colab_tasks():
+    """Clean up old Colab generation tasks"""
+    try:
+        current_time = time.time()
+        tasks_to_remove = []
+
+        for task_id, task in list(generation_tasks.items()):
+            task_age = current_time - task.get('created_at', 0)
+
+            # Remove tasks older than 1 hour
+            if task_age > 3600:
+                tasks_to_remove.append(task_id)
+
+                # Clean up temporary files
+                temp_path = task.get('temp_image_path')
+                if temp_path and os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except Exception as e:
+                        print(f"Failed to remove temp file {temp_path}: {e}")
+
+        # Remove old tasks
+        for task_id in tasks_to_remove:
+            del generation_tasks[task_id]
+
+        if len(tasks_to_remove) > 0:
+            print(f"🧹 Cleaned up {len(tasks_to_remove)} old Colab tasks")
+
+    except Exception as e:
+        print(f"Error in Colab cleanup: {str(e)}")
+
+
+# Periodic cleanup
+def periodic_colab_cleanup():
+    """Run Colab cleanup periodically"""
+    while True:
+        time.sleep(1800)  # 30 minutes
+        cleanup_old_colab_tasks()
+
+
+# Start cleanup thread
+cleanup_thread = threading.Thread(target=periodic_colab_cleanup, name="Colab-Cleanup")
+cleanup_thread.daemon = True
+cleanup_thread.start()
+
+print("🚀 Colab-only 3D Generation System initialized!")
+print(f"🔗 Colab URL: {COLAB_API_URL}")
+print(f"✅ Colab Available: {colab_client.available}")
+
+
+# FIXED: Enhanced save 3D model route with better error handling
+@app.route('/api/save-3d-model', methods=['POST'])
+@login_required
+def save_3d_model_to_wardrobe():
+    """Save generated 3D model to wardrobe item with enhanced validation"""
+    try:
+        data = request.json
+        item_id = data.get('item_id')
+        model_path = data.get('model_path')
+        method = data.get('method', 'colab')
+        file_format = data.get('file_format', 'OBJ')
+        file_size = data.get('file_size', 0)
+
+        print(f"💾 Saving 3D model to wardrobe:")
+        print(f"   Item ID: {item_id}")
+        print(f"   Model Path: {model_path}")
+        print(f"   Method: {method}")
+        print(f"   Format: {file_format}")
+        print(f"   Size: {file_size}")
+
+        if not item_id or not model_path:
+            return jsonify({
+                'success': False,
+                'error': 'Missing item_id or model_path'
+            }), 400
+
+        user_id = session['user']['_id']
+
+        # Verify the model file exists
+        if model_path.startswith('/'):
+            full_model_path = os.path.join('flaskapp', model_path.lstrip('/'))
+        else:
+            full_model_path = os.path.join('flaskapp', model_path)
+
+        if not os.path.exists(full_model_path):
+            print(f"❌ Model file not found at: {full_model_path}")
+            return jsonify({
+                'success': False,
+                'error': f'Model file not found at path: {model_path}'
+            }), 404
+
+        # Get actual file size if not provided
+        if file_size == 0:
+            try:
+                file_size = os.path.getsize(full_model_path)
+            except:
+                file_size = 0
+
+        print(f"✅ Model file verified: {full_model_path} ({file_size} bytes)")
+
+        # FIXED: Update the wardrobe item with comprehensive 3D model info
+        update_data = {
+            'model_3d_path': model_path,
+            'has_3d_model': True,
+            'model_generated_at': datetime.now(),
+            'model_method': method,
+            'model_file_format': file_format,
+            'model_file_size': file_size,
+            'model_last_updated': datetime.now(),
+            'model_generation_status': 'completed'
+        }
+
+        result = db.wardrobe.update_one(
+            {'_id': ObjectId(item_id), 'userId': user_id},
+            {'$set': update_data}
+        )
+
+        if result.modified_count > 0:
+            print(f"✅ Successfully updated wardrobe item {item_id} with 3D model")
+
+            # VERIFY the update worked by fetching the item
+            updated_item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+            if updated_item and updated_item.get('has_3d_model'):
+                print(f"✅ Database verification successful - 3D model saved!")
+                return jsonify({
+                    'success': True,
+                    'message': '3D model saved to wardrobe successfully',
+                    'model_info': {
+                        'path': model_path,
+                        'format': file_format,
+                        'size': file_size,
+                        'method': method,
+                        'item_label': updated_item.get('label', 'Unknown')
+                    }
+                })
+            else:
+                print(f"❌ Database verification failed - 3D model not properly saved")
+                raise Exception("Database update verification failed")
+
+        elif result.matched_count > 0:
+            print(f"⚠️ Wardrobe item {item_id} found but not modified (already up to date?)")
+            return jsonify({
+                'success': True,
+                'message': '3D model info already up to date',
+                'model_info': {
+                    'path': model_path,
+                    'format': file_format,
+                    'size': file_size,
+                    'method': method
+                }
+            })
+        else:
+            print(f"❌ Wardrobe item {item_id} not found for user {user_id}")
+            return jsonify({
+                'success': False,
+                'error': 'Wardrobe item not found'
+            }), 404
+
+    except Exception as e:
+        print(f"❌ Error saving 3D model: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/wardrobe/3d-model/<item_id>', methods=['GET'])
+@login_required
+def get_wardrobe_3d_model(item_id):
+    """Get 3D model info for a wardrobe item"""
+    try:
+        user_id = session['user']['_id']
+        item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+
+        if not item:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+        if not item.get('has_3d_model') or not item.get('model_3d_path'):
+            return jsonify({'success': False, 'error': 'No 3D model available for this item'}), 404
+
+        return jsonify({
+            'success': True,
+            'model_path': item['model_3d_path'],
+            'generated_at': item.get('model_generated_at'),
+            'method': item.get('model_method', 'unknown'),
+            'item_label': item.get('label', 'Unknown'),
+            'has_3d_model': True
+        })
+
+    except Exception as e:
+        print(f"Error getting 3D model: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def handle_colab_generation_success(data, task_id, user_id):
+    """Enhanced success handler with automatic database saving"""
+    try:
+        print(f"🎉 Colab generation completed for task {task_id}")
+
+        # Update task status
+        generation_tasks[task_id].update({
+            'status': 'completed',
+            'message': f'3D model generated successfully via Colab! ({data.get("file_format", "OBJ")} format)',
+            'progress': 1.0,
+            'updated_at': time.time(),
+            'model_path': data['model_path'],
+            'local_path': data['local_path'],
+            'file_size': data['file_size'],
+            'file_format': data.get('file_format', 'OBJ'),
+            'completed_at': datetime.now().isoformat(),
+            'method': 'colab'
+        })
+
+        print(f"✅ Task {task_id} marked as completed")
+        return True
+
+    except Exception as e:
+        print(f"❌ Error in success handler: {str(e)}")
+        return False
+
+
+# Enhanced Colab generation method in your existing ColabTripoSRClient class
+def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
+    """Enhanced Colab generation with better error handling and validation"""
+    if not self.available:
+        raise Exception("Colab API not available")
+
+    try:
+        print(f"🚀 Starting enhanced Colab 3D generation for task {task_id}")
+
+        # Update task status
+        generation_tasks[task_id].update({
+            'status': 'processing',
+            'message': 'Uploading image to Colab GPU...',
+            'progress': 0.1,
+            'updated_at': time.time()
+        })
+
+        # Prepare file for upload
+        with open(image_path, 'rb') as f:
+            files = {'image': ('image.jpg', f, 'image/jpeg')}
+
+            # Update progress
+            generation_tasks[task_id].update({
+                'message': 'Processing with Colab TripoSR...',
+                'progress': 0.3,
+                'updated_at': time.time()
+            })
+
+            print(f"📤 Uploading to enhanced Colab API: {self.colab_url}/generate")
+
+            # Call Colab API with extended timeout
+            response = self.session.post(
+                f"{self.colab_url}/generate",
+                files=files,
+                timeout=400  # Extended to 6+ minutes for complex models
+            )
+
+        print(f"📥 Colab response: HTTP {response.status_code}")
+        print(f"📦 Response headers: {dict(response.headers)}")
+
+        if response.status_code == 200:
+            # Update progress
+            generation_tasks[task_id].update({
+                'message': 'Saving and validating 3D model...',
+                'progress': 0.9,
+                'updated_at': time.time()
+            })
+
+            # Validate response content
+            content_length = len(response.content)
+            print(f"📦 Response content length: {content_length:,} bytes")
+
+            # More lenient validation - allow smaller OBJ files
+            if content_length < 500:  # Changed from 1000 to 500
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('message', error_data.get('error', 'Unknown error'))
+                    print(f"❌ Colab API returned error: {error_msg}")
+                    raise Exception(f"Colab processing failed: {error_msg}")
+                except:
+                    print(f"❌ Colab API returned insufficient data: {response.text[:200]}...")
+                    raise Exception("Colab API returned insufficient data - model may be too simple")
+
+            # Create user model directory
+            user_model_dir = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
+            os.makedirs(user_model_dir, exist_ok=True)
+
+            # Determine file format
+            content_type = response.headers.get('content-type', '').lower()
+            if 'glb' in content_type or 'gltf' in content_type:
+                file_extension = 'glb'
+            elif 'obj' in content_type or 'octet-stream' in content_type:
+                file_extension = 'obj'
+            else:
+                # Check content for OBJ markers
+                content_sample = response.content[:1000].decode('utf-8', errors='ignore')
+                if 'v ' in content_sample and 'f ' in content_sample:
+                    file_extension = 'obj'
+                else:
+                    file_extension = 'obj'  # Default assumption
+
+            # Generate unique filename
+            timestamp = int(time.time())
+            model_filename = f"colab_model_{task_id}_{timestamp}.{file_extension}"
+            model_path = os.path.join(user_model_dir, model_filename)
+
+            # Save the model file
+            with open(model_path, 'wb') as f:
+                f.write(response.content)
+
+            file_size = len(response.content)
+            print(f"💾 Model saved: {model_path} ({file_size:,} bytes)")
+
+            # Verify saved file
+            if not os.path.exists(model_path) or os.path.getsize(model_path) == 0:
+                print("❌ Saved model file is empty or doesn't exist")
+                raise Exception("Failed to save model file properly")
+
+            # Additional validation for OBJ files
+            if file_extension == 'obj':
+                try:
+                    with open(model_path, 'r') as f:
+                        content_check = f.read(1000)
+                        if not ('v ' in content_check or 'f ' in content_check):
+                            print("⚠️ OBJ file may not contain valid geometry data")
+                            print(f"Content preview: {content_check[:200]}...")
+                except Exception as e:
+                    print(f"⚠️ Could not validate OBJ content: {e}")
+
+            # Success data
+            success_data = {
+                'model_path': f'/static/models/generated/{user_id}/{model_filename}',
+                'local_path': model_path,
+                'file_size': file_size,
+                'file_format': file_extension.upper(),
+                'method': 'colab'
+            }
+
+            # Update task as completed
+            generation_tasks[task_id].update({
+                'status': 'completed',
+                'message': f'3D model generated successfully! ({file_extension.upper()}, {(file_size / 1024 / 1024):.1f}MB)',
+                'progress': 1.0,
+                'updated_at': time.time(),
+                **success_data,
+                'completed_at': datetime.now().isoformat()
+            })
+
+            print(f"✅ Enhanced task {task_id} completed successfully!")
+            return True
+
+        else:
+            # Enhanced error handling
+            error_msg = f"Colab API error: HTTP {response.status_code}"
+            try:
+                error_data = response.json()
+                error_msg = error_data.get('error', error_data.get('message', error_msg))
+                print(f"❌ Colab API error details: {error_data}")
+            except:
+                print(f"❌ Colab API error (raw): {response.text[:500]}...")
+
+            # Provide specific error messages
+            if response.status_code == 500:
+                error_msg = "Colab server error during 3D generation. The image may be too complex or the server is overloaded."
+            elif response.status_code == 404:
+                error_msg = "Colab API endpoint not found. Please check if the Colab notebook is running properly."
+            elif response.status_code == 413:
+                error_msg = "Image file too large for Colab processing. Please use a smaller image."
+            elif response.status_code == 408:
+                error_msg = "Colab processing timeout. Try with a simpler image or check server load."
+
+            raise Exception(error_msg)
+
+    except requests.exceptions.Timeout:
+        error_msg = "Colab processing timeout (>6 minutes). The 3D generation is taking too long - try with a simpler image."
+        print(f"❌ {error_msg}")
+        raise Exception(error_msg)
+
+    except requests.exceptions.ConnectionError:
+        error_msg = "Cannot connect to Colab API. Please verify the Colab notebook is running and ngrok tunnel is active."
+        print(f"❌ {error_msg}")
+        raise Exception(error_msg)
+
+    except Exception as e:
+        error_str = str(e)
+        print(f"❌ Enhanced Colab generation error: {error_str}")
+        raise Exception(f"3D generation failed: {error_str}")
+
+
+print("🚀 Enhanced Auto-Save 3D Model System loaded!")
+
+
+# FIXED: Route to get all wardrobe items WITH 3D model info
+@app.route('/api/wardrobe/all-with-3d', methods=['GET'])
+@login_required
+def get_all_wardrobe_with_3d():
+    """Get all wardrobe items including 3D model information"""
+    try:
+        user_id = session['user']['_id']
+        items_cursor = db.wardrobe.find({'userId': user_id})
+
+        items_with_3d = []
+        for item in items_cursor:
+            item_data = {
+                'id': str(item['_id']),
+                'label': item.get('label', ''),
+                'file_path': normalize_path(item.get('file_path', '')),
+                'color': item.get('color', ''),
+                'created_at': item.get('created_at'),
+                # 3D MODEL INFO
+                'has_3d_model': item.get('has_3d_model', False),
+                'model_3d_path': normalize_path(item.get('model_3d_path', '')) if item.get('model_3d_path') else None,
+                'model_method': item.get('model_method'),
+                'model_file_format': item.get('model_file_format'),
+                'model_file_size': item.get('model_file_size'),
+                'model_generated_at': item.get('model_generated_at'),
+                'model_generation_status': item.get('model_generation_status', 'none')
+            }
+            items_with_3d.append(item_data)
+
+        return jsonify({
+            'success': True,
+            'items': items_with_3d,
+            'total_items': len(items_with_3d),
+            'items_with_3d': len([item for item in items_with_3d if item['has_3d_model']])
+        })
+
+    except Exception as e:
+        print(f"Error getting wardrobe with 3D: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+        @app.route('/api/debug/wardrobe-items', methods=['GET'])
+        @login_required
+        def debug_wardrobe_items():
+            """Debug endpoint to see what wardrobe items exist"""
+            try:
+                user_id = session['user']['_id']
+
+                # Get all items for the user
+                items = list(db.wardrobe.find({'userId': user_id}))
+
+                debug_info = {
+                    'user_id': user_id,
+                    'total_items': len(items),
+                    'collection_name': 'wardrobe',
+                    'sample_items': []
+                }
+
+                # Add sample items for debugging
+                for item in items[:5]:  # First 5 items
+                    debug_info['sample_items'].append({
+                        'id': str(item['_id']),
+                        'label': item.get('label', 'No label'),
+                        'type': item.get('type', 'No type'),
+                        'file_path': item.get('file_path', 'No file_path'),
+                        'has_model_task_id': 'model_task_id' in item,
+                        'model_task_id': item.get('model_task_id', 'None'),
+                        'has_3d_model': item.get('has_3d_model', False)
+                    })
+
+                return jsonify(debug_info)
+
+            except Exception as e:
+                return jsonify({'error': str(e)})
+
+
+# ADD this route to your run.py to help find OBJ files
+
+# ADD this route to your run.py to help match specific OBJ files to items
+
+@app.route('/api/find-obj-for-item/<item_id>')
+@login_required
+def find_obj_for_item(item_id):
+    """Find the specific OBJ file for a wardrobe item"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get the item from database
+        item = db.wardrobe.find_one({"_id": ObjectId(item_id)})
+        if not item:
+            return jsonify({"success": False, "error": "Item not found"})
+
+        model_task_id = item.get('model_task_id')
+        if not model_task_id:
+            return jsonify({"success": False, "error": "No model_task_id found"})
+
+        import os
+        import glob
+
+        base_path = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
+
+        if not os.path.exists(base_path):
+            return jsonify({"success": False, "error": "No models directory"})
+
+        # Look for files matching this specific model_task_id
+        patterns = [
+            f"colab_model_task_{model_task_id}_*.obj",
+            f"colab_model_task_{model_task_id}.obj",
+            f"*{model_task_id}*.obj",
+            f"*{item_id[-8:]}*.obj"  # Last 8 chars of item ID
+        ]
+
+        found_files = []
+        for pattern in patterns:
+            pattern_path = os.path.join(base_path, pattern)
+            matches = glob.glob(pattern_path)
+            for match in matches:
+                filename = os.path.basename(match)
+                if filename not in [f['filename'] for f in found_files]:
+                    found_files.append({
+                        'filename': filename,
+                        'path': f'/static/models/generated/{user_id}/{filename}',
+                        'size': os.path.getsize(match),
+                        'pattern_matched': pattern
+                    })
+
+        return jsonify({
+            "success": True,
+            "item_id": item_id,
+            "model_task_id": model_task_id,
+            "found_files": found_files,
+            "total_matches": len(found_files)
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+def calculate_match_score(filename, item_id, model_task_id):
+    """Calculate how well a filename matches an item"""
+    score = 0
+
+    # Exact model_task_id match gets highest score
+    if model_task_id and model_task_id in filename:
+        score += 100
+
+    # Item ID matches
+    if item_id in filename:
+        score += 80
+
+    # Partial item ID matches
+    item_id_short = item_id[-8:]
+    if item_id_short in filename:
+        score += 60
+
+    # File recency (newer files get slightly higher score)
+    # This is a simple heuristic based on filename patterns
+    if '_174826' in filename:  # Recent timestamp pattern
+        score += 5
+
+    return score
+
+
+# ALSO ADD: Route to check all wardrobe items and their OBJ matches
+@app.route('/api/debug/check-obj-matches')
+@login_required
+def debug_check_obj_matches():
+    """Debug route to check OBJ matches for all wardrobe items"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get all wardrobe items
+        items = list(db.wardrobe.find({'userId': user_id}))
+
+        results = []
+        for item in items:
+            item_id = str(item['_id'])
+
+            # Find matches for this item
+            match_response = find_obj_for_item(item_id)
+            match_data = match_response.get_json()
+
+            results.append({
+                'item_id': item_id,
+                'label': item.get('label', 'Unknown'),
+                'model_task_id': item.get('model_task_id'),
+                'has_matches': match_data.get('success', False),
+                'match_count': match_data.get('total_matches', 0),
+                'best_match': match_data.get('best_match')
+            })
+
+        # Summary statistics
+        total_items = len(results)
+        items_with_matches = len([r for r in results if r['has_matches'] and r['match_count'] > 0])
+
+        return jsonify({
+            'success': True,
+            'total_items': total_items,
+            'items_with_matches': items_with_matches,
+            'match_percentage': round((items_with_matches / total_items * 100), 1) if total_items > 0 else 0,
+            'results': results
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 
 
