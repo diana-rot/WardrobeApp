@@ -1352,6 +1352,7 @@ def get_user_profile_picture():
 def utility_processor():
     return dict(get_user_profile_picture=get_user_profile_picture)
 
+
 @app.route('/dashboard/', methods=['GET', 'POST'])
 @login_required
 def dashboard():
@@ -1364,63 +1365,179 @@ def dashboard():
         print(f"New city submitted: {new_city}")
 
         if new_city:
+            # Check if city already exists for this user
+            existing_city = db.city.find_one({'name': {'$regex': f'^{new_city}$', '$options': 'i'}, 'userId': userId})
+            if existing_city:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({
+                        'success': False,
+                        'error': 'duplicate',
+                        'message': f'{new_city} is already in your weather list.'
+                    }), 400
+                else:
+                    flash(f'{new_city} is already in your weather list.', 'warning')
+                    return redirect(url_for('dashboard'))
+
+            # Get geocoding data
             geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={new_city}&limit=1&appid={api_key}'
-            geocode_response = requests.get(geocode_url).json()
-            print(f"Geocode response: {geocode_response}")
+            try:
+                geocode_response = requests.get(geocode_url, timeout=5).json()
+                print(f"Geocode response: {geocode_response}")
+
+                if geocode_response:
+                    lat = geocode_response[0].get('lat')
+                    lon = geocode_response[0].get('lon')
+                    city_name_from_api = geocode_response[0].get('name', new_city)
+
+                    if lat and lon:
+                        # Insert the new city
+                        db.city.insert_one({
+                            'name': city_name_from_api,
+                            'lat': lat,
+                            'lon': lon,
+                            'userId': userId
+                        })
+
+                        # Get weather data for the new city
+                        weather_url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric'
+                        weather_response = requests.get(weather_url, timeout=5).json()
+
+                        new_weather_data = []
+                        if weather_response.get('weather') and weather_response.get('main'):
+                            weather = {
+                                'city': city_name_from_api,
+                                'temperature': round(weather_response['main']['temp']),
+                                'description': weather_response['weather'][0]['description'].title(),
+                                'icon': weather_response['weather'][0]['icon'],
+                            }
+                            new_weather_data.append(weather)
+
+                        # Return JSON response for AJAX requests
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return jsonify({
+                                'success': True,
+                                'weather_data': new_weather_data,
+                                'message': f'{city_name_from_api} added successfully!'
+                            })
+                        else:
+                            flash(f'{city_name_from_api} added successfully!', 'success')
+                            return redirect(url_for('dashboard'))
+                    else:
+                        error_msg = f'Could not get coordinates for {new_city}.'
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return jsonify({'success': False, 'message': error_msg}), 400
+                        else:
+                            flash(error_msg, 'error')
+                            return redirect(url_for('dashboard'))
+                else:
+                    error_msg = f'City "{new_city}" not found. Please check the spelling.'
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'success': False, 'message': error_msg}), 400
+                    else:
+                        flash(error_msg, 'error')
+                        return redirect(url_for('dashboard'))
+
+            except requests.RequestException as e:
+                error_msg = 'Error connecting to weather service. Please try again.'
+                print(f"API request error: {e}")
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': error_msg}), 500
+                else:
+                    flash(error_msg, 'error')
+                    return redirect(url_for('dashboard'))
+
+    # GET request or fallback - render the dashboard
+    filter = {'userId': userId}
+
+    # Add default city if user has no cities
+    if db.city.find_one(filter) is None:
+        geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={cityByDefault}&limit=1&appid={api_key}'
+        try:
+            geocode_response = requests.get(geocode_url, timeout=5).json()
+            print(f"Default city geocode response: {geocode_response}")
 
             if geocode_response:
                 lat = geocode_response[0].get('lat')
                 lon = geocode_response[0].get('lon')
                 if lat and lon:
-                    db.city.insert_one({'name': new_city, 'lat': lat, 'lon': lon, 'userId': userId})
+                    db.city.insert_one({'name': cityByDefault, 'lat': lat, 'lon': lon, 'userId': userId})
+        except requests.RequestException as e:
+            print(f"Error adding default city: {e}")
 
-    filter = {'userId': userId}
-    if db.city.find_one(filter) is None:
-        geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={cityByDefault}&limit=1&appid={api_key}'
-        geocode_response = requests.get(geocode_url).json()
-        print(f"Default city geocode response: {geocode_response}")
-
-        if geocode_response:
-            lat = geocode_response[0].get('lat')
-            lon = geocode_response[0].get('lon')
-            if lat and lon:
-                db.city.insert_one({'name': cityByDefault, 'lat': lat, 'lon': lon, 'userId': userId})
-
-    cities = db.city.find(filter)
-    url = 'https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}&units=metric'
-
+    # Get all cities for the user
+    cities = list(db.city.find(filter))
     weather_data = []
 
     for city in cities:
-        if 'lat' not in city or 'lon' not in city:
-            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={city["name"]}&limit=1&appid={api_key}'
-            geocode_response = requests.get(geocode_url).json()
-            print(f"Geocode response for {city['name']}: {geocode_response}")
+        try:
+            # Ensure we have coordinates
+            if 'lat' not in city or 'lon' not in city:
+                geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={city["name"]}&limit=1&appid={api_key}'
+                geocode_response = requests.get(geocode_url, timeout=5).json()
+                print(f"Geocode response for {city['name']}: {geocode_response}")
 
-            if geocode_response:
-                lat = geocode_response[0].get('lat')
-                lon = geocode_response[0].get('lon')
-                if lat and lon:
-                    db.city.update_one({'_id': city['_id']}, {'$set': {'lat': lat, 'lon': lon}})
-                    city['lat'] = lat
-                    city['lon'] = lon
-            else:
-                continue
+                if geocode_response:
+                    lat = geocode_response[0].get('lat')
+                    lon = geocode_response[0].get('lon')
+                    if lat and lon:
+                        db.city.update_one({'_id': city['_id']}, {'$set': {'lat': lat, 'lon': lon}})
+                        city['lat'] = lat
+                        city['lon'] = lon
+                else:
+                    continue
 
-        r = requests.get(url.format(city['lat'], city['lon'], api_key)).json()
-        print(f"Weather API response for {city['name']}: {r}")
+            # Get weather data
+            weather_url = f'https://api.openweathermap.org/data/2.5/weather?lat={city["lat"]}&lon={city["lon"]}&appid={api_key}&units=metric'
+            weather_response = requests.get(weather_url, timeout=5).json()
+            print(f"Weather API response for {city['name']}: {weather_response}")
 
-        if r.get('weather') and r.get('main'):
-            weather = {
-                'city': city['name'],
-                'temperature': r['main']['temp'],
-                'description': r['weather'][0]['description'],
-                'icon': r['weather'][0]['icon'],
-            }
-            weather_data.append(weather)
+            if weather_response.get('weather') and weather_response.get('main'):
+                weather = {
+                    'city': city['name'],
+                    'temperature': round(weather_response['main']['temp']),
+                    'description': weather_response['weather'][0]['description'].title(),
+                    'icon': weather_response['weather'][0]['icon'],
+                }
+                weather_data.append(weather)
+
+        except requests.RequestException as e:
+            print(f"Error getting weather for {city['name']}: {e}")
+            continue
 
     print(f"Weather data to be rendered: {weather_data}")
     return render_template('dashboard.html', weather_data=weather_data)
+
+
+@app.route('/dashboard/delete_city/<city_name>', methods=['DELETE'])
+@login_required
+def delete_city(city_name):
+    userId = session['user']['_id']
+
+    try:
+        # Find and delete the city
+        result = db.city.delete_one({
+            'name': {'$regex': f'^{city_name}$', '$options': 'i'},
+            'userId': userId
+        })
+
+        if result.deleted_count > 0:
+            return jsonify({
+                'success': True,
+                'message': f'{city_name} removed from your weather list.'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': f'City {city_name} not found in your list.'
+            }), 404
+
+    except Exception as e:
+        print(f"Error deleting city {city_name}: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error removing city. Please try again.'
+        }), 500
+
 
 
 @app.route('/wardrobe/delete/<item_id>', methods=['DELETE'])
