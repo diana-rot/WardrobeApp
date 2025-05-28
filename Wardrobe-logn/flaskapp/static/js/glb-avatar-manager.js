@@ -101,8 +101,8 @@ class CustomizableGLBAvatarManager {
 
     setupScene() {
         this.scene = new THREE.Scene();
-        // Professional background like Blender
-        this.scene.background = new THREE.Color(0x393939);
+        // Clean white background
+        this.scene.background = new THREE.Color(0xffffff);
     }
 
     setupCamera() {
