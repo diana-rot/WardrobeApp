@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}RPM Avatar Creator{% endblock %}
+{% block title %}Avatar Creator & Wardrobe{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -13,170 +13,270 @@
         overflow: hidden;
     }
 
-    /* Left Panel - Controls & Wardrobe */
+    /* Left Panel - Tab System */
     .customization-panel {
-        width: 280px;
+        width: 320px;
         background: #fff;
         box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
         z-index: 1;
     }
 
-    /* Center Panel - Main 3D Viewport */
-    .avatar-container {
-        flex: 2;
-        position: relative;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        min-width: 600px;
+    /* Tab Navigation */
+    .tab-navigation {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 2px solid #e9ecef;
+        flex-shrink: 0;
     }
 
-    /* Loading & Feedback */
-    .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.9);
+    .tab-button {
+        flex: 1;
+        padding: 15px 10px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        color: #6c757d;
+        transition: all 0.3s ease;
+        border-bottom: 3px solid transparent;
+        font-size: 14px;
+    }
+
+    .tab-button:hover {
+        background: #e9ecef;
+        color: #495057;
+    }
+
+    .tab-button.active {
+        color: #3498db;
+        background: #fff;
+        border-bottom-color: #3498db;
+    }
+
+    /* Tab Content Container */
+    .tab-content-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .tab-content {
         display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 2;
-        flex-direction: column;
     }
 
-    .loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+    .tab-content.active {
+        display: block;
     }
 
-    .loading-progress {
-        margin-top: 15px;
-        font-weight: 500;
-        color: #333;
+    /* Avatar Creation Tab Styles */
+    .avatar-creation-section {
+        margin-bottom: 25px;
     }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    .avatar-creation-section h4 {
+        margin-bottom: 15px;
+        color: #2c3e50;
+        font-size: 16px;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 5px;
     }
 
-    /* Toast Messages */
-    .message {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 25px;
-        border-radius: 5px;
-        color: white;
-        font-weight: 500;
-        z-index: 1000;
-        animation: slideIn 0.3s ease-out;
+    /* Customization Controls */
+    .customization-group {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
     }
 
-    .message.success { background: #2ecc71; }
-    .message.error { background: #e74c3c; }
-    .message.info { background: #3498db; }
-
-    @keyframes slideIn {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
+    .customization-group h5 {
+        margin: 0 0 12px 0;
+        color: #495057;
+        font-size: 14px;
+        font-weight: 600;
     }
 
-    /* Form Components */
-    .form-group {
+    /* Slider Controls */
+    .slider-control {
         margin-bottom: 15px;
     }
 
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        color: #2c3e50;
+    .slider-control label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: #495057;
         font-weight: 500;
     }
 
-    .form-control {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 14px;
-        transition: border-color 0.3s ease;
-    }
-
-    .form-control:focus {
-        outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-    }
-
-    /* Button System */
-    .btn {
-        display: inline-block;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        text-align: center;
-    }
-
-    .btn-primary {
+    .slider-value {
         background: #3498db;
         color: white;
-    }
-
-    .btn-primary:hover {
-        background: #2980b9;
-        transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-        background: #95a5a6;
-        color: white;
-    }
-
-    .btn-secondary:hover {
-        background: #7f8c8d;
-    }
-
-    .btn-success {
-        background: #2ecc71;
-        color: white;
-    }
-
-    .btn-success:hover {
-        background: #27ae60;
-    }
-
-    .btn-info {
-        background: #17a2b8;
-        color: white;
-    }
-
-    .btn-info:hover {
-        background: #138496;
-    }
-
-    /* RPM Specific Button Styling */
-    .rpm-button {
-        display: block;
-        width: 100%;
-        margin-bottom: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        min-width: 35px;
         text-align: center;
     }
 
-    /* Wardrobe System */
+    .slider-control input[type="range"] {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: #ddd;
+        outline: none;
+        transition: background 0.3s ease;
+    }
+
+    .slider-control input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #3498db;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .slider-control input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #3498db;
+        cursor: pointer;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    /* Color Picker Styles */
+    .color-picker-group {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .color-option {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: relative;
+    }
+
+    .color-option:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .color-option.selected {
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    .color-option.selected::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-weight: bold;
+        font-size: 14px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* Selection Grid (Hair, Eyes, etc.) */
+    .selection-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .selection-option {
+        aspect-ratio: 1;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 500;
+        color: #495057;
+        text-align: center;
+        padding: 5px;
+    }
+
+    .selection-option:hover {
+        border-color: #3498db;
+        background: #ebf5fb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .selection-option.selected {
+        border-color: #3498db;
+        background: #3498db;
+        color: white;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    /* Gender Toggle */
+    .gender-toggle {
+        display: flex;
+        background: #e9ecef;
+        border-radius: 25px;
+        padding: 3px;
+        margin-top: 10px;
+    }
+
+    .gender-option {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        background: none;
+        border-radius: 22px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        color: #6c757d;
+    }
+
+    .gender-option.active {
+        background: #3498db;
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Avatar Actions */
+    .avatar-actions {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .avatar-actions .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    /* Reset to original wardrobe styles for tab 2 */
     .wardrobe-section {
-        margin-top: 30px;
+        margin-top: 0;
     }
 
     .wardrobe-grid {
@@ -250,7 +350,152 @@
         justify-content: center;
     }
 
-    /* Outfit Controls */
+    /* Keep all original styles */
+    .avatar-container {
+        flex: 2;
+        position: relative;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-width: 600px;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 2;
+        flex-direction: column;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-progress {
+        margin-top: 15px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 5px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .message.success { background: #2ecc71; }
+    .message.error { background: #e74c3c; }
+    .message.info { background: #3498db; }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2980b9;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #7f8c8d;
+    }
+
+    .btn-success {
+        background: #2ecc71;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #27ae60;
+    }
+
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background: #138496;
+    }
+
+    .rpm-button {
+        display: block;
+        width: 100%;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+
     .outfit-controls {
         display: flex;
         flex-wrap: wrap;
@@ -263,7 +508,6 @@
         min-width: 120px;
     }
 
-    /* Current Outfit Display */
     .active-items-section {
         margin-top: 30px;
     }
@@ -311,7 +555,6 @@
         background-color: #f8d7da;
     }
 
-    /* Avatar Scale Controls */
     .scale-section {
         margin-top: 25px;
         padding-top: 20px;
@@ -330,7 +573,6 @@
         padding: 8px 4px;
     }
 
-    /* 3D Viewport Controls */
     .viewport-controls {
         position: absolute;
         bottom: 20px;
@@ -362,7 +604,6 @@
         font-size: 18px;
     }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
         .avatar-page-content {
             flex-direction: column;
@@ -386,7 +627,6 @@
         }
     }
 
-    /* Utility Classes */
     .loading, .error, .no-items {
         padding: 20px;
         text-align: center;
@@ -410,6 +650,16 @@
     .mt-2 { margin-top: 8px; }
     .mt-3 { margin-top: 16px; }
     .mt-4 { margin-top: 24px; }
+
+    /* Add some polish to make tabs stand out */
+    .tab-button i {
+        margin-right: 8px;
+        font-size: 16px;
+    }
+
+    .customization-group {
+        border-left: 4px solid #3498db;
+    }
 </style>
 {% endblock %}
 
@@ -417,109 +667,248 @@
 <!-- Main Application Layout -->
 <div class="avatar-page-content">
 
-    <!-- Left Panel: RPM Avatar Controls & Wardrobe -->
+    <!-- Left Panel: Two-Tab System -->
     <div class="customization-panel">
-        <h2>Ready Player Me Avatar</h2>
-        <p class="text-muted">Create and customize your 3D avatar with clothing</p>
 
-        <!-- RPM Avatar Management Section -->
-        <div class="rpm-options">
-            <h4>Avatar Management</h4>
-
-            <!-- External RPM Creator -->
-            <button id="open-rpm-creator" class="btn btn-primary rpm-button">
-                <i class="bi bi-person-plus"></i> Create New Avatar
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="create-avatar">
+                <i class="bi bi-person-gear"></i>Create Avatar
             </button>
-
-            <!-- Load Saved Avatar -->
-            <button id="load-saved-rpm" class="btn btn-secondary rpm-button">
-                <i class="bi bi-download"></i> Load Saved Avatar
+            <button class="tab-button" data-tab="wardrobe">
+                <i class="bi bi-palette"></i>Wardrobe
             </button>
-
-            <!-- Manual URL Input -->
-            <div class="form-group">
-                <label for="rpm-avatar-url">Or Enter Avatar URL:</label>
-                <input type="text"
-                       id="rpm-avatar-url"
-                       class="form-control"
-                       placeholder="https://models.readyplayer.me/...">
-                <button id="load-rpm-url" class="btn btn-primary mt-2">
-                    <i class="bi bi-link"></i> Load Avatar
-                </button>
-            </div>
         </div>
 
-        <!-- Avatar Scale Controls -->
-        <div class="scale-section">
-            <h4>Avatar Size</h4>
-            <p class="text-muted">Adjust avatar dimensions</p>
+        <!-- Tab Content Container -->
+        <div class="tab-content-container">
 
-            <div class="form-group">
-                <label for="avatar-scale-slider">Scale: <span id="scale-value">100%</span></label>
-                <input type="range"
-                       id="avatar-scale-slider"
-                       class="form-control"
-                       min="0.5"
-                       max="3.0"
-                       step="0.1"
-                       value="1.0">
+            <!-- Tab 1: Avatar Creation -->
+            <div id="create-avatar" class="tab-content active">
+
+                <!-- Avatar Base Section -->
+                <div class="avatar-creation-section">
+                    <h4><i class="bi bi-person-plus"></i> Avatar Base</h4>
+
+                    <!-- Gender Selection -->
+                    <div class="customization-group">
+                        <h5>Gender</h5>
+                        <div class="gender-toggle">
+                            <button class="gender-option active" data-gender="female">
+                                <i class="bi bi-person-dress"></i> Female
+                            </button>
+                            <button class="gender-option" data-gender="male">
+                                <i class="bi bi-person"></i> Male
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- RPM Avatar Management -->
+                    <div class="customization-group">
+                        <h5>Ready Player Me Avatar</h5>
+                        <button id="open-rpm-creator" class="btn btn-primary rpm-button">
+                            <i class="bi bi-person-plus"></i> Create New Avatar
+                        </button>
+                        <button id="load-saved-rpm" class="btn btn-secondary rpm-button">
+                            <i class="bi bi-download"></i> Load Saved Avatar
+                        </button>
+                        <div class="form-group">
+                            <label for="rpm-avatar-url">Or Enter Avatar URL:</label>
+                            <input type="text" id="rpm-avatar-url" class="form-control" placeholder="https://models.readyplayer.me/...">
+                            <button id="load-rpm-url" class="btn btn-primary mt-2">
+                                <i class="bi bi-link"></i> Load Avatar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Body Customization Section -->
+                <div class="avatar-creation-section">
+                    <h4><i class="bi bi-rulers"></i> Body Shape</h4>
+
+                    <!-- Body Proportions -->
+                    <div class="customization-group">
+                        <h5>Proportions</h5>
+
+                        <div class="slider-control">
+                            <label>
+                                <span>Height</span>
+                                <span class="slider-value" id="height-value">50</span>
+                            </label>
+                            <input type="range" id="height-slider" min="0" max="100" value="50">
+                        </div>
+
+                        <div class="slider-control">
+                            <label>
+                                <span>Width</span>
+                                <span class="slider-value" id="width-value">50</span>
+                            </label>
+                            <input type="range" id="width-slider" min="0" max="100" value="50">
+                        </div>
+
+                        <div class="slider-control">
+                            <label>
+                                <span>Muscle Definition</span>
+                                <span class="slider-value" id="muscle-value">50</span>
+                            </label>
+                            <input type="range" id="muscle-slider" min="0" max="100" value="50">
+                        </div>
+                    </div>
+
+                    <!-- Avatar Scale -->
+                    <div class="customization-group">
+                        <h5>Avatar Size</h5>
+                        <div class="slider-control">
+                            <label>
+                                <span>Scale</span>
+                                <span class="slider-value" id="scale-display">100%</span>
+                            </label>
+                            <input type="range" id="avatar-scale-slider" min="0.5" max="3.0" step="0.1" value="1.0">
+                        </div>
+                        <div class="scale-presets">
+                            <button class="btn btn-secondary scale-preset" data-scale="0.8">Small</button>
+                            <button class="btn btn-secondary scale-preset" data-scale="1.0">Normal</button>
+                            <button class="btn btn-secondary scale-preset" data-scale="1.5">Large</button>
+                            <button class="btn btn-secondary scale-preset" data-scale="2.0">XL</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facial Features Section -->
+                <div class="avatar-creation-section">
+                    <h4><i class="bi bi-emoji-smile"></i> Facial Features</h4>
+
+                    <!-- Skin Tone -->
+                    <div class="customization-group">
+                        <h5>Skin Color</h5>
+                        <div class="color-picker-group">
+                            <div class="color-option selected" style="background-color: #FDBCB4;" data-skin="light"></div>
+                            <div class="color-option" style="background-color: #EE9B82;" data-skin="medium"></div>
+                            <div class="color-option" style="background-color: #D08B5B;" data-skin="tan"></div>
+                            <div class="color-option" style="background-color: #AE5D29;" data-skin="dark"></div>
+                            <div class="color-option" style="background-color: #8B4513;" data-skin="darker"></div>
+                            <div class="color-option" style="background-color: #654321;" data-skin="darkest"></div>
+                            <div class="color-option" style="background-color: #FFB6C1;" data-skin="pink"></div>
+                            <div class="color-option" style="background-color: #DDBEA9;" data-skin="olive"></div>
+                        </div>
+                    </div>
+
+                    <!-- Eye Color -->
+                    <div class="customization-group">
+                        <h5>Eye Color</h5>
+                        <div class="color-picker-group">
+                            <div class="color-option selected" style="background-color: #6B4423;" data-eye="brown"></div>
+                            <div class="color-option" style="background-color: #4A90E2;" data-eye="blue"></div>
+                            <div class="color-option" style="background-color: #50C878;" data-eye="green"></div>
+                            <div class="color-option" style="background-color: #87CEEB;" data-eye="light-blue"></div>
+                            <div class="color-option" style="background-color: #800080;" data-eye="purple"></div>
+                            <div class="color-option" style="background-color: #708090;" data-eye="gray"></div>
+                            <div class="color-option" style="background-color: #228B22;" data-eye="dark-green"></div>
+                            <div class="color-option" style="background-color: #B8860B;" data-eye="hazel"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hair Customization Section -->
+                <div class="avatar-creation-section">
+                    <h4><i class="bi bi-scissors"></i> Hair Style</h4>
+
+                    <!-- Hair Style Selection -->
+                    <div class="customization-group">
+                        <h5>Hair Type</h5>
+                        <div class="selection-grid">
+                            <div class="selection-option selected" data-hair="short">Short</div>
+                            <div class="selection-option" data-hair="medium">Medium</div>
+                            <div class="selection-option" data-hair="long">Long</div>
+                            <div class="selection-option" data-hair="curly">Curly</div>
+                            <div class="selection-option" data-hair="straight">Straight</div>
+                            <div class="selection-option" data-hair="wavy">Wavy</div>
+                            <div class="selection-option" data-hair="pixie">Pixie</div>
+                            <div class="selection-option" data-hair="bob">Bob</div>
+                            <div class="selection-option" data-hair="bald">Bald</div>
+                        </div>
+                    </div>
+
+                    <!-- Hair Color -->
+                    <div class="customization-group">
+                        <h5>Hair Color</h5>
+                        <div class="color-picker-group">
+                            <div class="color-option selected" style="background-color: #8B4513;" data-hair-color="brown"></div>
+                            <div class="color-option" style="background-color: #000000;" data-hair-color="black"></div>
+                            <div class="color-option" style="background-color: #FFD700;" data-hair-color="blonde"></div>
+                            <div class="color-option" style="background-color: #DC143C;" data-hair-color="red"></div>
+                            <div class="color-option" style="background-color: #A0522D;" data-hair-color="auburn"></div>
+                            <div class="color-option" style="background-color: #C0C0C0;" data-hair-color="gray"></div>
+                            <div class="color-option" style="background-color: #FFFFFF;" data-hair-color="white"></div>
+                            <div class="color-option" style="background-color: #FF69B4;" data-hair-color="pink"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Avatar Actions -->
+                <div class="avatar-actions">
+                    <button id="randomize-avatar" class="btn btn-info">
+                        <i class="bi bi-shuffle"></i> Randomize Avatar
+                    </button>
+                    <button id="reset-avatar" class="btn btn-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
+                    </button>
+                    <button id="save-avatar-btn" class="btn btn-success">
+                        <i class="bi bi-save"></i> Save Avatar
+                    </button>
+                </div>
             </div>
 
-            <div class="scale-presets">
-                <button class="btn btn-secondary scale-preset" data-scale="0.8">Small</button>
-                <button class="btn btn-secondary scale-preset" data-scale="1.0">Normal</button>
-                <button class="btn btn-secondary scale-preset" data-scale="1.5">Large</button>
-                <button class="btn btn-secondary scale-preset" data-scale="2.0">XL</button>
-            </div>
-        </div>
+            <!-- Tab 2: Wardrobe (Your existing wardrobe system) -->
+            <div id="wardrobe" class="tab-content">
+                <div class="wardrobe-section">
+                    <h4>Virtual Wardrobe</h4>
+                    <p class="text-muted">Select clothes to dress your avatar</p>
 
-        <!-- Wardrobe Section -->
-        <div class="wardrobe-section">
-            <h4>Virtual Wardrobe</h4>
-            <p class="text-muted">Select clothes to dress your avatar</p>
+                    <!-- Category Selection -->
+                    <div class="form-group">
+                        <label for="category-rpm">Clothing Category:</label>
+                        <select id="category-rpm" class="form-control category-select">
+                            <option value="tops">Tops</option>
+                            <option value="bottoms">Bottoms</option>
+                            <option value="dresses">Dresses</option>
+                            <option value="outerwear">Outerwear</option>
+                            <option value="shoes">Shoes</option>
+                            <option value="accessories">Accessories</option>
+                        </select>
+                    </div>
 
-            <!-- Category Selection -->
-            <div class="form-group">
-                <label for="category-rpm">Clothing Category:</label>
-                <select id="category-rpm" class="form-control category-select">
-                    <option value="tops">Tops</option>
-                    <option value="bottoms">Bottoms</option>
-                    <option value="dresses">Dresses</option>
-                    <option value="outerwear">Outerwear</option>
-                    <option value="shoes">Shoes</option>
-                    <option value="accessories">Accessories</option>
-                </select>
-            </div>
+                    <!-- Clothing Items Grid -->
+                    <div class="wardrobe-grid" id="wardrobe-items-rpm">
+                        <div class="loading">Loading wardrobe items...</div>
+                    </div>
 
-            <!-- Clothing Items Grid -->
-            <div class="wardrobe-grid" id="wardrobe-items-rpm">
-                <div class="loading">Loading wardrobe items...</div>
-            </div>
+                    <!-- Outfit Action Buttons -->
+                    <div class="outfit-controls">
+                        <button id="try-on-rpm" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Try On Selected
+                        </button>
+                        <button id="save-outfit-btn" class="btn btn-success">
+                            <i class="bi bi-save"></i> Save Outfit
+                        </button>
+                        <button id="clear-outfit-btn" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Clear All
+                        </button>
+                    </div>
 
-            <!-- Outfit Action Buttons -->
-            <div class="outfit-controls">
-                <button id="try-on-rpm" class="btn btn-primary">
-                    <i class="bi bi-check-circle"></i> Try On Selected
-                </button>
-                <button id="save-outfit-btn" class="btn btn-success">
-                    <i class="bi bi-save"></i> Save Outfit
-                </button>
-                <button id="clear-outfit-btn" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> Clear All
-                </button>
-            </div>
-
-            <!-- Current Outfit Display -->
-            <div class="active-items-section">
-                <h5>Current Outfit</h5>
-                <div id="active-outfit-items" class="active-items-list">
-                    <p class="text-muted">No items selected</p>
+                    <!-- Current Outfit Display -->
+                    <div class="active-items-section">
+                        <h5>Current Outfit</h5>
+                        <div id="active-outfit-items" class="active-items-list">
+                            <p class="text-muted">No items selected</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Center Panel: Main 3D Avatar Viewport -->
+    <!-- Center Panel: Main 3D Avatar Viewport (unchanged) -->
     <div class="avatar-container" id="avatar-container">
         <!-- Loading Overlay -->
         <div class="loading-overlay">
@@ -581,10 +970,26 @@
         AVATAR_Y_POSITION: -0.5
     };
 
+    /* Avatar Customization State */
+    const avatarCustomization = {
+        gender: 'female',
+        body: {
+            height: 50,
+            width: 50,
+            muscle: 50,
+            scale: 1.0
+        },
+        skin: 'light',
+        eyes: 'brown',
+        hair: {
+            type: 'short',
+            color: 'brown'
+        }
+    };
+
     /* Dependency Verification */
     console.log('🔍 Verifying dependencies...');
 
-    // Function to wait for ClothingOBJRenderer
     function waitForClothingOBJRenderer() {
         return new Promise((resolve) => {
             const checkInterval = setInterval(() => {
@@ -597,7 +1002,6 @@
                 }
             }, 100);
 
-            // Timeout after 10 seconds
             setTimeout(() => {
                 clearInterval(checkInterval);
                 console.error('❌ ClothingOBJRenderer failed to load after 10 seconds');
@@ -606,15 +1010,12 @@
         });
     }
 
-    // Initialize ClothingOBJRenderer when dependencies are ready
     async function initializeClothingSystem() {
         const objRendererReady = await waitForClothingOBJRenderer();
-
         if (!objRendererReady) {
             console.error('❌ ClothingOBJRenderer not available - falling back to old method');
             return false;
         }
-
         return true;
     }
 
@@ -628,7 +1029,6 @@
         return;
     }
 
-    // Verify OBJ loader
     if (typeof THREE.OBJLoader === 'undefined') {
         console.error('❌ OBJLoader failed to load properly');
         return;
@@ -638,12 +1038,18 @@
 
     /* Application Initialization */
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Initializing RPM Avatar Application...');
+        console.log('🚀 Initializing Two-Tab Avatar Application...');
+
+        /* Initialize Tab System */
+        initializeTabSystem();
+
+        /* Initialize Avatar Customization System */
+        initializeAvatarCustomization();
 
         /* Initialize RPM Avatar Manager */
         const rpmManager = new RPMAvatarManager({
             container: document.getElementById('avatar-container'),
-            debug: false, // Disabled debug mode
+            debug: false,
             enableStats: true,
             enableAutoSave: true
         });
@@ -658,10 +1064,9 @@
             rpmManager.controls.dampingFactor = 0.1;
         }
 
-        /* Clean scene setup - NO GROUND PLANE */
+        /* Clean scene setup */
         setTimeout(() => {
             if (rpmManager && rpmManager.scene) {
-                // Remove any existing ground planes from the scene
                 const objectsToRemove = [];
                 rpmManager.scene.traverse((child) => {
                     if (child.isMesh && child.geometry && child.geometry.type === 'PlaneGeometry') {
@@ -684,16 +1089,12 @@
                 });
 
                 console.log('🗑️ Removed', objectsToRemove.length, 'ground plane objects');
-
-                // Ensure clean background
                 rpmManager.scene.background = new THREE.Color(0xf5f7fa);
 
-                // Disable shadows if they're enabled
                 if (rpmManager.renderer) {
                     rpmManager.renderer.shadowMap.enabled = false;
                 }
 
-                // Update camera controls
                 if (rpmManager.controls) {
                     rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
                     rpmManager.controls.target.set(0, -0.3, 0);
@@ -712,6 +1113,7 @@
         /* Make globally available for debugging */
         window.rpmManager = rpmManager;
         window.objRenderer = objRenderer;
+        window.avatarCustomization = avatarCustomization;
 
         /* Auto-load saved avatar on startup */
         initializeAvatar();
@@ -727,9 +1129,8 @@
                     rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
                     updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
 
-                    // Wait for OBJ renderer to be available before setting references
                     let attempts = 0;
-                    const maxAttempts = 50; // 5 seconds
+                    const maxAttempts = 50;
 
                     while (!window.clothingOBJRenderer && attempts < maxAttempts) {
                         await new Promise(resolve => setTimeout(resolve, 100));
@@ -740,7 +1141,6 @@
                         console.log('🔄 Setting OBJ renderer references...');
                         window.clothingOBJRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
 
-                        // Verify references were set
                         setTimeout(() => {
                             console.log('🔍 Reference verification:');
                             console.log(`  - Scene set: ${!!window.clothingOBJRenderer.scene}`);
@@ -754,20 +1154,256 @@
 
                 updateAvatarStats();
                 console.log('✅ Avatar loaded successfully');
-                showMessage('Avatar loaded and ready for colored clothing', 'success');
+                showMessage('Avatar loaded and ready for customization and colored clothing', 'success');
             } catch (error) {
                 console.log(`⚠️ Error loading avatar: ${error.message}`);
                 showMessage('No saved avatar found. Create or load one to get started.', 'info');
             }
         }
 
+        /* Tab System Functions */
+        function initializeTabSystem() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.dataset.tab;
+
+                    // Remove active class from all buttons and contents
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    // Add active class to clicked button and corresponding content
+                    this.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+
+                    console.log(`📑 Switched to tab: ${targetTab}`);
+
+                    // Initialize wardrobe when switching to wardrobe tab
+                    if (targetTab === 'wardrobe') {
+                        loadWardrobeItems('tops');
+                    }
+                });
+            });
+        }
+
+        /* Avatar Customization Functions */
+        function initializeAvatarCustomization() {
+            console.log('🎨 Initializing avatar customization system...');
+
+            // Gender selection
+            document.querySelectorAll('.gender-option').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.gender-option').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    avatarCustomization.gender = this.dataset.gender;
+                    console.log('👤 Gender changed to:', avatarCustomization.gender);
+                    applyAvatarCustomization();
+                });
+            });
+
+            // Body sliders
+            const sliders = ['height', 'width', 'muscle'];
+            sliders.forEach(sliderName => {
+                const slider = document.getElementById(`${sliderName}-slider`);
+                const valueDisplay = document.getElementById(`${sliderName}-value`);
+
+                if (slider && valueDisplay) {
+                    slider.addEventListener('input', function() {
+                        const value = parseInt(this.value);
+                        valueDisplay.textContent = value;
+                        avatarCustomization.body[sliderName] = value;
+                        console.log(`📏 ${sliderName} changed to:`, value);
+                        applyAvatarCustomization();
+                    });
+                }
+            });
+
+            // Skin color selection
+            document.querySelectorAll('[data-skin]').forEach(colorOption => {
+                colorOption.addEventListener('click', function() {
+                    document.querySelectorAll('[data-skin]').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    avatarCustomization.skin = this.dataset.skin;
+                    console.log('🎨 Skin color changed to:', avatarCustomization.skin);
+                    applyAvatarCustomization();
+                });
+            });
+
+            // Eye color selection
+            document.querySelectorAll('[data-eye]').forEach(colorOption => {
+                colorOption.addEventListener('click', function() {
+                    document.querySelectorAll('[data-eye]').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    avatarCustomization.eyes = this.dataset.eye;
+                    console.log('👁️ Eye color changed to:', avatarCustomization.eyes);
+                    applyAvatarCustomization();
+                });
+            });
+
+            // Hair style selection
+            document.querySelectorAll('[data-hair]').forEach(hairOption => {
+                hairOption.addEventListener('click', function() {
+                    document.querySelectorAll('[data-hair]').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    avatarCustomization.hair.type = this.dataset.hair;
+                    console.log('✂️ Hair type changed to:', avatarCustomization.hair.type);
+                    applyAvatarCustomization();
+                });
+            });
+
+            // Hair color selection
+            document.querySelectorAll('[data-hair-color]').forEach(colorOption => {
+                colorOption.addEventListener('click', function() {
+                    document.querySelectorAll('[data-hair-color]').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    avatarCustomization.hair.color = this.dataset.hairColor;
+                    console.log('🎨 Hair color changed to:', avatarCustomization.hair.color);
+                    applyAvatarCustomization();
+                });
+            });
+
+            // Avatar actions
+            document.getElementById('randomize-avatar').addEventListener('click', randomizeAvatar);
+            document.getElementById('reset-avatar').addEventListener('click', resetAvatar);
+            document.getElementById('save-avatar-btn').addEventListener('click', saveAvatarCustomization);
+        }
+
+        function applyAvatarCustomization() {
+            console.log('🔄 Applying avatar customization:', avatarCustomization);
+
+            // For now, this is a placeholder for actual morphing
+            // In a real implementation, you would:
+            // 1. Apply morph targets to the 3D model
+            // 2. Change textures for skin/eye color
+            // 3. Swap hair meshes
+            // 4. Scale the avatar
+
+            if (rpmManager && rpmManager.avatarModel) {
+                // Apply scale immediately
+                updateAvatarScale(avatarCustomization.body.scale);
+                updateAvatarStats();
+                showMessage('Avatar customization applied!', 'success');
+            } else {
+                console.warn('⚠️ No avatar model loaded for customization');
+            }
+        }
+
+        function randomizeAvatar() {
+            console.log('🎲 Randomizing avatar...');
+
+            // Generate random values
+            avatarCustomization.gender = Math.random() > 0.5 ? 'female' : 'male';
+            avatarCustomization.body.height = Math.floor(Math.random() * 100);
+            avatarCustomization.body.width = Math.floor(Math.random() * 100);
+            avatarCustomization.body.muscle = Math.floor(Math.random() * 100);
+
+            const skinColors = ['light', 'medium', 'tan', 'dark', 'darker', 'darkest', 'pink', 'olive'];
+            const eyeColors = ['brown', 'blue', 'green', 'light-blue', 'purple', 'gray', 'dark-green', 'hazel'];
+            const hairTypes = ['short', 'medium', 'long', 'curly', 'straight', 'wavy', 'pixie', 'bob', 'bald'];
+            const hairColors = ['brown', 'black', 'blonde', 'red', 'auburn', 'gray', 'white', 'pink'];
+
+            avatarCustomization.skin = skinColors[Math.floor(Math.random() * skinColors.length)];
+            avatarCustomization.eyes = eyeColors[Math.floor(Math.random() * eyeColors.length)];
+            avatarCustomization.hair.type = hairTypes[Math.floor(Math.random() * hairTypes.length)];
+            avatarCustomization.hair.color = hairColors[Math.floor(Math.random() * hairColors.length)];
+
+            // Update UI to reflect random values
+            updateCustomizationUI();
+            applyAvatarCustomization();
+
+            showMessage('Avatar randomized!', 'info');
+        }
+
+        function resetAvatar() {
+            console.log('↩️ Resetting avatar to defaults...');
+
+            // Reset to default values
+            avatarCustomization.gender = 'female';
+            avatarCustomization.body = { height: 50, width: 50, muscle: 50, scale: 1.0 };
+            avatarCustomization.skin = 'light';
+            avatarCustomization.eyes = 'brown';
+            avatarCustomization.hair = { type: 'short', color: 'brown' };
+
+            // Update UI
+            updateCustomizationUI();
+            applyAvatarCustomization();
+
+            showMessage('Avatar reset to defaults', 'info');
+        }
+
+        function updateCustomizationUI() {
+            // Update gender buttons
+            document.querySelectorAll('.gender-option').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.gender === avatarCustomization.gender);
+            });
+
+            // Update sliders
+            ['height', 'width', 'muscle'].forEach(slider => {
+                const element = document.getElementById(`${slider}-slider`);
+                const valueDisplay = document.getElementById(`${slider}-value`);
+                if (element && valueDisplay) {
+                    element.value = avatarCustomization.body[slider];
+                    valueDisplay.textContent = avatarCustomization.body[slider];
+                }
+            });
+
+            // Update color selections
+            document.querySelectorAll('[data-skin]').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.skin === avatarCustomization.skin);
+            });
+
+            document.querySelectorAll('[data-eye]').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.eye === avatarCustomization.eyes);
+            });
+
+            document.querySelectorAll('[data-hair]').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.hair === avatarCustomization.hair.type);
+            });
+
+            document.querySelectorAll('[data-hair-color]').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.hairColor === avatarCustomization.hair.color);
+            });
+        }
+
+        async function saveAvatarCustomization() {
+            try {
+                console.log('💾 Saving avatar customization...');
+
+                const response = await fetch('/api/avatar/save-customization', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customization: avatarCustomization,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save avatar customization');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('Avatar customization saved successfully!', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to save customization');
+                }
+            } catch (error) {
+                console.error('❌ Error saving avatar customization:', error);
+                showMessage('Failed to save avatar customization: ' + error.message, 'error');
+            }
+        }
+
         /* Avatar Scale Controls */
         const scaleSlider = document.getElementById('avatar-scale-slider');
-        const scaleValueDisplay = document.getElementById('scale-value');
+        const scaleValueDisplay = document.getElementById('scale-display');
 
         if (scaleSlider) {
             scaleSlider.addEventListener('input', function() {
                 const scale = parseFloat(this.value);
+                avatarCustomization.body.scale = scale;
                 updateAvatarScale(scale);
                 scaleValueDisplay.textContent = Math.round(scale * 100) + '%';
             });
@@ -776,6 +1412,7 @@
         document.querySelectorAll('.scale-preset').forEach(button => {
             button.addEventListener('click', function() {
                 const scale = parseFloat(this.dataset.scale);
+                avatarCustomization.body.scale = scale;
                 updateAvatarScale(scale);
                 updateScaleUI(scale);
                 showMessage(`Avatar size set to ${Math.round(scale * 100)}%`, 'info');
@@ -799,7 +1436,6 @@
                     });
                 }
 
-                // Also scale OBJ clothing items
                 if (objRenderer && objRenderer.currentClothing) {
                     objRenderer.currentClothing.forEach((item) => {
                         if (item.mesh) {
@@ -824,7 +1460,7 @@
             }
         }
 
-        /* Wardrobe System with Enhanced Color Support */
+        /* Wardrobe System (Unchanged from original) */
         document.getElementById('category-rpm').addEventListener('change', function() {
             const category = this.value;
             console.log(`👕 Loading wardrobe category: ${category}`);
@@ -867,7 +1503,6 @@
             }
         }
 
-        // Enhanced wardrobe item creation with color support
         function createWardrobeItem(item, category) {
             const itemElement = document.createElement('div');
             itemElement.className = 'wardrobe-item';
@@ -890,7 +1525,6 @@
                 <div class="item-name">${itemName}</div>
             `;
 
-            // Enhanced click handler with color support
             itemElement.addEventListener('click', async function() {
                 console.log('🎯 Wardrobe item clicked:', itemName, item._id);
 
@@ -899,14 +1533,12 @@
                     return;
                 }
 
-                // Ensure OBJ renderer is available and has references
                 if (!window.clothingOBJRenderer) {
                     console.error('❌ ClothingOBJRenderer not available');
                     showMessage('OBJ Renderer not initialized', 'error');
                     return;
                 }
 
-                // Set references if missing
                 if (!window.clothingOBJRenderer.scene || !window.clothingOBJRenderer.avatar) {
                     console.log('🔄 Setting OBJ renderer references...');
                     window.clothingOBJRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
@@ -917,7 +1549,6 @@
 
                 try {
                     if (isSelected) {
-                        // Remove clothing
                         console.log('🗑️ Removing clothing:', itemId);
                         const success = await window.clothingOBJRenderer.removeClothing(itemId);
 
@@ -929,13 +1560,11 @@
                             showMessage(`Failed to remove ${itemName}`, 'error');
                         }
                     } else {
-                        // Add clothing with color
                         console.log('👕 Adding colored clothing:', itemId, itemName);
                         showLoading(`Applying ${itemName} with color...`);
 
                         let success = false;
 
-                        // Try database loading first
                         try {
                             success = await window.clothingOBJRenderer.loadClothingFromDatabase(itemId);
                             if (success) {
@@ -945,7 +1574,6 @@
                             console.warn('⚠️ Database loading failed, trying fallback:', error.message);
                         }
 
-                        // If database loading failed, try fallback with color
                         if (!success) {
                             try {
                                 const fallbackData = {
@@ -954,7 +1582,7 @@
                                     label: itemName,
                                     file_path: item.file_path,
                                     category: category,
-                                    color: item.color // Include color data
+                                    color: item.color
                                 };
                                 success = await window.clothingOBJRenderer.createFallbackClothing(fallbackData);
                                 if (success) {
@@ -984,7 +1612,7 @@
             return itemElement;
         }
 
-        /* RPM Avatar Management */
+        /* RPM Avatar Management (Unchanged) */
         document.getElementById('open-rpm-creator').addEventListener('click', function() {
             console.log('🔗 Opening RPM Creator...');
             window.open('https://demo.readyplayer.me/avatar', '_blank', 'noopener,noreferrer');
@@ -1011,7 +1639,6 @@
                         rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
                         updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
 
-                        // Update OBJ renderer references
                         if (objRenderer) {
                             objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
                         }
@@ -1050,7 +1677,6 @@
                     rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
                     updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
 
-                    // Update OBJ renderer references
                     if (objRenderer) {
                         objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
                     }
@@ -1067,7 +1693,7 @@
             }
         });
 
-        /* Outfit Management with Color Support */
+        /* Outfit Management */
         document.getElementById('try-on-rpm').addEventListener('click', async function() {
             const selectedItems = document.querySelectorAll('#wardrobe-items-rpm .wardrobe-item.selected');
 
@@ -1080,7 +1706,6 @@
                 showLoading('Applying colored outfit...');
                 console.log(`👕 Trying on ${selectedItems.length} colored items...`);
 
-                // Clear all clothing first
                 if (objRenderer) {
                     await objRenderer.clearAllClothing();
                 } else if (rpmManager.clearAllClothing) {
@@ -1094,7 +1719,6 @@
                     if (objRenderer) {
                         await objRenderer.loadClothingFromDatabase(itemId);
                     } else {
-                        // Fallback to original method
                         const imagePath = item.querySelector('img')?.src;
                         if (imagePath && rpmManager.loadClothing) {
                             await rpmManager.loadClothing(itemId, imagePath, itemName);
@@ -1116,7 +1740,6 @@
             let itemCount = 0;
             let itemIds = [];
 
-            // Count items from both systems
             if (objRenderer && objRenderer.currentClothing) {
                 itemCount += objRenderer.currentClothing.size;
                 itemIds = Array.from(objRenderer.currentClothing.keys());
@@ -1166,17 +1789,14 @@
             try {
                 console.log('🗑️ Clearing all clothing...');
 
-                // Clear from OBJ renderer
                 if (objRenderer) {
                     await objRenderer.clearAllClothing();
                 }
 
-                // Clear from RPM manager as backup
                 if (rpmManager.clearAllClothing) {
                     rpmManager.clearAllClothing();
                 }
 
-                // Clear UI selections
                 document.querySelectorAll('#wardrobe-items-rpm .wardrobe-item.selected').forEach(item => {
                     item.classList.remove('selected');
                 });
@@ -1229,7 +1849,6 @@
             let totalItems = 0;
             let itemsHtml = '';
 
-            // Get items from OBJ renderer
             if (objRenderer && objRenderer.currentClothing) {
                 for (const [itemId, clothingData] of objRenderer.currentClothing.entries()) {
                     const itemName = clothingData.itemData?.label || clothingData.category || 'OBJ Item';
@@ -1246,7 +1865,6 @@
                 }
             }
 
-            // Get items from RPM manager (fallback)
             if (rpmManager.clothingItems) {
                 for (const [itemId, item] of rpmManager.clothingItems.entries()) {
                     const itemName = item.data?.itemType || item.type || 'GLB Item';
@@ -1269,7 +1887,6 @@
 
             listContainer.innerHTML = itemsHtml;
 
-            // Add remove event listeners
             listContainer.querySelectorAll('.active-item-remove').forEach(button => {
                 button.addEventListener('click', async function(e) {
                     e.stopPropagation();
@@ -1285,7 +1902,6 @@
                             rpmManager.removeClothing(itemId);
                         }
 
-                        // Remove UI selection
                         const wardrobeItem = document.querySelector(`[data-item-id="${itemId}"]`);
                         if (wardrobeItem) {
                             wardrobeItem.classList.remove('selected');
@@ -1313,12 +1929,15 @@
             const stats = {
                 'Model': 'Ready Player Me',
                 'Scale': Math.round((rpmManager.avatarModel.scale.x || 1.0) * 100) + '%',
+                'Gender': avatarCustomization.gender,
+                'Skin': avatarCustomization.skin,
+                'Hair': `${avatarCustomization.hair.type} (${avatarCustomization.hair.color})`,
+                'Eyes': avatarCustomization.eyes,
                 'Polygons': 'Calculating...',
                 'Materials': 'Calculating...',
                 'Clothing': 0
             };
 
-            // Count clothing from both systems
             let clothingCount = 0;
             if (objRenderer && objRenderer.currentClothing) {
                 clothingCount += objRenderer.currentClothing.size;
@@ -1409,10 +2028,8 @@
         }
 
         /* Initialization Completion */
-        loadWardrobeItems('tops');
-
-        console.log('✅ Clean RPM Avatar Application initialized successfully');
-        showMessage('Application ready! Create or load an avatar to get started.', 'info');
+        console.log('✅ Two-Tab Avatar Application initialized successfully');
+        showMessage('Application ready! Use the Create Avatar tab to customize, then switch to Wardrobe to dress your avatar.', 'info');
     });
 
 })();
