@@ -136,14 +136,14 @@ class CustomizableGLBAvatarManager {
     }
 
     setupLighting() {
-        // Professional studio lighting
+        // Enhanced lighting setup optimized for white background
 
-        // Ambient light
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        // Stronger ambient light for white background
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
         this.scene.add(ambientLight);
 
-        // Key light
-        const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        // Main key light (stronger for better definition)
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
         keyLight.position.set(-5, 10, 5);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.width = 2048;
@@ -154,17 +154,28 @@ class CustomizableGLBAvatarManager {
         keyLight.shadow.camera.right = 10;
         keyLight.shadow.camera.top = 10;
         keyLight.shadow.camera.bottom = -10;
+        keyLight.shadow.bias = -0.0001; // Reduce shadow acne
         this.scene.add(keyLight);
 
-        // Fill light
-        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        // Fill light (stronger to reduce harsh shadows)
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
         fillLight.position.set(5, 5, 5);
         this.scene.add(fillLight);
 
-        // Rim light
-        const rimLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        // Rim light (enhanced for better edge definition)
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.8);
         rimLight.position.set(0, 5, -8);
         this.scene.add(rimLight);
+
+        // Additional soft top light for even illumination
+        const topLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        topLight.position.set(0, 10, 0);
+        this.scene.add(topLight);
+
+        // Subtle hemisphere light for natural ambient lighting
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.3);
+        hemisphereLight.position.set(0, 20, 0);
+        this.scene.add(hemisphereLight);
     }
 
     setupControls() {
@@ -192,16 +203,17 @@ class CustomizableGLBAvatarManager {
     }
 
     setupGround() {
-        // Professional grid like Blender
-        const gridHelper = new THREE.GridHelper(20, 20, 0x555555, 0x444444);
-        gridHelper.material.opacity = 0.6;
+        // Subtle grid that works well with white background
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xdddddd);
+        gridHelper.material.opacity = 0.8;
         gridHelper.material.transparent = true;
         this.scene.add(gridHelper);
 
-        // Shadow plane
+        // More visible shadow plane for white background
         const groundGeometry = new THREE.PlaneGeometry(20, 20);
         const groundMaterial = new THREE.ShadowMaterial({
-            opacity: 0.3
+            opacity: 0.15,
+            color: 0x000000
         });
 
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
