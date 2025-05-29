@@ -36,15 +36,15 @@ class CustomizableGLBAvatarManager {
         this.hairStyles = {
             female: {
                 'afro_ponytail': {
-                    name: 'Afro Ponytail',
-                    preview: '/static/models/makehuman/hair/previews/afro_ponytail.jpg',
-                    glbPath: '/static/models/makehuman/hair/Afro_Hair_-_Ponytail/hair_08.glb',
+                    name: 'Long Hair',
+                    preview: '/static/models/makehuman/hair/previews/hair1l.jpg',
+                    glbPath: '/static/models/makehuman/hair/hair1/hair1.glb',
                     category: 'long'
                 },
                 'elvis_hazel': {
                     name: 'Elvis Hazel',
                     preview: '/static/models/makehuman/hair/previews/elvis_hazel.jpg',
-                    glbPath: '/static/models/makehuman/hair/Elvs_Hazel_Hair/hair_08.glb',
+                    glbPath: '/static/models/makehuman/hair/Elvs_Hazel_Hair/elvs_hazel.glb',
                     category: 'medium'
                 },
                 'french_bob': {
@@ -564,35 +564,43 @@ class CustomizableGLBAvatarManager {
     }
 
     // Forehead positioning methods
-    moveHairToForehead() {
-        if (!this.currentHairModel || !this.avatarModel) {
-            console.log('❌ No avatar or hair model available');
-            return false;
-        }
-
-        const hairModel = this.currentHairModel;
-        const avatarModel = this.avatarModel;
-
-        console.log('🎯 Moving hair to optimal forehead position...');
-
-        const avatarBox = new THREE.Box3().setFromObject(avatarModel);
-        const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
-        const avatarSize = avatarBox.getSize(new THREE.Vector3());
-
-        const hairY = avatarBox.max.y - (avatarSize.y * 0.082);
-        const hairZ = avatarCenter.z - (avatarSize.z * 0.26);
-        const hairX = avatarCenter.x;
-
-        hairModel.position.set(hairX, hairY, hairZ);
-
-        const newHairBox = new THREE.Box3().setFromObject(hairModel);
-        const hairBottom = newHairBox.min.y;
-        const yAdjustment = hairY - hairBottom;
-        hairModel.position.y += yAdjustment;
-
-        console.log(`✅ Hair positioned at forehead: (${hairModel.position.x.toFixed(3)}, ${hairModel.position.y.toFixed(3)}, ${hairModel.position.z.toFixed(3)})`);
-        return true;
+  moveHairToForehead() {
+    if (!this.currentHairModel || !this.avatarModel) {
+        console.log('❌ No avatar or hair model available');
+        return false;
     }
+
+    const hairModel = this.currentHairModel;
+    const avatarModel = this.avatarModel;
+
+    console.log('🎯 Moving hair to optimal forehead position (FIXED)...');
+
+    const avatarBox = new THREE.Box3().setFromObject(avatarModel);
+    const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+    const avatarSize = avatarBox.getSize(new THREE.Vector3());
+
+    const hairBox = new THREE.Box3().setFromObject(hairModel);
+    const hairSize = hairBox.getSize(new THREE.Vector3());
+
+    // FIXED: Position hair much lower
+    const headTopY = avatarBox.max.y;
+    const hairY = headTopY - (hairSize.y * 0.3); // Much lower than before
+    const hairX = avatarCenter.x;
+    const hairZ = avatarCenter.z + (avatarSize.z * 0.05);
+
+    hairModel.position.set(hairX, hairY, hairZ);
+
+    // Ensure hair sits on head properly
+    const newHairBox = new THREE.Box3().setFromObject(hairModel);
+    const hairBottom = newHairBox.min.y;
+    const targetBottom = headTopY - (hairSize.y * 0.4);
+
+    const yAdjustment = targetBottom - hairBottom;
+    hairModel.position.y += yAdjustment;
+
+    console.log(`✅ Hair positioned at head: (${hairModel.position.x.toFixed(3)}, ${hairModel.position.y.toFixed(3)}, ${hairModel.position.z.toFixed(3)})`);
+    return true;
+}
 
     positionHairOnForehead() {
         console.log('🎯 Starting forehead hair positioning...');
