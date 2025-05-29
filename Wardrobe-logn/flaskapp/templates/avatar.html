@@ -89,53 +89,6 @@
         padding-bottom: 5px;
     }
 
-    /* Quick Load Section */
-    .quick-load-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    }
-
-    .quick-load-section h4 {
-        color: white;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-        margin-bottom: 15px;
-    }
-
-    .quick-load-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 15px;
-    }
-
-    .quick-load-btn {
-        padding: 12px;
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 8px;
-        color: white;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-weight: 500;
-        font-size: 13px;
-        backdrop-filter: blur(10px);
-    }
-
-    .quick-load-btn:hover {
-        background: rgba(255, 255, 255, 0.25);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .quick-load-btn.active {
-        background: rgba(255, 255, 255, 0.3);
-        border-color: rgba(255, 255, 255, 0.5);
-    }
-
     /* Customization Controls */
     .customization-group {
         margin-bottom: 20px;
@@ -637,6 +590,34 @@
         font-size: 18px;
     }
 
+    /* Camera View Controls */
+    .camera-view-toggle {
+        display: flex;
+        background: #e9ecef;
+        border-radius: 25px;
+        padding: 3px;
+        margin-top: 10px;
+    }
+
+    .view-option {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        background: none;
+        border-radius: 22px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        color: #6c757d;
+        font-size: 13px;
+    }
+
+    .view-option.active {
+        background: #3498db;
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
     /* Slider Controls */
     .slider-control {
         margin-bottom: 15px;
@@ -806,31 +787,6 @@
             <!-- Tab 1: Avatar Creation -->
             <div id="create-avatar" class="tab-content active">
 
-                <!-- Quick Load Section -->
-                <div class="quick-load-section">
-                    <h4><i class="bi bi-lightning-charge"></i> Quick Load</h4>
-                    <p style="margin: 0 0 15px 0; opacity: 0.9; font-size: 13px;">Load pre-configured avatars instantly</p>
-
-                    <div class="quick-load-buttons">
-                        <button class="quick-load-btn" data-config="female-medium">
-                            <i class="bi bi-person-dress"></i><br>Female Medium
-                        </button>
-                        <button class="quick-load-btn" data-config="male-medium">
-                            <i class="bi bi-person"></i><br>Male Medium
-                        </button>
-                        <button class="quick-load-btn" data-config="female-tall">
-                            <i class="bi bi-person-dress"></i><br>Female Tall
-                        </button>
-                        <button class="quick-load-btn" data-config="male-tall">
-                            <i class="bi bi-person"></i><br>Male Tall
-                        </button>
-                    </div>
-
-                    <button id="load-current-avatar" class="btn btn-primary" style="width: 100%; margin-top: 15px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
-                        <i class="bi bi-download"></i> Load Current Configuration
-                    </button>
-                </div>
-
                 <!-- Avatar Base Section -->
                 <div class="avatar-creation-section">
                     <h4><i class="bi bi-person-plus"></i> Avatar Base</h4>
@@ -885,22 +841,18 @@
                         </div>
                     </div>
 
-                    <!-- Avatar Scale -->
+                    <!-- Camera View Controls -->
                     <div class="customization-group">
-                        <h5>Avatar Size</h5>
-                        <div class="slider-control">
-                            <label>
-                                <span>Scale</span>
-                                <span class="slider-value" id="scale-display">100%</span>
-                            </label>
-                            <input type="range" id="avatar-scale-slider" min="0.5" max="3.0" step="0.1" value="1.0">
+                        <h5>Camera View</h5>
+                        <div class="camera-view-toggle">
+                            <button class="view-option active" data-view="normal">
+                                <i class="bi bi-person"></i> Normal
+                            </button>
+                            <button class="view-option" data-view="portrait">
+                                <i class="bi bi-person-bounding-box"></i> Portrait
+                            </button>
                         </div>
-                        <div class="scale-presets">
-                            <button class="btn btn-secondary scale-preset" data-scale="0.8">Small</button>
-                            <button class="btn btn-secondary scale-preset" data-scale="1.0">Normal</button>
-                            <button class="btn btn-secondary scale-preset" data-scale="1.5">Large</button>
-                            <button class="btn btn-secondary scale-preset" data-scale="2.0">XL</button>
-                        </div>
+                        <p style="font-size: 11px; margin: 8px 0 0 0; opacity: 0.8;">Normal: Full body view • Portrait: Face close-up</p>
                     </div>
                 </div>
 
@@ -1064,7 +1016,7 @@
                 <p><strong>Model:</strong> <span id="debug-model">None</span></p>
                 <p><strong>Gender:</strong> <span id="debug-gender">female</span></p>
                 <p><strong>Body:</strong> <span id="debug-body">m_medium</span></p>
-                <p><strong>Scale:</strong> <span id="debug-scale">100%</span></p>
+                <p><strong>View:</strong> <span id="debug-view">Normal</span></p>
                 <div class="path-display" id="debug-path">/static/models/makehuman/bodies/female/m_medium.glb</div>
             </div>
         </div>
@@ -1117,52 +1069,9 @@ setTimeout(() => {
 
     /* Avatar Configuration */
     const AVATAR_CONFIG = {
-        DEFAULT_SCALE: 1.0,
-        MIN_SCALE: 0.5,
-        MAX_SCALE: 3.0,
         CLOTHING_SCALE_MATCH: true,
         AVATAR_Y_POSITION: 0,
         PREFERRED_FORMAT: 'glb' // GLB only
-    };
-
-    /* Quick Load Configurations - FIXED with correct mapping */
-    const QUICK_LOAD_CONFIGS = {
-        'female-medium': {
-            gender: 'female',
-            bodySize: 'm',
-            height: 'medium',
-            skinColor: 'light',
-            hairType: 'short',
-            hairColor: 'brown',
-            eyeColor: 'brown'
-        },
-        'male-medium': {
-            gender: 'male',
-            bodySize: 'm',
-            height: 'medium',
-            skinColor: 'light',
-            hairType: 'short',
-            hairColor: 'brown',
-            eyeColor: 'brown'
-        },
-        'female-tall': {
-            gender: 'female',
-            bodySize: 'l',
-            height: 'tall',
-            skinColor: 'medium',
-            hairType: 'long',
-            hairColor: 'blonde',
-            eyeColor: 'blue'
-        },
-        'male-tall': {
-            gender: 'male',
-            bodySize: 'l',
-            height: 'tall',
-            skinColor: 'tan',
-            hairType: 'short',
-            hairColor: 'black',
-            eyeColor: 'brown'
-        }
     };
 
     /* Avatar Customization State */
@@ -1170,15 +1079,15 @@ setTimeout(() => {
         gender: 'female',
         body: {
             height: 'medium',
-            bodySize: 'm',
-            scale: 1.0
+            bodySize: 'm'
         },
         skin: 'light',
         eyes: 'brown',
         hair: {
             type: 'short',
             color: 'brown'
-        }
+        },
+        view: 'normal' // 'normal' or 'portrait'
     };
 
     /* Global Avatar Manager */
@@ -1216,9 +1125,9 @@ setTimeout(() => {
             initializeAvatarCustomization();
         }, 500);
 
-        /* Initialize Quick Load System */
+        /* Initialize Camera View System */
         setTimeout(() => {
-            initializeQuickLoadSystem();
+            initializeCameraViewSystem();
         }, 600);
 
         /* Initialize Wardrobe System */
@@ -1325,6 +1234,57 @@ setTimeout(() => {
             checkAndInit();
         }
 
+        /* Camera View System */
+        function initializeCameraViewSystem() {
+            console.log('📷 Initializing camera view system...');
+
+            document.querySelectorAll('.view-option').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.view-option').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const viewType = this.dataset.view;
+                    avatarCustomization.view = viewType;
+
+                    console.log(`📷 Camera view changed to: ${viewType}`);
+
+                    setCameraView(viewType);
+                    updateDebugDisplay();
+                    showMessage(`Camera view: ${viewType}`, 'info');
+                });
+            });
+        }
+
+        function setCameraView(viewType) {
+            if (!avatarManager || !avatarManager.camera || !avatarManager.controls) {
+                console.warn('⚠️ Avatar manager or camera not available');
+                return;
+            }
+
+            const camera = avatarManager.camera;
+            const controls = avatarManager.controls;
+
+            if (viewType === 'portrait') {
+                // Portrait view - focus on face
+                camera.position.set(0, 1.6, 2.5);
+                controls.target.set(0, 1.6, 0);
+                controls.minDistance = 1.5;
+                controls.maxDistance = 4;
+                controls.maxPolarAngle = Math.PI * 0.6; // Limit vertical rotation
+                console.log('📷 Set to portrait view (face close-up)');
+            } else {
+                // Normal view - full body
+                camera.position.set(0, 1.6, 4);
+                controls.target.set(0, 1, 0);
+                controls.minDistance = 1;
+                controls.maxDistance = 10;
+                controls.maxPolarAngle = Math.PI * 0.8; // Allow more vertical rotation
+                console.log('📷 Set to normal view (full body)');
+            }
+
+            controls.update();
+        }
+
         /* Debug Info System */
         function initializeDebugInfo() {
             console.log('🐛 Initializing debug info system...');
@@ -1365,9 +1325,9 @@ setTimeout(() => {
                 bodyElement.textContent = `${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}`;
             }
 
-            const scaleElement = document.getElementById('debug-scale');
-            if (scaleElement) {
-                scaleElement.textContent = Math.round(avatarCustomization.body.scale * 100) + '%';
+            const viewElement = document.getElementById('debug-view');
+            if (viewElement) {
+                viewElement.textContent = avatarCustomization.view.charAt(0).toUpperCase() + avatarCustomization.view.slice(1);
             }
 
             // Update current path
@@ -1378,88 +1338,6 @@ setTimeout(() => {
                     `/static/models/makehuman/bodies/${avatarCustomization.gender}/${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}.glb`;
                 pathElement.textContent = currentPath;
             }
-        }
-
-        /* Quick Load System */
-        function initializeQuickLoadSystem() {
-            console.log('⚡ Initializing Quick Load System...');
-
-            // Quick load buttons
-            document.querySelectorAll('.quick-load-btn').forEach(button => {
-                button.addEventListener('click', async function() {
-                    const configKey = this.dataset.config;
-                    const config = QUICK_LOAD_CONFIGS[configKey];
-
-                    if (!config) {
-                        showMessage('Configuration not found', 'error');
-                        return;
-                    }
-
-                    try {
-                        // Remove active class from all buttons
-                        document.querySelectorAll('.quick-load-btn').forEach(btn => btn.classList.remove('active'));
-                        this.classList.add('active');
-
-                        showLoading(`Loading ${configKey.replace('-', ' ')} avatar...`);
-                        updateDebugInfo(`Loading ${configKey}...`, 'info');
-                        console.log(`⚡ Quick loading configuration: ${configKey}`, config);
-
-                        // Update avatar customization state
-                        avatarCustomization.gender = config.gender;
-                        avatarCustomization.body.bodySize = config.bodySize;
-                        avatarCustomization.body.height = config.height;
-                        avatarCustomization.skin = config.skinColor;
-                        avatarCustomization.hair.type = config.hairType;
-                        avatarCustomization.hair.color = config.hairColor;
-                        avatarCustomization.eyes = config.eyeColor;
-
-                        // Load avatar with configuration
-                        if (avatarManager && avatarManager.setConfiguration) {
-                            await avatarManager.setConfiguration(config);
-                        }
-
-                        // Update UI to reflect the loaded configuration
-                        updateUIFromConfig(config);
-                        updateAvatarStats();
-                        updateDebugDisplay();
-
-                        updateDebugInfo(`${configKey} loaded`, 'success');
-                        showMessage(`${configKey.replace('-', ' ')} avatar loaded successfully!`, 'success');
-                    } catch (error) {
-                        console.error('❌ Error loading quick configuration:', error);
-                        updateDebugInfo('Quick load failed', 'error');
-                        showMessage('Failed to load avatar configuration', 'error');
-                    } finally {
-                        hideLoading();
-                    }
-                });
-            });
-
-            // Load current configuration button
-            document.getElementById('load-current-avatar').addEventListener('click', async function() {
-                try {
-                    showLoading('Loading current avatar configuration...');
-                    updateDebugInfo('Loading current config...', 'info');
-                    console.log('🔄 Loading current avatar configuration...');
-
-                    if (avatarManager && avatarManager.loadAvatarFromConfig) {
-                        await avatarManager.loadAvatarFromConfig(avatarCustomization);
-                        updateAvatarStats();
-                        updateDebugDisplay();
-                        updateDebugInfo('Current config loaded', 'success');
-                        showMessage('Current configuration loaded!', 'success');
-                    } else {
-                        updateDebugInfo('Avatar manager unavailable', 'error');
-                        showMessage('Avatar manager not available', 'error');
-                    }
-                } catch (error) {
-                    console.error('❌ Error loading current configuration:', error);
-                    updateDebugInfo('Load failed', 'error');
-                    showMessage('Failed to load current configuration', 'error');
-                } finally {
-                    hideLoading();
-                }
-            });
         }
 
         /* Tab System Functions */
@@ -1679,34 +1557,6 @@ setTimeout(() => {
                 });
             });
 
-            // Avatar scale controls
-            const scaleSlider = document.getElementById('avatar-scale-slider');
-            const scaleDisplay = document.getElementById('scale-display');
-
-            if (scaleSlider) {
-                scaleSlider.addEventListener('input', function() {
-                    const scale = parseFloat(this.value);
-                    avatarCustomization.body.scale = scale;
-                    updateAvatarScale(scale);
-                    scaleDisplay.textContent = Math.round(scale * 100) + '%';
-                    updateAvatarStats();
-                    updateDebugDisplay();
-                });
-            }
-
-            // Scale presets
-            document.querySelectorAll('.scale-preset').forEach(button => {
-                button.addEventListener('click', function() {
-                    const scale = parseFloat(this.dataset.scale);
-                    avatarCustomization.body.scale = scale;
-                    updateAvatarScale(scale);
-                    updateScaleUI(scale);
-                    updateAvatarStats();
-                    updateDebugDisplay();
-                    showMessage(`Avatar scaled to ${Math.round(scale * 100)}%`, 'info');
-                });
-            });
-
             // Randomize avatar
             document.getElementById('randomize-avatar').addEventListener('click', async function() {
                 console.log('🎲 Randomizing avatar...');
@@ -1831,51 +1681,6 @@ setTimeout(() => {
                     showMessage('Failed to save avatar: ' + error.message, 'error');
                 }
             });
-        }
-
-        function updateAvatarScale(scale) {
-            if (!avatarManager || !avatarManager.avatarModel) {
-                console.warn('⚠️ No avatar loaded to scale');
-                return;
-            }
-
-            try {
-                avatarManager.avatarModel.scale.setScalar(scale);
-
-                // Scale clothing items if they exist
-                if (AVATAR_CONFIG.CLOTHING_SCALE_MATCH) {
-                    if (avatarManager.clothingItems) {
-                        avatarManager.clothingItems.forEach((item) => {
-                            if (item.model) {
-                                item.model.scale.setScalar(scale);
-                            }
-                        });
-                    }
-
-                    if (window.clothingOBJRenderer && window.clothingOBJRenderer.currentClothing) {
-                        window.clothingOBJRenderer.currentClothing.forEach((item) => {
-                            if (item.mesh) {
-                                item.mesh.scale.setScalar(scale);
-                            }
-                        });
-                    }
-                }
-
-                console.log(`📏 Avatar scaled to: ${scale}`);
-
-            } catch (error) {
-                console.error('❌ Error scaling avatar:', error);
-                showMessage('Failed to scale avatar', 'error');
-            }
-        }
-
-        function updateScaleUI(scale) {
-            const scaleSlider = document.getElementById('avatar-scale-slider');
-            const scaleValueDisplay = document.getElementById('scale-display');
-            if (scaleSlider && scaleValueDisplay) {
-                scaleSlider.value = scale;
-                scaleValueDisplay.textContent = Math.round(scale * 100) + '%';
-            }
         }
 
         /* Wardrobe System */
@@ -2176,10 +1981,10 @@ setTimeout(() => {
             const stats = {
                 'Model': 'MakeHuman GLB',
                 'Format': 'GLB',
-                'Scale': Math.round((avatarManager.avatarModel.scale.x || 1.0) * 100) + '%',
                 'Gender': avatarCustomization.gender,
                 'Body Size': avatarCustomization.body.bodySize ? avatarCustomization.body.bodySize.toUpperCase() : 'M',
                 'Height': avatarCustomization.body.height || 'medium',
+                'View': avatarCustomization.view.charAt(0).toUpperCase() + avatarCustomization.view.slice(1),
                 'Skin': avatarCustomization.skin,
                 'Hair': `${avatarCustomization.hair.type} (${avatarCustomization.hair.color})`,
                 'Eyes': avatarCustomization.eyes,

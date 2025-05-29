@@ -1,9 +1,6 @@
 /**
- * Complete GLB Avatar Manager with Fixed Path Generation
+ * Enhanced GLB Avatar Manager with Eye Texture Loading
  * Save as: static/js/glb-avatar-manager.js
- *
- * Fixed to use correct filename format: {bodySize}_{height}.glb
- * Example: m_medium.glb, f_tall.glb, etc.
  */
 
 class CustomizableGLBAvatarManager {
@@ -26,7 +23,23 @@ class CustomizableGLBAvatarManager {
             eyeColor: 'brown'
         };
 
-        // Color definitions for customization
+        // Eye texture mapping
+        this.eyeTextures = {
+            'brown': '/static/models/makehuman/bodies/female/textures/brown_eye.png',
+            'blue': '/static/models/makehuman/bodies/female/textures/blue_eye.png',
+            'green': '/static/models/makehuman/bodies/female/textures/green_eye.png',
+            'light-blue': '/static/models/makehuman/bodies/female/textures/light_blue_eye.png',
+            'purple': '/static/models/makehuman/bodies/female/textures/purple_eye.png',
+            'gray': '/static/models/makehuman/bodies/female/textures/gray_eye.png',
+            'grey': '/static/models/makehuman/bodies/female/textures/gray_eye.png',
+            'dark-green': '/static/models/makehuman/bodies/female/textures/dark_green_eye.png',
+            'hazel': '/static/models/makehuman/bodies/female/textures/hazel_eye.png'
+        };
+
+        // Loaded textures cache
+        this.loadedTextures = new Map();
+
+        // Color definitions
         this.skinColors = {
             'light': 0xfdbcb4,
             'medium': 0xee9b82,
@@ -45,6 +58,7 @@ class CustomizableGLBAvatarManager {
             'light-blue': 0x87CEEB,
             'purple': 0x800080,
             'gray': 0x708090,
+            'grey': 0x708090,
             'dark-green': 0x228B22,
             'hazel': 0xB8860B
         };
@@ -60,7 +74,7 @@ class CustomizableGLBAvatarManager {
             'pink': 0xFF69B4
         };
 
-        // Store references to materials for easy modification
+        // Material references
         this.avatarMaterials = {
             skin: [],
             eyes: [],
@@ -73,8 +87,6 @@ class CustomizableGLBAvatarManager {
         this.camera = null;
         this.renderer = null;
         this.controls = null;
-
-        // Loaders
         this.gltfLoader = null;
         this.textureLoader = null;
 
@@ -83,7 +95,7 @@ class CustomizableGLBAvatarManager {
     }
 
     init() {
-        console.log('🤖 Initializing GLB Avatar Manager...');
+        console.log('🤖 Initializing GLB Avatar Manager with Eye Textures...');
         this.setupScene();
         this.setupCamera();
         this.setupRenderer();
@@ -92,16 +104,12 @@ class CustomizableGLBAvatarManager {
         this.setupLoaders();
         this.setupGround();
         this.animate();
-
-        // Load default avatar
         this.loadDefaultAvatar();
-
         console.log('✅ GLB Avatar Manager initialized');
     }
 
     setupScene() {
         this.scene = new THREE.Scene();
-        // Clean white background
         this.scene.background = new THREE.Color(0xffffff);
     }
 
@@ -122,8 +130,6 @@ class CustomizableGLBAvatarManager {
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-        // GLB-optimized settings
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1.0;
@@ -136,13 +142,9 @@ class CustomizableGLBAvatarManager {
     }
 
     setupLighting() {
-        // Enhanced lighting setup optimized for white background
-
-        // Stronger ambient light for white background
         const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
         this.scene.add(ambientLight);
 
-        // Main key light (stronger for better definition)
         const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
         keyLight.position.set(-5, 10, 5);
         keyLight.castShadow = true;
@@ -154,28 +156,29 @@ class CustomizableGLBAvatarManager {
         keyLight.shadow.camera.right = 10;
         keyLight.shadow.camera.top = 10;
         keyLight.shadow.camera.bottom = -10;
-        keyLight.shadow.bias = -0.0001; // Reduce shadow acne
+        keyLight.shadow.bias = -0.0001;
         this.scene.add(keyLight);
 
-        // Fill light (stronger to reduce harsh shadows)
         const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
         fillLight.position.set(5, 5, 5);
         this.scene.add(fillLight);
 
-        // Rim light (enhanced for better edge definition)
         const rimLight = new THREE.DirectionalLight(0xffffff, 0.8);
         rimLight.position.set(0, 5, -8);
         this.scene.add(rimLight);
 
-        // Additional soft top light for even illumination
         const topLight = new THREE.DirectionalLight(0xffffff, 0.4);
         topLight.position.set(0, 10, 0);
         this.scene.add(topLight);
 
-        // Subtle hemisphere light for natural ambient lighting
         const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.3);
         hemisphereLight.position.set(0, 20, 0);
         this.scene.add(hemisphereLight);
+
+        const eyeLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        eyeLight.position.set(0, 2, 3);
+        eyeLight.name = 'eyeLight';
+        this.scene.add(eyeLight);
     }
 
     setupControls() {
@@ -203,13 +206,11 @@ class CustomizableGLBAvatarManager {
     }
 
     setupGround() {
-        // Subtle grid that works well with white background
         const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xdddddd);
         gridHelper.material.opacity = 0.8;
         gridHelper.material.transparent = true;
         this.scene.add(gridHelper);
 
-        // More visible shadow plane for white background
         const groundGeometry = new THREE.PlaneGeometry(20, 20);
         const groundMaterial = new THREE.ShadowMaterial({
             opacity: 0.15,
@@ -221,6 +222,52 @@ class CustomizableGLBAvatarManager {
         ground.position.y = 0;
         ground.receiveShadow = true;
         this.scene.add(ground);
+    }
+
+    async loadEyeTexture(eyeColor) {
+        const texturePath = this.eyeTextures[eyeColor];
+
+        if (!texturePath) {
+            console.warn(`⚠️ No texture found for eye color: ${eyeColor}, falling back to brown`);
+            return await this.loadEyeTexture('brown');
+        }
+
+        if (this.loadedTextures.has(eyeColor)) {
+            console.log(`✅ Using cached eye texture: ${eyeColor}`);
+            return this.loadedTextures.get(eyeColor);
+        }
+
+        return new Promise((resolve) => {
+            console.log(`🔄 Loading eye texture: ${texturePath}`);
+
+            this.textureLoader.load(
+                texturePath,
+                (texture) => {
+                    console.log(`✅ Eye texture loaded: ${eyeColor}`);
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.flipY = false;
+                    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    texture.generateMipmaps = false;
+                    this.loadedTextures.set(eyeColor, texture);
+                    resolve(texture);
+                },
+                (progress) => {
+                    console.log(`📊 Loading texture progress: ${(progress.loaded / progress.total * 100).toFixed(1)}%`);
+                },
+                (error) => {
+                    console.error(`❌ Failed to load eye texture: ${texturePath}`, error);
+                    if (eyeColor !== 'brown') {
+                        console.log(`🔄 Falling back to brown eye texture for ${eyeColor}`);
+                        resolve(this.loadEyeTexture('brown'));
+                    } else {
+                        console.warn(`⚠️ Even brown eye texture failed, using color fallback`);
+                        resolve(null);
+                    }
+                }
+            );
+        });
     }
 
     async loadDefaultAvatar() {
@@ -241,14 +288,8 @@ class CustomizableGLBAvatarManager {
 
     getAvatarPath(config) {
         const { gender, bodySize, height } = config;
-
-        // FIXED: Use correct filename format: {bodySize}_{height}.glb
-        // Examples: m_medium.glb, l_tall.glb, s_short.glb
         const fileName = `${bodySize}_${height}`;
-
-        // Path structure: /static/models/makehuman/bodies/{gender}/{bodySize}_{height}.glb
         const fullPath = `/static/models/makehuman/bodies/${gender}/${fileName}.glb`;
-
         console.log(`🔗 Avatar path generated: ${fullPath}`);
         return fullPath;
     }
@@ -257,13 +298,11 @@ class CustomizableGLBAvatarManager {
         console.log(`🔄 Loading GLB avatar from: ${glbPath}`);
 
         try {
-            // Remove existing avatar
             if (this.avatarModel) {
                 this.scene.remove(this.avatarModel);
                 this.avatarModel = null;
             }
 
-            // Clear material references
             this.avatarMaterials = {
                 skin: [],
                 eyes: [],
@@ -275,9 +314,8 @@ class CustomizableGLBAvatarManager {
             this.setupAvatarModel();
             this.scene.add(this.avatarModel);
 
-            // Apply current configuration colors
             this.updateSkinColor(this.config.skinColor);
-            this.updateEyeColor(this.config.eyeColor);
+            await this.updateEyeColor(this.config.eyeColor);
             this.updateHairColor(this.config.hairColor);
 
             console.log('✅ GLB avatar loaded successfully');
@@ -297,12 +335,8 @@ class CustomizableGLBAvatarManager {
                 glbPath,
                 (gltf) => {
                     console.log('✅ GLB loaded successfully');
-
                     const model = gltf.scene;
-
-                    // Process the model for customization
                     this.processGLBModel(model);
-
                     resolve(model);
                 },
                 (progress) => {
@@ -322,53 +356,76 @@ class CustomizableGLBAvatarManager {
     processGLBModel(model) {
         console.log('🎨 Processing GLB model for customization...');
 
+        let eyeMeshCount = 0;
+        let headMeshCount = 0;
+
         model.traverse((child) => {
             if (child.isMesh) {
+                const meshName = (child.name || 'unnamed').toLowerCase();
                 console.log('🔍 Processing mesh:', child.name || 'unnamed');
 
-                // Categorize materials for later customization
+                if (meshName.includes('eye')) {
+                    eyeMeshCount++;
+                } else if (meshName.includes('head') || meshName.includes('face')) {
+                    headMeshCount++;
+                }
+
                 this.categorizeMaterial(child);
 
-                // Enable shadows
                 child.castShadow = true;
                 child.receiveShadow = true;
 
-                // Ensure materials are properly configured
                 if (child.material) {
                     if (child.material.map) {
                         child.material.map.colorSpace = THREE.SRGBColorSpace;
+                        child.material.map.flipY = false;
                     }
                     child.material.needsUpdate = true;
                 }
             }
         });
 
-        console.log('📊 Categorized materials:', {
-            skin: this.avatarMaterials.skin.length,
-            eyes: this.avatarMaterials.eyes.length,
-            hair: this.avatarMaterials.hair.length,
-            underwear: this.avatarMaterials.underwear.length
+        console.log('📊 Mesh Analysis:', {
+            totalMeshes: model.children.length,
+            eyeMeshes: eyeMeshCount,
+            headMeshes: headMeshCount,
+            materials: {
+                skin: this.avatarMaterials.skin.length,
+                eyes: this.avatarMaterials.eyes.length,
+                hair: this.avatarMaterials.hair.length,
+                underwear: this.avatarMaterials.underwear.length
+            }
         });
+
+        if (this.avatarMaterials.eyes.length === 0 && eyeMeshCount === 0) {
+            console.warn('⚠️ No eye materials or meshes detected, creating fallback eyes...');
+            setTimeout(() => this.createTexturedFallbackEyes(), 1000);
+        }
     }
 
     categorizeMaterial(mesh) {
         const meshName = (mesh.name || '').toLowerCase();
+        const materialName = (mesh.material.name || '').toLowerCase();
         const material = mesh.material;
 
         if (!material) return;
 
-        // Categorize based on mesh name - Updated for better detection
-        if (meshName.includes('body') || meshName.includes('head') ||
-            meshName.includes('arm') || meshName.includes('leg') ||
-            meshName.includes('torso') || meshName.includes('neck') ||
-            meshName.includes('base') || meshName.includes('skin') ||
-            meshName.includes('face') || meshName.includes('hand') ||
-            meshName.includes('foot')) {
-            this.avatarMaterials.skin.push(material);
-        }
-        else if (meshName.includes('eye') && !meshName.includes('brow') &&
-                 !meshName.includes('lash') && !meshName.includes('lid')) {
+        console.log(`🏷️ Categorizing: Mesh="${meshName}" Material="${materialName}"`);
+
+        if (meshName.includes('eye') || materialName.includes('eye')) {
+            console.log(`👁️ Found eye material: ${meshName} | ${materialName}`);
             this.avatarMaterials.eyes.push(material);
+        }
+        else if (meshName.includes('head') || meshName.includes('face') ||
+                 materialName.includes('head') || materialName.includes('face')) {
+            console.log(`👤 Found head/face material: ${meshName} | ${materialName}`);
+            this.avatarMaterials.eyes.push(material);
+        }
+        else if (meshName.includes('body') || meshName.includes('arm') ||
+                 meshName.includes('leg') || meshName.includes('torso') ||
+                 meshName.includes('neck') || meshName.includes('skin') ||
+                 meshName.includes('hand') || meshName.includes('foot')) {
+            this.avatarMaterials.skin.push(material);
         }
         else if (meshName.includes('hair') || meshName.includes('scalp')) {
             this.avatarMaterials.hair.push(material);
@@ -379,8 +436,7 @@ class CustomizableGLBAvatarManager {
             this.avatarMaterials.underwear.push(material);
         }
         else {
-            // Default to skin if unsure - more conservative approach
-            console.log(`⚠️ Unrecognized mesh '${meshName}', categorizing as skin`);
+            console.log(`❓ Unrecognized mesh '${meshName}', categorizing as skin`);
             this.avatarMaterials.skin.push(material);
         }
     }
@@ -388,12 +444,10 @@ class CustomizableGLBAvatarManager {
     setupAvatarModel() {
         if (!this.avatarModel) return;
 
-        // Calculate bounds and scale
         const box = new THREE.Box3().setFromObject(this.avatarModel);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        // GLB files usually come at the right scale, but adjust if needed
         let scale = 1.0;
         if (size.y > 3) {
             scale = 1.8 / size.y;
@@ -402,8 +456,6 @@ class CustomizableGLBAvatarManager {
         }
 
         this.avatarModel.scale.setScalar(scale);
-
-        // Position at ground level
         this.avatarModel.position.y = -box.min.y * scale;
         this.avatarModel.position.x = -center.x * scale;
         this.avatarModel.position.z = -center.z * scale;
@@ -411,7 +463,100 @@ class CustomizableGLBAvatarManager {
         console.log(`📏 Avatar scaled by ${scale.toFixed(2)}, positioned at (${this.avatarModel.position.x.toFixed(2)}, ${this.avatarModel.position.y.toFixed(2)}, ${this.avatarModel.position.z.toFixed(2)})`);
     }
 
-    // Avatar customization methods
+    async updateEyeColor(eyeColor) {
+        this.config.eyeColor = eyeColor;
+        console.log(`👁️ Updating eye color to: ${eyeColor}`);
+
+        const eyeTexture = await this.loadEyeTexture(eyeColor);
+
+        if (eyeTexture) {
+            console.log(`✅ Applying eye texture for: ${eyeColor}`);
+            this.applyEyeTexture(eyeTexture, eyeColor);
+        } else {
+            console.log(`⚠️ No texture available, using color: ${eyeColor}`);
+            this.applyEyeColor(eyeColor);
+        }
+    }
+
+    applyEyeTexture(texture, eyeColor) {
+        let materialsUpdated = 0;
+
+        this.avatarMaterials.eyes.forEach((material, index) => {
+            if (material.map !== texture) {
+                material.map = texture;
+                material.needsUpdate = true;
+                material.metalness = 0.0;
+                material.roughness = 0.0;
+                material.transparent = false;
+                material.opacity = 1.0;
+
+                if (material.isMeshPhongMaterial || material.isMeshLambertMaterial) {
+                    material.shininess = 100;
+                }
+
+                materialsUpdated++;
+                console.log(`  ✅ Applied eye texture to material ${index} (no roughness)`);
+            }
+        });
+
+        console.log(`👁️ Updated ${materialsUpdated} materials with eye texture`);
+    }
+
+    applyEyeColor(eyeColor) {
+        const newColor = this.eyeColors[eyeColor] || this.eyeColors['brown'];
+
+        this.avatarMaterials.eyes.forEach((material, index) => {
+            if (material.color) {
+                material.color.setHex(newColor);
+                material.metalness = 0.0;
+                material.roughness = 0.0;
+                material.needsUpdate = true;
+
+                if (material.isMeshPhongMaterial || material.isMeshLambertMaterial) {
+                    material.shininess = 100;
+                }
+
+                console.log(`  ✓ Updated eye material ${index} with color (no roughness)`);
+            }
+        });
+    }
+
+    async createTexturedFallbackEyes() {
+        console.log('🔧 Creating textured fallback eyes...');
+
+        if (!this.avatarModel) return;
+
+        const eyeTexture = await this.loadEyeTexture(this.config.eyeColor);
+        const eyeGeometry = new THREE.SphereGeometry(0.03, 16, 16);
+
+        const eyeMaterial = new THREE.MeshPhongMaterial({
+            map: eyeTexture,
+            shininess: 100,
+            transparent: false,
+            metalness: 0.0,
+            roughness: 0.0
+        });
+
+        if (!eyeTexture) {
+            eyeMaterial.color.setHex(this.eyeColors[this.config.eyeColor] || this.eyeColors['brown']);
+        }
+
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.035, 1.65, 0.08);
+        leftEye.name = 'fallback_left_eye';
+
+        const rightEyeMaterial = eyeMaterial.clone();
+        const rightEye = new THREE.Mesh(eyeGeometry, rightEyeMaterial);
+        rightEye.position.set(0.035, 1.65, 0.08);
+        rightEye.name = 'fallback_right_eye';
+
+        this.avatarModel.add(leftEye);
+        this.avatarModel.add(rightEye);
+        this.avatarMaterials.eyes.push(eyeMaterial, rightEyeMaterial);
+
+        console.log('✅ Textured fallback eyes created (no roughness)');
+    }
+
     async updateGender(gender) {
         console.log(`👤 Updating gender to: ${gender}`);
         this.config.gender = gender;
@@ -432,12 +577,10 @@ class CustomizableGLBAvatarManager {
 
     updateSkinColor(skinColor) {
         this.config.skinColor = skinColor;
-
         const newColor = this.skinColors[skinColor] || this.skinColors['light'];
 
         console.log(`🎨 Changing skin color to: ${skinColor} (0x${newColor.toString(16)})`);
 
-        // Update all skin materials
         this.avatarMaterials.skin.forEach((material, index) => {
             if (material.color) {
                 material.color.setHex(newColor);
@@ -447,31 +590,12 @@ class CustomizableGLBAvatarManager {
         });
     }
 
-    updateEyeColor(eyeColor) {
-        this.config.eyeColor = eyeColor;
-
-        const newColor = this.eyeColors[eyeColor] || this.eyeColors['brown'];
-
-        console.log(`👁️ Changing eye color to: ${eyeColor} (0x${newColor.toString(16)})`);
-
-        // Update all eye materials
-        this.avatarMaterials.eyes.forEach((material, index) => {
-            if (material.color) {
-                material.color.setHex(newColor);
-                material.needsUpdate = true;
-                console.log(`  ✓ Updated eye material ${index}`);
-            }
-        });
-    }
-
     updateHairColor(hairColor) {
         this.config.hairColor = hairColor;
-
         const newColor = this.hairColors[hairColor] || this.hairColors['brown'];
 
         console.log(`💇 Changing hair color to: ${hairColor} (0x${newColor.toString(16)})`);
 
-        // Update all hair materials
         this.avatarMaterials.hair.forEach((material, index) => {
             if (material.color) {
                 material.color.setHex(newColor);
@@ -484,12 +608,9 @@ class CustomizableGLBAvatarManager {
     updateHairType(hairType) {
         this.config.hairType = hairType;
         console.log(`✂️ Hair type set to: ${hairType}`);
-        // For GLB files, different hair types would require different models
-        // This could trigger a model reload with different hair geometry
         console.log('ℹ️ Note: Hair type changes in GLB require different model files');
     }
 
-    // Configuration management
     getConfiguration() {
         return { ...this.config };
     }
@@ -500,7 +621,6 @@ class CustomizableGLBAvatarManager {
 
         console.log('🔧 Setting new configuration:', newConfig);
 
-        // Major changes require reloading GLB
         const majorChanges = ['gender', 'bodySize', 'height', 'hairType'];
         const needsReload = majorChanges.some(key =>
             oldConfig[key] !== newConfig[key] && newConfig[key] !== undefined
@@ -511,17 +631,150 @@ class CustomizableGLBAvatarManager {
             await this.loadAvatarFromConfig(this.config);
         } else {
             console.log('🎨 Minor change, updating materials...');
-            // Just update colors
             if (oldConfig.skinColor !== newConfig.skinColor && newConfig.skinColor) {
                 this.updateSkinColor(newConfig.skinColor);
             }
             if (oldConfig.eyeColor !== newConfig.eyeColor && newConfig.eyeColor) {
-                this.updateEyeColor(newConfig.eyeColor);
+                await this.updateEyeColor(newConfig.eyeColor);
             }
             if (oldConfig.hairColor !== newConfig.hairColor && newConfig.hairColor) {
                 this.updateHairColor(newConfig.hairColor);
             }
         }
+    }
+
+    checkEyeTextures() {
+        console.log('🔍 Checking eye texture files...');
+
+        Object.entries(this.eyeTextures).forEach(([color, path]) => {
+            fetch(path)
+                .then(response => {
+                    if (response.ok) {
+                        console.log(`✅ ${color}: ${path} - Available`);
+                    } else {
+                        console.warn(`❌ ${color}: ${path} - Missing (${response.status})`);
+                    }
+                })
+                .catch(error => {
+                    console.error(`❌ ${color}: ${path} - Error: ${error.message}`);
+                });
+        });
+    }
+
+    showExpectedTextures() {
+        console.log('📋 EXPECTED EYE TEXTURE FILES:');
+        console.log('Create these texture files for proper eye colors:');
+        console.log('');
+        console.log('📁 /static/models/makehuman/bodies/female/textures/');
+
+        Object.entries(this.eyeTextures).forEach(([color, path]) => {
+            const filename = path.split('/').pop();
+            console.log(`   ├── ${filename} (for ${color} eyes)`);
+        });
+
+        console.log('');
+        console.log('🎨 To create different colored eyes:');
+        console.log('   1. Start with brown_eye.png as template');
+        console.log('   2. Edit with image editor (GIMP, Photoshop, etc.)');
+        console.log('   3. Change only the iris color, keep the pupil black');
+        console.log('   4. Save with the appropriate filename');
+        console.log('   5. Ensure all files are in the correct directory');
+    }
+
+    async forceApplyEyeTexture(eyeColor = null) {
+        const colorToTest = eyeColor || this.config.eyeColor;
+
+        if (!this.avatarModel) {
+            console.error('❌ No avatar model loaded');
+            return;
+        }
+
+        console.log(`🔧 Force applying ${colorToTest} eye texture for testing...`);
+
+        const eyeTexture = await this.loadEyeTexture(colorToTest);
+
+        if (eyeTexture) {
+            let appliedCount = 0;
+
+            this.avatarModel.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    const meshName = (child.name || '').toLowerCase();
+                    const materialName = (child.material.name || '').toLowerCase();
+
+                    if (meshName.includes('head') || meshName.includes('face') ||
+                        meshName.includes('eye') || materialName.includes('head') ||
+                        materialName.includes('face') || materialName.includes('eye')) {
+
+                        console.log(`🎯 Applying ${colorToTest} texture to: ${child.name} (${child.material.name})`);
+
+                        const newMaterial = child.material.clone();
+                        newMaterial.map = eyeTexture;
+                        newMaterial.needsUpdate = true;
+                        newMaterial.metalness = 0.0;
+                        newMaterial.roughness = 0.0;
+                        newMaterial.transparent = false;
+                        newMaterial.opacity = 1.0;
+
+                        if (newMaterial.isMeshPhongMaterial || newMaterial.isMeshLambertMaterial) {
+                            newMaterial.shininess = 100;
+                        }
+
+                        child.material = newMaterial;
+                        appliedCount++;
+                    }
+                }
+            });
+
+            console.log(`✅ Applied ${colorToTest} eye texture to ${appliedCount} materials`);
+        } else {
+            console.error(`❌ Failed to load ${colorToTest} eye texture`);
+        }
+    }
+
+    createTestFallbackEyes() {
+        if (!this.avatarModel) {
+            console.error('❌ No avatar model loaded');
+            return;
+        }
+
+        console.log('🔧 Creating test fallback eyes with texture...');
+
+        const texturePath = this.eyeTextures[this.config.eyeColor];
+
+        this.textureLoader.load(texturePath, (texture) => {
+            texture.flipY = false;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+
+            const eyeGeometry = new THREE.SphereGeometry(0.04, 16, 16);
+            const eyeMaterial = new THREE.MeshPhongMaterial({
+                map: texture,
+                transparent: false,
+                metalness: 0.0,
+                roughness: 0.0,
+                shininess: 100
+            });
+
+            const existingTestEyes = this.avatarModel.children.filter(child =>
+                child.name && child.name.includes('test_eye'));
+            existingTestEyes.forEach(eye => this.avatarModel.remove(eye));
+
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.04, 1.65, 0.09);
+            leftEye.name = 'test_left_eye';
+
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial.clone());
+            rightEye.position.set(0.04, 1.65, 0.09);
+            rightEye.name = 'test_right_eye';
+
+            this.avatarModel.add(leftEye);
+            this.avatarModel.add(rightEye);
+
+            console.log('✅ Test fallback eyes created with texture (no roughness)');
+            console.log('👁️ Look at your avatar - you should see glossy textured eye spheres');
+        }, undefined, (error) => {
+            console.error('❌ Failed to load texture for test eyes:', error);
+        });
     }
 
     loadFallbackAvatar() {
@@ -541,7 +794,6 @@ class CustomizableGLBAvatarManager {
         console.log('✅ Fallback avatar created');
     }
 
-    // Clothing management
     clearAllClothing() {
         console.log('🗑️ Clearing all clothing items...');
         this.clothingItems.forEach((item, id) => {
@@ -563,7 +815,6 @@ class CustomizableGLBAvatarManager {
         return false;
     }
 
-    // Animation loop
     animate() {
         requestAnimationFrame(() => this.animate());
 
@@ -576,7 +827,6 @@ class CustomizableGLBAvatarManager {
         }
     }
 
-    // Window resize handler
     onWindowResize() {
         if (!this.camera || !this.renderer) return;
 
@@ -590,49 +840,12 @@ class CustomizableGLBAvatarManager {
         console.log(`📐 Resized to: ${width}x${height}`);
     }
 
-    // Debug method to list all materials
-    debugMaterials() {
-        if (!this.avatarModel) {
-            console.log('❌ No avatar loaded');
-            return;
-        }
-
-        console.log('🔍 Avatar materials debug:');
-        this.avatarModel.traverse((child) => {
-            if (child.isMesh && child.material) {
-                console.log(`- ${child.name || 'unnamed'}: ${child.material.type}`, child.material);
-            }
-        });
-    }
-
-    // Get expected file list for directory structure
-    getExpectedFiles() {
-        const genders = ['female', 'male'];
-        const bodySizes = ['xs', 's', 'm', 'l', 'xl'];
-        const heights = ['short', 'medium', 'tall'];
-
-        const files = [];
-
-        genders.forEach(gender => {
-            bodySizes.forEach(bodySize => {
-                heights.forEach(height => {
-                    const fileName = `${bodySize}_${height}.glb`;
-                    const fullPath = `/static/models/makehuman/bodies/${gender}/${fileName}`;
-                    files.push({
-                        gender,
-                        bodySize,
-                        height,
-                        fileName,
-                        fullPath
-                    });
-                });
-            });
-        });
-
-        return files;
-    }
-
     cleanup() {
+        this.loadedTextures.forEach((texture) => {
+            texture.dispose();
+        });
+        this.loadedTextures.clear();
+
         if (this.renderer) {
             this.renderer.dispose();
         }
@@ -650,6 +863,6 @@ class GLBAvatarManager extends CustomizableGLBAvatarManager {
 // Make globally available
 window.CustomizableGLBAvatarManager = CustomizableGLBAvatarManager;
 window.GLBAvatarManager = GLBAvatarManager;
-window.MakeHumanAvatarManager = CustomizableGLBAvatarManager; // Default to GLB version
+window.MakeHumanAvatarManager = CustomizableGLBAvatarManager;
 
-console.log('✅ GLB Avatar Manager classes loaded successfully');
+console.log('✅ Enhanced GLB Avatar Manager with Eye Textures loaded successfully');
