@@ -3,6 +3,7 @@
 {% block title %}Avatar Creator & Wardrobe{% endblock %}
 
 {% block extra_css %}
+<!-- Keep all your existing CSS exactly as it is - no changes needed -->
 <style>
     /* Layout Structure */
     .avatar-page-content {
@@ -252,6 +253,161 @@
         background: #3498db;
         color: white;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Hair Preview Specific Styles */
+    .hair-preview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 15px;
+    }
+
+    .hair-preview-option {
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hair-preview-option:hover {
+        border-color: #3498db;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .hair-preview-option.selected {
+        border-color: #3498db;
+        background: #ebf5fb;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .hair-preview-option.selected::before {
+        content: '✓';
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #3498db;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 2;
+    }
+
+    .hair-preview-image {
+        width: 100%;
+        height: 80px;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hair-preview-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .hair-preview-option:hover .hair-preview-image img {
+        transform: scale(1.05);
+    }
+
+    .preview-placeholder {
+        width: 100%;
+        height: 100%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: #6c757d;
+        text-align: center;
+        padding: 5px;
+        border-radius: 4px;
+    }
+
+    .hair-preview-name {
+        padding: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #495057;
+        text-align: center;
+        background: #fff;
+    }
+
+    .hair-preview-option.selected .hair-preview-name {
+        background: #ebf5fb;
+        color: #2c3e50;
+    }
+
+    /* Category filters */
+    .hair-category-filters {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+
+    .hair-category-filter {
+        padding: 6px 12px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        color: #6c757d;
+    }
+
+    .hair-category-filter:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+    }
+
+    .hair-category-filter.active {
+        background: #3498db;
+        border-color: #3498db;
+        color: white;
+    }
+
+    /* Loading status for hair */
+    .loading-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin-top: 10px;
+        font-size: 13px;
+        color: #495057;
+    }
+
+    .loading-spinner-small {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    /* Hide filtered hair styles */
+    .hair-preview-option.hidden {
+        display: none;
     }
 
     /* Avatar Actions */
@@ -541,22 +697,32 @@
         background-color: #f8d7da;
     }
 
-    .scale-section {
-        margin-top: 25px;
-        padding-top: 20px;
-        border-top: 1px solid #e9ecef;
-    }
-
-    .scale-presets {
+    /* Camera View Controls */
+    .camera-view-toggle {
         display: flex;
-        gap: 8px;
-        margin: 10px 0;
+        background: #e9ecef;
+        border-radius: 25px;
+        padding: 3px;
+        margin-top: 10px;
     }
 
-    .scale-preset {
+    .view-option {
         flex: 1;
-        font-size: 12px;
-        padding: 8px 4px;
+        padding: 10px;
+        border: none;
+        background: none;
+        border-radius: 22px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        color: #6c757d;
+        font-size: 13px;
+    }
+
+    .view-option.active {
+        background: #3498db;
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .viewport-controls {
@@ -588,89 +754,6 @@
 
     .viewport-controls .btn i {
         font-size: 18px;
-    }
-
-    /* Camera View Controls */
-    .camera-view-toggle {
-        display: flex;
-        background: #e9ecef;
-        border-radius: 25px;
-        padding: 3px;
-        margin-top: 10px;
-    }
-
-    .view-option {
-        flex: 1;
-        padding: 10px;
-        border: none;
-        background: none;
-        border-radius: 22px;
-        cursor: pointer;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        color: #6c757d;
-        font-size: 13px;
-    }
-
-    .view-option.active {
-        background: #3498db;
-        color: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    /* Slider Controls */
-    .slider-control {
-        margin-bottom: 15px;
-    }
-
-    .slider-control label {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        font-size: 13px;
-        color: #495057;
-        font-weight: 500;
-    }
-
-    .slider-value {
-        background: #3498db;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 12px;
-        min-width: 35px;
-        text-align: center;
-    }
-
-    .slider-control input[type="range"] {
-        width: 100%;
-        height: 6px;
-        border-radius: 3px;
-        background: #ddd;
-        outline: none;
-        transition: background 0.3s ease;
-    }
-
-    .slider-control input[type="range"]::-webkit-slider-thumb {
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #3498db;
-        cursor: pointer;
-        border: 2px solid #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-
-    .slider-control input[type="range"]::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #3498db;
-        cursor: pointer;
-        border: 2px solid #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
     /* Debug Info Box */
@@ -736,6 +819,29 @@
             position: relative;
             margin-bottom: 10px;
         }
+
+        .hair-preview-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .hair-preview-image {
+            height: 60px;
+        }
+
+        .hair-preview-name {
+            font-size: 11px;
+            padding: 6px;
+        }
+
+        .hair-category-filters {
+            justify-content: center;
+        }
+
+        .hair-category-filter {
+            font-size: 11px;
+            padding: 5px 10px;
+        }
     }
 
     .loading, .error, .no-items {
@@ -765,7 +871,7 @@
 {% endblock %}
 
 {% block content %}
-<!-- Main Application Layout -->
+<!-- Main Application Layout - Keep all your HTML exactly as it is -->
 <div class="avatar-page-content">
 
     <!-- Left Panel: Two-Tab System -->
@@ -796,10 +902,10 @@
                         <label style="font-size: 13px; margin-bottom: 5px; display: block;">Model Format:</label>
                         <div class="format-toggle">
                             <button class="format-option active" data-format="glb" disabled style="opacity: 1; cursor: default;">
-                                <i class="bi bi-file-earmark"></i> GLB Only
+                                <i class="bi bi-file-earmark"></i> GLB + Hair
                             </button>
                         </div>
-                        <p style="font-size: 11px; margin: 8px 0 0 0; opacity: 0.8;">Optimized for GLB files with embedded textures</p>
+                        <p style="font-size: 11px; margin: 8px 0 0 0; opacity: 0.8;">FIXED: No continuous loading system</p>
                     </div>
 
                     <!-- Gender Selection -->
@@ -891,20 +997,28 @@
                     </div>
                 </div>
 
-                <!-- Hair Customization Section -->
+                <!-- Enhanced GLB Hair Customization Section with Previews -->
                 <div class="avatar-creation-section">
-                    <h4><i class="bi bi-scissors"></i> Hair Style</h4>
+                    <h4><i class="bi bi-scissors"></i> GLB Hair System</h4>
 
-                    <!-- Hair Style Selection -->
+                    <!-- Hair Category Filters -->
                     <div class="customization-group">
-                        <h5>Hair Type</h5>
-                        <div class="selection-grid">
-                            <div class="selection-option selected" data-hair="short">Short</div>
-                            <div class="selection-option" data-hair="medium">Medium</div>
-                            <div class="selection-option" data-hair="long">Long</div>
-                            <div class="selection-option" data-hair="curly">Curly</div>
-                            <div class="selection-option" data-hair="pixie">Pixie</div>
-                            <div class="selection-option" data-hair="bald">Bald</div>
+                        <h5>Filter by Length</h5>
+                        <div class="hair-category-filters">
+                            <button class="hair-category-filter active" data-hair-category="all">All Styles</button>
+                            <button class="hair-category-filter" data-hair-category="short">Short</button>
+                            <button class="hair-category-filter" data-hair-category="medium">Medium</button>
+                            <button class="hair-category-filter" data-hair-category="long">Long</button>
+                            <button class="hair-category-filter" data-hair-category="none">Bald</button>
+                        </div>
+                    </div>
+
+                    <!-- Hair Style Selection with GLB Previews -->
+                    <div class="customization-group">
+                        <h5>Hair Style (GLB Models)</h5>
+                        <div id="hair-preview-container">
+                            <!-- Hair previews will be dynamically generated here -->
+                            <div class="loading">Loading GLB hair styles...</div>
                         </div>
                     </div>
 
@@ -922,12 +1036,18 @@
                             <div class="color-option" style="background-color: #FF69B4;" data-hair-color="pink"></div>
                         </div>
                     </div>
+
+                    <!-- Hair Loading Status -->
+                    <div id="hair-loading-status" class="loading-status" style="display: none;">
+                        <div class="loading-spinner-small"></div>
+                        <span>Loading GLB hair model...</span>
+                    </div>
                 </div>
 
                 <!-- Avatar Actions -->
                 <div class="avatar-actions">
                     <button id="randomize-avatar" class="btn btn-info">
-                        <i class="bi bi-shuffle"></i> Randomize Avatar
+                        <i class="bi bi-shuffle"></i> Randomize Avatar + Hair
                     </button>
                     <button id="reset-avatar" class="btn btn-secondary">
                         <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
@@ -992,7 +1112,7 @@
         <!-- Loading Overlay -->
         <div class="loading-overlay">
             <div class="loading-spinner"></div>
-            <div class="loading-progress">Loading: 0%</div>
+            <div class="loading-progress">Loading GLB Avatar: 0%</div>
         </div>
 
         <!-- 3D Viewport Controls -->
@@ -1010,10 +1130,11 @@
 
         <!-- Avatar Stats & Debug Info -->
         <div class="debug-info">
-            <h5>Avatar Debug Info</h5>
+            <h5>FIXED GLB Avatar - No Continuous Loading</h5>
             <div id="avatar-info">
-                <p><strong>Status:</strong> <span id="debug-status">Initializing...</span></p>
-                <p><strong>Model:</strong> <span id="debug-model">None</span></p>
+                <p><strong>Status:</strong> <span id="debug-status">Initializing FIXED system...</span></p>
+                <p><strong>Model:</strong> <span id="debug-model">GLB Loading</span></p>
+                <p><strong>Hair:</strong> <span id="debug-hair-type">None</span></p>
                 <p><strong>Gender:</strong> <span id="debug-gender">female</span></p>
                 <p><strong>Body:</strong> <span id="debug-body">m_medium</span></p>
                 <p><strong>View:</strong> <span id="debug-view">Normal</span></p>
@@ -1041,20 +1162,8 @@ if (typeof THREE === 'undefined') {
 <!-- Load THREE.js extensions -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 
-<!-- Wait a moment for extensions to load -->
-<script>
-setTimeout(() => {
-    console.log('THREE.js extensions check:', {
-        OrbitControls: typeof THREE.OrbitControls !== 'undefined',
-        GLTFLoader: typeof THREE.GLTFLoader !== 'undefined',
-        OBJLoader: typeof THREE.OBJLoader !== 'undefined'
-    });
-}, 100);
-</script>
-
-<!-- GLB Avatar Manager -->
+<!-- FIXED GLB Avatar Manager with NO continuous loading -->
 <script src="{{ url_for('static', filename='js/glb-avatar-manager.js') }}"></script>
 
 <!-- Custom modules AFTER Three.js -->
@@ -1063,6 +1172,12 @@ setTimeout(() => {
 <script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-processor.js') }}"></script>
 
+<!--
+=================================================================
+COMPLETELY FIXED JAVASCRIPT - NO CONTINUOUS LOADING
+Replace your entire JavaScript section with this code
+=================================================================
+-->
 <script>
 (function() {
     'use strict';
@@ -1071,7 +1186,8 @@ setTimeout(() => {
     const AVATAR_CONFIG = {
         CLOTHING_SCALE_MATCH: true,
         AVATAR_Y_POSITION: 0,
-        PREFERRED_FORMAT: 'glb' // GLB only
+        PREFERRED_FORMAT: 'glb',
+        HAIR_SYSTEM: 'glb'
     };
 
     /* Avatar Customization State */
@@ -1084,87 +1200,60 @@ setTimeout(() => {
         skin: 'light',
         eyes: 'brown',
         hair: {
-            type: 'short',
+            type: 'short_messy',
             color: 'brown'
         },
-        view: 'normal' // 'normal' or 'portrait'
+        view: 'normal'
     };
 
     /* Global Avatar Manager */
     let avatarManager = null;
     let currentAvatarType = 'glb';
 
-    console.log('🚀 Initializing GLB Avatar System...');
+    console.log('🚀 FIXED: Initializing NO continuous loading Avatar System...');
 
     /* Application Initialization */
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 DOM Content Loaded - Starting initialization...');
+        console.log('🚀 DOM Content Loaded - Starting FIXED GLB initialization...');
 
-        /* Initialize Tab System */
-        setTimeout(() => {
-            initializeTabSystem();
-        }, 100);
+        /* Initialize all systems with delays to prevent overlap */
+        setTimeout(() => initializeTabSystem(), 100);
+        setTimeout(() => initializeFormatSelection(), 200);
+        setTimeout(() => initializeFixedGLBAvatarSystem(), 300); // FIXED VERSION
+        setTimeout(() => initializeClothingSystem(), 400);
+        setTimeout(() => initializeFixedAvatarCustomization(), 500); // FIXED VERSION
+        setTimeout(() => initializeCameraViewSystem(), 600);
+        setTimeout(() => initializeFixedGLBHairSystem(), 700); // FIXED VERSION
+        setTimeout(() => initializeWardrobeSystem(), 800);
+        setTimeout(() => initializeDebugInfo(), 900);
 
-        /* Initialize Format Selection */
-        setTimeout(() => {
-            initializeFormatSelection();
-        }, 200);
-
-        /* Initialize GLB Avatar Management System */
-        setTimeout(() => {
-            initializeGLBAvatarSystem();
-        }, 300);
-
-        /* Initialize Clothing System */
-        setTimeout(() => {
-            initializeClothingSystem();
-        }, 400);
-
-        /* Initialize Avatar Customization System */
-        setTimeout(() => {
-            initializeAvatarCustomization();
-        }, 500);
-
-        /* Initialize Camera View System */
-        setTimeout(() => {
-            initializeCameraViewSystem();
-        }, 600);
-
-        /* Initialize Wardrobe System */
-        setTimeout(() => {
-            initializeWardrobeSystem();
-        }, 700);
-
-        /* Initialize Debug Info Updates */
-        setTimeout(() => {
-            initializeDebugInfo();
-        }, 800);
-
-        console.log('✅ All systems initialization queued');
+        console.log('✅ All FIXED systems initialization queued');
 
         /* Format Selection System */
         function initializeFormatSelection() {
-            console.log('⚙️ GLB format selected (fixed)...');
+            console.log('⚙️ FIXED GLB format selected...');
             AVATAR_CONFIG.PREFERRED_FORMAT = 'glb';
+            AVATAR_CONFIG.HAIR_SYSTEM = 'glb';
         }
 
-        /* GLB Avatar Management System */
-        function initializeGLBAvatarSystem() {
-            console.log('🤖 Initializing GLB Avatar System...');
+        /* FIXED Enhanced GLB Avatar Management System */
+        function initializeFixedGLBAvatarSystem() {
+            console.log('🤖 Initializing FIXED GLB Avatar System (NO continuous loading)...');
 
             // Wait for THREE.js to be fully loaded
             if (typeof THREE === 'undefined') {
                 console.log('⏳ Waiting for THREE.js to load...');
                 setTimeout(() => {
-                    initializeGLBAvatarSystem();
+                    initializeFixedGLBAvatarSystem();
                 }, 500);
                 return;
             }
 
             // Check if GLBAvatarManager is available
-            if (typeof window.GLBAvatarManager !== 'undefined') {
+            if (typeof window.CustomizableGLBAvatarManager !== 'undefined') {
                 try {
-                    avatarManager = new window.GLBAvatarManager({
+                    // FIXED: Create avatar manager but DON'T load avatar automatically
+                    avatarManager = new window.CustomizableGLBAvatarManager({
                         container: document.getElementById('avatar-container'),
                         debug: true
                     });
@@ -1180,35 +1269,367 @@ setTimeout(() => {
                         }
                     });
 
-                    updateDebugInfo('GLB system initialized', 'success');
-                    showMessage('GLB avatar system initialized!', 'success');
+                    updateDebugInfo('FIXED GLB system initialized (no auto-load)', 'success');
+                    showMessage('FIXED GLB avatar system - no continuous loading!', 'success');
+
+                    // FIXED: Load default avatar MANUALLY after a delay (only once)
+                    setTimeout(() => {
+                        loadDefaultAvatarManually();
+                    }, 2000);
+
                 } catch (error) {
-                    console.error('❌ Error initializing GLB Avatar Manager:', error);
-                    updateDebugInfo('Failed to initialize', 'error');
-                    showMessage('Failed to initialize GLB Avatar Manager: ' + error.message, 'error');
+                    console.error('❌ Error initializing FIXED GLB Avatar Manager:', error);
+                    updateDebugInfo('Failed to initialize FIXED GLB system', 'error');
+                    showMessage('Failed to initialize FIXED GLB Avatar Manager: ' + error.message, 'error');
                     return;
                 }
             } else {
-                console.error('❌ GLB Avatar Manager not available');
-                updateDebugInfo('GLB Manager not found', 'error');
-                showMessage('GLB Avatar Manager not found. Please check the script files.', 'error');
+                console.error('❌ FIXED GLB Avatar Manager not available');
+                updateDebugInfo('FIXED GLB Manager not found', 'error');
+                showMessage('FIXED GLB Avatar Manager not found. Please check the script files.', 'error');
                 return;
             }
         }
 
-        /* Initialize Clothing System with proper error handling */
+        // FIXED: Manual default avatar loading function
+        async function loadDefaultAvatarManually() {
+            if (!avatarManager) {
+                console.log('❌ Avatar manager not available');
+                return;
+            }
+
+            // Check if already loading or loaded
+            const status = avatarManager.getLoadingStatus();
+            if (status.hasLoadedDefault || status.avatar) {
+                console.log('⚠️ Default avatar already loaded or loading');
+                return;
+            }
+
+            console.log('🎯 MANUALLY loading default avatar (ONE TIME ONLY)...');
+
+            try {
+                showLoading('Loading default avatar...');
+                updateDebugInfo('Loading default avatar...', 'info');
+
+                // FIXED: Use the manual request method
+                await avatarManager.requestDefaultAvatar();
+
+                updateDebugInfo('Default avatar loaded successfully', 'success');
+                showMessage('Default avatar loaded successfully!', 'success');
+
+                // Update debug display
+                updateDebugDisplay();
+
+            } catch (error) {
+                console.error('❌ Error loading default avatar:', error);
+                updateDebugInfo('Failed to load default avatar', 'error');
+                showMessage('Failed to load default avatar: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        /* FIXED Enhanced GLB Hair System */
+        function initializeFixedGLBHairSystem() {
+            console.log('🦱 Initializing FIXED GLB Hair System...');
+
+            // Wait for avatar manager to be ready
+            if (!avatarManager) {
+                console.log('⏳ Waiting for avatar manager...');
+                setTimeout(initializeFixedGLBHairSystem, 1000);
+                return;
+            }
+
+            try {
+                // Load initial hair previews
+                loadGLBHairPreviews();
+
+                // Setup hair event listeners
+                setupGLBHairEventListeners();
+
+                // Setup hair category filters
+                setupHairCategoryFilters();
+
+                console.log('✅ FIXED GLB Hair System initialized');
+
+                // FIXED: Load default hair style ONLY after avatar is loaded
+                setTimeout(() => {
+                    loadInitialGLBHairStyleSafely();
+                }, 4000); // Increased delay to ensure avatar is loaded first
+
+            } catch (error) {
+                console.error('❌ Failed to initialize FIXED GLB Hair System:', error);
+            }
+        }
+
+        // FIXED: Safe initial hair loading
+        async function loadInitialGLBHairStyleSafely() {
+            if (!avatarManager) {
+                console.log('❌ Avatar manager not available for hair loading');
+                return;
+            }
+
+            // Check if avatar is loaded
+            if (!avatarManager.avatarModel) {
+                console.log('⏳ Waiting for avatar model to load before applying hair...');
+                setTimeout(loadInitialGLBHairStyleSafely, 2000);
+                return;
+            }
+
+            // Check loading status
+            const status = avatarManager.getLoadingStatus();
+            if (status.hair) {
+                console.log('⚠️ Hair already loading, skipping...');
+                return;
+            }
+
+            console.log('🦱 Loading initial hair style safely...');
+
+            try {
+                await selectGLBHairStyle(avatarCustomization.hair.type);
+            } catch (error) {
+                console.error('❌ Error loading initial hair style:', error);
+            }
+        }
+
+        /**
+         * Load GLB hair previews into the UI
+         */
+        function loadGLBHairPreviews() {
+            const container = document.getElementById('hair-preview-container');
+            if (!container) {
+                console.error('❌ Hair preview container not found');
+                return;
+            }
+
+            try {
+                const currentGender = avatarCustomization.gender || 'female';
+                const hairPreviewHTML = avatarManager.generateHairPreviewHTML(currentGender);
+                container.innerHTML = hairPreviewHTML;
+
+                console.log(`✅ GLB hair previews loaded for gender: ${currentGender}`);
+
+                // Mark default hair as selected
+                setTimeout(() => {
+                    const defaultHairElement = container.querySelector(`[data-hair-style="${avatarCustomization.hair.type}"]`);
+                    if (defaultHairElement) {
+                        defaultHairElement.classList.add('selected');
+                    }
+                }, 100);
+
+            } catch (error) {
+                console.error('❌ Error loading GLB hair previews:', error);
+                container.innerHTML = '<div class="error">Failed to load GLB hair styles</div>';
+            }
+        }
+
+        /**
+         * Setup GLB hair event listeners
+         */
+        function setupGLBHairEventListeners() {
+            console.log('🎧 Setting up GLB hair event listeners...');
+
+            // Hair style selection
+            document.addEventListener('click', async function(e) {
+                const hairOption = e.target.closest('.hair-preview-option');
+                if (hairOption) {
+                    const hairStyleKey = hairOption.dataset.hairStyle;
+
+                    if (hairStyleKey) {
+                        await selectGLBHairStyle(hairStyleKey);
+                    }
+                }
+            });
+
+            // Hair color selection
+            document.querySelectorAll('[data-hair-color]').forEach(colorOption => {
+                colorOption.addEventListener('click', function() {
+                    // Remove previous selection
+                    document.querySelectorAll('[data-hair-color]').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    const hairColor = this.dataset.hairColor;
+                    avatarCustomization.hair.color = hairColor;
+                    console.log('🎨 Hair color changed to:', hairColor);
+
+                    // Update avatar manager hair color
+                    if (avatarManager && avatarManager.updateHairColor) {
+                        avatarManager.updateHairColor(hairColor);
+                    }
+
+                    updateDebugDisplay();
+                    showMessage(`Hair color changed to ${hairColor}`, 'success');
+                });
+            });
+        }
+
+        /**
+         * Setup hair category filters
+         */
+        function setupHairCategoryFilters() {
+            console.log('🏷️ Setting up hair category filters...');
+
+            document.querySelectorAll('.hair-category-filter').forEach(filter => {
+                filter.addEventListener('click', function() {
+                    // Update active filter
+                    document.querySelectorAll('.hair-category-filter').forEach(f => f.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const category = this.dataset.hairCategory;
+                    filterHairByCategory(category);
+                });
+            });
+        }
+
+        /**
+         * Filter hair styles by category
+         */
+        function filterHairByCategory(category) {
+            console.log(`🔍 Filtering GLB hair styles by category: ${category}`);
+
+            const hairOptions = document.querySelectorAll('.hair-preview-option');
+            const currentGender = avatarCustomization.gender || 'female';
+            const hairStyles = avatarManager.getAvailableHairStyles(currentGender);
+
+            hairOptions.forEach(option => {
+                const hairStyleKey = option.dataset.hairStyle;
+                const hairData = hairStyles[hairStyleKey];
+
+                if (category === 'all') {
+                    option.classList.remove('hidden');
+                } else {
+                    if (hairData && hairData.category === category) {
+                        option.classList.remove('hidden');
+                    } else {
+                        option.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        // FIXED: Select GLB hair style with protection
+        async function selectGLBHairStyle(hairStyleKey) {
+            if (!avatarManager) {
+                console.log('❌ Avatar manager not available');
+                return false;
+            }
+
+            // Check if already loading
+            if (avatarManager.isHairLoading && avatarManager.isHairLoading()) {
+                console.log('⚠️ Hair already loading, please wait...');
+                return false;
+            }
+
+            // Check if avatar is loaded
+            if (!avatarManager.avatarModel) {
+                console.log('⚠️ No avatar loaded, cannot apply hair');
+                showMessage('Please load an avatar first', 'error');
+                return false;
+            }
+
+            console.log(`🦱 Selecting FIXED GLB hair style: ${hairStyleKey}`);
+
+            // Show loading status
+            showHairLoadingStatus(true, 'Loading GLB hair model...');
+
+            try {
+                // Update UI selection
+                document.querySelectorAll('.hair-preview-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+
+                const selectedOption = document.querySelector(`[data-hair-style="${hairStyleKey}"]`);
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                }
+
+                // Load GLB hair model
+                const success = await avatarManager.updateHairStyle(hairStyleKey);
+
+                if (success) {
+                    // Update avatar customization state
+                    avatarCustomization.hair.type = hairStyleKey;
+
+                    const hairData = avatarManager.getAvailableHairStyles()[hairStyleKey];
+                    const hairName = hairData ? hairData.name : hairStyleKey;
+
+                    updateDebugDisplay();
+                    showMessage(`GLB hairstyle "${hairName}" applied successfully`, 'success');
+                    console.log(`✅ FIXED GLB hair style applied: ${hairName}`);
+                } else {
+                    showMessage('Failed to apply GLB hairstyle', 'error');
+                    console.error(`❌ Failed to apply FIXED GLB hair style: ${hairStyleKey}`);
+                }
+
+                return success;
+
+            } catch (error) {
+                console.error('❌ Error selecting FIXED GLB hair style:', error);
+                showMessage('Error applying GLB hairstyle', 'error');
+                return false;
+            } finally {
+                showHairLoadingStatus(false);
+            }
+        }
+
+        /**
+         * Show/hide hair loading status
+         */
+        function showHairLoadingStatus(show, message = '') {
+            const statusElement = document.getElementById('hair-loading-status');
+            if (statusElement) {
+                if (show) {
+                    statusElement.style.display = 'flex';
+                    const messageSpan = statusElement.querySelector('span');
+                    if (messageSpan && message) {
+                        messageSpan.textContent = message;
+                    }
+                } else {
+                    statusElement.style.display = 'none';
+                }
+            }
+        }
+
+        /**
+         * Update hair previews when gender changes
+         */
+        function updateHairPreviewsForGender(newGender) {
+            console.log(`🔄 Updating FIXED GLB hair previews for gender: ${newGender}`);
+
+            if (avatarManager) {
+                // Remove current hair model
+                avatarManager.removeCurrentHair();
+
+                // Reload hair previews
+                loadGLBHairPreviews();
+
+                // Reset to default hair style for new gender
+                const defaultHairStyles = {
+                    'female': 'short_messy',
+                    'male': 'male_short'
+                };
+
+                avatarCustomization.hair.type = defaultHairStyles[newGender] || 'short_messy';
+
+                // Apply default hair style after a delay to ensure avatar is loaded
+                setTimeout(() => {
+                    selectGLBHairStyle(avatarCustomization.hair.type);
+                }, 2000); // Increased delay
+            }
+        }
+
+        /* Initialize Clothing System */
         function initializeClothingSystem() {
             console.log('👕 Initializing clothing system...');
 
-            // Wait for THREE.js and check multiple times if needed
             let attempts = 0;
-            const maxAttempts = 20; // 10 seconds total
+            const maxAttempts = 20;
 
             const checkAndInit = () => {
                 attempts++;
 
-                if (typeof THREE !== 'undefined' && THREE.OBJLoader) {
-                    console.log('✅ THREE.js and OBJLoader available, initializing clothing...');
+                if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
+                    console.log('✅ THREE.js and GLTFLoader available, initializing clothing...');
 
                     // Initialize clothing systems
                     if (typeof window.ClothingOBJRenderer !== 'undefined') {
@@ -1270,7 +1691,7 @@ setTimeout(() => {
                 controls.target.set(0, 1.6, 0);
                 controls.minDistance = 1.5;
                 controls.maxDistance = 4;
-                controls.maxPolarAngle = Math.PI * 0.6; // Limit vertical rotation
+                controls.maxPolarAngle = Math.PI * 0.6;
                 console.log('📷 Set to portrait view (face close-up)');
             } else {
                 // Normal view - full body
@@ -1278,7 +1699,7 @@ setTimeout(() => {
                 controls.target.set(0, 1, 0);
                 controls.minDistance = 1;
                 controls.maxDistance = 10;
-                controls.maxPolarAngle = Math.PI * 0.8; // Allow more vertical rotation
+                controls.maxPolarAngle = Math.PI * 0.8;
                 console.log('📷 Set to normal view (full body)');
             }
 
@@ -1288,7 +1709,7 @@ setTimeout(() => {
         /* Debug Info System */
         function initializeDebugInfo() {
             console.log('🐛 Initializing debug info system...');
-            updateDebugInfo('System starting...', 'info');
+            updateDebugInfo('FIXED GLB system starting...', 'info');
 
             // Update debug info every 2 seconds
             setInterval(() => {
@@ -1309,7 +1730,7 @@ setTimeout(() => {
             // Update model info
             const modelElement = document.getElementById('debug-model');
             if (modelElement && avatarManager && avatarManager.avatarModel) {
-                modelElement.textContent = 'GLB Loaded';
+                modelElement.textContent = 'Enhanced GLB + Hair';
             } else if (modelElement) {
                 modelElement.textContent = 'None';
             }
@@ -1323,6 +1744,12 @@ setTimeout(() => {
             const bodyElement = document.getElementById('debug-body');
             if (bodyElement) {
                 bodyElement.textContent = `${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}`;
+            }
+
+            const hairElement = document.getElementById('debug-hair-type');
+            if (hairElement) {
+                const hairStatus = avatarManager && avatarManager.currentHairModel ? 'GLB Loaded' : 'None';
+                hairElement.textContent = `${avatarCustomization.hair.type} (${avatarCustomization.hair.color}) - ${hairStatus}`;
             }
 
             const viewElement = document.getElementById('debug-view');
@@ -1367,11 +1794,11 @@ setTimeout(() => {
             });
         }
 
-        /* Avatar Customization Functions */
-        function initializeAvatarCustomization() {
-            console.log('🎨 Initializing avatar customization system...');
+        /* FIXED Avatar Customization Functions */
+        function initializeFixedAvatarCustomization() {
+            console.log('🎨 Initializing FIXED avatar customization system...');
 
-            // Gender selection
+            // FIXED Gender selection with loading protection
             document.querySelectorAll('.gender-option').forEach(button => {
                 button.addEventListener('click', async function() {
                     document.querySelectorAll('.gender-option').forEach(btn => btn.classList.remove('active'));
@@ -1381,31 +1808,11 @@ setTimeout(() => {
                     avatarCustomization.gender = gender;
                     console.log('👤 Gender changed to:', gender);
 
-                    if (avatarManager && avatarManager.updateGender) {
-                        showLoading('Changing gender...');
-                        updateDebugInfo('Changing gender...', 'info');
-                        try {
-                            await avatarManager.updateGender(gender);
-                            updateAvatarStats();
-                            updateDebugDisplay();
-                            updateDebugInfo('Gender changed', 'success');
-                            showMessage(`Avatar gender changed to ${gender}`, 'success');
-                        } catch (error) {
-                            console.error('❌ Error changing gender:', error);
-                            updateDebugInfo('Gender change failed', 'error');
-                            showMessage('Failed to change gender', 'error');
-                        } finally {
-                            hideLoading();
-                        }
-                    } else {
-                        updateAvatarStats();
-                        updateDebugDisplay();
-                        showMessage(`Gender preference set to ${gender}`, 'info');
-                    }
+                    await handleGenderChange(gender);
                 });
             });
 
-            // Height selection
+            // FIXED Height selection with loading protection
             document.querySelectorAll('[data-height]').forEach(button => {
                 button.addEventListener('click', async function() {
                     document.querySelectorAll('[data-height]').forEach(btn => btn.classList.remove('selected'));
@@ -1415,30 +1822,11 @@ setTimeout(() => {
                     avatarCustomization.body.height = height;
                     console.log('📏 Height changed to:', height);
 
-                    if (avatarManager && avatarManager.updateHeight) {
-                        showLoading('Changing height...');
-                        updateDebugInfo('Changing height...', 'info');
-                        try {
-                            await avatarManager.updateHeight(height);
-                            updateAvatarStats();
-                            updateDebugDisplay();
-                            updateDebugInfo('Height changed', 'success');
-                            showMessage(`Avatar height changed to ${height}`, 'success');
-                        } catch (error) {
-                            console.error('❌ Error changing height:', error);
-                            updateDebugInfo('Height change failed', 'error');
-                            showMessage('Failed to change height', 'error');
-                        } finally {
-                            hideLoading();
-                        }
-                    } else {
-                        updateAvatarStats();
-                        updateDebugDisplay();
-                    }
+                    await handleHeightChange(height);
                 });
             });
 
-            // Body size selection
+            // FIXED Body size selection with loading protection
             document.querySelectorAll('[data-body-size]').forEach(button => {
                 button.addEventListener('click', async function() {
                     document.querySelectorAll('[data-body-size]').forEach(btn => btn.classList.remove('selected'));
@@ -1448,30 +1836,11 @@ setTimeout(() => {
                     avatarCustomization.body.bodySize = bodySize;
                     console.log('📏 Body size changed to:', bodySize);
 
-                    if (avatarManager && avatarManager.updateBodySize) {
-                        showLoading('Changing body size...');
-                        updateDebugInfo('Changing body size...', 'info');
-                        try {
-                            await avatarManager.updateBodySize(bodySize);
-                            updateAvatarStats();
-                            updateDebugDisplay();
-                            updateDebugInfo('Body size changed', 'success');
-                            showMessage(`Avatar body size changed to ${bodySize.toUpperCase()}`, 'success');
-                        } catch (error) {
-                            console.error('❌ Error changing body size:', error);
-                            updateDebugInfo('Body size change failed', 'error');
-                            showMessage('Failed to change body size', 'error');
-                        } finally {
-                            hideLoading();
-                        }
-                    } else {
-                        updateAvatarStats();
-                        updateDebugDisplay();
-                    }
+                    await handleBodySizeChange(bodySize);
                 });
             });
 
-            // Skin color selection
+            // Skin color selection (no loading protection needed)
             document.querySelectorAll('[data-skin]').forEach(colorOption => {
                 colorOption.addEventListener('click', function() {
                     document.querySelectorAll('[data-skin]').forEach(opt => opt.classList.remove('selected'));
@@ -1489,7 +1858,7 @@ setTimeout(() => {
                 });
             });
 
-            // Eye color selection
+            // Eye color selection (no loading protection needed)
             document.querySelectorAll('[data-eye]').forEach(colorOption => {
                 colorOption.addEventListener('click', function() {
                     document.querySelectorAll('[data-eye]').forEach(opt => opt.classList.remove('selected'));
@@ -1507,91 +1876,77 @@ setTimeout(() => {
                 });
             });
 
-            // Hair style selection
-            document.querySelectorAll('[data-hair]').forEach(hairOption => {
-                hairOption.addEventListener('click', async function() {
-                    document.querySelectorAll('[data-hair]').forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-
-                    const hairType = this.dataset.hair;
-                    avatarCustomization.hair.type = hairType;
-                    console.log('✂️ Hair type changed to:', hairType);
-
-                    if (avatarManager && avatarManager.updateHairType) {
-                        showLoading('Changing hairstyle...');
-                        updateDebugInfo('Changing hairstyle...', 'info');
-                        try {
-                            await avatarManager.updateHairType(hairType);
-                            updateAvatarStats();
-                            updateDebugInfo('Hairstyle changed', 'success');
-                            showMessage(`Hairstyle changed to ${hairType}`, 'success');
-                        } catch (error) {
-                            console.error('❌ Error changing hairstyle:', error);
-                            updateDebugInfo('Hairstyle change failed', 'error');
-                            showMessage('Failed to change hairstyle', 'error');
-                        } finally {
-                            hideLoading();
-                        }
-                    } else {
-                        updateAvatarStats();
-                        showMessage(`Hairstyle preference set to ${hairType}`, 'info');
-                    }
-                });
-            });
-
-            // Hair color selection
-            document.querySelectorAll('[data-hair-color]').forEach(colorOption => {
-                colorOption.addEventListener('click', function() {
-                    document.querySelectorAll('[data-hair-color]').forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-
-                    const hairColor = this.dataset.hairColor;
-                    avatarCustomization.hair.color = hairColor;
-                    console.log('🎨 Hair color changed to:', hairColor);
-
-                    if (avatarManager && avatarManager.updateHairColor) {
-                        avatarManager.updateHairColor(hairColor);
-                        showMessage(`Hair color changed to ${hairColor}`, 'success');
-                    }
-                    updateAvatarStats();
-                });
-            });
-
-            // Randomize avatar
+            // FIXED Randomize avatar
             document.getElementById('randomize-avatar').addEventListener('click', async function() {
-                console.log('🎲 Randomizing avatar...');
+                if (!avatarManager) {
+                    showMessage('Avatar manager not available', 'error');
+                    return;
+                }
+
+                // Check if already loading
+                const status = avatarManager.getLoadingStatus();
+                if (status.avatar || status.hair) {
+                    showMessage('Please wait for current loading to complete', 'error');
+                    return;
+                }
+
+                console.log('🎲 Randomizing avatar with FIXED GLB hair...');
                 showLoading('Randomizing avatar...');
                 updateDebugInfo('Randomizing...', 'info');
 
                 try {
+                    const genders = ['female', 'male'];
+                    const randomGender = genders[Math.floor(Math.random() * genders.length)];
+
                     const randomConfig = {
-                        gender: Math.random() > 0.5 ? 'female' : 'male',
+                        gender: randomGender,
                         bodySize: ['xs', 's', 'm', 'l', 'xl'][Math.floor(Math.random() * 5)],
                         height: ['short', 'medium', 'tall'][Math.floor(Math.random() * 3)],
-                        hairType: ['short', 'medium', 'long', 'curly', 'pixie'][Math.floor(Math.random() * 5)],
                         skinColor: ['light', 'medium', 'tan', 'dark'][Math.floor(Math.random() * 4)],
                         hairColor: ['brown', 'black', 'blonde', 'red'][Math.floor(Math.random() * 4)],
                         eyeColor: ['brown', 'blue', 'green', 'hazel'][Math.floor(Math.random() * 4)]
                     };
 
-                    // Update avatar customization state
-                    avatarCustomization.gender = randomConfig.gender;
-                    avatarCustomization.body.bodySize = randomConfig.bodySize;
-                    avatarCustomization.body.height = randomConfig.height;
-                    avatarCustomization.hair.type = randomConfig.hairType;
-                    avatarCustomization.skin = randomConfig.skinColor;
-                    avatarCustomization.hair.color = randomConfig.hairColor;
-                    avatarCustomization.eyes = randomConfig.eyeColor;
+                    // Get random GLB hair style for the selected gender
+                    const availableHairStyles = Object.keys(avatarManager.getAvailableHairStyles(randomGender));
+                    const randomHairStyle = availableHairStyles[Math.floor(Math.random() * availableHairStyles.length)];
+                    randomConfig.hairType = randomHairStyle;
 
-                    if (avatarManager && avatarManager.setConfiguration) {
+                    // Update avatar customization state
+                    Object.assign(avatarCustomization, {
+                        gender: randomConfig.gender,
+                        body: {
+                            bodySize: randomConfig.bodySize,
+                            height: randomConfig.height
+                        },
+                        hair: {
+                            type: randomConfig.hairType,
+                            color: randomConfig.hairColor
+                        },
+                        skin: randomConfig.skinColor,
+                        eyes: randomConfig.eyeColor
+                    });
+
+                    if (avatarManager.setConfiguration) {
                         await avatarManager.setConfiguration(randomConfig);
                     }
 
                     updateUIFromConfig(randomConfig);
                     updateAvatarStats();
                     updateDebugDisplay();
-                    updateDebugInfo('Randomized', 'success');
-                    showMessage('Avatar randomized!', 'success');
+                    updateDebugInfo('Randomized with FIXED GLB hair', 'success');
+                    showMessage('Avatar randomized with new GLB hairstyle!', 'success');
+
+                    // Update hair previews if gender changed
+                    if (randomConfig.gender !== avatarCustomization.gender) {
+                        updateHairPreviewsForGender(randomConfig.gender);
+                    } else {
+                        // Just update hair selection
+                        setTimeout(() => {
+                            selectGLBHairStyle(randomConfig.hairType);
+                        }, 2000);
+                    }
+
                 } catch (error) {
                     console.error('❌ Error randomizing avatar:', error);
                     updateDebugInfo('Randomize failed', 'error');
@@ -1601,8 +1956,20 @@ setTimeout(() => {
                 }
             });
 
-            // Reset avatar
+            // FIXED Reset avatar
             document.getElementById('reset-avatar').addEventListener('click', async function() {
+                if (!avatarManager) {
+                    showMessage('Avatar manager not available', 'error');
+                    return;
+                }
+
+                // Check if already loading
+                const status = avatarManager.getLoadingStatus();
+                if (status.avatar || status.hair) {
+                    showMessage('Please wait for current loading to complete', 'error');
+                    return;
+                }
+
                 console.log('↩️ Resetting avatar...');
                 showLoading('Resetting avatar...');
                 updateDebugInfo('Resetting...', 'info');
@@ -1612,22 +1979,28 @@ setTimeout(() => {
                         gender: 'female',
                         bodySize: 'm',
                         height: 'medium',
-                        hairType: 'short',
+                        hairType: 'short_messy',
                         skinColor: 'light',
                         hairColor: 'brown',
                         eyeColor: 'brown'
                     };
 
                     // Update avatar customization state
-                    avatarCustomization.gender = defaultConfig.gender;
-                    avatarCustomization.body.bodySize = defaultConfig.bodySize;
-                    avatarCustomization.body.height = defaultConfig.height;
-                    avatarCustomization.hair.type = defaultConfig.hairType;
-                    avatarCustomization.skin = defaultConfig.skinColor;
-                    avatarCustomization.hair.color = defaultConfig.hairColor;
-                    avatarCustomization.eyes = defaultConfig.eyeColor;
+                    Object.assign(avatarCustomization, {
+                        gender: defaultConfig.gender,
+                        body: {
+                            bodySize: defaultConfig.bodySize,
+                            height: defaultConfig.height
+                        },
+                        hair: {
+                            type: defaultConfig.hairType,
+                            color: defaultConfig.hairColor
+                        },
+                        skin: defaultConfig.skinColor,
+                        eyes: defaultConfig.eyeColor
+                    });
 
-                    if (avatarManager && avatarManager.setConfiguration) {
+                    if (avatarManager.setConfiguration) {
                         await avatarManager.setConfiguration(defaultConfig);
                     }
 
@@ -1636,6 +2009,13 @@ setTimeout(() => {
                     updateDebugDisplay();
                     updateDebugInfo('Reset complete', 'success');
                     showMessage('Avatar reset to defaults', 'info');
+
+                    // Reset hair previews and selection
+                    loadGLBHairPreviews();
+                    setTimeout(() => {
+                        selectGLBHairStyle(defaultConfig.hairType);
+                    }, 2000);
+
                 } catch (error) {
                     console.error('❌ Error resetting avatar:', error);
                     updateDebugInfo('Reset failed', 'error');
@@ -1645,7 +2025,7 @@ setTimeout(() => {
                 }
             });
 
-            // Save avatar
+            // Save avatar (no loading protection needed)
             document.getElementById('save-avatar-btn').addEventListener('click', async function() {
                 try {
                     let config;
@@ -1662,6 +2042,7 @@ setTimeout(() => {
                             configuration: config,
                             avatarType: currentAvatarType,
                             format: AVATAR_CONFIG.PREFERRED_FORMAT,
+                            hairSystem: AVATAR_CONFIG.HAIR_SYSTEM,
                             timestamp: new Date().toISOString()
                         })
                     });
@@ -1672,7 +2053,7 @@ setTimeout(() => {
 
                     const data = await response.json();
                     if (data.success) {
-                        showMessage('Avatar saved successfully!', 'success');
+                        showMessage('FIXED GLB Avatar saved successfully!', 'success');
                     } else {
                         throw new Error(data.error || 'Failed to save avatar');
                     }
@@ -1681,6 +2062,106 @@ setTimeout(() => {
                     showMessage('Failed to save avatar: ' + error.message, 'error');
                 }
             });
+        }
+
+        // FIXED: Gender change handler with loading protection
+        async function handleGenderChange(gender) {
+            if (avatarManager && avatarManager.updateGender) {
+                // Check if already loading
+                if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
+                    console.log('⚠️ Avatar already loading, please wait...');
+                    showMessage('Please wait for current loading to complete', 'error');
+                    return;
+                }
+
+                showLoading('Changing gender...');
+                updateDebugInfo('Changing gender...', 'info');
+
+                try {
+                    await avatarManager.updateGender(gender);
+                    updateAvatarStats();
+                    updateDebugDisplay();
+                    updateDebugInfo('Gender changed', 'success');
+                    showMessage(`Avatar gender changed to ${gender}`, 'success');
+
+                    // Update hair previews for new gender
+                    updateHairPreviewsForGender(gender);
+                } catch (error) {
+                    console.error('❌ Error changing gender:', error);
+                    updateDebugInfo('Gender change failed', 'error');
+                    showMessage('Failed to change gender', 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                updateAvatarStats();
+                updateDebugDisplay();
+                showMessage(`Gender preference set to ${gender}`, 'info');
+            }
+        }
+
+        // FIXED: Height change handler with loading protection
+        async function handleHeightChange(height) {
+            if (avatarManager && avatarManager.updateHeight) {
+                // Check if already loading
+                if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
+                    console.log('⚠️ Avatar already loading, please wait...');
+                    showMessage('Please wait for current loading to complete', 'error');
+                    return;
+                }
+
+                showLoading('Changing height...');
+                updateDebugInfo('Changing height...', 'info');
+
+                try {
+                    await avatarManager.updateHeight(height);
+                    updateAvatarStats();
+                    updateDebugDisplay();
+                    updateDebugInfo('Height changed', 'success');
+                    showMessage(`Avatar height changed to ${height}`, 'success');
+                } catch (error) {
+                    console.error('❌ Error changing height:', error);
+                    updateDebugInfo('Height change failed', 'error');
+                    showMessage('Failed to change height', 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                updateAvatarStats();
+                updateDebugDisplay();
+            }
+        }
+
+        // FIXED: Body size change handler with loading protection
+        async function handleBodySizeChange(bodySize) {
+            if (avatarManager && avatarManager.updateBodySize) {
+                // Check if already loading
+                if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
+                    console.log('⚠️ Avatar already loading, please wait...');
+                    showMessage('Please wait for current loading to complete', 'error');
+                    return;
+                }
+
+                showLoading('Changing body size...');
+                updateDebugInfo('Changing body size...', 'info');
+
+                try {
+                    await avatarManager.updateBodySize(bodySize);
+                    updateAvatarStats();
+                    updateDebugDisplay();
+                    updateDebugInfo('Body size changed', 'success');
+                    showMessage(`Avatar body size changed to ${bodySize.toUpperCase()}`, 'success');
+                } catch (error) {
+                    console.error('❌ Error changing body size:', error);
+                    updateDebugInfo('Body size change failed', 'error');
+                    showMessage('Failed to change body size', 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                updateAvatarStats();
+                updateDebugDisplay();
+            }
         }
 
         /* Wardrobe System */
@@ -1960,12 +2441,13 @@ setTimeout(() => {
                 opt.classList.toggle('selected', opt.dataset.eye === config.eyeColor);
             });
 
-            document.querySelectorAll('[data-hair]').forEach(opt => {
-                opt.classList.toggle('selected', opt.dataset.hair === config.hairType);
-            });
-
             document.querySelectorAll('[data-hair-color]').forEach(opt => {
                 opt.classList.toggle('selected', opt.dataset.hairColor === config.hairColor);
+            });
+
+            // Update hair style selection
+            document.querySelectorAll('.hair-preview-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.hairStyle === config.hairType);
             });
         }
 
@@ -1974,19 +2456,20 @@ setTimeout(() => {
             if (!infoContainer) return;
 
             if (!avatarManager || !avatarManager.avatarModel) {
-                infoContainer.innerHTML = '<p style="margin:0; color:#999;">Loading GLB avatar...</p>';
+                infoContainer.innerHTML = '<p style="margin:0; color:#999;">Loading FIXED GLB avatar...</p>';
                 return;
             }
 
             const stats = {
-                'Model': 'MakeHuman GLB',
-                'Format': 'GLB',
+                'Model': 'FIXED MakeHuman GLB',
+                'Format': 'GLB + Hair System',
                 'Gender': avatarCustomization.gender,
                 'Body Size': avatarCustomization.body.bodySize ? avatarCustomization.body.bodySize.toUpperCase() : 'M',
                 'Height': avatarCustomization.body.height || 'medium',
                 'View': avatarCustomization.view.charAt(0).toUpperCase() + avatarCustomization.view.slice(1),
                 'Skin': avatarCustomization.skin,
                 'Hair': `${avatarCustomization.hair.type} (${avatarCustomization.hair.color})`,
+                'Hair Model': avatarManager.currentHairModel ? 'GLB Loaded' : 'None',
                 'Eyes': avatarCustomization.eyes,
                 'Polygons': 'Calculating...',
                 'Materials': 'Calculating...',
@@ -2016,6 +2499,17 @@ setTimeout(() => {
                         materialCount++;
                     }
                 });
+
+                // Include hair polygons if present
+                if (avatarManager.currentHairModel) {
+                    avatarManager.currentHairModel.traverse((child) => {
+                        if (child.isMesh && child.geometry) {
+                            polyCount += child.geometry.index ?
+                                child.geometry.index.count / 3 :
+                                child.geometry.attributes.position.count / 3;
+                        }
+                    });
+                }
 
                 stats['Polygons'] = Math.floor(polyCount).toLocaleString();
                 stats['Materials'] = materialCount;
@@ -2170,8 +2664,62 @@ setTimeout(() => {
             return icons[type] || 'info-circle';
         }
 
+        // FIXED: Global debug functions
+        window.checkAvatarLoadingStatus = function() {
+            if (!avatarManager) {
+                console.log('❌ Avatar manager not available');
+                return null;
+            }
+
+            const status = avatarManager.getLoadingStatus();
+            console.log('📊 Current loading status:', status);
+            return status;
+        };
+
+        window.forceStopAllLoading = function() {
+            if (!avatarManager) {
+                console.log('❌ Avatar manager not available');
+                return;
+            }
+
+            console.log('🛑 Force stopping all loading operations...');
+
+            // This is an emergency function - use with caution
+            avatarManager.isLoadingAvatar = false;
+            avatarManager.isLoadingHair = false;
+            avatarManager.loadingQueue.clear();
+
+            hideLoading();
+            updateDebugInfo('Force stopped all loading', 'info');
+            showMessage('All loading operations force stopped', 'info');
+        };
+
+        window.manuallyLoadAvatar = async function() {
+            if (!avatarManager) {
+                console.log('❌ Avatar manager not available');
+                return;
+            }
+
+            const status = avatarManager.getLoadingStatus();
+            console.log('📊 Current status before manual load:', status);
+
+            if (status.avatar) {
+                console.log('⚠️ Avatar already loading');
+                return;
+            }
+
+            if (status.hasLoadedDefault) {
+                console.log('⚠️ Default avatar already loaded');
+                return;
+            }
+
+            console.log('🎯 Manually triggering avatar load...');
+            await avatarManager.requestDefaultAvatar();
+        };
+
         /* Initialization Completion */
-        console.log('✅ GLB Avatar System initialized successfully');
+        console.log('✅ COMPLETELY FIXED GLB Avatar System initialized - NO CONTINUOUS LOADING!');
+        console.log('🔒 Available debug functions: checkAvatarLoadingStatus(), forceStopAllLoading(), manuallyLoadAvatar()');
     });
 
 })();

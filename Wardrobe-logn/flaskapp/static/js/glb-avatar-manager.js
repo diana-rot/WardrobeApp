@@ -1,5 +1,6 @@
 /**
- * Enhanced GLB Avatar Manager with Eye Texture Loading
+ * COMPLETELY FIXED: Enhanced GLB Avatar Manager - NO CONTINUOUS LOADING
+ * This version completely eliminates the continuous loading issue
  * Save as: static/js/glb-avatar-manager.js
  */
 
@@ -11,6 +12,14 @@ class CustomizableGLBAvatarManager {
         // Avatar state
         this.avatarModel = null;
         this.clothingItems = new Map();
+        this.currentHairModel = null;
+
+        // FIXED: Add comprehensive loading states
+        this.isLoadingAvatar = false;
+        this.isLoadingHair = false;
+        this.loadingQueue = new Set();
+        this.isInitialized = false;
+        this.hasLoadedDefault = false;
 
         // Avatar configuration
         this.config = {
@@ -18,9 +27,131 @@ class CustomizableGLBAvatarManager {
             bodySize: 'm',
             height: 'medium',
             skinColor: 'light',
-            hairType: 'short',
+            hairType: 'short_messy',
             hairColor: 'brown',
             eyeColor: 'brown'
+        };
+
+        // Hair styles configuration
+        this.hairStyles = {
+            female: {
+                'afro_ponytail': {
+                    name: 'Afro Ponytail',
+                    preview: '/static/models/makehuman/hair/previews/afro_ponytail.jpg',
+                    glbPath: '/static/models/makehuman/hair/Afro_Hair_-_Ponytail/hair_08.glb',
+                    category: 'long'
+                },
+                'elvis_hazel': {
+                    name: 'Elvis Hazel',
+                    preview: '/static/models/makehuman/hair/previews/elvis_hazel.jpg',
+                    glbPath: '/static/models/makehuman/hair/Elvs_Hazel_Hair/hair_08.glb',
+                    category: 'medium'
+                },
+                'french_bob': {
+                    name: 'French Bob',
+                    preview: '/static/models/makehuman/hair/previews/french_bob.jpg',
+                    glbPath: '/static/models/makehuman/hair/French_Bob_Blonde/hair_08.glb',
+                    category: 'short'
+                },
+                'hair_06': {
+                    name: 'Classic Style',
+                    preview: '/static/models/makehuman/hair/previews/hair_06.jpg',
+                    glbPath: '/static/models/makehuman/hair/Hair_06/hair_08.glb',
+                    category: 'medium'
+                },
+                'hair_07': {
+                    name: 'Wavy Medium',
+                    preview: '/static/models/makehuman/hair/previews/hair_07.jpg',
+                    glbPath: '/static/models/makehuman/hair/Hair_07/hair_07.glb',
+                    category: 'medium'
+                },
+                'hair_08': {
+                    name: 'Long Straight',
+                    preview: '/static/models/makehuman/hair/previews/hair_08.jpg',
+                    glbPath: '/static/models/makehuman/hair/Hair_08/hair_08.glb',
+                    category: 'long'
+                },
+                'female_medium': {
+                    name: 'Medium Length',
+                    preview: '/static/models/makehuman/hair/previews/hair_female_medium.jpg',
+                    glbPath: '/static/models/makehuman/hair/hair_female_medium/hair_08.glb',
+                    category: 'medium'
+                },
+                'hair1': {
+                    name: 'Short Curly',
+                    preview: '/static/models/makehuman/hair/previews/hair1.jpg',
+                    glbPath: '/static/models/makehuman/hair/hair1/hair_08.glb',
+                    category: 'short'
+                },
+                'long_alpha': {
+                    name: 'Long Alpha',
+                    preview: '/static/models/makehuman/hair/previews/hairstyle_long2_alpha.jpg',
+                    glbPath: '/static/models/makehuman/hair/Hairstyle_Long2_alpha_7_adaptation/hair_08.glb',
+                    category: 'long'
+                },
+                'helen_troy': {
+                    name: 'Helen of Troy',
+                    preview: '/static/models/makehuman/hair/previews/helen_of_troy.jpg',
+                    glbPath: '/static/models/makehuman/hair/Helen_Of_Troy/hair_08.glb',
+                    category: 'long'
+                },
+                'shaggy_green': {
+                    name: 'Shaggy Style',
+                    preview: '/static/models/makehuman/hair/previews/shaggy_green.jpg',
+                    glbPath: '/static/models/makehuman/hair/Shaggy_Green_Hair/hair_08.glb',
+                    category: 'medium'
+                },
+                'short_messy': {
+                    name: 'Short Messy',
+                    preview: '/static/models/makehuman/hair/previews/short_messy.jpg',
+                    glbPath: '/static/models/makehuman/hair/Short_Messy_Hair/hair_08.glb',
+                    category: 'short'
+                },
+                'southern_belle': {
+                    name: 'Southern Belle',
+                    preview: '/static/models/makehuman/hair/previews/southern_belle.jpg',
+                    glbPath: '/static/models/makehuman/hair/Southern_Belle_Ringlets/hair_08.glb',
+                    category: 'long'
+                },
+                'bald': {
+                    name: 'Bald',
+                    preview: '/static/models/makehuman/hair/previews/bald.jpg',
+                    glbPath: null,
+                    category: 'none'
+                }
+            },
+            male: {
+                'male_short': {
+                    name: 'Short Male',
+                    preview: '/static/models/makehuman/hair/previews/male_short.jpg',
+                    glbPath: '/static/models/makehuman/hair/male_short_hair/hair_08.glb',
+                    category: 'short'
+                },
+                'minoan_hairdo': {
+                    name: 'Minoan Style',
+                    preview: '/static/models/makehuman/hair/previews/minoan_hairdo.jpg',
+                    glbPath: '/static/models/makehuman/hair/Minoan_Hairdo_One/hair_08.glb',
+                    category: 'medium'
+                },
+                'crew_cut': {
+                    name: 'Crew Cut',
+                    preview: '/static/models/makehuman/hair/previews/crew_cut.jpg',
+                    glbPath: '/static/models/makehuman/hair/Crew_Cut/hair_08.glb',
+                    category: 'short'
+                },
+                'business_cut': {
+                    name: 'Business Cut',
+                    preview: '/static/models/makehuman/hair/previews/business_cut.jpg',
+                    glbPath: '/static/models/makehuman/hair/Business_Cut/hair_08.glb',
+                    category: 'short'
+                },
+                'bald': {
+                    name: 'Bald',
+                    preview: '/static/models/makehuman/hair/previews/bald.jpg',
+                    glbPath: null,
+                    category: 'none'
+                }
+            }
         };
 
         // Eye texture mapping
@@ -90,12 +221,15 @@ class CustomizableGLBAvatarManager {
         this.gltfLoader = null;
         this.textureLoader = null;
 
-        // Initialize
+        // SMART Hair Positioning System
+        this.smartHairPositioning = new SmartHairPositioningSystem(this);
+
+        // FIXED: Only initialize once, don't load default avatar automatically
         this.init();
     }
 
     init() {
-        console.log('🤖 Initializing GLB Avatar Manager with Eye Textures...');
+        console.log('🤖 Initializing FIXED GLB Avatar Manager (NO continuous loading)...');
         this.setupScene();
         this.setupCamera();
         this.setupRenderer();
@@ -104,10 +238,215 @@ class CustomizableGLBAvatarManager {
         this.setupLoaders();
         this.setupGround();
         this.animate();
-        this.loadDefaultAvatar();
-        console.log('✅ GLB Avatar Manager initialized');
+
+        // FIXED: Set initialized flag but DON'T load default avatar automatically
+        this.isInitialized = true;
+        console.log('✅ FIXED GLB Avatar Manager initialized - waiting for manual load request');
     }
 
+    // FIXED: Manual method to load default avatar (called only when needed)
+    async loadDefaultAvatarManually() {
+        if (this.hasLoadedDefault || this.isLoadingAvatar) {
+            console.log('⚠️ Default avatar already loaded or loading');
+            return;
+        }
+
+        console.log('🤖 Loading default GLB avatar (MANUAL REQUEST)...');
+        this.hasLoadedDefault = true;
+
+        try {
+            await this.loadAvatarFromConfig(this.config);
+            console.log('✅ Default avatar loaded successfully');
+
+            // Load default hair after avatar loads (ONE-TIME only)
+            setTimeout(async () => {
+                if (!this.isLoadingHair && !this.currentHairModel) {
+                    await this.updateHairStyle(this.config.hairType);
+                }
+            }, 1000);
+        } catch (error) {
+            console.error('❌ Failed to load default avatar:', error);
+            this.hasLoadedDefault = false; // Allow retry
+            this.loadFallbackAvatar();
+        }
+    }
+
+    // FIXED: Prevent duplicate loading
+    async loadAvatarFromConfig(config) {
+        if (this.isLoadingAvatar) {
+            console.log('⚠️ Avatar loading already in progress');
+            return null;
+        }
+
+        const avatarPath = this.getAvatarPath(config);
+
+        if (this.loadingQueue.has(avatarPath)) {
+            console.log('⚠️ Avatar path already queued:', avatarPath);
+            return null;
+        }
+
+        return this.loadGLBAvatar(avatarPath);
+    }
+
+    getAvatarPath(config) {
+        const { gender, bodySize, height } = config;
+        const fileName = `${bodySize}_${height}`;
+        const fullPath = `/static/models/makehuman/bodies/${gender}/${fileName}.glb`;
+        return fullPath;
+    }
+
+    // FIXED: Comprehensive loading protection
+    async loadGLBAvatar(glbPath) {
+        if (this.isLoadingAvatar) {
+            console.log('⚠️ Avatar loading blocked - already in progress');
+            return null;
+        }
+
+        if (this.loadingQueue.has(glbPath)) {
+            console.log('⚠️ Avatar loading blocked - already queued:', glbPath);
+            return null;
+        }
+
+        console.log(`🔄 Loading GLB avatar from: ${glbPath}`);
+
+        // FIXED: Set all protection flags
+        this.isLoadingAvatar = true;
+        this.loadingQueue.add(glbPath);
+
+        try {
+            // Clear existing avatar
+            if (this.avatarModel) {
+                this.scene.remove(this.avatarModel);
+                this.avatarModel = null;
+            }
+
+            // Reset materials
+            this.avatarMaterials = {
+                skin: [],
+                eyes: [],
+                hair: [],
+                underwear: []
+            };
+
+            // Load new avatar
+            this.avatarModel = await this.loadGLB(glbPath);
+            this.setupAvatarModel();
+            this.scene.add(this.avatarModel);
+
+            // Apply colors
+            this.updateSkinColor(this.config.skinColor);
+            await this.updateEyeColor(this.config.eyeColor);
+
+            console.log('✅ GLB avatar loaded - NO MORE CONTINUOUS LOADING');
+            return this.avatarModel;
+
+        } catch (error) {
+            console.error('❌ Error loading GLB avatar:', error);
+            throw error;
+        } finally {
+            // FIXED: Always clear loading flags
+            this.isLoadingAvatar = false;
+            this.loadingQueue.delete(glbPath);
+            console.log('🔓 Avatar loading flags cleared');
+        }
+    }
+
+    async loadGLB(glbPath) {
+        return new Promise((resolve, reject) => {
+            this.gltfLoader.load(
+                glbPath,
+                (gltf) => {
+                    const model = gltf.scene;
+                    this.processGLBModel(model);
+                    resolve(model);
+                },
+                (progress) => {
+                    if (this.debug) {
+                        const percentage = (progress.loaded / progress.total * 100).toFixed(1);
+                        console.log(`📊 GLB loading progress: ${percentage}%`);
+                    }
+                },
+                (error) => {
+                    console.error('❌ GLB loading error:', error);
+                    reject(error);
+                }
+            );
+        });
+    }
+
+    // FIXED: Hair loading with protection
+    async updateHairStyle(hairStyleKey) {
+        if (this.isLoadingHair) {
+            console.log('⚠️ Hair loading blocked - already in progress');
+            return false;
+        }
+
+        console.log(`🦱 Updating hair style to: ${hairStyleKey}`);
+
+        const gender = this.config.gender || 'female';
+        const hairData = this.hairStyles[gender][hairStyleKey];
+
+        if (!hairData) {
+            console.error(`❌ Hair style not found: ${hairStyleKey} for gender: ${gender}`);
+            return false;
+        }
+
+        // FIXED: Set loading protection
+        this.isLoadingHair = true;
+
+        try {
+            // Remove existing hair
+            this.removeCurrentHair();
+
+            // Handle bald case
+            if (!hairData.glbPath || hairStyleKey === 'bald') {
+                console.log('👩‍🦲 Applied bald style (no hair model)');
+                this.config.hairType = hairStyleKey;
+                return true;
+            }
+
+            console.log(`🦱 Loading GLB hair model: ${hairData.name}`);
+            const hairModel = await this.loadHairGLB(hairData.glbPath);
+
+            if (hairModel) {
+                // Apply positioning
+                const foreheadResult = this.positionHairOnForehead();
+
+                if (!foreheadResult) {
+                    console.warn('⚠️ Forehead positioning failed, using smart positioning');
+                    const result = this.smartHairPositioning.positionHairCloseToHead(hairModel, this.avatarModel);
+
+                    if (result.success) {
+                        console.log(`🧠 SMART positioning successful`);
+                    } else {
+                        console.warn('⚠️ Smart positioning failed, using fallback');
+                        this.positionHairOnAvatarFallback(hairModel);
+                    }
+                }
+
+                // Apply materials and add to scene
+                this.enhanceHairMaterials(hairModel);
+                this.scene.add(hairModel);
+                this.currentHairModel = hairModel;
+                this.currentHairModel.name = `hair_${hairStyleKey}`;
+                this.config.hairType = hairStyleKey;
+
+                console.log(`✅ GLB hair model loaded: ${hairData.name}`);
+                return true;
+            }
+        } catch (error) {
+            console.error(`❌ Failed to load GLB hair model: ${error.message}`);
+            return false;
+        } finally {
+            // FIXED: Always clear hair loading flag
+            this.isLoadingHair = false;
+            console.log('🔓 Hair loading flag cleared');
+        }
+
+        return false;
+    }
+
+    // Include all the setup methods
     setupScene() {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xffffff);
@@ -224,154 +563,230 @@ class CustomizableGLBAvatarManager {
         this.scene.add(ground);
     }
 
-    async loadEyeTexture(eyeColor) {
-        const texturePath = this.eyeTextures[eyeColor];
-
-        if (!texturePath) {
-            console.warn(`⚠️ No texture found for eye color: ${eyeColor}, falling back to brown`);
-            return await this.loadEyeTexture('brown');
+    // Forehead positioning methods
+    moveHairToForehead() {
+        if (!this.currentHairModel || !this.avatarModel) {
+            console.log('❌ No avatar or hair model available');
+            return false;
         }
 
-        if (this.loadedTextures.has(eyeColor)) {
-            console.log(`✅ Using cached eye texture: ${eyeColor}`);
-            return this.loadedTextures.get(eyeColor);
+        const hairModel = this.currentHairModel;
+        const avatarModel = this.avatarModel;
+
+        console.log('🎯 Moving hair to optimal forehead position...');
+
+        const avatarBox = new THREE.Box3().setFromObject(avatarModel);
+        const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+        const avatarSize = avatarBox.getSize(new THREE.Vector3());
+
+        const hairY = avatarBox.max.y - (avatarSize.y * 0.082);
+        const hairZ = avatarCenter.z - (avatarSize.z * 0.26);
+        const hairX = avatarCenter.x;
+
+        hairModel.position.set(hairX, hairY, hairZ);
+
+        const newHairBox = new THREE.Box3().setFromObject(hairModel);
+        const hairBottom = newHairBox.min.y;
+        const yAdjustment = hairY - hairBottom;
+        hairModel.position.y += yAdjustment;
+
+        console.log(`✅ Hair positioned at forehead: (${hairModel.position.x.toFixed(3)}, ${hairModel.position.y.toFixed(3)}, ${hairModel.position.z.toFixed(3)})`);
+        return true;
+    }
+
+    positionHairOnForehead() {
+        console.log('🎯 Starting forehead hair positioning...');
+
+        const foreheadPos = this.createForeheadReference();
+        if (!foreheadPos) return false;
+
+        if (!this.moveHairToForehead()) return false;
+
+        this.fineAdjustHairPosition(0, -0.01, 0.02);
+        this.optimizeHairScale(0.95);
+
+        console.log('✅ Forehead positioning complete!');
+        return true;
+    }
+
+    createForeheadReference() {
+        if (!this.avatarModel) {
+            console.log('❌ No avatar model available');
+            return false;
         }
 
-        return new Promise((resolve) => {
-            console.log(`🔄 Loading eye texture: ${texturePath}`);
+        const existingMarker = this.scene.getObjectByName('forehead_reference');
+        if (existingMarker) {
+            this.scene.remove(existingMarker);
+        }
 
-            this.textureLoader.load(
-                texturePath,
-                (texture) => {
-                    console.log(`✅ Eye texture loaded: ${eyeColor}`);
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                    texture.flipY = false;
-                    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-                    texture.minFilter = THREE.LinearFilter;
-                    texture.magFilter = THREE.LinearFilter;
-                    texture.generateMipmaps = false;
-                    this.loadedTextures.set(eyeColor, texture);
-                    resolve(texture);
-                },
-                (progress) => {
-                    console.log(`📊 Loading texture progress: ${(progress.loaded / progress.total * 100).toFixed(1)}%`);
-                },
-                (error) => {
-                    console.error(`❌ Failed to load eye texture: ${texturePath}`, error);
-                    if (eyeColor !== 'brown') {
-                        console.log(`🔄 Falling back to brown eye texture for ${eyeColor}`);
-                        resolve(this.loadEyeTexture('brown'));
-                    } else {
-                        console.warn(`⚠️ Even brown eye texture failed, using color fallback`);
-                        resolve(null);
-                    }
-                }
-            );
+        const avatarBox = new THREE.Box3().setFromObject(this.avatarModel);
+        const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+        const avatarSize = avatarBox.getSize(new THREE.Vector3());
+
+        const foreheadPos = new THREE.Vector3(
+            avatarCenter.x,
+            avatarBox.max.y - (avatarSize.y * 0.082),
+            avatarCenter.z - (avatarSize.z * 0.26)
+        );
+
+        const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+        const markerMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.8
         });
+
+        const foreheadMarker = new THREE.Mesh(markerGeometry, markerMaterial);
+        foreheadMarker.position.copy(foreheadPos);
+        foreheadMarker.name = 'forehead_reference';
+
+        this.scene.add(foreheadMarker);
+
+        console.log('🎯 Cyan forehead reference marker created');
+        return foreheadPos;
     }
 
-    async loadDefaultAvatar() {
-        console.log('🤖 Loading default GLB avatar...');
-        try {
-            await this.loadAvatarFromConfig(this.config);
-            console.log('✅ Default avatar loaded successfully');
-        } catch (error) {
-            console.error('❌ Failed to load default avatar:', error);
-            this.loadFallbackAvatar();
+    fineAdjustHairPosition(xOffset = 0, yOffset = 0, zOffset = 0) {
+        if (!this.currentHairModel) {
+            console.log('❌ No hair model available');
+            return false;
         }
+
+        const hairModel = this.currentHairModel;
+        hairModel.position.x += xOffset;
+        hairModel.position.y += yOffset;
+        hairModel.position.z += zOffset;
+
+        console.log(`🔧 Hair position adjusted by (${xOffset}, ${yOffset}, ${zOffset})`);
+        return true;
     }
 
-    async loadAvatarFromConfig(config) {
-        const avatarPath = this.getAvatarPath(config);
-        return this.loadGLBAvatar(avatarPath);
-    }
-
-    getAvatarPath(config) {
-        const { gender, bodySize, height } = config;
-        const fileName = `${bodySize}_${height}`;
-        const fullPath = `/static/models/makehuman/bodies/${gender}/${fileName}.glb`;
-        console.log(`🔗 Avatar path generated: ${fullPath}`);
-        return fullPath;
-    }
-
-    async loadGLBAvatar(glbPath) {
-        console.log(`🔄 Loading GLB avatar from: ${glbPath}`);
-
-        try {
-            if (this.avatarModel) {
-                this.scene.remove(this.avatarModel);
-                this.avatarModel = null;
-            }
-
-            this.avatarMaterials = {
-                skin: [],
-                eyes: [],
-                hair: [],
-                underwear: []
-            };
-
-            this.avatarModel = await this.loadGLB(glbPath);
-            this.setupAvatarModel();
-            this.scene.add(this.avatarModel);
-
-            this.updateSkinColor(this.config.skinColor);
-            await this.updateEyeColor(this.config.eyeColor);
-            this.updateHairColor(this.config.hairColor);
-
-            console.log('✅ GLB avatar loaded successfully');
-            return this.avatarModel;
-
-        } catch (error) {
-            console.error('❌ Error loading GLB avatar:', error);
-            throw error;
+    optimizeHairScale(scaleFactor = 0.9) {
+        if (!this.currentHairModel) {
+            console.log('❌ No hair model available');
+            return false;
         }
+
+        const hairModel = this.currentHairModel;
+        const currentScale = hairModel.scale.x;
+        const newScale = currentScale * scaleFactor;
+
+        hairModel.scale.setScalar(newScale);
+
+        console.log(`📏 Hair scale adjusted: ${currentScale.toFixed(3)} → ${newScale.toFixed(3)}`);
+        return true;
     }
 
-    async loadGLB(glbPath) {
+    // Continue with other essential methods...
+    async loadHairGLB(glbPath) {
+        console.log(`🔄 Loading GLB hair from: ${glbPath}`);
+
         return new Promise((resolve, reject) => {
-            console.log('🔄 Loading GLB from:', glbPath);
-
             this.gltfLoader.load(
                 glbPath,
                 (gltf) => {
-                    console.log('✅ GLB loaded successfully');
-                    const model = gltf.scene;
-                    this.processGLBModel(model);
-                    resolve(model);
+                    console.log('✅ GLB hair loaded successfully');
+                    const hairModel = gltf.scene;
+                    this.processHairModel(hairModel);
+                    resolve(hairModel);
                 },
                 (progress) => {
                     if (this.debug) {
                         const percentage = (progress.loaded / progress.total * 100).toFixed(1);
-                        console.log(`📊 GLB loading progress: ${percentage}%`);
+                        console.log(`📊 GLB hair loading progress: ${percentage}%`);
                     }
                 },
                 (error) => {
-                    console.error('❌ GLB loading error:', error);
+                    console.error('❌ GLB hair loading error:', error);
                     reject(error);
                 }
             );
         });
     }
 
+    processHairModel(hairModel) {
+        console.log('🎨 Processing GLB hair model...');
+
+        hairModel.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = false;
+                child.frustumCulled = false;
+
+                if (child.material) {
+                    if (child.material.map) {
+                        child.material.map.colorSpace = THREE.SRGBColorSpace;
+                        child.material.map.flipY = false;
+                    }
+
+                    if (child.material.transparent === undefined) {
+                        child.material.transparent = true;
+                    }
+                    if (child.material.alphaTest === undefined) {
+                        child.material.alphaTest = 0.1;
+                    }
+                    if (child.material.side === undefined) {
+                        child.material.side = THREE.DoubleSide;
+                    }
+
+                    child.material.needsUpdate = true;
+                }
+            }
+        });
+    }
+
+    enhanceHairMaterials(hairModel) {
+        console.log('🎨 Enhancing GLB hair materials...');
+
+        const hairColor = this.hairColors[this.config.hairColor] || this.hairColors['brown'];
+
+        hairModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.color = new THREE.Color(hairColor);
+                child.material.transparent = true;
+                child.material.alphaTest = 0.1;
+                child.material.side = THREE.DoubleSide;
+                child.material.depthWrite = true;
+                child.material.depthTest = true;
+
+                if (child.material.opacity > 0.5) {
+                    child.material.opacity = Math.min(child.material.opacity, 0.98);
+                }
+
+                child.material.needsUpdate = true;
+            }
+        });
+
+        hairModel.rotation.set(0, 0, 0);
+    }
+
+    removeCurrentHair() {
+        if (this.currentHairModel) {
+            this.scene.remove(this.currentHairModel);
+
+            this.currentHairModel.traverse((child) => {
+                if (child.isMesh) {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (child.material.map) child.material.map.dispose();
+                        child.material.dispose();
+                    }
+                }
+            });
+
+            this.currentHairModel = null;
+            console.log('🗑️ Previous hair model removed');
+        }
+    }
+
+    // Essential utility methods
     processGLBModel(model) {
         console.log('🎨 Processing GLB model for customization...');
 
-        let eyeMeshCount = 0;
-        let headMeshCount = 0;
-
         model.traverse((child) => {
             if (child.isMesh) {
-                const meshName = (child.name || 'unnamed').toLowerCase();
-                console.log('🔍 Processing mesh:', child.name || 'unnamed');
-
-                if (meshName.includes('eye')) {
-                    eyeMeshCount++;
-                } else if (meshName.includes('head') || meshName.includes('face')) {
-                    headMeshCount++;
-                }
-
                 this.categorizeMaterial(child);
-
                 child.castShadow = true;
                 child.receiveShadow = true;
 
@@ -384,23 +799,6 @@ class CustomizableGLBAvatarManager {
                 }
             }
         });
-
-        console.log('📊 Mesh Analysis:', {
-            totalMeshes: model.children.length,
-            eyeMeshes: eyeMeshCount,
-            headMeshes: headMeshCount,
-            materials: {
-                skin: this.avatarMaterials.skin.length,
-                eyes: this.avatarMaterials.eyes.length,
-                hair: this.avatarMaterials.hair.length,
-                underwear: this.avatarMaterials.underwear.length
-            }
-        });
-
-        if (this.avatarMaterials.eyes.length === 0 && eyeMeshCount === 0) {
-            console.warn('⚠️ No eye materials or meshes detected, creating fallback eyes...');
-            setTimeout(() => this.createTexturedFallbackEyes(), 1000);
-        }
     }
 
     categorizeMaterial(mesh) {
@@ -410,15 +808,9 @@ class CustomizableGLBAvatarManager {
 
         if (!material) return;
 
-        console.log(`🏷️ Categorizing: Mesh="${meshName}" Material="${materialName}"`);
-
-        if (meshName.includes('eye') || materialName.includes('eye')) {
-            console.log(`👁️ Found eye material: ${meshName} | ${materialName}`);
-            this.avatarMaterials.eyes.push(material);
-        }
-        else if (meshName.includes('head') || meshName.includes('face') ||
-                 materialName.includes('head') || materialName.includes('face')) {
-            console.log(`👤 Found head/face material: ${meshName} | ${materialName}`);
+        if (meshName.includes('eye') || materialName.includes('eye') ||
+            meshName.includes('head') || meshName.includes('face') ||
+            materialName.includes('head') || materialName.includes('face')) {
             this.avatarMaterials.eyes.push(material);
         }
         else if (meshName.includes('body') || meshName.includes('arm') ||
@@ -427,16 +819,7 @@ class CustomizableGLBAvatarManager {
                  meshName.includes('hand') || meshName.includes('foot')) {
             this.avatarMaterials.skin.push(material);
         }
-        else if (meshName.includes('hair') || meshName.includes('scalp')) {
-            this.avatarMaterials.hair.push(material);
-        }
-        else if (meshName.includes('bra') || meshName.includes('thong') ||
-                 meshName.includes('underwear') || meshName.includes('french') ||
-                 meshName.includes('panties') || meshName.includes('briefs')) {
-            this.avatarMaterials.underwear.push(material);
-        }
         else {
-            console.log(`❓ Unrecognized mesh '${meshName}', categorizing as skin`);
             this.avatarMaterials.skin.push(material);
         }
     }
@@ -460,155 +843,173 @@ class CustomizableGLBAvatarManager {
         this.avatarModel.position.x = -center.x * scale;
         this.avatarModel.position.z = -center.z * scale;
 
-        console.log(`📏 Avatar scaled by ${scale.toFixed(2)}, positioned at (${this.avatarModel.position.x.toFixed(2)}, ${this.avatarModel.position.y.toFixed(2)}, ${this.avatarModel.position.z.toFixed(2)})`);
-    }
-
-    async updateEyeColor(eyeColor) {
-        this.config.eyeColor = eyeColor;
-        console.log(`👁️ Updating eye color to: ${eyeColor}`);
-
-        const eyeTexture = await this.loadEyeTexture(eyeColor);
-
-        if (eyeTexture) {
-            console.log(`✅ Applying eye texture for: ${eyeColor}`);
-            this.applyEyeTexture(eyeTexture, eyeColor);
-        } else {
-            console.log(`⚠️ No texture available, using color: ${eyeColor}`);
-            this.applyEyeColor(eyeColor);
-        }
-    }
-
-    applyEyeTexture(texture, eyeColor) {
-        let materialsUpdated = 0;
-
-        this.avatarMaterials.eyes.forEach((material, index) => {
-            if (material.map !== texture) {
-                material.map = texture;
-                material.needsUpdate = true;
-                material.metalness = 0.0;
-                material.roughness = 0.0;
-                material.transparent = false;
-                material.opacity = 1.0;
-
-                if (material.isMeshPhongMaterial || material.isMeshLambertMaterial) {
-                    material.shininess = 100;
-                }
-
-                materialsUpdated++;
-                console.log(`  ✅ Applied eye texture to material ${index} (no roughness)`);
-            }
-        });
-
-        console.log(`👁️ Updated ${materialsUpdated} materials with eye texture`);
-    }
-
-    applyEyeColor(eyeColor) {
-        const newColor = this.eyeColors[eyeColor] || this.eyeColors['brown'];
-
-        this.avatarMaterials.eyes.forEach((material, index) => {
-            if (material.color) {
-                material.color.setHex(newColor);
-                material.metalness = 0.0;
-                material.roughness = 0.0;
-                material.needsUpdate = true;
-
-                if (material.isMeshPhongMaterial || material.isMeshLambertMaterial) {
-                    material.shininess = 100;
-                }
-
-                console.log(`  ✓ Updated eye material ${index} with color (no roughness)`);
-            }
-        });
-    }
-
-    async createTexturedFallbackEyes() {
-        console.log('🔧 Creating textured fallback eyes...');
-
-        if (!this.avatarModel) return;
-
-        const eyeTexture = await this.loadEyeTexture(this.config.eyeColor);
-        const eyeGeometry = new THREE.SphereGeometry(0.03, 16, 16);
-
-        const eyeMaterial = new THREE.MeshPhongMaterial({
-            map: eyeTexture,
-            shininess: 100,
-            transparent: false,
-            metalness: 0.0,
-            roughness: 0.0
-        });
-
-        if (!eyeTexture) {
-            eyeMaterial.color.setHex(this.eyeColors[this.config.eyeColor] || this.eyeColors['brown']);
-        }
-
-        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        leftEye.position.set(-0.035, 1.65, 0.08);
-        leftEye.name = 'fallback_left_eye';
-
-        const rightEyeMaterial = eyeMaterial.clone();
-        const rightEye = new THREE.Mesh(eyeGeometry, rightEyeMaterial);
-        rightEye.position.set(0.035, 1.65, 0.08);
-        rightEye.name = 'fallback_right_eye';
-
-        this.avatarModel.add(leftEye);
-        this.avatarModel.add(rightEye);
-        this.avatarMaterials.eyes.push(eyeMaterial, rightEyeMaterial);
-
-        console.log('✅ Textured fallback eyes created (no roughness)');
-    }
-
-    async updateGender(gender) {
-        console.log(`👤 Updating gender to: ${gender}`);
-        this.config.gender = gender;
-        await this.loadAvatarFromConfig(this.config);
-    }
-
-    async updateBodySize(bodySize) {
-        console.log(`📏 Updating body size to: ${bodySize}`);
-        this.config.bodySize = bodySize;
-        await this.loadAvatarFromConfig(this.config);
-    }
-
-    async updateHeight(height) {
-        console.log(`📐 Updating height to: ${height}`);
-        this.config.height = height;
-        await this.loadAvatarFromConfig(this.config);
+        console.log(`📏 Avatar scaled and positioned`);
     }
 
     updateSkinColor(skinColor) {
         this.config.skinColor = skinColor;
         const newColor = this.skinColors[skinColor] || this.skinColors['light'];
 
-        console.log(`🎨 Changing skin color to: ${skinColor} (0x${newColor.toString(16)})`);
-
-        this.avatarMaterials.skin.forEach((material, index) => {
+        this.avatarMaterials.skin.forEach((material) => {
             if (material.color) {
                 material.color.setHex(newColor);
                 material.needsUpdate = true;
-                console.log(`  ✓ Updated skin material ${index}`);
+            }
+        });
+    }
+
+    async updateEyeColor(eyeColor) {
+        this.config.eyeColor = eyeColor;
+        const eyeTexture = await this.loadEyeTexture(eyeColor);
+
+        if (eyeTexture) {
+            this.applyEyeTexture(eyeTexture, eyeColor);
+        } else {
+            this.applyEyeColor(eyeColor);
+        }
+    }
+
+    async loadEyeTexture(eyeColor) {
+        const texturePath = this.eyeTextures[eyeColor];
+        if (!texturePath) return null;
+
+        if (this.loadedTextures.has(eyeColor)) {
+            return this.loadedTextures.get(eyeColor);
+        }
+
+        return new Promise((resolve) => {
+            this.textureLoader.load(
+                texturePath,
+                (texture) => {
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.flipY = false;
+                    this.loadedTextures.set(eyeColor, texture);
+                    resolve(texture);
+                },
+                undefined,
+                () => resolve(null)
+            );
+        });
+    }
+
+    applyEyeTexture(texture, eyeColor) {
+        this.avatarMaterials.eyes.forEach((material) => {
+            material.map = texture;
+            material.needsUpdate = true;
+        });
+    }
+
+    applyEyeColor(eyeColor) {
+        const newColor = this.eyeColors[eyeColor] || this.eyeColors['brown'];
+        this.avatarMaterials.eyes.forEach((material) => {
+            if (material.color) {
+                material.color.setHex(newColor);
+                material.needsUpdate = true;
             }
         });
     }
 
     updateHairColor(hairColor) {
         this.config.hairColor = hairColor;
+
+        if (!this.currentHairModel) return;
+
         const newColor = this.hairColors[hairColor] || this.hairColors['brown'];
 
-        console.log(`💇 Changing hair color to: ${hairColor} (0x${newColor.toString(16)})`);
-
-        this.avatarMaterials.hair.forEach((material, index) => {
-            if (material.color) {
-                material.color.setHex(newColor);
-                material.needsUpdate = true;
-                console.log(`  ✓ Updated hair material ${index}`);
+        this.currentHairModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.color.setHex(newColor);
+                child.material.needsUpdate = true;
             }
         });
     }
 
-    updateHairType(hairType) {
-        this.config.hairType = hairType;
-        console.log(`✂️ Hair type set to: ${hairType}`);
-        console.log('ℹ️ Note: Hair type changes in GLB require different model files');
+    positionHairOnAvatarFallback(hairModel) {
+        console.log('🔄 Using fallback hair positioning...');
+
+        const avatarBox = new THREE.Box3().setFromObject(this.avatarModel);
+        const avatarSize = avatarBox.getSize(new THREE.Vector3());
+        const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+        const avatarScale = this.avatarModel.scale.x;
+
+        const hairScale = avatarScale * 0.85;
+        hairModel.scale.setScalar(hairScale);
+
+        hairModel.position.copy(avatarCenter);
+        hairModel.position.y = avatarBox.min.y + (avatarSize.y * 0.95);
+        hairModel.rotation.set(0, 0, 0);
+
+        console.log('✅ Fallback hair positioning complete');
+    }
+
+    // Update methods for UI
+    async updateGender(gender) {
+        console.log(`👤 Updating gender to: ${gender}`);
+        this.config.gender = gender;
+        this.removeCurrentHair();
+        await this.loadAvatarFromConfig(this.config);
+
+        const defaultHairStyles = {
+            'female': 'short_messy',
+            'male': 'male_short'
+        };
+
+        const defaultHair = defaultHairStyles[gender] || 'short_messy';
+        setTimeout(async () => {
+            await this.updateHairStyle(defaultHair);
+        }, 1000);
+    }
+
+    async updateBodySize(bodySize) {
+        console.log(`📏 Updating body size to: ${bodySize}`);
+        this.config.bodySize = bodySize;
+        await this.loadAvatarFromConfig(this.config);
+
+        if (this.config.hairType) {
+            setTimeout(async () => {
+                await this.updateHairStyle(this.config.hairType);
+            }, 1000);
+        }
+    }
+
+    async updateHeight(height) {
+        console.log(`📐 Updating height to: ${height}`);
+        this.config.height = height;
+        await this.loadAvatarFromConfig(this.config);
+
+        if (this.config.hairType) {
+            setTimeout(async () => {
+                await this.updateHairStyle(this.config.hairType);
+            }, 1000);
+        }
+    }
+
+    getAvailableHairStyles(gender = null) {
+        const targetGender = gender || this.config.gender || 'female';
+        return this.hairStyles[targetGender] || {};
+    }
+
+    generateHairPreviewHTML(gender = null) {
+        const targetGender = gender || this.config.gender || 'female';
+        const hairStyles = this.getAvailableHairStyles(targetGender);
+
+        let html = '<div class="hair-preview-grid">';
+
+        Object.entries(hairStyles).forEach(([styleKey, styleData]) => {
+            html += `
+                <div class="hair-preview-option" data-hair-style="${styleKey}">
+                    <div class="hair-preview-image">
+                        <img src="${styleData.preview}" 
+                             alt="${styleData.name}"
+                             onerror="this.parentElement.innerHTML='<div class=\\'preview-placeholder\\'>${styleData.name}</div>'">
+                    </div>
+                    <div class="hair-preview-name">${styleData.name}</div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        return html;
     }
 
     getConfiguration() {
@@ -619,18 +1020,20 @@ class CustomizableGLBAvatarManager {
         const oldConfig = { ...this.config };
         this.config = { ...this.config, ...newConfig };
 
-        console.log('🔧 Setting new configuration:', newConfig);
-
-        const majorChanges = ['gender', 'bodySize', 'height', 'hairType'];
+        const majorChanges = ['gender', 'bodySize', 'height'];
         const needsReload = majorChanges.some(key =>
             oldConfig[key] !== newConfig[key] && newConfig[key] !== undefined
         );
 
         if (needsReload) {
-            console.log('🔄 Major change detected, reloading avatar...');
             await this.loadAvatarFromConfig(this.config);
+
+            if (newConfig.hairType || this.config.hairType) {
+                setTimeout(async () => {
+                    await this.updateHairStyle(newConfig.hairType || this.config.hairType);
+                }, 1000);
+            }
         } else {
-            console.log('🎨 Minor change, updating materials...');
             if (oldConfig.skinColor !== newConfig.skinColor && newConfig.skinColor) {
                 this.updateSkinColor(newConfig.skinColor);
             }
@@ -640,141 +1043,27 @@ class CustomizableGLBAvatarManager {
             if (oldConfig.hairColor !== newConfig.hairColor && newConfig.hairColor) {
                 this.updateHairColor(newConfig.hairColor);
             }
+            if (oldConfig.hairType !== newConfig.hairType && newConfig.hairType) {
+                await this.updateHairStyle(newConfig.hairType);
+            }
         }
     }
 
-    checkEyeTextures() {
-        console.log('🔍 Checking eye texture files...');
-
-        Object.entries(this.eyeTextures).forEach(([color, path]) => {
-            fetch(path)
-                .then(response => {
-                    if (response.ok) {
-                        console.log(`✅ ${color}: ${path} - Available`);
-                    } else {
-                        console.warn(`❌ ${color}: ${path} - Missing (${response.status})`);
-                    }
-                })
-                .catch(error => {
-                    console.error(`❌ ${color}: ${path} - Error: ${error.message}`);
-                });
+    clearAllClothing() {
+        this.clothingItems.forEach((item, id) => {
+            this.removeClothing(id);
         });
+        this.clothingItems.clear();
     }
 
-    showExpectedTextures() {
-        console.log('📋 EXPECTED EYE TEXTURE FILES:');
-        console.log('Create these texture files for proper eye colors:');
-        console.log('');
-        console.log('📁 /static/models/makehuman/bodies/female/textures/');
-
-        Object.entries(this.eyeTextures).forEach(([color, path]) => {
-            const filename = path.split('/').pop();
-            console.log(`   ├── ${filename} (for ${color} eyes)`);
-        });
-
-        console.log('');
-        console.log('🎨 To create different colored eyes:');
-        console.log('   1. Start with brown_eye.png as template');
-        console.log('   2. Edit with image editor (GIMP, Photoshop, etc.)');
-        console.log('   3. Change only the iris color, keep the pupil black');
-        console.log('   4. Save with the appropriate filename');
-        console.log('   5. Ensure all files are in the correct directory');
-    }
-
-    async forceApplyEyeTexture(eyeColor = null) {
-        const colorToTest = eyeColor || this.config.eyeColor;
-
-        if (!this.avatarModel) {
-            console.error('❌ No avatar model loaded');
-            return;
+    removeClothing(itemId) {
+        const item = this.clothingItems.get(itemId);
+        if (item && item.model) {
+            this.scene.remove(item.model);
+            this.clothingItems.delete(itemId);
+            return true;
         }
-
-        console.log(`🔧 Force applying ${colorToTest} eye texture for testing...`);
-
-        const eyeTexture = await this.loadEyeTexture(colorToTest);
-
-        if (eyeTexture) {
-            let appliedCount = 0;
-
-            this.avatarModel.traverse((child) => {
-                if (child.isMesh && child.material) {
-                    const meshName = (child.name || '').toLowerCase();
-                    const materialName = (child.material.name || '').toLowerCase();
-
-                    if (meshName.includes('head') || meshName.includes('face') ||
-                        meshName.includes('eye') || materialName.includes('head') ||
-                        materialName.includes('face') || materialName.includes('eye')) {
-
-                        console.log(`🎯 Applying ${colorToTest} texture to: ${child.name} (${child.material.name})`);
-
-                        const newMaterial = child.material.clone();
-                        newMaterial.map = eyeTexture;
-                        newMaterial.needsUpdate = true;
-                        newMaterial.metalness = 0.0;
-                        newMaterial.roughness = 0.0;
-                        newMaterial.transparent = false;
-                        newMaterial.opacity = 1.0;
-
-                        if (newMaterial.isMeshPhongMaterial || newMaterial.isMeshLambertMaterial) {
-                            newMaterial.shininess = 100;
-                        }
-
-                        child.material = newMaterial;
-                        appliedCount++;
-                    }
-                }
-            });
-
-            console.log(`✅ Applied ${colorToTest} eye texture to ${appliedCount} materials`);
-        } else {
-            console.error(`❌ Failed to load ${colorToTest} eye texture`);
-        }
-    }
-
-    createTestFallbackEyes() {
-        if (!this.avatarModel) {
-            console.error('❌ No avatar model loaded');
-            return;
-        }
-
-        console.log('🔧 Creating test fallback eyes with texture...');
-
-        const texturePath = this.eyeTextures[this.config.eyeColor];
-
-        this.textureLoader.load(texturePath, (texture) => {
-            texture.flipY = false;
-            texture.colorSpace = THREE.SRGBColorSpace;
-            texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-
-            const eyeGeometry = new THREE.SphereGeometry(0.04, 16, 16);
-            const eyeMaterial = new THREE.MeshPhongMaterial({
-                map: texture,
-                transparent: false,
-                metalness: 0.0,
-                roughness: 0.0,
-                shininess: 100
-            });
-
-            const existingTestEyes = this.avatarModel.children.filter(child =>
-                child.name && child.name.includes('test_eye'));
-            existingTestEyes.forEach(eye => this.avatarModel.remove(eye));
-
-            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            leftEye.position.set(-0.04, 1.65, 0.09);
-            leftEye.name = 'test_left_eye';
-
-            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial.clone());
-            rightEye.position.set(0.04, 1.65, 0.09);
-            rightEye.name = 'test_right_eye';
-
-            this.avatarModel.add(leftEye);
-            this.avatarModel.add(rightEye);
-
-            console.log('✅ Test fallback eyes created with texture (no roughness)');
-            console.log('👁️ Look at your avatar - you should see glossy textured eye spheres');
-        }, undefined, (error) => {
-            console.error('❌ Failed to load texture for test eyes:', error);
-        });
+        return false;
     }
 
     loadFallbackAvatar() {
@@ -792,27 +1081,6 @@ class CustomizableGLBAvatarManager {
 
         this.scene.add(this.avatarModel);
         console.log('✅ Fallback avatar created');
-    }
-
-    clearAllClothing() {
-        console.log('🗑️ Clearing all clothing items...');
-        this.clothingItems.forEach((item, id) => {
-            this.removeClothing(id);
-        });
-        this.clothingItems.clear();
-        console.log('✅ All clothing items cleared');
-    }
-
-    removeClothing(itemId) {
-        const item = this.clothingItems.get(itemId);
-        if (item && item.model) {
-            this.scene.remove(item.model);
-            this.clothingItems.delete(itemId);
-            console.log(`🗑️ Removed clothing item: ${itemId}`);
-            return true;
-        }
-        console.warn(`⚠️ Clothing item not found: ${itemId}`);
-        return false;
     }
 
     animate() {
@@ -836,8 +1104,6 @@ class CustomizableGLBAvatarManager {
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
-
-        console.log(`📐 Resized to: ${width}x${height}`);
     }
 
     cleanup() {
@@ -846,23 +1112,164 @@ class CustomizableGLBAvatarManager {
         });
         this.loadedTextures.clear();
 
+        this.removeCurrentHair();
+
         if (this.renderer) {
             this.renderer.dispose();
         }
-        console.log('🧹 GLB Avatar Manager cleaned up');
+
+        // Clear all loading states
+        this.isLoadingAvatar = false;
+        this.isLoadingHair = false;
+        this.loadingQueue.clear();
+        this.hasLoadedDefault = false;
+
+        console.log('🧹 FIXED Avatar Manager cleaned up');
+    }
+
+    // Status check methods
+    isAvatarLoading() {
+        return this.isLoadingAvatar;
+    }
+
+    isHairLoading() {
+        return this.isLoadingHair;
+    }
+
+    getLoadingStatus() {
+        return {
+            avatar: this.isLoadingAvatar,
+            hair: this.isLoadingHair,
+            queue: Array.from(this.loadingQueue),
+            hasLoadedDefault: this.hasLoadedDefault
+        };
+    }
+
+    // FIXED: Method to manually trigger default loading (call this from UI)
+    async requestDefaultAvatar() {
+        if (!this.hasLoadedDefault && !this.isLoadingAvatar) {
+            await this.loadDefaultAvatarManually();
+        } else {
+            console.log('⚠️ Default avatar already loaded or request in progress');
+        }
+    }
+
+    enableHairDebugMode(enabled = true) {
+        this.smartHairPositioning.setDebugMode(enabled);
+    }
+
+    getHairPositioningInfo() {
+        return this.smartHairPositioning.getLastPositioningInfo();
     }
 }
 
-// Basic GLB Avatar Manager (simplified version)
-class GLBAvatarManager extends CustomizableGLBAvatarManager {
-    constructor(options = {}) {
-        super(options);
+// Simplified Smart Hair Positioning System
+class SmartHairPositioningSystem {
+    constructor(avatarManager) {
+        this.avatarManager = avatarManager;
+        this.debugMode = false;
+        this.lastPositioningInfo = null;
+    }
+
+    positionHairCloseToHead(hairModel, avatarModel) {
+        console.log('🧠 SMART: Starting hair positioning close to head...');
+
+        try {
+            const headInfo = this.findHeadPosition(avatarModel);
+            const hairAnalysis = this.analyzeHairModel(hairModel);
+            const positioningResult = this.calculateOptimalPositioning(headInfo, hairAnalysis, avatarModel);
+
+            this.applyPositioning(hairModel, positioningResult);
+
+            this.lastPositioningInfo = {
+                headInfo,
+                hairAnalysis,
+                positioningResult,
+                timestamp: Date.now()
+            };
+
+            return {
+                success: true,
+                method: headInfo.method,
+                confidence: headInfo.confidence
+            };
+        } catch (error) {
+            console.error('❌ SMART positioning failed:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    findHeadPosition(avatarModel) {
+        const avatarBox = new THREE.Box3().setFromObject(avatarModel);
+        const avatarSize = avatarBox.getSize(new THREE.Vector3());
+        const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+
+        const headY = avatarBox.min.y + (avatarSize.y * 0.88);
+
+        return {
+            position: new THREE.Vector3(avatarCenter.x, headY, avatarCenter.z),
+            method: 'geometric',
+            confidence: 0.7
+        };
+    }
+
+    analyzeHairModel(hairModel) {
+        const hairBox = new THREE.Box3().setFromObject(hairModel);
+        const hairSize = hairBox.getSize(new THREE.Vector3());
+
+        return {
+            size: hairSize,
+            type: 'medium'
+        };
+    }
+
+    calculateOptimalPositioning(headInfo, hairAnalysis, avatarModel) {
+        const avatarBox = new THREE.Box3().setFromObject(avatarModel);
+        const avatarSize = avatarBox.getSize(new THREE.Vector3());
+        const avatarScale = avatarModel.scale.x || 1.0;
+
+        const estimatedHeadWidth = avatarSize.x * 0.22;
+        const baseScale = estimatedHeadWidth / hairAnalysis.size.x;
+        const finalScale = Math.max(0.4, Math.min(2.5, baseScale * 1.1 * avatarScale));
+
+        const targetPosition = headInfo.position.clone();
+        targetPosition.y -= 0.06 * avatarSize.y;
+
+        return {
+            scale: finalScale,
+            position: targetPosition
+        };
+    }
+
+    applyPositioning(hairModel, positioningResult) {
+        hairModel.scale.setScalar(positioningResult.scale);
+        hairModel.position.copy(positioningResult.position);
+
+        const hairBox = new THREE.Box3().setFromObject(hairModel);
+        const yAdjustment = positioningResult.position.y - hairBox.min.y;
+        hairModel.position.y += yAdjustment - 0.02;
+
+        hairModel.rotation.set(0, 0, 0);
+    }
+
+    setDebugMode(enabled) {
+        this.debugMode = enabled;
+    }
+
+    getLastPositioningInfo() {
+        return this.lastPositioningInfo;
     }
 }
 
 // Make globally available
 window.CustomizableGLBAvatarManager = CustomizableGLBAvatarManager;
-window.GLBAvatarManager = GLBAvatarManager;
-window.MakeHumanAvatarManager = CustomizableGLBAvatarManager;
+window.GLBAvatarManager = CustomizableGLBAvatarManager; // Alias
+window.SmartHairPositioningSystem = SmartHairPositioningSystem;
 
-console.log('✅ Enhanced GLB Avatar Manager with Eye Textures loaded successfully');
+console.log('✅ COMPLETELY FIXED: GLB Avatar Manager - NO CONTINUOUS LOADING');
+console.log('🔒 Loading protection: Multiple flags prevent duplicate requests');
+console.log('📞 Call avatarManager.requestDefaultAvatar() to load default avatar manually');
+console.log('📊 Use avatarManager.getLoadingStatus() to check current state');
