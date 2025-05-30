@@ -3,7 +3,6 @@
 {% block title %}Avatar Creator & Wardrobe{% endblock %}
 
 {% block extra_css %}
-<!-- Keep all your existing CSS exactly as it is - no changes needed -->
 <style>
     /* Layout Structure */
     .avatar-page-content {
@@ -107,7 +106,7 @@
         font-weight: 600;
     }
 
-    /* EXPANDED Color Picker Styles - Now supports 5-6 columns for more colors */
+    /* Color Picker Styles */
     .color-picker-group {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -172,7 +171,7 @@
         margin-top: 5px;
     }
 
-    /* Selection Grid (Hair, Eyes, etc.) */
+    /* Selection Grid */
     .selection-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -446,6 +445,89 @@
         margin-bottom: 10px;
     }
 
+    /* Saved Avatars Section */
+    .saved-avatars-section {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .saved-avatars-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .saved-avatar-item {
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+        text-align: center;
+    }
+
+    .saved-avatar-item:hover {
+        border-color: #3498db;
+        background: #f7f9fc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .saved-avatar-item.loading {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .saved-avatar-preview {
+        width: 100%;
+        height: 60px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #f8f9fa;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .saved-avatar-name {
+        font-size: 12px;
+        color: #2c3e50;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+
+    .saved-avatar-date {
+        font-size: 10px;
+        color: #6c757d;
+    }
+
+    .delete-saved-avatar {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        display: none;
+    }
+
+    .saved-avatar-item:hover .delete-saved-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     /* Wardrobe Section */
     .wardrobe-section {
         margin-top: 0;
@@ -662,6 +744,15 @@
         background: #138496;
     }
 
+    .btn-danger {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c0392b;
+    }
+
     .outfit-controls {
         display: flex;
         flex-wrap: wrap;
@@ -867,7 +958,6 @@
             padding: 5px 10px;
         }
 
-        /* Mobile color grid adjustments */
         .color-picker-group.large-grid {
             grid-template-columns: repeat(4, 1fr);
         }
@@ -905,7 +995,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Main Application Layout - Keep all your HTML exactly as it is -->
 <div class="avatar-page-content">
 
     <!-- Left Panel: Two-Tab System -->
@@ -939,7 +1028,7 @@
                                 <i class="bi bi-file-earmark"></i> GLB + Hair
                             </button>
                         </div>
-                        <p style="font-size: 11px; margin: 8px 0 0 0; opacity: 0.8;">FIXED: No continuous loading system</p>
+                        <p style="font-size: 11px; margin: 8px 0 0 0; opacity: 0.8;">Avatar loads first, hair loads separately</p>
                     </div>
 
                     <!-- Gender Selection -->
@@ -1000,7 +1089,7 @@
                 <div class="avatar-creation-section">
                     <h4><i class="bi bi-emoji-smile"></i> Facial Features</h4>
 
-                    <!-- EXPANDED Skin Tone with 14 options -->
+                    <!-- Skin Tone -->
                     <div class="customization-group">
                         <h5>Skin Color <span style="font-size: 11px; color: #6c757d;">(14 options)</span></h5>
 
@@ -1031,7 +1120,7 @@
                         </div>
                     </div>
 
-                    <!-- EXPANDED Eye Color with 19 options -->
+                    <!-- Eye Color -->
                     <div class="customization-group">
                         <h5>Eye Color <span style="font-size: 11px; color: #6c757d;">(19 options)</span></h5>
 
@@ -1071,7 +1160,7 @@
                     </div>
                 </div>
 
-                <!-- Enhanced GLB Hair Customization Section with Previews -->
+                <!-- Hair Customization Section -->
                 <div class="avatar-creation-section">
                     <h4><i class="bi bi-scissors"></i> GLB Hair System</h4>
 
@@ -1087,16 +1176,15 @@
                         </div>
                     </div>
 
-                    <!-- Hair Style Selection with GLB Previews -->
+                    <!-- Hair Style Selection -->
                     <div class="customization-group">
                         <h5>Hair Style (GLB Models)</h5>
                         <div id="hair-preview-container">
-                            <!-- Hair previews will be dynamically generated here -->
                             <div class="loading">Loading GLB hair styles...</div>
                         </div>
                     </div>
 
-                    <!-- EXPANDED Hair Color with 30+ options -->
+                    <!-- Hair Color -->
                     <div class="customization-group">
                         <h5>Hair Color <span style="font-size: 11px; color: #6c757d;">(30+ options)</span></h5>
 
@@ -1169,15 +1257,23 @@
 
                 <!-- Avatar Actions -->
                 <div class="avatar-actions">
-                    <button id="randomize-avatar" class="btn btn-info">
-                        <i class="bi bi-shuffle"></i> Randomize Avatar + Hair
-                    </button>
                     <button id="reset-avatar" class="btn btn-secondary">
                         <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
                     </button>
                     <button id="save-avatar-btn" class="btn btn-success">
                         <i class="bi bi-save"></i> Save Avatar
                     </button>
+                    <button id="load-saved-avatar-btn" class="btn btn-info">
+                        <i class="bi bi-folder-open"></i> Load Saved Avatar
+                    </button>
+                </div>
+
+                <!-- Saved Avatars Section -->
+                <div class="saved-avatars-section">
+                    <h4><i class="bi bi-collection"></i> Saved Avatars</h4>
+                    <div id="saved-avatars-grid" class="saved-avatars-grid">
+                        <div class="loading">Loading saved avatars...</div>
+                    </div>
                 </div>
             </div>
 
@@ -1235,7 +1331,7 @@
         <!-- Loading Overlay -->
         <div class="loading-overlay">
             <div class="loading-spinner"></div>
-            <div class="loading-progress">Loading GLB Avatar: 0%</div>
+            <div class="loading-progress">Loading Avatar: 0%</div>
         </div>
 
         <!-- 3D Viewport Controls -->
@@ -1253,10 +1349,10 @@
 
         <!-- Avatar Stats & Debug Info -->
         <div class="debug-info">
-            <h5>EXPANDED GLB Avatar - Rich Color Options</h5>
+            <h5>Avatar System - Optimized Loading</h5>
             <div id="avatar-info">
-                <p><strong>Status:</strong> <span id="debug-status">Initializing EXPANDED system...</span></p>
-                <p><strong>Model:</strong> <span id="debug-model">GLB Loading</span></p>
+                <p><strong>Status:</strong> <span id="debug-status">Initializing...</span></p>
+                <p><strong>Model:</strong> <span id="debug-model">Loading...</span></p>
                 <p><strong>Hair:</strong> <span id="debug-hair-type">None</span></p>
                 <p><strong>Gender:</strong> <span id="debug-gender">female</span></p>
                 <p><strong>Body:</strong> <span id="debug-body">m_medium</span></p>
@@ -1274,7 +1370,6 @@
 
 <!-- Wait for THREE.js to load completely -->
 <script>
-// Ensure THREE.js loads before other scripts
 if (typeof THREE === 'undefined') {
     console.error('❌ THREE.js failed to load');
 } else {
@@ -1286,22 +1381,15 @@ if (typeof THREE === 'undefined') {
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
-<!-- EXPANDED GLB Avatar Manager with Rich Color Options -->
+<!-- Avatar Manager -->
 <script src="{{ url_for('static', filename='js/glb-avatar-manager.js') }}"></script>
 
-<!-- Custom modules AFTER Three.js -->
+<!-- Custom modules -->
 <script src="{{ url_for('static', filename='js/clothing-obj-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-mapper.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-processor.js') }}"></script>
 
-<!--
-=================================================================
-EXPANDED JAVASCRIPT WITH RICH COLOR SUPPORT
-Your existing JavaScript remains the same - just need to update
-the randomization function to use the new color options
-=================================================================
--->
 <script>
 (function() {
     'use strict';
@@ -1330,189 +1418,186 @@ the randomization function to use the new color options
         view: 'normal'
     };
 
-    /* EXPANDED Color Arrays for Randomization */
-    const EXPANDED_COLORS = {
-        skin: ['light', 'fair', 'pale', 'medium', 'olive', 'warm', 'tan', 'bronze', 'dark', 'darker', 'darkest', 'ebony', 'pink', 'cool'],
-        eyes: ['brown', 'dark-brown', 'light-brown', 'blue', 'light-blue', 'dark-blue', 'sky-blue', 'green', 'light-green', 'dark-green', 'emerald', 'hazel', 'amber', 'purple', 'violet', 'gray', 'silver', 'gold'],
-        hair: ['brown', 'light-brown', 'dark-brown', 'chestnut', 'chocolate', 'mahogany', 'black', 'jet-black', 'charcoal', 'blonde', 'light-blonde', 'dark-blonde', 'platinum', 'honey', 'strawberry-blonde', 'red', 'auburn', 'copper', 'ginger', 'burgundy', 'cherry', 'gray', 'silver', 'white', 'pink', 'hot-pink', 'purple', 'violet', 'blue', 'teal', 'green', 'mint', 'orange']
-    };
-
     /* Global Avatar Manager */
     let avatarManager = null;
     let currentAvatarType = 'glb';
 
-    console.log('🚀 EXPANDED: Initializing Rich Color Avatar System...');
+    console.log('🚀 Initializing Optimized Avatar System (No Randomize + Save/Load)...');
 
     /* Application Initialization */
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 DOM Content Loaded - Starting EXPANDED GLB initialization...');
+        console.log('🚀 DOM Content Loaded - Starting optimized initialization...');
 
-        /* Initialize all systems with delays to prevent overlap */
         setTimeout(() => initializeTabSystem(), 100);
         setTimeout(() => initializeFormatSelection(), 200);
-        setTimeout(() => initializeExpandedGLBAvatarSystem(), 300);
+        setTimeout(() => initializeAvatarSystem(), 300);
         setTimeout(() => initializeClothingSystem(), 400);
-        setTimeout(() => initializeExpandedAvatarCustomization(), 500);
+        setTimeout(() => initializeAvatarCustomization(), 500);
         setTimeout(() => initializeCameraViewSystem(), 600);
-        setTimeout(() => initializeExpandedGLBHairSystem(), 700);
+        setTimeout(() => initializeHairSystem(), 700);
         setTimeout(() => initializeWardrobeSystem(), 800);
-        setTimeout(() => initializeDebugInfo(), 900);
+        setTimeout(() => initializeSavedAvatarsSystem(), 900);
+        setTimeout(() => initializeDebugInfo(), 1000);
 
-        console.log('✅ All EXPANDED systems initialization queued');
+        console.log('✅ All systems initialization queued');
 
-        /* Format Selection System */
         function initializeFormatSelection() {
-            console.log('⚙️ EXPANDED GLB format selected...');
+            console.log('⚙️ GLB format selected...');
             AVATAR_CONFIG.PREFERRED_FORMAT = 'glb';
             AVATAR_CONFIG.HAIR_SYSTEM = 'glb';
         }
 
-        /* EXPANDED Enhanced GLB Avatar Management System */
-        function initializeExpandedGLBAvatarSystem() {
-            console.log('🤖 Initializing EXPANDED GLB Avatar System with Rich Colors...');
+        /* Avatar System */
+        function initializeAvatarSystem() {
+            console.log('🤖 Initializing Optimized Avatar System...');
 
-            // Wait for THREE.js to be fully loaded
             if (typeof THREE === 'undefined') {
                 console.log('⏳ Waiting for THREE.js to load...');
                 setTimeout(() => {
-                    initializeExpandedGLBAvatarSystem();
+                    initializeAvatarSystem();
                 }, 500);
                 return;
             }
 
-            // Check if GLBAvatarManager is available
             if (typeof window.CustomizableGLBAvatarManager !== 'undefined') {
                 try {
-                    // Create avatar manager
                     avatarManager = new window.CustomizableGLBAvatarManager({
                         container: document.getElementById('avatar-container'),
                         debug: true
                     });
 
-                    // Make globally available for debugging
                     window.avatarManager = avatarManager;
                     window.currentAvatarType = currentAvatarType;
 
-                    // Setup window resize handler
                     window.addEventListener('resize', () => {
                         if (avatarManager && avatarManager.onWindowResize) {
                             avatarManager.onWindowResize();
                         }
                     });
 
-                    updateDebugInfo('EXPANDED GLB system initialized with rich colors', 'success');
-                    showMessage('EXPANDED GLB avatar system - 60+ color options!', 'success');
+                    updateDebugInfo('Optimized system initialized', 'success');
+                    showMessage('Avatar system ready!', 'success');
 
-                    // Load default avatar manually after a delay
+                    // Load saved avatar or default
                     setTimeout(() => {
-                        loadDefaultAvatarManually();
+                        loadSavedAvatarOrDefault();
                     }, 2000);
 
                 } catch (error) {
-                    console.error('❌ Error initializing EXPANDED GLB Avatar Manager:', error);
-                    updateDebugInfo('Failed to initialize EXPANDED GLB system', 'error');
-                    showMessage('Failed to initialize EXPANDED GLB Avatar Manager: ' + error.message, 'error');
-                    return;
+                    console.error('❌ Error initializing Avatar Manager:', error);
+                    updateDebugInfo('Failed to initialize system', 'error');
+                    showMessage('Failed to initialize Avatar Manager: ' + error.message, 'error');
                 }
             } else {
-                console.error('❌ EXPANDED GLB Avatar Manager not available');
-                updateDebugInfo('EXPANDED GLB Manager not found', 'error');
-                showMessage('EXPANDED GLB Avatar Manager not found. Please check the script files.', 'error');
-                return;
+                console.error('❌ Avatar Manager not available');
+                updateDebugInfo('Manager not found', 'error');
+                showMessage('Avatar Manager not found. Please check the script files.', 'error');
             }
         }
 
-        // Load default avatar manually
-        async function loadDefaultAvatarManually() {
+        /* Load saved avatar or default */
+        async function loadSavedAvatarOrDefault() {
             if (!avatarManager) {
                 console.log('❌ Avatar manager not available');
                 return;
             }
 
-            const status = avatarManager.getLoadingStatus();
-            if (status.hasLoadedDefault || status.avatar) {
-                console.log('⚠️ Default avatar already loaded or loading');
-                return;
-            }
-
-            console.log('🎯 MANUALLY loading default avatar with RICH COLORS...');
-
             try {
-                showLoading('Loading default avatar with rich colors...');
-                updateDebugInfo('Loading default avatar...', 'info');
+                showLoading('Loading your saved avatar...');
+                updateDebugInfo('Loading saved avatar...', 'info');
 
-                await avatarManager.requestDefaultAvatar();
-
-                updateDebugInfo('Default avatar loaded successfully', 'success');
-                showMessage('Default avatar loaded with rich color options!', 'success');
-
+                // Try to load the most recent saved avatar
+                const response = await fetch('/api/avatar/get-saved');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.avatar) {
+                        console.log('🎯 Loading saved avatar configuration...');
+                        
+                        // Update local config
+                        Object.assign(avatarCustomization, data.avatar.configuration);
+                        
+                        // Load avatar
+                        await avatarManager.requestDefaultAvatar();
+                        
+                        // Apply saved configuration
+                        if (avatarManager.setConfiguration) {
+                            await avatarManager.setConfiguration(data.avatar.configuration);
+                        }
+                        
+                        // Update UI
+                        updateUIFromConfig(data.avatar.configuration);
+                        
+                        // Load hair separately after delay
+                        setTimeout(() => {
+                            if (data.avatar.configuration.hairType) {
+                                selectHairStyle(data.avatar.configuration.hairType);
+                            }
+                        }, 3000);
+                        
+                        updateDebugInfo('Saved avatar loaded', 'success');
+                        showMessage('Your saved avatar has been loaded!', 'success');
+                    } else {
+                        // No saved avatar, load default
+                        await loadDefaultAvatar();
+                    }
+                } else {
+                    // Error or no saved avatar, load default
+                    await loadDefaultAvatar();
+                }
+                
                 updateDebugDisplay();
-
+                
             } catch (error) {
-                console.error('❌ Error loading default avatar:', error);
-                updateDebugInfo('Failed to load default avatar', 'error');
-                showMessage('Failed to load default avatar: ' + error.message, 'error');
+                console.error('❌ Error loading saved avatar:', error);
+                await loadDefaultAvatar();
             } finally {
                 hideLoading();
             }
         }
 
-        /* EXPANDED Enhanced GLB Hair System */
-        function initializeExpandedGLBHairSystem() {
-            console.log('🦱 Initializing EXPANDED GLB Hair System...');
+        /* Load default avatar */
+        async function loadDefaultAvatar() {
+            console.log('🎯 Loading default avatar...');
+            
+            try {
+                await avatarManager.requestDefaultAvatar();
+                updateDebugInfo('Default avatar loaded', 'success');
+                showMessage('Default avatar loaded!', 'success');
+                
+                // Load default hair after delay
+                setTimeout(() => {
+                    selectHairStyle(avatarCustomization.hair.type);
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Error loading default avatar:', error);
+                updateDebugInfo('Failed to load default avatar', 'error');
+                showMessage('Failed to load default avatar: ' + error.message, 'error');
+            }
+        }
+
+        /* Hair System */
+        function initializeHairSystem() {
+            console.log('🦱 Initializing Hair System...');
 
             if (!avatarManager) {
                 console.log('⏳ Waiting for avatar manager...');
-                setTimeout(initializeExpandedGLBHairSystem, 1000);
+                setTimeout(initializeHairSystem, 1000);
                 return;
             }
 
             try {
-                loadGLBHairPreviews();
-                setupGLBHairEventListeners();
+                loadHairPreviews();
+                setupHairEventListeners();
                 setupHairCategoryFilters();
-
-                console.log('✅ EXPANDED GLB Hair System initialized');
-
-                setTimeout(() => {
-                    loadInitialGLBHairStyleSafely();
-                }, 4000);
-
+                console.log('✅ Hair System initialized');
             } catch (error) {
-                console.error('❌ Failed to initialize EXPANDED GLB Hair System:', error);
+                console.error('❌ Failed to initialize Hair System:', error);
             }
         }
 
-        // Safe initial hair loading
-        async function loadInitialGLBHairStyleSafely() {
-            if (!avatarManager) {
-                console.log('❌ Avatar manager not available for hair loading');
-                return;
-            }
-
-            if (!avatarManager.avatarModel) {
-                console.log('⏳ Waiting for avatar model to load before applying hair...');
-                setTimeout(loadInitialGLBHairStyleSafely, 2000);
-                return;
-            }
-
-            const status = avatarManager.getLoadingStatus();
-            if (status.hair) {
-                console.log('⚠️ Hair already loading, skipping...');
-                return;
-            }
-
-            console.log('🦱 Loading initial hair style safely...');
-
-            try {
-                await selectGLBHairStyle(avatarCustomization.hair.type);
-            } catch (error) {
-                console.error('❌ Error loading initial hair style:', error);
-            }
-        }
-
-        // Load GLB hair previews into the UI
-        function loadGLBHairPreviews() {
+        function loadHairPreviews() {
             const container = document.getElementById('hair-preview-container');
             if (!container) {
                 console.error('❌ Hair preview container not found');
@@ -1524,7 +1609,7 @@ the randomization function to use the new color options
                 const hairPreviewHTML = avatarManager.generateHairPreviewHTML(currentGender);
                 container.innerHTML = hairPreviewHTML;
 
-                console.log(`✅ GLB hair previews loaded for gender: ${currentGender}`);
+                console.log(`✅ Hair previews loaded for gender: ${currentGender}`);
 
                 setTimeout(() => {
                     const defaultHairElement = container.querySelector(`[data-hair-style="${avatarCustomization.hair.type}"]`);
@@ -1534,21 +1619,20 @@ the randomization function to use the new color options
                 }, 100);
 
             } catch (error) {
-                console.error('❌ Error loading GLB hair previews:', error);
-                container.innerHTML = '<div class="error">Failed to load GLB hair styles</div>';
+                console.error('❌ Error loading hair previews:', error);
+                container.innerHTML = '<div class="error">Failed to load hair styles</div>';
             }
         }
 
-        // Setup GLB hair event listeners
-        function setupGLBHairEventListeners() {
-            console.log('🎧 Setting up GLB hair event listeners...');
+        function setupHairEventListeners() {
+            console.log('🎧 Setting up hair event listeners...');
 
             document.addEventListener('click', async function(e) {
                 const hairOption = e.target.closest('.hair-preview-option');
                 if (hairOption) {
                     const hairStyleKey = hairOption.dataset.hairStyle;
                     if (hairStyleKey) {
-                        await selectGLBHairStyle(hairStyleKey);
+                        await selectHairStyle(hairStyleKey);
                     }
                 }
             });
@@ -1572,7 +1656,6 @@ the randomization function to use the new color options
             });
         }
 
-        // Setup hair category filters
         function setupHairCategoryFilters() {
             console.log('🏷️ Setting up hair category filters...');
 
@@ -1587,9 +1670,8 @@ the randomization function to use the new color options
             });
         }
 
-        // Filter hair styles by category
         function filterHairByCategory(category) {
-            console.log(`🔍 Filtering GLB hair styles by category: ${category}`);
+            console.log(`🔍 Filtering hair styles by category: ${category}`);
 
             const hairOptions = document.querySelectorAll('.hair-preview-option');
             const currentGender = avatarCustomization.gender || 'female';
@@ -1611,8 +1693,7 @@ the randomization function to use the new color options
             });
         }
 
-        // Select GLB hair style with protection
-        async function selectGLBHairStyle(hairStyleKey) {
+        async function selectHairStyle(hairStyleKey) {
             if (!avatarManager) {
                 console.log('❌ Avatar manager not available');
                 return false;
@@ -1629,9 +1710,9 @@ the randomization function to use the new color options
                 return false;
             }
 
-            console.log(`🦱 Selecting EXPANDED GLB hair style: ${hairStyleKey}`);
+            console.log(`🦱 Selecting hair style: ${hairStyleKey}`);
 
-            showHairLoadingStatus(true, 'Loading GLB hair model...');
+            showHairLoadingStatus(true, 'Loading hair model...');
 
             try {
                 document.querySelectorAll('.hair-preview-option').forEach(option => {
@@ -1652,25 +1733,24 @@ the randomization function to use the new color options
                     const hairName = hairData ? hairData.name : hairStyleKey;
 
                     updateDebugDisplay();
-                    showMessage(`GLB hairstyle "${hairName}" applied successfully`, 'success');
-                    console.log(`✅ EXPANDED GLB hair style applied: ${hairName}`);
+                    showMessage(`Hairstyle "${hairName}" applied successfully`, 'success');
+                    console.log(`✅ Hair style applied: ${hairName}`);
                 } else {
-                    showMessage('Failed to apply GLB hairstyle', 'error');
-                    console.error(`❌ Failed to apply EXPANDED GLB hair style: ${hairStyleKey}`);
+                    showMessage('Failed to apply hairstyle', 'error');
+                    console.error(`❌ Failed to apply hair style: ${hairStyleKey}`);
                 }
 
                 return success;
 
             } catch (error) {
-                console.error('❌ Error selecting EXPANDED GLB hair style:', error);
-                showMessage('Error applying GLB hairstyle', 'error');
+                console.error('❌ Error selecting hair style:', error);
+                showMessage('Error applying hairstyle', 'error');
                 return false;
             } finally {
                 showHairLoadingStatus(false);
             }
         }
 
-        // Show/hide hair loading status
         function showHairLoadingStatus(show, message = '') {
             const statusElement = document.getElementById('hair-loading-status');
             if (statusElement) {
@@ -1686,13 +1766,12 @@ the randomization function to use the new color options
             }
         }
 
-        // Update hair previews when gender changes
         function updateHairPreviewsForGender(newGender) {
-            console.log(`🔄 Updating EXPANDED GLB hair previews for gender: ${newGender}`);
+            console.log(`🔄 Updating hair previews for gender: ${newGender}`);
 
             if (avatarManager) {
                 avatarManager.removeCurrentHair();
-                loadGLBHairPreviews();
+                loadHairPreviews();
 
                 const defaultHairStyles = {
                     'female': 'elvis_hazel',
@@ -1702,7 +1781,7 @@ the randomization function to use the new color options
                 avatarCustomization.hair.type = defaultHairStyles[newGender] || 'elvis_hazel';
 
                 setTimeout(() => {
-                    selectGLBHairStyle(avatarCustomization.hair.type);
+                    selectHairStyle(avatarCustomization.hair.type);
                 }, 2000);
             }
         }
@@ -1792,92 +1871,11 @@ the randomization function to use the new color options
             controls.update();
         }
 
-        /* Debug Info System */
-        function initializeDebugInfo() {
-            console.log('🐛 Initializing debug info system...');
-            updateDebugInfo('EXPANDED GLB system starting...', 'info');
+        /* Avatar Customization Functions */
+        function initializeAvatarCustomization() {
+            console.log('🎨 Initializing avatar customization system...');
 
-            setInterval(() => {
-                updateDebugDisplay();
-            }, 2000);
-        }
-
-        function updateDebugInfo(status, type = 'info') {
-            const statusElement = document.getElementById('debug-status');
-            if (statusElement) {
-                statusElement.textContent = status;
-                statusElement.style.color = type === 'error' ? '#e74c3c' :
-                                          type === 'success' ? '#27ae60' : '#333';
-            }
-        }
-
-        function updateDebugDisplay() {
-            const modelElement = document.getElementById('debug-model');
-            if (modelElement && avatarManager && avatarManager.avatarModel) {
-                modelElement.textContent = 'Enhanced GLB + Hair';
-            } else if (modelElement) {
-                modelElement.textContent = 'None';
-            }
-
-            const genderElement = document.getElementById('debug-gender');
-            if (genderElement) {
-                genderElement.textContent = avatarCustomization.gender;
-            }
-
-            const bodyElement = document.getElementById('debug-body');
-            if (bodyElement) {
-                bodyElement.textContent = `${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}`;
-            }
-
-            const hairElement = document.getElementById('debug-hair-type');
-            if (hairElement) {
-                const hairStatus = avatarManager && avatarManager.currentHairModel ? 'GLB Loaded' : 'None';
-                hairElement.textContent = `${avatarCustomization.hair.type} (${avatarCustomization.hair.color}) - ${hairStatus}`;
-            }
-
-            const viewElement = document.getElementById('debug-view');
-            if (viewElement) {
-                viewElement.textContent = avatarCustomization.view.charAt(0).toUpperCase() + avatarCustomization.view.slice(1);
-            }
-
-            const pathElement = document.getElementById('debug-path');
-            if (pathElement && avatarManager) {
-                const currentPath = avatarManager.getAvatarPath ?
-                    avatarManager.getAvatarPath(avatarCustomization) :
-                    `/static/models/makehuman/bodies/${avatarCustomization.gender}/${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}.glb`;
-                pathElement.textContent = currentPath;
-            }
-        }
-
-        /* Tab System Functions */
-        function initializeTabSystem() {
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const targetTab = this.dataset.tab;
-
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-
-                    this.classList.add('active');
-                    document.getElementById(targetTab).classList.add('active');
-
-                    console.log(`📑 Switched to tab: ${targetTab}`);
-
-                    if (targetTab === 'wardrobe') {
-                        loadWardrobeItems('tops');
-                    }
-                });
-            });
-        }
-
-        /* EXPANDED Avatar Customization Functions */
-        function initializeExpandedAvatarCustomization() {
-            console.log('🎨 Initializing EXPANDED avatar customization system...');
-
-            // Gender selection with loading protection
+            // Gender selection
             document.querySelectorAll('.gender-option').forEach(button => {
                 button.addEventListener('click', async function() {
                     document.querySelectorAll('.gender-option').forEach(btn => btn.classList.remove('active'));
@@ -1891,7 +1889,7 @@ the randomization function to use the new color options
                 });
             });
 
-            // Height selection with loading protection
+            // Height selection
             document.querySelectorAll('[data-height]').forEach(button => {
                 button.addEventListener('click', async function() {
                     document.querySelectorAll('[data-height]').forEach(btn => btn.classList.remove('selected'));
@@ -1905,7 +1903,7 @@ the randomization function to use the new color options
                 });
             });
 
-            // Body size selection with loading protection
+            // Body size selection
             document.querySelectorAll('[data-body-size]').forEach(button => {
                 button.addEventListener('click', async function() {
                     document.querySelectorAll('[data-body-size]').forEach(btn => btn.classList.remove('selected'));
@@ -1919,7 +1917,7 @@ the randomization function to use the new color options
                 });
             });
 
-            // EXPANDED Skin color selection with 14 options
+            // Skin color selection
             document.querySelectorAll('[data-skin]').forEach(colorOption => {
                 colorOption.addEventListener('click', function() {
                     document.querySelectorAll('[data-skin]').forEach(opt => opt.classList.remove('selected'));
@@ -1937,7 +1935,7 @@ the randomization function to use the new color options
                 });
             });
 
-            // EXPANDED Eye color selection with 19 options
+            // Eye color selection
             document.querySelectorAll('[data-eye]').forEach(colorOption => {
                 colorOption.addEventListener('click', function() {
                     document.querySelectorAll('[data-eye]').forEach(opt => opt.classList.remove('selected'));
@@ -1953,80 +1951,6 @@ the randomization function to use the new color options
                     }
                     updateDebugDisplay();
                 });
-            });
-
-            // EXPANDED Randomize avatar with rich colors
-            document.getElementById('randomize-avatar').addEventListener('click', async function() {
-                if (!avatarManager) {
-                    showMessage('Avatar manager not available', 'error');
-                    return;
-                }
-
-                const status = avatarManager.getLoadingStatus();
-                if (status.avatar || status.hair) {
-                    showMessage('Please wait for current loading to complete', 'error');
-                    return;
-                }
-
-                console.log('🎲 Randomizing avatar with EXPANDED colors...');
-                showLoading('Randomizing avatar with rich colors...');
-                updateDebugInfo('Randomizing with expanded palette...', 'info');
-
-                try {
-                    const genders = ['female', 'male'];
-                    const randomGender = genders[Math.floor(Math.random() * genders.length)];
-
-                    const randomConfig = {
-                        gender: randomGender,
-                        bodySize: ['xs', 's', 'm', 'l', 'xl'][Math.floor(Math.random() * 5)],
-                        height: ['short', 'medium', 'tall'][Math.floor(Math.random() * 3)],
-                        skinColor: EXPANDED_COLORS.skin[Math.floor(Math.random() * EXPANDED_COLORS.skin.length)],
-                        hairColor: EXPANDED_COLORS.hair[Math.floor(Math.random() * EXPANDED_COLORS.hair.length)],
-                        eyeColor: EXPANDED_COLORS.eyes[Math.floor(Math.random() * EXPANDED_COLORS.eyes.length)]
-                    };
-
-                    const availableHairStyles = Object.keys(avatarManager.getAvailableHairStyles(randomGender));
-                    const randomHairStyle = availableHairStyles[Math.floor(Math.random() * availableHairStyles.length)];
-                    randomConfig.hairType = randomHairStyle;
-
-                    Object.assign(avatarCustomization, {
-                        gender: randomConfig.gender,
-                        body: {
-                            bodySize: randomConfig.bodySize,
-                            height: randomConfig.height
-                        },
-                        hair: {
-                            type: randomConfig.hairType,
-                            color: randomConfig.hairColor
-                        },
-                        skin: randomConfig.skinColor,
-                        eyes: randomConfig.eyeColor
-                    });
-
-                    if (avatarManager.setConfiguration) {
-                        await avatarManager.setConfiguration(randomConfig);
-                    }
-
-                    updateUIFromConfig(randomConfig);
-                    updateDebugDisplay();
-                    updateDebugInfo('Randomized with EXPANDED colors', 'success');
-                    showMessage(`Avatar randomized! Skin: ${randomConfig.skinColor}, Eyes: ${randomConfig.eyeColor}, Hair: ${randomConfig.hairColor}`, 'success');
-
-                    if (randomConfig.gender !== avatarCustomization.gender) {
-                        updateHairPreviewsForGender(randomConfig.gender);
-                    } else {
-                        setTimeout(() => {
-                            selectGLBHairStyle(randomConfig.hairType);
-                        }, 2000);
-                    }
-
-                } catch (error) {
-                    console.error('❌ Error randomizing avatar:', error);
-                    updateDebugInfo('Randomize failed', 'error');
-                    showMessage('Failed to randomize avatar', 'error');
-                } finally {
-                    hideLoading();
-                }
             });
 
             // Reset avatar
@@ -2080,9 +2004,9 @@ the randomization function to use the new color options
                     updateDebugInfo('Reset complete', 'success');
                     showMessage('Avatar reset to defaults', 'info');
 
-                    loadGLBHairPreviews();
+                    loadHairPreviews();
                     setTimeout(() => {
-                        selectGLBHairStyle(defaultConfig.hairType);
+                        selectHairStyle(defaultConfig.hairType);
                     }, 2000);
 
                 } catch (error) {
@@ -2097,6 +2021,8 @@ the randomization function to use the new color options
             // Save avatar
             document.getElementById('save-avatar-btn').addEventListener('click', async function() {
                 try {
+                    showLoading('Saving avatar...');
+                    
                     let config;
                     if (avatarManager && avatarManager.getConfiguration) {
                         config = avatarManager.getConfiguration();
@@ -2104,7 +2030,7 @@ the randomization function to use the new color options
                         config = avatarCustomization;
                     }
 
-                    const response = await fetch('/api/makehuman/save-avatar', {
+                    const response = await fetch('/api/avatar/save', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -2122,18 +2048,179 @@ the randomization function to use the new color options
 
                     const data = await response.json();
                     if (data.success) {
-                        showMessage('EXPANDED GLB Avatar saved successfully!', 'success');
+                        showMessage('Avatar saved successfully!', 'success');
+                        loadSavedAvatars(); // Refresh saved avatars list
                     } else {
                         throw new Error(data.error || 'Failed to save avatar');
                     }
                 } catch (error) {
                     console.error('❌ Error saving avatar:', error);
                     showMessage('Failed to save avatar: ' + error.message, 'error');
+                } finally {
+                    hideLoading();
                 }
+            });
+
+            // Load saved avatar button
+            document.getElementById('load-saved-avatar-btn').addEventListener('click', function() {
+                loadSavedAvatars();
+                showMessage('Select a saved avatar from the list below', 'info');
             });
         }
 
-        // Gender change handler with loading protection
+        /* Saved Avatars System */
+        function initializeSavedAvatarsSystem() {
+            console.log('💾 Initializing saved avatars system...');
+            loadSavedAvatars();
+        }
+
+        async function loadSavedAvatars() {
+            const container = document.getElementById('saved-avatars-grid');
+            if (!container) return;
+
+            try {
+                container.innerHTML = '<div class="loading">Loading saved avatars...</div>';
+
+                const response = await fetch('/api/avatar/get-all-saved');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load saved avatars');
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.avatars && data.avatars.length > 0) {
+                    let html = '';
+                    
+                    data.avatars.forEach((avatar, index) => {
+                        const date = new Date(avatar.created_at).toLocaleDateString();
+                        const config = avatar.configuration || {};
+                        const genderIcon = config.gender === 'male' ? '👨' : '👩';
+                        
+                        html += `
+                            <div class="saved-avatar-item" data-avatar-id="${avatar._id}">
+                                <button class="delete-saved-avatar" onclick="deleteSavedAvatar('${avatar._id}')" title="Delete">×</button>
+                                <div class="saved-avatar-preview">
+                                    ${genderIcon} Avatar ${index + 1}
+                                </div>
+                                <div class="saved-avatar-name">
+                                    ${config.gender || 'Unknown'} | ${config.skinColor || 'light'} | ${config.hairType || 'default'}
+                                </div>
+                                <div class="saved-avatar-date">${date}</div>
+                            </div>
+                        `;
+                    });
+
+                    container.innerHTML = html;
+
+                    // Add click listeners
+                    container.querySelectorAll('.saved-avatar-item').forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            if (e.target.classList.contains('delete-saved-avatar')) return;
+                            
+                            const avatarId = this.dataset.avatarId;
+                            loadSavedAvatar(avatarId);
+                        });
+                    });
+
+                } else {
+                    container.innerHTML = '<div class="no-items">No saved avatars found</div>';
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading saved avatars:', error);
+                container.innerHTML = '<div class="error">Failed to load saved avatars</div>';
+            }
+        }
+
+        async function loadSavedAvatar(avatarId) {
+            if (!avatarManager) {
+                showMessage('Avatar manager not available', 'error');
+                return;
+            }
+
+            try {
+                showLoading('Loading saved avatar...');
+                updateDebugInfo('Loading saved avatar...', 'info');
+
+                const response = await fetch(`/api/avatar/get-saved/${avatarId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load saved avatar');
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.avatar) {
+                    console.log('🎯 Loading saved avatar configuration...');
+                    
+                    // Update local config
+                    Object.assign(avatarCustomization, data.avatar.configuration);
+                    
+                    // Load avatar
+                    await avatarManager.requestDefaultAvatar();
+                    
+                    // Apply saved configuration
+                    if (avatarManager.setConfiguration) {
+                        await avatarManager.setConfiguration(data.avatar.configuration);
+                    }
+                    
+                    // Update UI
+                    updateUIFromConfig(data.avatar.configuration);
+                    
+                    // Load hair separately after delay
+                    setTimeout(() => {
+                        if (data.avatar.configuration.hairType) {
+                            selectHairStyle(data.avatar.configuration.hairType);
+                        }
+                    }, 3000);
+                    
+                    updateDebugInfo('Saved avatar loaded', 'success');
+                    showMessage('Saved avatar loaded successfully!', 'success');
+                    updateDebugDisplay();
+                } else {
+                    throw new Error(data.error || 'Failed to load avatar');
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading saved avatar:', error);
+                updateDebugInfo('Failed to load saved avatar', 'error');
+                showMessage('Failed to load saved avatar: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        window.deleteSavedAvatar = async function(avatarId) {
+            if (!confirm('Are you sure you want to delete this saved avatar?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/avatar/delete/${avatarId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete avatar');
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('Avatar deleted successfully', 'success');
+                    loadSavedAvatars(); // Refresh the list
+                } else {
+                    throw new Error(data.error || 'Failed to delete avatar');
+                }
+
+            } catch (error) {
+                console.error('❌ Error deleting avatar:', error);
+                showMessage('Failed to delete avatar: ' + error.message, 'error');
+            }
+        };
+
+        // Gender change handler
         async function handleGenderChange(gender) {
             if (avatarManager && avatarManager.updateGender) {
                 if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
@@ -2165,7 +2252,7 @@ the randomization function to use the new color options
             }
         }
 
-        // Height change handler with loading protection
+        // Height change handler
         async function handleHeightChange(height) {
             if (avatarManager && avatarManager.updateHeight) {
                 if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
@@ -2194,7 +2281,7 @@ the randomization function to use the new color options
             }
         }
 
-        // Body size change handler with loading protection
+        // Body size change handler
         async function handleBodySizeChange(bodySize) {
             if (avatarManager && avatarManager.updateBodySize) {
                 if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
@@ -2226,8 +2313,88 @@ the randomization function to use the new color options
         /* Wardrobe System */
         function initializeWardrobeSystem() {
             console.log('👕 Initializing wardrobe system...');
-            // Wardrobe system implementation continues...
-            // [Wardrobe functions remain the same as they don't need color expansion]
+            // Wardrobe functionality would go here
+        }
+
+        /* Debug Info System */
+        function initializeDebugInfo() {
+            console.log('🐛 Initializing debug info system...');
+            updateDebugInfo('System starting...', 'info');
+
+            setInterval(() => {
+                updateDebugDisplay();
+            }, 2000);
+        }
+
+        function updateDebugInfo(status, type = 'info') {
+            const statusElement = document.getElementById('debug-status');
+            if (statusElement) {
+                statusElement.textContent = status;
+                statusElement.style.color = type === 'error' ? '#e74c3c' :
+                                          type === 'success' ? '#27ae60' : '#333';
+            }
+        }
+
+        function updateDebugDisplay() {
+            const modelElement = document.getElementById('debug-model');
+            if (modelElement && avatarManager && avatarManager.avatarModel) {
+                modelElement.textContent = 'GLB + Hair';
+            } else if (modelElement) {
+                modelElement.textContent = 'None';
+            }
+
+            const genderElement = document.getElementById('debug-gender');
+            if (genderElement) {
+                genderElement.textContent = avatarCustomization.gender;
+            }
+
+            const bodyElement = document.getElementById('debug-body');
+            if (bodyElement) {
+                bodyElement.textContent = `${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}`;
+            }
+
+            const hairElement = document.getElementById('debug-hair-type');
+            if (hairElement) {
+                const hairStatus = avatarManager && avatarManager.currentHairModel ? 'Loaded' : 'None';
+                hairElement.textContent = `${avatarCustomization.hair.type} (${avatarCustomization.hair.color}) - ${hairStatus}`;
+            }
+
+            const viewElement = document.getElementById('debug-view');
+            if (viewElement) {
+                viewElement.textContent = avatarCustomization.view.charAt(0).toUpperCase() + avatarCustomization.view.slice(1);
+            }
+
+            const pathElement = document.getElementById('debug-path');
+            if (pathElement && avatarManager) {
+                const currentPath = avatarManager.getAvatarPath ?
+                    avatarManager.getAvatarPath(avatarCustomization) :
+                    `/static/models/makehuman/bodies/${avatarCustomization.gender}/${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}.glb`;
+                pathElement.textContent = currentPath;
+            }
+        }
+
+        /* Tab System Functions */
+        function initializeTabSystem() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.dataset.tab;
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    this.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+
+                    console.log(`📑 Switched to tab: ${targetTab}`);
+
+                    if (targetTab === 'wardrobe') {
+                        // Load wardrobe items if needed
+                    }
+                });
+            });
         }
 
         /* Update UI elements based on configuration */
@@ -2247,7 +2414,7 @@ the randomization function to use the new color options
                 btn.classList.toggle('selected', btn.dataset.bodySize === config.bodySize);
             });
 
-            // Update EXPANDED color selections
+            // Update color selections
             document.querySelectorAll('[data-skin]').forEach(opt => {
                 opt.classList.toggle('selected', opt.dataset.skin === config.skinColor);
             });
@@ -2305,65 +2472,7 @@ the randomization function to use the new color options
             return icons[type] || 'info-circle';
         }
 
-        /* Global debug functions */
-        window.checkAvatarLoadingStatus = function() {
-            if (!avatarManager) {
-                console.log('❌ Avatar manager not available');
-                return null;
-            }
-
-            const status = avatarManager.getLoadingStatus();
-            console.log('📊 Current loading status:', status);
-            return status;
-        };
-
-        window.forceStopAllLoading = function() {
-            if (!avatarManager) {
-                console.log('❌ Avatar manager not available');
-                return;
-            }
-
-            console.log('🛑 Force stopping all loading operations...');
-
-            avatarManager.isLoadingAvatar = false;
-            avatarManager.isLoadingHair = false;
-            avatarManager.loadingQueue.clear();
-
-            hideLoading();
-            updateDebugInfo('Force stopped all loading', 'info');
-            showMessage('All loading operations force stopped', 'info');
-        };
-
-        window.manuallyLoadAvatar = async function() {
-            if (!avatarManager) {
-                console.log('❌ Avatar manager not available');
-                return;
-            }
-
-            const status = avatarManager.getLoadingStatus();
-            console.log('📊 Current status before manual load:', status);
-
-            if (status.avatar) {
-                console.log('⚠️ Avatar already loading');
-                return;
-            }
-
-            if (status.hasLoadedDefault) {
-                console.log('⚠️ Default avatar already loaded');
-                return;
-            }
-
-            console.log('🎯 Manually triggering avatar load...');
-            await avatarManager.requestDefaultAvatar();
-        };
-
-        /* Initialization Completion */
-        console.log('✅ COMPLETELY EXPANDED GLB Avatar System initialized with RICH COLORS!');
-        console.log('🌈 Available Colors:');
-        console.log(`   🎭 Skin: ${EXPANDED_COLORS.skin.length} options`);
-        console.log(`   👁️ Eyes: ${EXPANDED_COLORS.eyes.length} options`);
-        console.log(`   💇 Hair: ${EXPANDED_COLORS.hair.length} options`);
-        console.log('🔒 Available debug functions: checkAvatarLoadingStatus(), forceStopAllLoading(), manuallyLoadAvatar()');
+        console.log('✅ Optimized Avatar System initialized (No Randomize + Save/Load)!');
     });
 
 })();

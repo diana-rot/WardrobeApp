@@ -4998,7 +4998,294 @@ def debug_check_obj_matches():
         return jsonify({'success': False, 'error': str(e)})
 
 # avatar make human
+from bson import ObjectId
+import json
 
+
+# Avatar Save/Load Routes
+@app.route('/api/avatar/save', methods=['POST'])
+@login_required
+def save_avatar():
+    """Save avatar configuration to database"""
+    try:
+        user_id = session['user']['_id']
+        data = request.json
+
+        if not data or 'configuration' not in data:
+            return jsonify({'success': False, 'error': 'No configuration provided'}), 400
+
+        configuration = data['configuration']
+        avatar_type = data.get('avatarType', 'glb')
+        format_type = data.get('format', 'glb')
+        hair_system = data.get('hairSystem', 'glb')
+
+        # Create avatar document
+        avatar_doc = {
+            'userId': user_id,
+            'configuration': configuration,
+            'avatarType': avatar_type,
+            'format': format_type,
+            'hairSystem': hair_system,
+            'created_at': datetime.now(),
+            'updated_at': datetime.now(),
+            'version': '1.0'
+        }
+
+        # Check if user already has a saved avatar - update it or create new
+        existing_avatar = db.saved_avatars.find_one({'userId': user_id})
+
+        if existing_avatar:
+            # Update existing avatar
+            avatar_doc['updated_at'] = datetime.now()
+            result = db.saved_avatars.update_one(
+                {'userId': user_id},
+                {'$set': avatar_doc}
+            )
+            message = 'Avatar configuration updated successfully'
+        else:
+            # Create new avatar
+            result = db.saved_avatars.insert_one(avatar_doc)
+            message = 'Avatar configuration saved successfully'
+
+        if result:
+            print(f"✅ Avatar saved for user {user_id}")
+            return jsonify({
+                'success': True,
+                'message': message,
+                'avatarId': str(existing_avatar['_id']) if existing_avatar else str(result.inserted_id)
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to save avatar'}), 500
+
+    except Exception as e:
+        print(f"❌ Error saving avatar: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/avatar/get-saved', methods=['GET'])
+@login_required
+def get_saved_avatar():
+    """Get the most recent saved avatar for the current user"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get the most recent saved avatar
+        avatar = db.saved_avatars.find_one(
+            {'userId': user_id},
+            sort=[('updated_at', -1)]
+        )
+
+        if avatar:
+            # Convert ObjectId to string for JSON serialization
+            avatar['_id'] = str(avatar['_id'])
+
+            return jsonify({
+                'success': True,
+                'avatar': avatar
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'No saved avatar found'
+            }), 404
+
+    except Exception as e:
+        print(f"❌ Error getting saved avatar: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/avatar/get-all-saved', methods=['GET'])
+@login_required
+def get_all_saved_avatars():
+    """Get all saved avatars for the current user"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get all saved avatars for this user, sorted by most recent
+        avatars = list(db.saved_avatars.find(
+            {'userId': user_id}
+        ).sort('updated_at', -1).limit(10))  # Limit to last 10 avatars
+
+        # Convert ObjectIds to strings for JSON serialization
+        for avatar in avatars:
+            avatar['_id'] = str(avatar['_id'])
+
+        return jsonify({
+            'success': True,
+            'avatars': avatars,
+            'count': len(avatars)
+        })
+
+    except Exception as e:
+        print(f"❌ Error getting all saved avatars: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/avatar/get-saved/<avatar_id>', methods=['GET'])
+@login_required
+def get_saved_avatar_by_id(avatar_id):
+    """Get a specific saved avatar by ID"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get the specific avatar
+        avatar = db.saved_avatars.find_one({
+            '_id': ObjectId(avatar_id),
+            'userId': user_id
+        })
+
+        if avatar:
+            # Convert ObjectId to string for JSON serialization
+            avatar['_id'] = str(avatar['_id'])
+
+            return jsonify({
+                'success': True,
+                'avatar': avatar
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Avatar not found'
+            }), 404
+
+    except Exception as e:
+        print(f"❌ Error getting saved avatar by ID: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/avatar/delete/<avatar_id>', methods=['DELETE'])
+@login_required
+def delete_saved_avatar(avatar_id):
+    """Delete a saved avatar"""
+    try:
+        user_id = session['user']['_id']
+
+        # Delete the avatar (only if it belongs to the current user)
+        result = db.saved_avatars.delete_one({
+            '_id': ObjectId(avatar_id),
+            'userId': user_id
+        })
+
+        if result.deleted_count > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Avatar deleted successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Avatar not found or access denied'
+            }), 404
+
+    except Exception as e:
+        print(f"❌ Error deleting saved avatar: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/avatar/load-on-startup', methods=['GET'])
+@login_required
+def load_avatar_on_startup():
+    """Load avatar configuration on application startup"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get the most recent saved avatar
+        avatar = db.saved_avatars.find_one(
+            {'userId': user_id},
+            sort=[('updated_at', -1)]
+        )
+
+        if avatar:
+            # Convert ObjectId to string for JSON serialization
+            avatar['_id'] = str(avatar['_id'])
+
+            print(f"✅ Loading saved avatar for user {user_id} on startup")
+
+            return jsonify({
+                'success': True,
+                'hasAvatar': True,
+                'avatar': avatar,
+                'message': 'Saved avatar configuration loaded'
+            })
+        else:
+            print(f"ℹ️ No saved avatar found for user {user_id}, loading defaults")
+
+            # Return default configuration
+            default_config = {
+                'gender': 'female',
+                'bodySize': 'm',
+                'height': 'medium',
+                'skinColor': 'light',
+                'hairType': 'elvis_hazel',
+                'hairColor': 'brown',
+                'eyeColor': 'brown'
+            }
+
+            return jsonify({
+                'success': True,
+                'hasAvatar': False,
+                'defaultConfig': default_config,
+                'message': 'No saved avatar found, using defaults'
+            })
+
+    except Exception as e:
+        print(f"❌ Error loading avatar on startup: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Optional: Avatar statistics route
+@app.route('/api/avatar/stats', methods=['GET'])
+@login_required
+def get_avatar_stats():
+    """Get avatar statistics for the current user"""
+    try:
+        user_id = session['user']['_id']
+
+        # Count saved avatars
+        avatar_count = db.saved_avatars.count_documents({'userId': user_id})
+
+        # Get creation date of first avatar
+        first_avatar = db.saved_avatars.find_one(
+            {'userId': user_id},
+            sort=[('created_at', 1)]
+        )
+
+        # Get last updated avatar
+        last_avatar = db.saved_avatars.find_one(
+            {'userId': user_id},
+            sort=[('updated_at', -1)]
+        )
+
+        stats = {
+            'totalAvatars': avatar_count,
+            'firstCreated': first_avatar['created_at'].isoformat() if first_avatar else None,
+            'lastUpdated': last_avatar['updated_at'].isoformat() if last_avatar else None,
+            'hasAvatars': avatar_count > 0
+        }
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+
+    except Exception as e:
+        print(f"❌ Error getting avatar stats: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Database initialization - add this to your app startup
+def initialize_avatar_collections():
+    """Initialize avatar-related database collections and indexes"""
+    try:
+        # Create indexes for better performance
+        db.saved_avatars.create_index([("userId", 1), ("updated_at", -1)])
+        db.saved_avatars.create_index([("userId", 1), ("created_at", -1)])
+
+        print("✅ Avatar database collections and indexes initialized")
+
+    except Exception as e:
+        print(f"❌ Error initializing avatar collections: {str(e)}")
 
 if __name__ == '__main__':
+    initialize_avatar_collections()
     app.run(debug=True, use_reloader=False)

@@ -49,14 +49,14 @@ class CustomizableGLBAvatarManager {
                 },
                 'french_bob': {
                     name: 'French Bob',
-                    preview: '/static/models/makehuman/hair/previews/french_bob.jpg',
-                    glbPath: '/static/models/makehuman/hair/French_Bob_Blonde/hair_08.glb',
+                    preview: '/static/models/makehuman/hair/previews/bob.jpg',
+                    glbPath: '/static/models/makehuman/hair/French_Bob_Blonde/bob.glb',
                     category: 'short'
                 },
-                'hair_06': {
-                    name: 'Classic Style',
-                    preview: '/static/models/makehuman/hair/previews/hair_06.jpg',
-                    glbPath: '/static/models/makehuman/hair/Hair_06/hair_06.glb',
+                'ponytail': {
+                    name: 'PonyTail',
+                    preview: '/static/models/makehuman/hair/previews/ponytail.jpg',
+                    glbPath: '/static/models/makehuman/hair/Hair_06/ponytail.glb',
                     category: 'medium'
                 },
                 'hair_07': {
@@ -83,11 +83,11 @@ class CustomizableGLBAvatarManager {
                     glbPath: '/static/models/makehuman/hair/hair1/hair1.glb',
                     category: 'short'
                 },
-                'bald': {
-                    name: 'Bald',
-                    preview: '/static/models/makehuman/hair/previews/bald.jpg',
-                    glbPath: null, // No model for bald
-                    category: 'none'
+                'short_strawberry': {
+                    name: 'Strawberry Hair',
+                    preview: '/static/models/makehuman/hair/previews/strawberry_hair.jpg',
+                    glbPath:  '/static/models/makehuman/hair/Strawberry_Cloud_Hair/strawberry.glb',
+                    category: 'medium'
                 }
             },
             male: {
@@ -1142,28 +1142,3 @@ window.switchToLong = async function() {
         console.log('🔄 Switched to long avatar - hair will auto-position');
     }
 };
-
-console.log('✅ EXPANDED: GLB Avatar Manager with PERFECT Hair Positioning & Rich Colors!');
-console.log('🎯 Using your EXACT coordinates for all avatar heights:');
-console.log('   Short:  (0, -0.534, -0.13) scale: 1.0x');
-console.log('   Medium: (0, -0.39, -0.12) scale: 1.0x');
-console.log('   Long:   (0, -0.534, -0.13) scale: 1.0x');
-console.log('');
-console.log('🧹 FIXED PATHS:');
-console.log('   ✅ Fixed hair_06 path: Hair_06/hair_06.glb');
-console.log('   ✅ Fixed female_medium path: hair_female_medium/hair_female_medium.glb');
-console.log('   ✅ Fixed hair1 path: hair1/hair1.glb');
-console.log('   ✅ Fixed male_short path: male_short_hair/male_short_hair.glb');
-console.log('   ✅ Added bald option for both genders');
-console.log('');
-console.log('🎨 EXPANDED COLOR OPTIONS:');
-console.log('   👁️ Eye Colors: 19 options (brown, blue, green, hazel, purple, gray, amber, etc.)');
-console.log('   🎭 Skin Colors: 14 options (light, fair, pale, medium, olive, tan, bronze, dark, etc.)');
-console.log('   💇 Hair Colors: 30+ options (natural browns, blondes, reds, fantasy colors!)');
-console.log('');
-console.log('📞 USAGE:');
-console.log('   avatarManager.requestDefaultAvatar() - Load avatar with perfect hair');
-console.log('   switchToShort() / switchToMedium() / switchToLong() - Change height');
-console.log('   testPerfectPositioning("medium") - Apply perfect coords manually');
-console.log('');
-console.log('🌈 Now with TONS of customization options for maximum creativity!');
