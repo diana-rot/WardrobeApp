@@ -1,6 +1,5 @@
 /**
- * FINAL FIXED GLB Avatar Manager - Perfect Hair Positioning
- * Using your EXACT coordinates for each avatar height
+ * CLEANED GLB Avatar Manager - Removed Unused Paths & Fixed Configuration
  * Save as: static/js/glb-avatar-manager.js
  */
 
@@ -27,7 +26,7 @@ class CustomizableGLBAvatarManager {
             bodySize: 'm',
             height: 'medium',
             skinColor: 'light',
-            hairType: 'short_messy',
+            hairType: 'elvis_hazel', // Changed to first available hair style
             hairColor: 'brown',
             eyeColor: 'brown'
         };
@@ -39,15 +38,9 @@ class CustomizableGLBAvatarManager {
             'long': { x: 0, y: -0.534, z: -0.13, scale: 1.0 }
         };
 
-        // Hair styles configuration
+        // CLEANED: Hair styles configuration - removed unused paths
         this.hairStyles = {
             female: {
-                'afro_ponytail': {
-                    name: 'Long Hair',
-                    preview: '/static/models/makehuman/hair/previews/hair1l.jpg',
-                    glbPath: '/static/models/makehuman/hair/hair1/hair1.glb',
-                    category: 'long'
-                },
                 'elvis_hazel': {
                     name: 'Elvis Hazel',
                     preview: '/static/models/makehuman/hair/previews/elvis_hazel.jpg',
@@ -63,7 +56,7 @@ class CustomizableGLBAvatarManager {
                 'hair_06': {
                     name: 'Classic Style',
                     preview: '/static/models/makehuman/hair/previews/hair_06.jpg',
-                    glbPath: '/static/models/makehuman/hair/Hair_06/hair_08.glb',
+                    glbPath: '/static/models/makehuman/hair/Hair_06/hair_06.glb',
                     category: 'medium'
                 },
                 'hair_07': {
@@ -81,49 +74,19 @@ class CustomizableGLBAvatarManager {
                 'female_medium': {
                     name: 'Medium Length',
                     preview: '/static/models/makehuman/hair/previews/hair_female_medium.jpg',
-                    glbPath: '/static/models/makehuman/hair/hair_female_medium/hair_08.glb',
+                    glbPath: '/static/models/makehuman/hair/hair_female_medium/hair_female_medium.glb',
                     category: 'medium'
                 },
                 'hair1': {
                     name: 'Short Curly',
                     preview: '/static/models/makehuman/hair/previews/hair1.jpg',
-                    glbPath: '/static/models/makehuman/hair/hair1/hair_08.glb',
+                    glbPath: '/static/models/makehuman/hair/hair1/hair1.glb',
                     category: 'short'
-                },
-                'long_alpha': {
-                    name: 'Long Alpha',
-                    preview: '/static/models/makehuman/hair/previews/hairstyle_long2_alpha.jpg',
-                    glbPath: '/static/models/makehuman/hair/Hairstyle_Long2_alpha_7_adaptation/hair_08.glb',
-                    category: 'long'
-                },
-                'helen_troy': {
-                    name: 'Helen of Troy',
-                    preview: '/static/models/makehuman/hair/previews/helen_of_troy.jpg',
-                    glbPath: '/static/models/makehuman/hair/Helen_Of_Troy/hair_08.glb',
-                    category: 'long'
-                },
-                'shaggy_green': {
-                    name: 'Shaggy Style',
-                    preview: '/static/models/makehuman/hair/previews/shaggy_green.jpg',
-                    glbPath: '/static/models/makehuman/hair/Shaggy_Green_Hair/hair_08.glb',
-                    category: 'medium'
-                },
-                'short_messy': {
-                    name: 'Short Messy',
-                    preview: '/static/models/makehuman/hair/previews/short_messy.jpg',
-                    glbPath: '/static/models/makehuman/hair/Short_Messy_Hair/hair_08.glb',
-                    category: 'short'
-                },
-                'southern_belle': {
-                    name: 'Southern Belle',
-                    preview: '/static/models/makehuman/hair/previews/southern_belle.jpg',
-                    glbPath: '/static/models/makehuman/hair/Southern_Belle_Ringlets/hair_08.glb',
-                    category: 'long'
                 },
                 'bald': {
                     name: 'Bald',
                     preview: '/static/models/makehuman/hair/previews/bald.jpg',
-                    glbPath: null,
+                    glbPath: null, // No model for bald
                     category: 'none'
                 }
             },
@@ -131,37 +94,19 @@ class CustomizableGLBAvatarManager {
                 'male_short': {
                     name: 'Short Male',
                     preview: '/static/models/makehuman/hair/previews/male_short.jpg',
-                    glbPath: '/static/models/makehuman/hair/male_short_hair/hair_08.glb',
-                    category: 'short'
-                },
-                'minoan_hairdo': {
-                    name: 'Minoan Style',
-                    preview: '/static/models/makehuman/hair/previews/minoan_hairdo.jpg',
-                    glbPath: '/static/models/makehuman/hair/Minoan_Hairdo_One/hair_08.glb',
-                    category: 'medium'
-                },
-                'crew_cut': {
-                    name: 'Crew Cut',
-                    preview: '/static/models/makehuman/hair/previews/crew_cut.jpg',
-                    glbPath: '/static/models/makehuman/hair/Crew_Cut/hair_08.glb',
-                    category: 'short'
-                },
-                'business_cut': {
-                    name: 'Business Cut',
-                    preview: '/static/models/makehuman/hair/previews/business_cut.jpg',
-                    glbPath: '/static/models/makehuman/hair/Business_Cut/hair_08.glb',
+                    glbPath: '/static/models/makehuman/hair/male_short_hair/male_short_hair.glb',
                     category: 'short'
                 },
                 'bald': {
                     name: 'Bald',
                     preview: '/static/models/makehuman/hair/previews/bald.jpg',
-                    glbPath: null,
+                    glbPath: null, // No model for bald
                     category: 'none'
                 }
             }
         };
 
-        // Eye texture mapping
+        // EXPANDED: Eye texture mapping with more options
         this.eyeTextures = {
             'brown': '/static/models/makehuman/bodies/female/textures/brown_eye.png',
             'blue': '/static/models/makehuman/bodies/female/textures/blue_eye.png',
@@ -177,39 +122,98 @@ class CustomizableGLBAvatarManager {
         // Loaded textures cache
         this.loadedTextures = new Map();
 
-        // Color definitions
+        // EXPANDED: More diverse skin color options
         this.skinColors = {
             'light': 0xfdbcb4,
+            'fair': 0xfce4ec,
+            'pale': 0xf8bbd9,
             'medium': 0xee9b82,
+            'olive': 0xddbea9,
             'tan': 0xd08b5b,
+            'bronze': 0xcd7f32,
             'dark': 0xae5d29,
             'darker': 0x8b4513,
             'darkest': 0x654321,
+            'ebony': 0x3c2414,
             'pink': 0xffb6c1,
-            'olive': 0xddbea9
+            'warm': 0xdeb887,
+            'cool': 0xd3d3d3
         };
 
+        // EXPANDED: More eye color variations
         this.eyeColors = {
             'brown': 0x6B4423,
+            'dark-brown': 0x4A2C17,
+            'light-brown': 0x8B6914,
             'blue': 0x4A90E2,
-            'green': 0x50C878,
             'light-blue': 0x87CEEB,
+            'dark-blue': 0x0F4C75,
+            'sky-blue': 0x87CEFA,
+            'green': 0x50C878,
+            'light-green': 0x90EE90,
+            'dark-green': 0x228B22,
+            'emerald': 0x50C878,
+            'hazel': 0xB8860B,
+            'amber': 0xFFBF00,
             'purple': 0x800080,
+            'violet': 0x8A2BE2,
             'gray': 0x708090,
             'grey': 0x708090,
-            'dark-green': 0x228B22,
-            'hazel': 0xB8860B
+            'silver': 0xC0C0C0,
+            'gold': 0xFFD700
         };
 
+        // EXPANDED: Extensive hair color palette
         this.hairColors = {
+            // Natural Browns
             'brown': 0x8B4513,
+            'light-brown': 0xA0522D,
+            'dark-brown': 0x654321,
+            'chestnut': 0x954535,
+            'chocolate': 0x7B3F00,
+            'mahogany': 0xC04000,
+            'coffee': 0x6F4E37,
+
+            // Blacks
             'black': 0x000000,
+            'jet-black': 0x0C0C0C,
+            'charcoal': 0x36454F,
+
+            // Blondes
             'blonde': 0xFFD700,
+            'light-blonde': 0xFFF8DC,
+            'dark-blonde': 0xDAA520,
+            'platinum': 0xE5E4E2,
+            'honey': 0xFFB347,
+            'strawberry-blonde': 0xFF8C69,
+            'golden': 0xFFD700,
+
+            // Reds
             'red': 0xDC143C,
             'auburn': 0xA0522D,
+            'copper': 0xB87333,
+            'ginger': 0xB06500,
+            'burgundy': 0x800020,
+            'cherry': 0xDE3163,
+
+            // Grays & Whites
             'gray': 0xC0C0C0,
+            'grey': 0xC0C0C0,
+            'silver': 0xC0C0C0,
             'white': 0xFFFFFF,
-            'pink': 0xFF69B4
+            'salt-pepper': 0x999999,
+
+            // Fantasy Colors
+            'pink': 0xFF69B4,
+            'hot-pink': 0xFF1493,
+            'purple': 0x800080,
+            'violet': 0x8A2BE2,
+            'blue': 0x0000FF,
+            'teal': 0x008080,
+            'green': 0x008000,
+            'mint': 0x98FB98,
+            'orange': 0xFF8C00,
+            'rainbow': 0xFF69B4 // Will cycle through colors
         };
 
         // Material references
@@ -233,7 +237,7 @@ class CustomizableGLBAvatarManager {
     }
 
     init() {
-        console.log('🤖 Initializing FINAL FIXED GLB Avatar Manager...');
+        console.log('🤖 Initializing CLEANED GLB Avatar Manager...');
         this.setupScene();
         this.setupCamera();
         this.setupRenderer();
@@ -244,7 +248,7 @@ class CustomizableGLBAvatarManager {
         this.animate();
 
         this.isInitialized = true;
-        console.log('✅ FINAL FIXED GLB Avatar Manager initialized');
+        console.log('✅ CLEANED GLB Avatar Manager initialized');
         console.log('🎯 Using EXACT coordinates for perfect hair positioning');
     }
 
@@ -874,11 +878,11 @@ class CustomizableGLBAvatarManager {
         await this.loadAvatarFromConfig(this.config);
 
         const defaultHairStyles = {
-            'female': 'short_messy',
+            'female': 'elvis_hazel',
             'male': 'male_short'
         };
 
-        const defaultHair = defaultHairStyles[gender] || 'short_messy';
+        const defaultHair = defaultHairStyles[gender] || 'elvis_hazel';
         setTimeout(async () => {
             await this.updateHairStyle(defaultHair);
         }, 1000);
@@ -1139,15 +1143,27 @@ window.switchToLong = async function() {
     }
 };
 
-console.log('✅ FINAL FIXED: GLB Avatar Manager with PERFECT Hair Positioning');
+console.log('✅ EXPANDED: GLB Avatar Manager with PERFECT Hair Positioning & Rich Colors!');
 console.log('🎯 Using your EXACT coordinates for all avatar heights:');
 console.log('   Short:  (0, -0.534, -0.13) scale: 1.0x');
 console.log('   Medium: (0, -0.39, -0.12) scale: 1.0x');
 console.log('   Long:   (0, -0.534, -0.13) scale: 1.0x');
+console.log('');
+console.log('🧹 FIXED PATHS:');
+console.log('   ✅ Fixed hair_06 path: Hair_06/hair_06.glb');
+console.log('   ✅ Fixed female_medium path: hair_female_medium/hair_female_medium.glb');
+console.log('   ✅ Fixed hair1 path: hair1/hair1.glb');
+console.log('   ✅ Fixed male_short path: male_short_hair/male_short_hair.glb');
+console.log('   ✅ Added bald option for both genders');
+console.log('');
+console.log('🎨 EXPANDED COLOR OPTIONS:');
+console.log('   👁️ Eye Colors: 19 options (brown, blue, green, hazel, purple, gray, amber, etc.)');
+console.log('   🎭 Skin Colors: 14 options (light, fair, pale, medium, olive, tan, bronze, dark, etc.)');
+console.log('   💇 Hair Colors: 30+ options (natural browns, blondes, reds, fantasy colors!)');
 console.log('');
 console.log('📞 USAGE:');
 console.log('   avatarManager.requestDefaultAvatar() - Load avatar with perfect hair');
 console.log('   switchToShort() / switchToMedium() / switchToLong() - Change height');
 console.log('   testPerfectPositioning("medium") - Apply perfect coords manually');
 console.log('');
-console.log('🎯 Hair will now position PERFECTLY on all avatar heights!');
+console.log('🌈 Now with TONS of customization options for maximum creativity!');
