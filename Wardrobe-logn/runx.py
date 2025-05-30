@@ -496,6 +496,208 @@ def improved_predict_color(img_path):
     return (float(dominant_percentage), dominant_color[::-1])  # BGR to RGB
 
 
+#
+# def predict_color(img_path):
+#     """
+#     Improved color prediction that focuses on the clothing item in the image.
+#
+#     Steps:
+#     1. Load the image
+#     2. Detect and crop the clothing item
+#     3. Apply color segmentation on the cropped region
+#     4. Return the dominant color and its percentage
+#
+#     Returns a tuple of (percentage, [R, G, B])
+#     """
+#     import cv2
+#     import numpy as np
+#     from sklearn.cluster import KMeans
+#     import imutils
+#     import matplotlib.pyplot as plt
+#
+#     # Load the image
+#     img = cv2.imread(img_path)
+#     if img is None:
+#         print(f"Error: Could not load image from {img_path}")
+#         return None
+#
+#     # Make a copy for visualization
+#     org_img = img.copy()
+#
+#     # Step 1: Apply preprocessing to enhance the clothing item
+#     # Convert to grayscale for processing
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#
+#     # Apply Gaussian blur to reduce noise
+#     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+#
+#     # Apply Canny edge detection
+#     edges = cv2.Canny(blurred, 50, 150)
+#
+#     # Find contours in the edge map
+#     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#
+#     # Find the largest contour which is likely to be the clothing item
+#     if contours:
+#         main_contour = max(contours, key=cv2.contourArea)
+#
+#         # Create a mask for the largest contour
+#         mask = np.zeros_like(gray)
+#         cv2.drawContours(mask, [main_contour], 0, 255, -1)
+#
+#         # Apply the mask to get the clothing item
+#         clothing_item = cv2.bitwise_and(img, img, mask=mask)
+#
+#         # Get the bounding box of the contour
+#         x, y, w, h = cv2.boundingRect(main_contour)
+#
+#         # Crop the clothing item
+#         cropped_item = clothing_item[y:y + h, x:x + w]
+#
+#         # Ensure the cropped item is not empty
+#         if cropped_item.size == 0:
+#             print("Warning: Cropped image is empty, using original image")
+#             cropped_item = img
+#     else:
+#         print("Warning: No contours found, using original image")
+#         cropped_item = img
+#
+#     # Step 2: Resize the cropped item for consistent processing
+#     cropped_item = imutils.resize(cropped_item, height=300)
+#
+#     # Step 3: Apply color segmentation using K-means clustering
+#     # Reshape the image to be a list of pixels
+#     pixels = cropped_item.reshape(-1, 3)
+#
+#     # Remove black background (mask pixels)
+#     non_black_pixels = pixels[~np.all(pixels == [0, 0, 0], axis=1)]
+#
+#     # If there are no non-black pixels, revert to original image
+#     if len(non_black_pixels) == 0:
+#         print("Warning: No non-black pixels found, using original image")
+#         non_black_pixels = img.reshape(-1, 3)
+#
+#     # Apply K-means clustering to find dominant colors
+#     clusters = 5
+#     kmeans = KMeans(n_clusters=clusters, random_state=0, n_init=10)
+#     kmeans.fit(non_black_pixels)
+#
+#     # Get the colors and their percentages
+#     colors = np.array(kmeans.cluster_centers_, dtype='uint8')
+#     percentages = np.bincount(kmeans.labels_) / len(kmeans.labels_)
+#
+#     # Sort colors by percentage
+#     p_and_c = sorted(zip(percentages, colors), reverse=True)
+#
+#     # Debug: Visualize the color segmentation
+#     if False:  # Set to True to debug color segmentation
+#         plt.figure(figsize=(12, 6))
+#
+#         # Plot the original image
+#         plt.subplot(1, 3, 1)
+#         plt.imshow(cv2.cvtColor(org_img, cv2.COLOR_BGR2RGB))
+#         plt.title('Original Image')
+#         plt.axis('off')
+#
+#         # Plot the cropped clothing item
+#         plt.subplot(1, 3, 2)
+#         plt.imshow(cv2.cvtColor(cropped_item, cv2.COLOR_BGR2RGB))
+#         plt.title('Cropped Clothing Item')
+#         plt.axis('off')
+#
+#         # Plot the color palette
+#         plt.subplot(1, 3, 3)
+#         # Create a color palette
+#         palette = np.zeros((100, 500, 3), dtype='uint8')
+#         start = 0
+#         for i, (percentage, color) in enumerate(p_and_c):
+#             end = start + int(percentage * 500)
+#             palette[:, start:end] = color[::-1]  # BGR to RGB
+#             start = end
+#
+#         plt.imshow(palette)
+#         plt.title('Color Palette')
+#         plt.axis('off')
+#
+#         plt.tight_layout()
+#         plt.show()
+#
+#     # Return the dominant color (first in the sorted list)
+#     # Format: (percentage, [R, G, B])
+#     return (float(p_and_c[0][0]), p_and_c[0][1])
+#
+#
+# def predict_color(img_path):
+#     clusters = 5
+#     img = cv2.imread(img_path)
+#     org_img = img.copy()
+#     img = imutils.resize(img, height=200)
+#     flat_img = np.reshape(img, (-1, 3))
+#     print('After Flattening shape --> ', flat_img.shape)
+#
+#     kmeans = KMeans(n_clusters=clusters, random_state=0)
+#     kmeans.fit(flat_img)
+#
+#     dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
+#
+#     percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
+#     p_and_c = zip(percentages, dominant_colors)
+#     p_and_c = sorted(p_and_c, reverse=True)
+#     print("the colour in the db")
+#     print(p_and_c[1])
+#     block = np.ones((50, 50, 3), dtype='uint')
+#     plt.figure(figsize=(12, 8))
+#     for i in range(clusters):
+#         plt.subplot(1, clusters, i + 1)
+#         block[:] = p_and_c[i][1][::-1]  # we have done this to convert bgr(opencv) to rgb(matplotlib)
+#         plt.imshow(block)
+#         plt.xticks([])
+#         plt.yticks([])
+#         plt.xlabel(str(round(p_and_c[i][0] * 100, 2)) + '%')
+#
+#     bar = np.ones((50, 500, 3), dtype='uint')
+#     plt.figure(figsize=(12, 8))
+#     plt.title('Proportions of colors in the image')
+#     start = 0
+#     i = 1
+#     for p, c in p_and_c:
+#         end = start + int(p * bar.shape[1])
+#         if i == clusters:
+#             bar[:, start:] = c[::-1]
+#         else:
+#             bar[:, start:end] = c[::-1]
+#         start = end
+#         i += 1
+#
+#     plt.imshow(bar)
+#     plt.xticks([])
+#     plt.yticks([])
+#
+#     rows = 1000
+#     cols = int((org_img.shape[0] / org_img.shape[1]) * rows)
+#     img = cv2.resize(org_img, dsize=(rows, cols), interpolation=cv2.INTER_LINEAR)
+#
+#     copy = img.copy()
+#     cv2.rectangle(copy, (rows // 2 - 250, cols // 2 - 90), (rows // 2 + 250, cols // 2 + 110), (255, 255, 255), -1)
+#
+#     final = cv2.addWeighted(img, 0.1, copy, 0.9, 0)
+#     cv2.putText(final, 'Most Dominant Colors in the Image',
+#                 (rows // 2 - 230, cols // 2 - 40),
+#                 cv2.FONT_HERSHEY_DUPLEX,
+#                 0.8, (0, 0, 0), 1, cv2.LINE_AA)
+#
+#     start = rows // 2 - 220
+#     for i in range(5):
+#         end = start + 70
+#         final[cols // 2:cols // 2 + 70, start:end] = p_and_c[i][1]
+#         cv2.putText(final, str(i + 1), (start + 25, cols // 2 + 45), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 1,
+#                     cv2.LINE_AA)
+#         start = end + 20
+#
+#     plt.show()
+#     return p_and_c[1]
+
+
 def improved_predict_color(img_path):
     """
     Enhanced color prediction that accurately identifies clothing colors.
@@ -844,7 +1046,61 @@ def get_material_properties(item_id):
     except Exception as e:
         print(f"Error getting material properties: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
+# @app.route('/predict', methods=['POST'])
+# @login_required
+# def upload():
+#     if request.method == 'POST':
+#         try:
+#             f = request.files['file']
+#             if not f:
+#                 return "No file uploaded", 400
+#
+#             user_id = session['user']['_id']
+#             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
+#             os.makedirs(upload_dir, exist_ok=True)
+#             file_path = os.path.join(upload_dir, secure_filename(f.filename))
+#             f.save(file_path)
+#
+#             # Make predictions with validation
+#             try:
+#                 preds = model_predict(file_path, model)
+#                 if not isinstance(preds, np.ndarray) or preds.size == 0:
+#                     raise ValueError("Invalid prediction output")
+#
+#                 color_result = predict_color(file_path)
+#                 if not color_result or len(color_result) < 2:
+#                     raise ValueError("Invalid color prediction")
+#
+#                 predicted_label = np.argmax(preds)
+#                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+#                                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+#
+#                 if predicted_label >= len(class_names):
+#                     raise ValueError("Invalid predicted label index")
+#
+#                 result = class_names[predicted_label]
+#
+#                 # Save to database
+#                 db.wardrobe.insert_one({
+#                     'label': result,
+#                     'color': ' '.join(map(str, color_result[1])),
+#                     'nota': 4,
+#                     'userId': user_id,
+#                     'file_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+#                 })
+#
+#                 return result
+#
+#             except Exception as e:
+#                 print(f"Prediction error: {str(e)}")
+#                 if os.path.exists(file_path):
+#                     os.remove(file_path)
+#                 return str(e), 500
+#
+#         except Exception as e:
+#             return str(e), 500
+#
+#     return None
 def load_model():
     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
     # assert os.path.isfile(path)
@@ -1096,7 +1352,6 @@ def get_user_profile_picture():
 def utility_processor():
     return dict(get_user_profile_picture=get_user_profile_picture)
 
-
 @app.route('/dashboard/', methods=['GET', 'POST'])
 @login_required
 def dashboard():
@@ -1109,179 +1364,63 @@ def dashboard():
         print(f"New city submitted: {new_city}")
 
         if new_city:
-            # Check if city already exists for this user
-            existing_city = db.city.find_one({'name': {'$regex': f'^{new_city}$', '$options': 'i'}, 'userId': userId})
-            if existing_city:
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({
-                        'success': False,
-                        'error': 'duplicate',
-                        'message': f'{new_city} is already in your weather list.'
-                    }), 400
-                else:
-                    flash(f'{new_city} is already in your weather list.', 'warning')
-                    return redirect(url_for('dashboard'))
-
-            # Get geocoding data
             geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={new_city}&limit=1&appid={api_key}'
-            try:
-                geocode_response = requests.get(geocode_url, timeout=5).json()
-                print(f"Geocode response: {geocode_response}")
-
-                if geocode_response:
-                    lat = geocode_response[0].get('lat')
-                    lon = geocode_response[0].get('lon')
-                    city_name_from_api = geocode_response[0].get('name', new_city)
-
-                    if lat and lon:
-                        # Insert the new city
-                        db.city.insert_one({
-                            'name': city_name_from_api,
-                            'lat': lat,
-                            'lon': lon,
-                            'userId': userId
-                        })
-
-                        # Get weather data for the new city
-                        weather_url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric'
-                        weather_response = requests.get(weather_url, timeout=5).json()
-
-                        new_weather_data = []
-                        if weather_response.get('weather') and weather_response.get('main'):
-                            weather = {
-                                'city': city_name_from_api,
-                                'temperature': round(weather_response['main']['temp']),
-                                'description': weather_response['weather'][0]['description'].title(),
-                                'icon': weather_response['weather'][0]['icon'],
-                            }
-                            new_weather_data.append(weather)
-
-                        # Return JSON response for AJAX requests
-                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                            return jsonify({
-                                'success': True,
-                                'weather_data': new_weather_data,
-                                'message': f'{city_name_from_api} added successfully!'
-                            })
-                        else:
-                            flash(f'{city_name_from_api} added successfully!', 'success')
-                            return redirect(url_for('dashboard'))
-                    else:
-                        error_msg = f'Could not get coordinates for {new_city}.'
-                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                            return jsonify({'success': False, 'message': error_msg}), 400
-                        else:
-                            flash(error_msg, 'error')
-                            return redirect(url_for('dashboard'))
-                else:
-                    error_msg = f'City "{new_city}" not found. Please check the spelling.'
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return jsonify({'success': False, 'message': error_msg}), 400
-                    else:
-                        flash(error_msg, 'error')
-                        return redirect(url_for('dashboard'))
-
-            except requests.RequestException as e:
-                error_msg = 'Error connecting to weather service. Please try again.'
-                print(f"API request error: {e}")
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': False, 'message': error_msg}), 500
-                else:
-                    flash(error_msg, 'error')
-                    return redirect(url_for('dashboard'))
-
-    # GET request or fallback - render the dashboard
-    filter = {'userId': userId}
-
-    # Add default city if user has no cities
-    if db.city.find_one(filter) is None:
-        geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={cityByDefault}&limit=1&appid={api_key}'
-        try:
-            geocode_response = requests.get(geocode_url, timeout=5).json()
-            print(f"Default city geocode response: {geocode_response}")
+            geocode_response = requests.get(geocode_url).json()
+            print(f"Geocode response: {geocode_response}")
 
             if geocode_response:
                 lat = geocode_response[0].get('lat')
                 lon = geocode_response[0].get('lon')
                 if lat and lon:
-                    db.city.insert_one({'name': cityByDefault, 'lat': lat, 'lon': lon, 'userId': userId})
-        except requests.RequestException as e:
-            print(f"Error adding default city: {e}")
+                    db.city.insert_one({'name': new_city, 'lat': lat, 'lon': lon, 'userId': userId})
 
-    # Get all cities for the user
-    cities = list(db.city.find(filter))
+    filter = {'userId': userId}
+    if db.city.find_one(filter) is None:
+        geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={cityByDefault}&limit=1&appid={api_key}'
+        geocode_response = requests.get(geocode_url).json()
+        print(f"Default city geocode response: {geocode_response}")
+
+        if geocode_response:
+            lat = geocode_response[0].get('lat')
+            lon = geocode_response[0].get('lon')
+            if lat and lon:
+                db.city.insert_one({'name': cityByDefault, 'lat': lat, 'lon': lon, 'userId': userId})
+
+    cities = db.city.find(filter)
+    url = 'https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}&units=metric'
+
     weather_data = []
 
     for city in cities:
-        try:
-            # Ensure we have coordinates
-            if 'lat' not in city or 'lon' not in city:
-                geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={city["name"]}&limit=1&appid={api_key}'
-                geocode_response = requests.get(geocode_url, timeout=5).json()
-                print(f"Geocode response for {city['name']}: {geocode_response}")
+        if 'lat' not in city or 'lon' not in city:
+            geocode_url = f'http://api.openweathermap.org/geo/1.0/direct?q={city["name"]}&limit=1&appid={api_key}'
+            geocode_response = requests.get(geocode_url).json()
+            print(f"Geocode response for {city['name']}: {geocode_response}")
 
-                if geocode_response:
-                    lat = geocode_response[0].get('lat')
-                    lon = geocode_response[0].get('lon')
-                    if lat and lon:
-                        db.city.update_one({'_id': city['_id']}, {'$set': {'lat': lat, 'lon': lon}})
-                        city['lat'] = lat
-                        city['lon'] = lon
-                else:
-                    continue
+            if geocode_response:
+                lat = geocode_response[0].get('lat')
+                lon = geocode_response[0].get('lon')
+                if lat and lon:
+                    db.city.update_one({'_id': city['_id']}, {'$set': {'lat': lat, 'lon': lon}})
+                    city['lat'] = lat
+                    city['lon'] = lon
+            else:
+                continue
 
-            # Get weather data
-            weather_url = f'https://api.openweathermap.org/data/2.5/weather?lat={city["lat"]}&lon={city["lon"]}&appid={api_key}&units=metric'
-            weather_response = requests.get(weather_url, timeout=5).json()
-            print(f"Weather API response for {city['name']}: {weather_response}")
+        r = requests.get(url.format(city['lat'], city['lon'], api_key)).json()
+        print(f"Weather API response for {city['name']}: {r}")
 
-            if weather_response.get('weather') and weather_response.get('main'):
-                weather = {
-                    'city': city['name'],
-                    'temperature': round(weather_response['main']['temp']),
-                    'description': weather_response['weather'][0]['description'].title(),
-                    'icon': weather_response['weather'][0]['icon'],
-                }
-                weather_data.append(weather)
-
-        except requests.RequestException as e:
-            print(f"Error getting weather for {city['name']}: {e}")
-            continue
+        if r.get('weather') and r.get('main'):
+            weather = {
+                'city': city['name'],
+                'temperature': r['main']['temp'],
+                'description': r['weather'][0]['description'],
+                'icon': r['weather'][0]['icon'],
+            }
+            weather_data.append(weather)
 
     print(f"Weather data to be rendered: {weather_data}")
     return render_template('dashboard.html', weather_data=weather_data)
-
-
-@app.route('/dashboard/delete_city/<city_name>', methods=['DELETE'])
-@login_required
-def delete_city(city_name):
-    userId = session['user']['_id']
-
-    try:
-        # Find and delete the city
-        result = db.city.delete_one({
-            'name': {'$regex': f'^{city_name}$', '$options': 'i'},
-            'userId': userId
-        })
-
-        if result.deleted_count > 0:
-            return jsonify({
-                'success': True,
-                'message': f'{city_name} removed from your weather list.'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': f'City {city_name} not found in your list.'
-            }), 404
-
-    except Exception as e:
-        print(f"Error deleting city {city_name}: {e}")
-        return jsonify({
-            'success': False,
-            'message': 'Error removing city. Please try again.'
-        }), 500
-
 
 
 @app.route('/wardrobe/delete/<item_id>', methods=['DELETE'])
@@ -1644,6 +1783,230 @@ def get_outfit():
             city3={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''},
             wardrobes=[]
         )
+
+# @app.route('/outfit/day', methods=['GET', 'POST'])
+# @login_required
+# def get_outfit():
+#     print("Debug: Entering get_outfit route")
+#
+#     try:
+#         userId = session['user']['_id']
+#         print(f"Debug: User ID: {userId}")
+#         filter = {'userId': userId, 'isFavorite': 'yes'}
+#         users_clothes = db.outfits.find(filter)
+#
+#         cityByDefault = 'Bucharest'
+#         DEFAULT_RATING = 4
+#
+#         # Default to show generator and hide outfits
+#         show_generator = True
+#         show_outfits = False
+#         success_message = None
+#         error_message = None
+#
+#         # Define available outfit combinations
+#         result_outfit = [
+#             'Dress_Sandal', 'T-shirt/top_Trouser_Sneaker', 'Shirt_Trouser',
+#             'Shirt_Trouser_Sneaker', 'Dress_Sandal_Coat', 'T-shirt/top_Trouser',
+#             'Shirt_Trouser_Coat', 'Shirt_Trouser_Coat', 'Dress_Ankle-boot_Coat',
+#             'Pullover_Trouser_Ankle-boot', 'Dress_Sneaker', 'Shirt_Trouser_Sandal',
+#             'Dress_Sandal_Bag'
+#         ]
+#
+#         # Initialize city if not exists
+#         filter = {'userId': userId}
+#         if db.city.count_documents(filter) == 0:
+#             print(f"Debug: Creating new city entry for user {userId}")
+#             db.city.insert_one({'name': cityByDefault, 'userId': userId})
+#
+#         # Get weather data
+#         cities = db.city.find(filter)
+#         weather_data = []
+#         url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=aa73cad280fbd125cc7073323a135efa'
+#
+#         for city in cities:
+#             try:
+#                 print(f"Debug: Fetching weather for {city['name']}")
+#                 r = requests.get(url.format(city['name']), timeout=5).json()
+#                 weather = {
+#                     'city': city['name'],
+#                     'temperature': r['main']['temp'],
+#                     'description': r['weather'][0]['description'],
+#                     'icon': r['weather'][0]['icon'],
+#                 }
+#                 weather_data.append(weather)
+#             except Exception as e:
+#                 print(f"Error fetching weather for {city['name']}: {e}")
+#                 weather_data.append({
+#                     'city': city['name'],
+#                     'temperature': 20,
+#                     'description': '',
+#                     'icon': ''
+#                 })
+#
+#         # Ensure we have 3 weather options
+#         while len(weather_data) < 3:
+#             weather_data.append({
+#                 'city': cityByDefault,
+#                 'temperature': 20,
+#                 'description': '',
+#                 'icon': ''
+#             })
+#
+#         city1, city2, city3 = weather_data[:3]
+#         outfit1, outfit2, outfit3 = [], [], []
+#
+#         if request.method == 'POST':
+#             print("Debug: Processing POST request")
+#
+#             # Handle outfit selection
+#             option = request.form.get('options')
+#             if option:
+#                 print(f"Debug: Selected option: {option}")
+#                 filter_lookup = {'userId': userId, 'outfitNo': option}
+#                 outfit_doc = db.outfits.find_one(filter_lookup, sort=[('_id', -1)])
+#
+#                 if outfit_doc:
+#                     # Update outfit pieces ratings
+#                     for piece in outfit_doc['outfit']:
+#                         try:
+#                             current_piece = db.wardrobe.find_one({'_id': piece['_id']})
+#                             current_rating = current_piece.get('nota',
+#                                                                DEFAULT_RATING) if current_piece else DEFAULT_RATING
+#
+#                             db.wardrobe.update_one(
+#                                 {'_id': piece['_id']},
+#                                 {'$set': {'nota': current_rating + 1}},
+#                                 upsert=True
+#                             )
+#                         except Exception as e:
+#                             print(f"Error updating piece rating: {str(e)}")
+#
+#                     try:
+#                         # Update outfit rating
+#                         current_outfit_rating = outfit_doc.get('nota', DEFAULT_RATING)
+#                         db.outfits.update_one(
+#                             {'_id': outfit_doc['_id']},
+#                             {
+#                                 '$set': {
+#                                     'nota': current_outfit_rating + 1,
+#                                     'isFavorite': 'yes'
+#                                 }
+#                             }
+#                         )
+#                         # Show success message and hide outfits
+#                         success_message = "Outfit has been saved to your favorites!"
+#                         show_outfits = False
+#                         return render_template(
+#                             'outfit_of_the_day.html',
+#                             success_message=success_message,
+#                             show_generator=show_generator,
+#                             show_outfits=show_outfits,
+#                             city1=city1,
+#                             city2=city2,
+#                             city3=city3
+#                         )
+#                     except Exception as e:
+#                         print(f"Error updating outfit rating: {str(e)}")
+#                         error_message = "Error saving outfit. Please try again."
+#
+#             # Generate new outfits
+#             include_weather = request.form.get('weather') == 'yes'
+#             city = request.form.get('city')
+#             event = request.form.get('events')
+#             temperature = 20  # Default temperature
+#
+#             print(f"Debug: Form data - weather: {include_weather}, city: {city}, event: {event}")
+#
+#             if include_weather and city:
+#                 selected_weather = next(
+#                     (w for w in weather_data if w['city'] == city),
+#                     {'temperature': 20}
+#                 )
+#                 temperature = selected_weather['temperature']
+#
+#             try:
+#                 loaded_classifier = joblib.load("./random_forest.joblib")
+#                 features = prepare_features(include_weather, event, temperature)
+#                 result_forest = loaded_classifier.predict([features])
+#                 index_of_outfit = result_forest[0]
+#                 outfit_combination = result_outfit[index_of_outfit]
+#                 filters_outfits = outfit_combination.split('_')
+#
+#                 print(f"Debug: Generated outfit combination: {outfit_combination}")
+#
+#                 # Generate three outfits
+#                 for i, outfit_list in enumerate([outfit1, outfit2, outfit3]):
+#                     outfit_pieces = []
+#                     for filter_name in filters_outfits:
+#                         clothes = list(db.wardrobe.find({
+#                             'userId': userId,
+#                             'label': filter_name
+#                         }).sort('nota', -1))
+#
+#                         if clothes:
+#                             index = min(i, len(clothes) - 1)
+#                             piece = clothes[index]
+#                             if not piece.get('file_path'):
+#                                 piece['file_path'] = None
+#                             if 'nota' not in piece:
+#                                 piece['nota'] = DEFAULT_RATING
+#                                 db.wardrobe.update_one(
+#                                     {'_id': piece['_id']},
+#                                     {'$set': {'nota': DEFAULT_RATING}}
+#                                 )
+#                             outfit_pieces.append(piece)
+#
+#                     if outfit_pieces:
+#                         outfit_doc = {
+#                             'outfit': outfit_pieces,
+#                             'userId': userId,
+#                             'nota': DEFAULT_RATING,
+#                             'outfitNo': f'piece{i + 1}',
+#                             'isFavorite': 'no',
+#                             'created_at': datetime.now()
+#                         }
+#                         db.outfits.insert_one(outfit_doc)
+#
+#                         if i == 0:
+#                             outfit1 = outfit_pieces
+#                         elif i == 1:
+#                             outfit2 = outfit_pieces
+#                         else:
+#                             outfit3 = outfit_pieces
+#
+#                 show_outfits = True
+#
+#             except Exception as e:
+#                 print(f"Error generating outfits: {e}")
+#                 error_message = "Error generating outfits. Please try again."
+#
+#         print("Debug: Rendering template")
+#         return render_template(
+#             'outfit_of_the_day.html',
+#             outfit1=outfit1,
+#             outfit2=outfit2,
+#             outfit3=outfit3,
+#             city1=city1,
+#             city2=city2,
+#             city3=city3,
+#             show_generator=show_generator,
+#             show_outfits=show_outfits,
+#             success_message=success_message,
+#             error_message=error_message
+#         )
+#
+#     except Exception as e:
+#         print(f"Error in get_outfit: {str(e)}")
+#         return render_template(
+#             'outfit_of_the_day.html',
+#             error_message="An error occurred. Please try again.",
+#             show_generator=True,
+#             show_outfits=False,
+#             city1={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''},
+#             city2={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''},
+#             city3={'city': cityByDefault, 'temperature': 20, 'description': '', 'icon': ''}
+#         )
 
 
 # FIXED: Enhanced wardrobe route with proper 3D model fields
@@ -2155,6 +2518,225 @@ def delete_calendar_outfit():
         return jsonify({"success": True, "message": "Outfit deleted successfully!"})
     return jsonify({"success": False, "message": "Outfit not found!"}), 404
 
+# # Enhanced Avatar generation imports
+# import mediapipe as mp
+# import cv2
+# import numpy as np
+# from PIL import Image
+# import json
+# import base64
+# from io import BytesIO
+# import colorsys
+# from sklearn.cluster import KMeans
+#
+# # Initialize MediaPipe Face Mesh
+# mp_face_mesh = mp.solutions.face_mesh
+# face_mesh = mp_face_mesh.FaceMesh(
+#     static_image_mode=True,
+#     max_num_faces=1,
+#     min_detection_confidence=0.5,
+#     min_tracking_confidence=0.5
+# )
+#
+# def extract_facial_features(image_path):
+#     """Extract facial features using MediaPipe Face Mesh."""
+#     image = cv2.imread(image_path)
+#     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     results = face_mesh.process(image_rgb)
+#
+#     if not results.multi_face_landmarks:
+#         raise ValueError("No face detected in the image")
+#
+#     landmarks = results.multi_face_landmarks[0]
+#
+#     # Extract key facial features
+#     features = {
+#         'face_width': landmarks.landmark[234].x - landmarks.landmark[454].x,
+#         'face_height': landmarks.landmark[152].y - landmarks.landmark[10].y,
+#         'eye_distance': landmarks.landmark[33].x - landmarks.landmark[263].x,
+#         'nose_length': landmarks.landmark[6].y - landmarks.landmark[94].y,
+#         'mouth_width': landmarks.landmark[61].x - landmarks.landmark[291].x
+#     }
+#
+#     return features
+#
+# def analyze_skin_tone(image_path):
+#     """Analyze skin tone from the uploaded image."""
+#     image = cv2.imread(image_path)
+#     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+#     results = face_mesh.process(image_rgb)
+#
+#     if not results.multi_face_landmarks:
+#         raise ValueError("No face detected in the image")
+#
+#     # Get face region
+#     landmarks = results.multi_face_landmarks[0]
+#     face_points = np.array([[int(l.x * image.shape[1]), int(l.y * image.shape[0])]
+#                           for l in landmarks.landmark])
+#
+#     # Create mask for face region
+#     mask = np.zeros(image.shape[:2], dtype=np.uint8)
+#     cv2.fillConvexPoly(mask, face_points, 255)
+#
+#     # Get average skin color
+#     face_region = cv2.bitwise_and(image, image, mask=mask)
+#     skin_color = cv2.mean(face_region, mask=mask)[:3]
+#
+#     return [int(c) for c in skin_color]
+#
+# @app.route('/api/avatar/generate', methods=['POST'])
+# @login_required
+# def generate_avatar():
+#     try:
+#         if 'photo' not in request.files:
+#             return jsonify({'error': 'No photo uploaded'}), 400
+#
+#         photo = request.files['photo']
+#         gender = request.form.get('gender', 'female')
+#
+#         if photo.filename == '':
+#             return jsonify({'error': 'No selected file'}), 400
+#
+#         # Save uploaded photo
+#         filename = secure_filename(photo.filename)
+#         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#         photo.save(filepath)
+#
+#         # Extract facial features
+#         features = extract_facial_features(filepath)
+#
+#         # Analyze skin tone
+#         skin_color = analyze_skin_tone(filepath)
+#
+#         # Prepare avatar data
+#         avatar_data = {
+#             'model_path': MODEL_PATHS[gender]['model'],
+#             'textures': MODEL_PATHS[gender]['textures'],
+#             'features': features,
+#             'skin_color': skin_color,
+#             'gender': gender
+#         }
+#
+#         # Save avatar data to user's profile
+#         user_id = session.get('user_id')
+#         if user_id:
+#             db.users.update_one(
+#                 {'_id': ObjectId(user_id)},
+#                 {'$set': {'avatar_data': avatar_data}}
+#             )
+#
+#         return jsonify(avatar_data)
+#
+#     except Exception as e:
+#         app.logger.error(f"Error in generate_avatar: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+# @app.route('/api/avatar/get', methods=['GET'])
+# @login_required
+# def get_user_avatar_data():
+#     """Get user's current avatar data"""
+#     try:
+#         user_id = session['user']['_id']
+#         avatar_doc = db.avatars.find_one({'userId': user_id})
+#
+#         if not avatar_doc:
+#             return jsonify({'error': 'No avatar found'}), 404
+#
+#         # Get the avatar data
+#         avatar_data = avatar_doc.get('avatarData', {})
+#
+#         # Add the model path if not present
+#         if 'model_path' not in avatar_data and 'gender' in avatar_data:
+#             avatar_data['model_path'] = MODEL_PATHS[avatar_data['gender'].lower()]
+#
+#         return jsonify({
+#             'success': True,
+#             'avatarData': avatar_data
+#         })
+#
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+#
+# # New endpoint for trying on clothes
+# @app.route('/api/avatar/try-on', methods=['POST'])
+# @login_required
+# def try_on_clothes():
+#     """Try on clothes from wardrobe on the avatar"""
+#     try:
+#         user_id = session['user']['_id']
+#         item_id = request.json.get('itemId')
+#
+#         if not item_id:
+#             return jsonify({'error': 'No item ID provided'}), 400
+#
+#         # Get the clothing item from the wardrobe
+#         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
+#
+#         if not item:
+#             return jsonify({'error': 'Item not found'}), 404
+#
+#         # Get the avatar data
+#         avatar_data = db.avatars.find_one({'userId': user_id})
+#
+#         if not avatar_data:
+#             return jsonify({'error': 'No avatar found. Please create an avatar first.'}), 404
+#
+#         # Return the item data for the avatar to wear
+#         return jsonify({
+#             'success': True,
+#             'item': {
+#                 'id': str(item['_id']),
+#                 'type': item.get('label', '').lower(),
+#                 'color': item.get('color', ''),
+#                 'image_url': normalize_path(item.get('file_path', ''))
+#             }
+#         })
+#
+#     except Exception as e:
+#         print(f"Error in try_on_clothes: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+# @app.route('/model-inspector')
+# @login_required
+# def model_inspector():
+#     return render_template('model_inspector.html')
+#
+#
+# # Update avatar data
+# @app.route('/api/avatar/update', methods=['POST'])
+# @login_required
+# def update_avatar():
+#     try:
+#         user_id = session['user']['_id']
+#         avatar_data = request.json
+#
+#         if not avatar_data:
+#             return jsonify({'error': 'No avatar data provided'}), 400
+#
+#         # Update avatar document
+#         result = db.avatars.update_one(
+#             {'userId': user_id},
+#             {
+#                 '$set': {
+#                     'avatarData': avatar_data,
+#                     'updatedAt': datetime.now()
+#                 }
+#             },
+#             upsert=True
+#         )
+#
+#         return jsonify({
+#             'success': True,
+#             'message': 'Avatar updated successfully'
+#         })
+#
+#     except Exception as e:
+#         print(f"Error updating avatar: {str(e)}")
+#         return jsonify({'error': str(e)}), 500
+#
+#
+
+
 # rpm avatar
 
 import requests
@@ -2422,6 +3004,12 @@ def get_item_category(label):
         return 'accessories'
     else:
         return 'tops'  # Default
+
+
+
+
+
+
 
 
 
@@ -4292,295 +4880,8 @@ def debug_check_obj_matches():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-# avatar make human
-from bson import ObjectId
-import json
 
 
-# Avatar Save/Load Routes
-@app.route('/api/avatar/save', methods=['POST'])
-@login_required
-def save_avatar():
-    """Save avatar configuration to database"""
-    try:
-        user_id = session['user']['_id']
-        data = request.json
-
-        if not data or 'configuration' not in data:
-            return jsonify({'success': False, 'error': 'No configuration provided'}), 400
-
-        configuration = data['configuration']
-        avatar_type = data.get('avatarType', 'glb')
-        format_type = data.get('format', 'glb')
-        hair_system = data.get('hairSystem', 'glb')
-
-        # Create avatar document
-        avatar_doc = {
-            'userId': user_id,
-            'configuration': configuration,
-            'avatarType': avatar_type,
-            'format': format_type,
-            'hairSystem': hair_system,
-            'created_at': datetime.now(),
-            'updated_at': datetime.now(),
-            'version': '1.0'
-        }
-
-        # Check if user already has a saved avatar - update it or create new
-        existing_avatar = db.saved_avatars.find_one({'userId': user_id})
-
-        if existing_avatar:
-            # Update existing avatar
-            avatar_doc['updated_at'] = datetime.now()
-            result = db.saved_avatars.update_one(
-                {'userId': user_id},
-                {'$set': avatar_doc}
-            )
-            message = 'Avatar configuration updated successfully'
-        else:
-            # Create new avatar
-            result = db.saved_avatars.insert_one(avatar_doc)
-            message = 'Avatar configuration saved successfully'
-
-        if result:
-            print(f"✅ Avatar saved for user {user_id}")
-            return jsonify({
-                'success': True,
-                'message': message,
-                'avatarId': str(existing_avatar['_id']) if existing_avatar else str(result.inserted_id)
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Failed to save avatar'}), 500
-
-    except Exception as e:
-        print(f"❌ Error saving avatar: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/avatar/get-saved', methods=['GET'])
-@login_required
-def get_saved_avatar():
-    """Get the most recent saved avatar for the current user"""
-    try:
-        user_id = session['user']['_id']
-
-        # Get the most recent saved avatar
-        avatar = db.saved_avatars.find_one(
-            {'userId': user_id},
-            sort=[('updated_at', -1)]
-        )
-
-        if avatar:
-            # Convert ObjectId to string for JSON serialization
-            avatar['_id'] = str(avatar['_id'])
-
-            return jsonify({
-                'success': True,
-                'avatar': avatar
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'No saved avatar found'
-            }), 404
-
-    except Exception as e:
-        print(f"❌ Error getting saved avatar: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/avatar/get-all-saved', methods=['GET'])
-@login_required
-def get_all_saved_avatars():
-    """Get all saved avatars for the current user"""
-    try:
-        user_id = session['user']['_id']
-
-        # Get all saved avatars for this user, sorted by most recent
-        avatars = list(db.saved_avatars.find(
-            {'userId': user_id}
-        ).sort('updated_at', -1).limit(10))  # Limit to last 10 avatars
-
-        # Convert ObjectIds to strings for JSON serialization
-        for avatar in avatars:
-            avatar['_id'] = str(avatar['_id'])
-
-        return jsonify({
-            'success': True,
-            'avatars': avatars,
-            'count': len(avatars)
-        })
-
-    except Exception as e:
-        print(f"❌ Error getting all saved avatars: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/avatar/get-saved/<avatar_id>', methods=['GET'])
-@login_required
-def get_saved_avatar_by_id(avatar_id):
-    """Get a specific saved avatar by ID"""
-    try:
-        user_id = session['user']['_id']
-
-        # Get the specific avatar
-        avatar = db.saved_avatars.find_one({
-            '_id': ObjectId(avatar_id),
-            'userId': user_id
-        })
-
-        if avatar:
-            # Convert ObjectId to string for JSON serialization
-            avatar['_id'] = str(avatar['_id'])
-
-            return jsonify({
-                'success': True,
-                'avatar': avatar
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Avatar not found'
-            }), 404
-
-    except Exception as e:
-        print(f"❌ Error getting saved avatar by ID: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/avatar/delete/<avatar_id>', methods=['DELETE'])
-@login_required
-def delete_saved_avatar(avatar_id):
-    """Delete a saved avatar"""
-    try:
-        user_id = session['user']['_id']
-
-        # Delete the avatar (only if it belongs to the current user)
-        result = db.saved_avatars.delete_one({
-            '_id': ObjectId(avatar_id),
-            'userId': user_id
-        })
-
-        if result.deleted_count > 0:
-            return jsonify({
-                'success': True,
-                'message': 'Avatar deleted successfully'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Avatar not found or access denied'
-            }), 404
-
-    except Exception as e:
-        print(f"❌ Error deleting saved avatar: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/avatar/load-on-startup', methods=['GET'])
-@login_required
-def load_avatar_on_startup():
-    """Load avatar configuration on application startup"""
-    try:
-        user_id = session['user']['_id']
-
-        # Get the most recent saved avatar
-        avatar = db.saved_avatars.find_one(
-            {'userId': user_id},
-            sort=[('updated_at', -1)]
-        )
-
-        if avatar:
-            # Convert ObjectId to string for JSON serialization
-            avatar['_id'] = str(avatar['_id'])
-
-            print(f"✅ Loading saved avatar for user {user_id} on startup")
-
-            return jsonify({
-                'success': True,
-                'hasAvatar': True,
-                'avatar': avatar,
-                'message': 'Saved avatar configuration loaded'
-            })
-        else:
-            print(f"ℹ️ No saved avatar found for user {user_id}, loading defaults")
-
-            # Return default configuration
-            default_config = {
-                'gender': 'female',
-                'bodySize': 'm',
-                'height': 'medium',
-                'skinColor': 'light',
-                'hairType': 'elvis_hazel',
-                'hairColor': 'brown',
-                'eyeColor': 'brown'
-            }
-
-            return jsonify({
-                'success': True,
-                'hasAvatar': False,
-                'defaultConfig': default_config,
-                'message': 'No saved avatar found, using defaults'
-            })
-
-    except Exception as e:
-        print(f"❌ Error loading avatar on startup: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-# Optional: Avatar statistics route
-@app.route('/api/avatar/stats', methods=['GET'])
-@login_required
-def get_avatar_stats():
-    """Get avatar statistics for the current user"""
-    try:
-        user_id = session['user']['_id']
-
-        # Count saved avatars
-        avatar_count = db.saved_avatars.count_documents({'userId': user_id})
-
-        # Get creation date of first avatar
-        first_avatar = db.saved_avatars.find_one(
-            {'userId': user_id},
-            sort=[('created_at', 1)]
-        )
-
-        # Get last updated avatar
-        last_avatar = db.saved_avatars.find_one(
-            {'userId': user_id},
-            sort=[('updated_at', -1)]
-        )
-
-        stats = {
-            'totalAvatars': avatar_count,
-            'firstCreated': first_avatar['created_at'].isoformat() if first_avatar else None,
-            'lastUpdated': last_avatar['updated_at'].isoformat() if last_avatar else None,
-            'hasAvatars': avatar_count > 0
-        }
-
-        return jsonify({
-            'success': True,
-            'stats': stats
-        })
-
-    except Exception as e:
-        print(f"❌ Error getting avatar stats: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-# Database initialization - add this to your app startup
-def initialize_avatar_collections():
-    """Initialize avatar-related database collections and indexes"""
-    try:
-        # Create indexes for better performance
-        db.saved_avatars.create_index([("userId", 1), ("updated_at", -1)])
-        db.saved_avatars.create_index([("userId", 1), ("created_at", -1)])
-
-        print("✅ Avatar database collections and indexes initialized")
-
-    except Exception as e:
-        print(f"❌ Error initializing avatar collections: {str(e)}")
 
 if __name__ == '__main__':
-    initialize_avatar_collections()
     app.run(debug=True, use_reloader=False)

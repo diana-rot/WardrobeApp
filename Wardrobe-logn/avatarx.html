@@ -1,0 +1,1421 @@
+{% extends "base.html" %}
+
+{% block title %}RPM Avatar Creator{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Layout Structure */
+    .avatar-page-content {
+        display: flex;
+        height: calc(100vh - 56px);
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    /* Left Panel - Controls & Wardrobe */
+    .customization-panel {
+        width: 280px;
+        background: #fff;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        overflow-y: auto;
+        z-index: 1;
+    }
+
+    /* Center Panel - Main 3D Viewport */
+    .avatar-container {
+        flex: 2;
+        position: relative;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-width: 600px;
+    }
+
+    /* Loading & Feedback */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 2;
+        flex-direction: column;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-progress {
+        margin-top: 15px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Toast Messages */
+    .message {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 5px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .message.success { background: #2ecc71; }
+    .message.error { background: #e74c3c; }
+    .message.info { background: #3498db; }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+
+    /* Form Components */
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    /* Button System */
+    .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2980b9;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #7f8c8d;
+    }
+
+    .btn-success {
+        background: #2ecc71;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #27ae60;
+    }
+
+    .btn-info {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background: #138496;
+    }
+
+    /* RPM Specific Button Styling */
+    .rpm-button {
+        display: block;
+        width: 100%;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+
+    /* Wardrobe System */
+    .wardrobe-section {
+        margin-top: 30px;
+    }
+
+    .wardrobe-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 15px;
+        padding: 10px;
+    }
+
+    .wardrobe-item {
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+    }
+
+    .wardrobe-item:hover {
+        border-color: #3498db;
+        background: #f7f9fc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .wardrobe-item.selected {
+        border-color: #3498db;
+        background: #ebf5fb;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .wardrobe-item .item-image {
+        width: 100%;
+        height: 120px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #f8f9fa;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .wardrobe-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+
+    .wardrobe-item .item-name {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #2c3e50;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .error-message {
+        color: #e74c3c;
+        font-size: 12px;
+        text-align: center;
+        padding: 10px;
+        background: #fde8e7;
+        border-radius: 4px;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Outfit Controls */
+    .outfit-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .outfit-controls .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    /* Current Outfit Display */
+    .active-items-section {
+        margin-top: 30px;
+    }
+
+    .active-items-list {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-size: 14px;
+        border: 1px solid #e9ecef;
+    }
+
+    .active-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #dee2e6;
+        transition: background-color 0.2s ease;
+    }
+
+    .active-item:last-child {
+        border-bottom: none;
+    }
+
+    .active-item:hover {
+        background-color: #e9ecef;
+    }
+
+    .active-item-name {
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .active-item-remove {
+        cursor: pointer;
+        color: #e74c3c;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+    }
+
+    .active-item-remove:hover {
+        background-color: #f8d7da;
+    }
+
+    /* Avatar Scale Controls */
+    .scale-section {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .scale-presets {
+        display: flex;
+        gap: 8px;
+        margin: 10px 0;
+    }
+
+    .scale-preset {
+        flex: 1;
+        font-size: 12px;
+        padding: 8px 4px;
+    }
+
+    /* 3D Viewport Controls */
+    .viewport-controls {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+    }
+
+    .viewport-controls .btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        backdrop-filter: blur(10px);
+    }
+
+    .viewport-controls .btn:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: translateY(-1px);
+    }
+
+    .viewport-controls .btn i {
+        font-size: 18px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .avatar-page-content {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .customization-panel {
+            width: 100%;
+            order: 2;
+        }
+
+        .avatar-container {
+            height: 60vh;
+            order: 1;
+            min-width: auto;
+        }
+
+        .viewport-controls {
+            bottom: 15px;
+            right: 15px;
+        }
+    }
+
+    /* Utility Classes */
+    .loading, .error, .no-items {
+        padding: 20px;
+        text-align: center;
+        color: #6c757d;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin: 15px 0;
+        border: 1px solid #e9ecef;
+    }
+
+    .error {
+        color: #e74c3c;
+        background: #fde8e7;
+        border-color: #f5c6cb;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 16px; }
+    .mt-4 { margin-top: 24px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Application Layout -->
+<div class="avatar-page-content">
+
+    <!-- Left Panel: RPM Avatar Controls & Wardrobe -->
+    <div class="customization-panel">
+        <h2>Ready Player Me Avatar</h2>
+        <p class="text-muted">Create and customize your 3D avatar with clothing</p>
+
+        <!-- RPM Avatar Management Section -->
+        <div class="rpm-options">
+            <h4>Avatar Management</h4>
+
+            <!-- External RPM Creator -->
+            <button id="open-rpm-creator" class="btn btn-primary rpm-button">
+                <i class="bi bi-person-plus"></i> Create New Avatar
+            </button>
+
+            <!-- Load Saved Avatar -->
+            <button id="load-saved-rpm" class="btn btn-secondary rpm-button">
+                <i class="bi bi-download"></i> Load Saved Avatar
+            </button>
+
+            <!-- Manual URL Input -->
+            <div class="form-group">
+                <label for="rpm-avatar-url">Or Enter Avatar URL:</label>
+                <input type="text"
+                       id="rpm-avatar-url"
+                       class="form-control"
+                       placeholder="https://models.readyplayer.me/...">
+                <button id="load-rpm-url" class="btn btn-primary mt-2">
+                    <i class="bi bi-link"></i> Load Avatar
+                </button>
+            </div>
+        </div>
+
+        <!-- Avatar Scale Controls -->
+        <div class="scale-section">
+            <h4>Avatar Size</h4>
+            <p class="text-muted">Adjust avatar dimensions</p>
+
+            <div class="form-group">
+                <label for="avatar-scale-slider">Scale: <span id="scale-value">100%</span></label>
+                <input type="range"
+                       id="avatar-scale-slider"
+                       class="form-control"
+                       min="0.5"
+                       max="3.0"
+                       step="0.1"
+                       value="1.0">
+            </div>
+
+            <div class="scale-presets">
+                <button class="btn btn-secondary scale-preset" data-scale="0.8">Small</button>
+                <button class="btn btn-secondary scale-preset" data-scale="1.0">Normal</button>
+                <button class="btn btn-secondary scale-preset" data-scale="1.5">Large</button>
+                <button class="btn btn-secondary scale-preset" data-scale="2.0">XL</button>
+            </div>
+        </div>
+
+        <!-- Wardrobe Section -->
+        <div class="wardrobe-section">
+            <h4>Virtual Wardrobe</h4>
+            <p class="text-muted">Select clothes to dress your avatar</p>
+
+            <!-- Category Selection -->
+            <div class="form-group">
+                <label for="category-rpm">Clothing Category:</label>
+                <select id="category-rpm" class="form-control category-select">
+                    <option value="tops">Tops</option>
+                    <option value="bottoms">Bottoms</option>
+                    <option value="dresses">Dresses</option>
+                    <option value="outerwear">Outerwear</option>
+                    <option value="shoes">Shoes</option>
+                    <option value="accessories">Accessories</option>
+                </select>
+            </div>
+
+            <!-- Clothing Items Grid -->
+            <div class="wardrobe-grid" id="wardrobe-items-rpm">
+                <div class="loading">Loading wardrobe items...</div>
+            </div>
+
+            <!-- Outfit Action Buttons -->
+            <div class="outfit-controls">
+                <button id="try-on-rpm" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Try On Selected
+                </button>
+                <button id="save-outfit-btn" class="btn btn-success">
+                    <i class="bi bi-save"></i> Save Outfit
+                </button>
+                <button id="clear-outfit-btn" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Clear All
+                </button>
+            </div>
+
+            <!-- Current Outfit Display -->
+            <div class="active-items-section">
+                <h5>Current Outfit</h5>
+                <div id="active-outfit-items" class="active-items-list">
+                    <p class="text-muted">No items selected</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Center Panel: Main 3D Avatar Viewport -->
+    <div class="avatar-container" id="avatar-container">
+        <!-- Loading Overlay -->
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-progress">Loading: 0%</div>
+        </div>
+
+        <!-- 3D Viewport Controls -->
+        <div class="viewport-controls">
+            <button class="btn" id="rotate-left-btn" title="Rotate Left">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+            <button class="btn" id="rotate-right-btn" title="Rotate Right">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button class="btn" id="fullscreen-btn" title="Fullscreen">
+                <i class="bi bi-fullscreen"></i>
+            </button>
+        </div>
+
+        <!-- Avatar Stats Overlay -->
+        <div style="position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 8px; backdrop-filter: blur(10px); z-index: 5;">
+            <h5 style="margin: 0 0 10px 0; color: #333;">Avatar Stats</h5>
+            <div id="avatar-info" style="font-size: 12px; color: #666;">
+                <p>Load an avatar to see details</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Three.js MUST be loaded first -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+
+<!-- Custom modules AFTER Three.js -->
+<script src="{{ url_for('static', filename='js/clothing-obj-renderer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/clothing-mapper.js') }}"></script>
+<script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/clothing-processor.js') }}"></script>
+
+<!-- RPM Avatar Management Module -->
+<script src="{{ url_for('static', filename='js/rpm-avatar.js') }}"></script>
+
+<script>
+(function() {
+    'use strict';
+
+    /* Avatar Configuration */
+    const AVATAR_CONFIG = {
+        DEFAULT_SCALE: 0.7,
+        MIN_SCALE: 0.5,
+        MAX_SCALE: 3.0,
+        CLOTHING_SCALE_MATCH: true,
+        AVATAR_Y_POSITION: -0.5
+    };
+
+    /* Dependency Verification */
+    console.log('🔍 Verifying dependencies...');
+
+    // Function to wait for ClothingOBJRenderer
+    function waitForClothingOBJRenderer() {
+        return new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+                if (window.clothingOBJRenderer) {
+                    clearInterval(checkInterval);
+                    console.log('✅ ClothingOBJRenderer loaded successfully');
+                    resolve(true);
+                } else {
+                    console.log('⏳ Waiting for ClothingOBJRenderer...');
+                }
+            }, 100);
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.error('❌ ClothingOBJRenderer failed to load after 10 seconds');
+                resolve(false);
+            }, 10000);
+        });
+    }
+
+    // Initialize ClothingOBJRenderer when dependencies are ready
+    async function initializeClothingSystem() {
+        const objRendererReady = await waitForClothingOBJRenderer();
+
+        if (!objRendererReady) {
+            console.error('❌ ClothingOBJRenderer not available - falling back to old method');
+            return false;
+        }
+
+        return true;
+    }
+
+    if (!window.ClothingMapper) {
+        console.error('❌ ClothingMapper failed to load properly');
+        return;
+    }
+
+    if (typeof THREE === 'undefined') {
+        console.error('❌ Three.js failed to load properly');
+        return;
+    }
+
+    // Verify OBJ loader
+    if (typeof THREE.OBJLoader === 'undefined') {
+        console.error('❌ OBJLoader failed to load properly');
+        return;
+    }
+
+    console.log('✅ All dependencies loaded successfully');
+
+    /* Application Initialization */
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Initializing RPM Avatar Application...');
+
+        /* Initialize RPM Avatar Manager */
+        const rpmManager = new RPMAvatarManager({
+            container: document.getElementById('avatar-container'),
+            debug: false, // Disabled debug mode
+            enableStats: true,
+            enableAutoSave: true
+        });
+
+        /* Configure camera controls */
+        if (rpmManager && rpmManager.controls) {
+            rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
+            rpmManager.controls.minDistance = 1;
+            rpmManager.controls.maxDistance = 10;
+            rpmManager.controls.target.set(0, -0.3, 0);
+            rpmManager.controls.enableDamping = true;
+            rpmManager.controls.dampingFactor = 0.1;
+        }
+
+        /* Clean scene setup - NO GROUND PLANE */
+        setTimeout(() => {
+            if (rpmManager && rpmManager.scene) {
+                // Remove any existing ground planes from the scene
+                const objectsToRemove = [];
+                rpmManager.scene.traverse((child) => {
+                    if (child.isMesh && child.geometry && child.geometry.type === 'PlaneGeometry') {
+                        if (child.rotation.x < -1.5 && child.position.y < 0) {
+                            objectsToRemove.push(child);
+                        }
+                    }
+                });
+
+                objectsToRemove.forEach(obj => {
+                    rpmManager.scene.remove(obj);
+                    if (obj.geometry) obj.geometry.dispose();
+                    if (obj.material) {
+                        if (Array.isArray(obj.material)) {
+                            obj.material.forEach(mat => mat.dispose());
+                        } else {
+                            obj.material.dispose();
+                        }
+                    }
+                });
+
+                console.log('🗑️ Removed', objectsToRemove.length, 'ground plane objects');
+
+                // Ensure clean background
+                rpmManager.scene.background = new THREE.Color(0xf5f7fa);
+
+                // Disable shadows if they're enabled
+                if (rpmManager.renderer) {
+                    rpmManager.renderer.shadowMap.enabled = false;
+                }
+
+                // Update camera controls
+                if (rpmManager.controls) {
+                    rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
+                    rpmManager.controls.target.set(0, -0.3, 0);
+                    rpmManager.controls.update();
+                }
+            }
+        }, 1000);
+
+        /* Initialize OBJ Clothing Renderer */
+        let objRenderer = null;
+        if (window.clothingOBJRenderer) {
+            objRenderer = window.clothingOBJRenderer;
+            objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+        }
+
+        /* Make globally available for debugging */
+        window.rpmManager = rpmManager;
+        window.objRenderer = objRenderer;
+
+        /* Auto-load saved avatar on startup */
+        initializeAvatar();
+
+        /* Avatar Initialization */
+        async function initializeAvatar() {
+            try {
+                console.log('🤖 Loading saved RPM avatar...');
+                await rpmManager.loadSavedAvatar();
+
+                if (rpmManager.avatarModel) {
+                    rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
+                    rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
+                    updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
+
+                    // Wait for OBJ renderer to be available before setting references
+                    let attempts = 0;
+                    const maxAttempts = 50; // 5 seconds
+
+                    while (!window.clothingOBJRenderer && attempts < maxAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        attempts++;
+                    }
+
+                    if (window.clothingOBJRenderer) {
+                        console.log('🔄 Setting OBJ renderer references...');
+                        window.clothingOBJRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+
+                        // Verify references were set
+                        setTimeout(() => {
+                            console.log('🔍 Reference verification:');
+                            console.log(`  - Scene set: ${!!window.clothingOBJRenderer.scene}`);
+                            console.log(`  - Avatar set: ${!!window.clothingOBJRenderer.avatar}`);
+                            console.log('✅ OBJ renderer ready for colored clothing!');
+                        }, 100);
+                    } else {
+                        console.log('❌ ClothingOBJRenderer not available after 5 seconds');
+                    }
+                }
+
+                updateAvatarStats();
+                console.log('✅ Avatar loaded successfully');
+                showMessage('Avatar loaded and ready for colored clothing', 'success');
+            } catch (error) {
+                console.log(`⚠️ Error loading avatar: ${error.message}`);
+                showMessage('No saved avatar found. Create or load one to get started.', 'info');
+            }
+        }
+
+        /* Avatar Scale Controls */
+        const scaleSlider = document.getElementById('avatar-scale-slider');
+        const scaleValueDisplay = document.getElementById('scale-value');
+
+        if (scaleSlider) {
+            scaleSlider.addEventListener('input', function() {
+                const scale = parseFloat(this.value);
+                updateAvatarScale(scale);
+                scaleValueDisplay.textContent = Math.round(scale * 100) + '%';
+            });
+        }
+
+        document.querySelectorAll('.scale-preset').forEach(button => {
+            button.addEventListener('click', function() {
+                const scale = parseFloat(this.dataset.scale);
+                updateAvatarScale(scale);
+                updateScaleUI(scale);
+                showMessage(`Avatar size set to ${Math.round(scale * 100)}%`, 'info');
+            });
+        });
+
+        function updateAvatarScale(scale) {
+            if (!rpmManager || !rpmManager.avatarModel) {
+                console.warn('⚠️ No avatar loaded to scale');
+                return;
+            }
+
+            try {
+                rpmManager.avatarModel.scale.setScalar(scale);
+
+                if (AVATAR_CONFIG.CLOTHING_SCALE_MATCH && rpmManager.clothingItems) {
+                    rpmManager.clothingItems.forEach((item) => {
+                        if (item.model) {
+                            item.model.scale.setScalar(scale);
+                        }
+                    });
+                }
+
+                // Also scale OBJ clothing items
+                if (objRenderer && objRenderer.currentClothing) {
+                    objRenderer.currentClothing.forEach((item) => {
+                        if (item.mesh) {
+                            item.mesh.scale.setScalar(scale);
+                        }
+                    });
+                }
+
+                console.log(`📏 Avatar scaled to: ${scale}`);
+                updateAvatarStats();
+
+            } catch (error) {
+                console.error('❌ Error scaling avatar:', error);
+                showMessage('Failed to scale avatar', 'error');
+            }
+        }
+
+        function updateScaleUI(scale) {
+            if (scaleSlider && scaleValueDisplay) {
+                scaleSlider.value = scale;
+                scaleValueDisplay.textContent = Math.round(scale * 100) + '%';
+            }
+        }
+
+        /* Wardrobe System with Enhanced Color Support */
+        document.getElementById('category-rpm').addEventListener('change', function() {
+            const category = this.value;
+            console.log(`👕 Loading wardrobe category: ${category}`);
+            loadWardrobeItems(category);
+        });
+
+        async function loadWardrobeItems(category) {
+            const container = document.getElementById('wardrobe-items-rpm');
+            if (!container) return;
+
+            container.innerHTML = '<div class="loading">Loading items...</div>';
+
+            try {
+                const response = await fetch(`/api/wardrobe-items?category=${category}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: Failed to load wardrobe items`);
+                }
+
+                const data = await response.json();
+                const items = data[category] || [];
+
+                container.innerHTML = '';
+
+                if (items.length === 0) {
+                    container.innerHTML = '<div class="no-items">No items found in this category</div>';
+                    return;
+                }
+
+                items.forEach(item => {
+                    const itemElement = createWardrobeItem(item, category);
+                    container.appendChild(itemElement);
+                });
+
+                console.log(`✅ Loaded ${items.length} items for category: ${category}`);
+
+            } catch (error) {
+                console.error('❌ Error loading wardrobe items:', error);
+                container.innerHTML = '<div class="error">Failed to load items. Please try again.</div>';
+                showMessage('Failed to load wardrobe items', 'error');
+            }
+        }
+
+        // Enhanced wardrobe item creation with color support
+        function createWardrobeItem(item, category) {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'wardrobe-item';
+            itemElement.dataset.itemId = item._id;
+            itemElement.dataset.category = category;
+            itemElement.dataset.itemType = item.type || item.label || 'unknown';
+
+            const itemName = item.label || 'Unnamed Item';
+
+            itemElement.innerHTML = `
+                <div class="item-image">
+                    ${item.file_path ? `
+                        <img src="${item.file_path}"
+                             alt="${itemName}"
+                             onerror="this.parentElement.innerHTML='<div class=\\'error-message\\'>Image not available</div>'">
+                    ` : `
+                        <div class="error-message">No image available</div>
+                    `}
+                </div>
+                <div class="item-name">${itemName}</div>
+            `;
+
+            // Enhanced click handler with color support
+            itemElement.addEventListener('click', async function() {
+                console.log('🎯 Wardrobe item clicked:', itemName, item._id);
+
+                if (!rpmManager.avatarModel) {
+                    showMessage('Please load an avatar first', 'error');
+                    return;
+                }
+
+                // Ensure OBJ renderer is available and has references
+                if (!window.clothingOBJRenderer) {
+                    console.error('❌ ClothingOBJRenderer not available');
+                    showMessage('OBJ Renderer not initialized', 'error');
+                    return;
+                }
+
+                // Set references if missing
+                if (!window.clothingOBJRenderer.scene || !window.clothingOBJRenderer.avatar) {
+                    console.log('🔄 Setting OBJ renderer references...');
+                    window.clothingOBJRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+                }
+
+                const isSelected = this.classList.contains('selected');
+                const itemId = this.dataset.itemId;
+
+                try {
+                    if (isSelected) {
+                        // Remove clothing
+                        console.log('🗑️ Removing clothing:', itemId);
+                        const success = await window.clothingOBJRenderer.removeClothing(itemId);
+
+                        if (success) {
+                            this.classList.remove('selected');
+                            updateActiveOutfitList();
+                            showMessage(`${itemName} removed`, 'info');
+                        } else {
+                            showMessage(`Failed to remove ${itemName}`, 'error');
+                        }
+                    } else {
+                        // Add clothing with color
+                        console.log('👕 Adding colored clothing:', itemId, itemName);
+                        showLoading(`Applying ${itemName} with color...`);
+
+                        let success = false;
+
+                        // Try database loading first
+                        try {
+                            success = await window.clothingOBJRenderer.loadClothingFromDatabase(itemId);
+                            if (success) {
+                                console.log('✅ Colored database loading successful');
+                            }
+                        } catch (error) {
+                            console.warn('⚠️ Database loading failed, trying fallback:', error.message);
+                        }
+
+                        // If database loading failed, try fallback with color
+                        if (!success) {
+                            try {
+                                const fallbackData = {
+                                    _id: itemId,
+                                    type: category,
+                                    label: itemName,
+                                    file_path: item.file_path,
+                                    category: category,
+                                    color: item.color // Include color data
+                                };
+                                success = await window.clothingOBJRenderer.createFallbackClothing(fallbackData);
+                                if (success) {
+                                    console.log('✅ Colored fallback creation successful');
+                                }
+                            } catch (fallbackError) {
+                                console.error('❌ Colored fallback creation failed:', fallbackError);
+                            }
+                        }
+
+                        if (success) {
+                            this.classList.add('selected');
+                            updateActiveOutfitList();
+                            showMessage(`${itemName} applied with color successfully`, 'success');
+                        } else {
+                            showMessage(`Failed to apply ${itemName}`, 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error in click handler:', error);
+                    showMessage(`Error: ${error.message}`, 'error');
+                } finally {
+                    hideLoading();
+                }
+            });
+
+            return itemElement;
+        }
+
+        /* RPM Avatar Management */
+        document.getElementById('open-rpm-creator').addEventListener('click', function() {
+            console.log('🔗 Opening RPM Creator...');
+            window.open('https://demo.readyplayer.me/avatar', '_blank', 'noopener,noreferrer');
+            showMessage('RPM Creator opened in new tab', 'info');
+        });
+
+        document.getElementById('load-saved-rpm').addEventListener('click', async function() {
+            try {
+                showLoading('Loading saved avatar...');
+                console.log('📥 Loading saved RPM avatar...');
+
+                const response = await fetch('/api/rpm/get-avatar');
+                if (!response.ok) {
+                    throw new Error('Failed to load saved avatar');
+                }
+
+                const data = await response.json();
+                if (data.success && data.avatarUrl) {
+                    document.getElementById('rpm-avatar-url').value = data.avatarUrl;
+                    await rpmManager.loadAvatar(data.avatarUrl);
+
+                    if (rpmManager.avatarModel) {
+                        rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
+                        rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
+                        updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
+
+                        // Update OBJ renderer references
+                        if (objRenderer) {
+                            objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+                        }
+                    }
+
+                    await saveRPMAvatarUrlIfPresent(data.avatarUrl);
+                    updateAvatarStats();
+                    showMessage('Saved avatar loaded successfully', 'success');
+                } else {
+                    throw new Error('No saved avatar found');
+                }
+            } catch (error) {
+                console.error('❌ Error loading saved avatar:', error);
+                showMessage(error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        document.getElementById('load-rpm-url').addEventListener('click', async function() {
+            const avatarUrl = document.getElementById('rpm-avatar-url').value.trim();
+
+            if (!avatarUrl) {
+                showMessage('Please enter a valid RPM avatar URL', 'error');
+                return;
+            }
+
+            try {
+                showLoading('Loading avatar from URL...');
+                console.log('🔗 Loading RPM avatar from URL:', avatarUrl);
+
+                await rpmManager.loadAvatar(avatarUrl);
+
+                if (rpmManager.avatarModel) {
+                    rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
+                    rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
+                    updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
+
+                    // Update OBJ renderer references
+                    if (objRenderer) {
+                        objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+                    }
+                }
+
+                await saveRPMAvatarUrlIfPresent(avatarUrl);
+                updateAvatarStats();
+                showMessage('Avatar loaded successfully from URL', 'success');
+            } catch (error) {
+                console.error('❌ Error loading avatar from URL:', error);
+                showMessage('Failed to load avatar: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        /* Outfit Management with Color Support */
+        document.getElementById('try-on-rpm').addEventListener('click', async function() {
+            const selectedItems = document.querySelectorAll('#wardrobe-items-rpm .wardrobe-item.selected');
+
+            if (selectedItems.length === 0) {
+                showMessage('Please select items to try on', 'error');
+                return;
+            }
+
+            try {
+                showLoading('Applying colored outfit...');
+                console.log(`👕 Trying on ${selectedItems.length} colored items...`);
+
+                // Clear all clothing first
+                if (objRenderer) {
+                    await objRenderer.clearAllClothing();
+                } else if (rpmManager.clearAllClothing) {
+                    rpmManager.clearAllClothing();
+                }
+
+                for (const item of selectedItems) {
+                    const itemId = item.dataset.itemId;
+                    const itemName = item.querySelector('.item-name').textContent;
+
+                    if (objRenderer) {
+                        await objRenderer.loadClothingFromDatabase(itemId);
+                    } else {
+                        // Fallback to original method
+                        const imagePath = item.querySelector('img')?.src;
+                        if (imagePath && rpmManager.loadClothing) {
+                            await rpmManager.loadClothing(itemId, imagePath, itemName);
+                        }
+                    }
+                }
+
+                updateActiveOutfitList();
+                showMessage(`Colored outfit applied with ${selectedItems.length} items`, 'success');
+            } catch (error) {
+                console.error('❌ Error applying outfit:', error);
+                showMessage('Failed to apply complete outfit', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        document.getElementById('save-outfit-btn').addEventListener('click', async function() {
+            let itemCount = 0;
+            let itemIds = [];
+
+            // Count items from both systems
+            if (objRenderer && objRenderer.currentClothing) {
+                itemCount += objRenderer.currentClothing.size;
+                itemIds = Array.from(objRenderer.currentClothing.keys());
+            } else if (rpmManager.clothingItems) {
+                itemCount += rpmManager.clothingItems.size;
+                itemIds = Array.from(rpmManager.clothingItems.keys());
+            }
+
+            if (itemCount === 0) {
+                showMessage('No outfit to save', 'error');
+                return;
+            }
+
+            try {
+                const outfitName = prompt('Enter a name for this outfit:', 'My Outfit ' + new Date().toLocaleDateString());
+                if (!outfitName) return;
+
+                console.log('💾 Saving outfit:', outfitName);
+
+                const response = await fetch('/api/outfits/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: outfitName,
+                        items: itemIds,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save outfit');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`Outfit "${outfitName}" saved successfully`, 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to save outfit');
+                }
+            } catch (error) {
+                console.error('❌ Error saving outfit:', error);
+                showMessage('Failed to save outfit: ' + error.message, 'error');
+            }
+        });
+
+        document.getElementById('clear-outfit-btn').addEventListener('click', async function() {
+            try {
+                console.log('🗑️ Clearing all clothing...');
+
+                // Clear from OBJ renderer
+                if (objRenderer) {
+                    await objRenderer.clearAllClothing();
+                }
+
+                // Clear from RPM manager as backup
+                if (rpmManager.clearAllClothing) {
+                    rpmManager.clearAllClothing();
+                }
+
+                // Clear UI selections
+                document.querySelectorAll('#wardrobe-items-rpm .wardrobe-item.selected').forEach(item => {
+                    item.classList.remove('selected');
+                });
+
+                updateActiveOutfitList();
+                showMessage('All clothing cleared', 'info');
+            } catch (error) {
+                console.error('❌ Error clearing clothing:', error);
+                showMessage('Error clearing clothing', 'error');
+            }
+        });
+
+        /* 3D Viewport Controls */
+        document.getElementById('rotate-left-btn').addEventListener('click', function() {
+            if (rpmManager.controls) {
+                rpmManager.controls.rotateLeft(Math.PI/8);
+                if (rpmManager.controls.maxPolarAngle < Math.PI * 0.8) {
+                    rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
+                }
+                console.log('↺ Rotating avatar left');
+            }
+        });
+
+        document.getElementById('rotate-right-btn').addEventListener('click', function() {
+            if (rpmManager.controls) {
+                rpmManager.controls.rotateLeft(-Math.PI/8);
+                if (rpmManager.controls.maxPolarAngle < Math.PI * 0.8) {
+                    rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
+                }
+                console.log('↻ Rotating avatar right');
+            }
+        });
+
+        document.getElementById('fullscreen-btn').addEventListener('click', function() {
+            const container = document.getElementById('avatar-container');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen();
+                showMessage('Entered fullscreen mode', 'info');
+            } else {
+                document.exitFullscreen();
+                showMessage('Exited fullscreen mode', 'info');
+            }
+        });
+
+        /* UI Update Functions */
+        function updateActiveOutfitList() {
+            const listContainer = document.getElementById('active-outfit-items');
+            if (!listContainer) return;
+
+            let totalItems = 0;
+            let itemsHtml = '';
+
+            // Get items from OBJ renderer
+            if (objRenderer && objRenderer.currentClothing) {
+                for (const [itemId, clothingData] of objRenderer.currentClothing.entries()) {
+                    const itemName = clothingData.itemData?.label || clothingData.category || 'OBJ Item';
+                    const source = clothingData.source || 'obj';
+                    itemsHtml += `
+                        <div class="active-item" data-item-id="${itemId}" data-source="obj">
+                            <span class="active-item-name">${itemName} (${source})</span>
+                            <span class="active-item-remove" title="Remove ${itemName}">
+                                <i class="bi bi-x-circle"></i>
+                            </span>
+                        </div>
+                    `;
+                    totalItems++;
+                }
+            }
+
+            // Get items from RPM manager (fallback)
+            if (rpmManager.clothingItems) {
+                for (const [itemId, item] of rpmManager.clothingItems.entries()) {
+                    const itemName = item.data?.itemType || item.type || 'GLB Item';
+                    itemsHtml += `
+                        <div class="active-item" data-item-id="${itemId}" data-source="rpm">
+                            <span class="active-item-name">${itemName} (GLB)</span>
+                            <span class="active-item-remove" title="Remove ${itemName}">
+                                <i class="bi bi-x-circle"></i>
+                            </span>
+                        </div>
+                    `;
+                    totalItems++;
+                }
+            }
+
+            if (totalItems === 0) {
+                listContainer.innerHTML = '<p class="text-muted">No items selected</p>';
+                return;
+            }
+
+            listContainer.innerHTML = itemsHtml;
+
+            // Add remove event listeners
+            listContainer.querySelectorAll('.active-item-remove').forEach(button => {
+                button.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    const itemElement = this.closest('.active-item');
+                    const itemId = itemElement.dataset.itemId;
+                    const source = itemElement.dataset.source;
+                    const itemName = itemElement.querySelector('.active-item-name').textContent;
+
+                    try {
+                        if (source === 'obj' && objRenderer) {
+                            await objRenderer.removeClothing(itemId);
+                        } else if (source === 'rpm' && rpmManager.removeClothing) {
+                            rpmManager.removeClothing(itemId);
+                        }
+
+                        // Remove UI selection
+                        const wardrobeItem = document.querySelector(`[data-item-id="${itemId}"]`);
+                        if (wardrobeItem) {
+                            wardrobeItem.classList.remove('selected');
+                        }
+
+                        updateActiveOutfitList();
+                        showMessage(`${itemName} removed`, 'info');
+                    } catch (error) {
+                        console.error('Error removing item:', error);
+                        showMessage(`Failed to remove ${itemName}`, 'error');
+                    }
+                });
+            });
+        }
+
+        function updateAvatarStats() {
+            const infoContainer = document.getElementById('avatar-info');
+            if (!infoContainer || !rpmManager.avatarModel) {
+                if (infoContainer) {
+                    infoContainer.innerHTML = '<p style="margin:0; color:#999;">No avatar loaded</p>';
+                }
+                return;
+            }
+
+            const stats = {
+                'Model': 'Ready Player Me',
+                'Scale': Math.round((rpmManager.avatarModel.scale.x || 1.0) * 100) + '%',
+                'Polygons': 'Calculating...',
+                'Materials': 'Calculating...',
+                'Clothing': 0
+            };
+
+            // Count clothing from both systems
+            let clothingCount = 0;
+            if (objRenderer && objRenderer.currentClothing) {
+                clothingCount += objRenderer.currentClothing.size;
+            }
+            if (rpmManager.clothingItems) {
+                clothingCount += rpmManager.clothingItems.size;
+            }
+            stats['Clothing'] = clothingCount;
+
+            if (rpmManager.avatarModel) {
+                let polyCount = 0;
+                let materialCount = 0;
+
+                rpmManager.avatarModel.traverse((child) => {
+                    if (child.isMesh) {
+                        if (child.geometry) {
+                            polyCount += child.geometry.index ?
+                                child.geometry.index.count / 3 :
+                                child.geometry.attributes.position.count / 3;
+                        }
+                        materialCount++;
+                    }
+                });
+
+                stats['Polygons'] = Math.floor(polyCount).toLocaleString();
+                stats['Materials'] = materialCount;
+            }
+
+            let html = '';
+            for (const [key, value] of Object.entries(stats)) {
+                html += `<p style="margin: 2px 0;"><strong>${key}:</strong> ${value}</p>`;
+            }
+
+            infoContainer.innerHTML = html;
+        }
+
+        /* Utility Functions */
+        function showLoading(message = 'Loading...') {
+            const overlay = document.querySelector('.loading-overlay');
+            const progressText = overlay?.querySelector('.loading-progress');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                if (progressText) progressText.textContent = message;
+            }
+        }
+
+        function hideLoading() {
+            const overlay = document.querySelector('.loading-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `<i class="bi bi-${getMessageIcon(type)}"></i> ${message}`;
+
+            document.body.appendChild(messageDiv);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 4000);
+        }
+
+        function getMessageIcon(type) {
+            const icons = {
+                'success': 'check-circle',
+                'error': 'exclamation-triangle',
+                'info': 'info-circle',
+                'warning': 'exclamation-circle'
+            };
+            return icons[type] || 'info-circle';
+        }
+
+        async function saveRPMAvatarUrlIfPresent(avatarUrl) {
+            if (!avatarUrl) return;
+            try {
+                await fetch('/api/rpm/save-avatar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({avatarUrl})
+                });
+                console.log('💾 RPM avatar URL saved automatically:', avatarUrl);
+            } catch (err) {
+                console.error('❌ Failed to auto-save RPM avatar URL:', err);
+            }
+        }
+
+        /* Initialization Completion */
+        loadWardrobeItems('tops');
+
+        console.log('✅ Clean RPM Avatar Application initialized successfully');
+        showMessage('Application ready! Create or load an avatar to get started.', 'info');
+    });
+
+})();
+</script>
+
+{% endblock %}
