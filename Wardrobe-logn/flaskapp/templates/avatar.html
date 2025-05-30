@@ -529,6 +529,197 @@
         justify-content: center;
     }
 
+    /* NEW: Clothing Position Controls */
+    .clothing-controls-section {
+        margin-top: 20px;
+        padding: 15px;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        border-left: 4px solid #f39c12;
+        display: none; /* Hidden by default */
+    }
+
+    .clothing-controls-section.active {
+        display: block;
+    }
+
+    .clothing-controls-section h5 {
+        margin: 0 0 15px 0;
+        color: #856404;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .selected-clothing-info {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        font-size: 13px;
+        color: #495057;
+        border: 1px solid #dee2e6;
+    }
+
+    .position-controls {
+        display: grid;
+        gap: 15px;
+    }
+
+    .axis-control {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 12px;
+    }
+
+    .axis-control h6 {
+        margin: 0 0 10px 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .axis-buttons {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .axis-btn {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 500;
+        color: #495057;
+        transition: all 0.2s ease;
+        min-width: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .axis-btn:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+        transform: translateY(-1px);
+    }
+
+    .axis-btn:active {
+        transform: translateY(0);
+        background: #dee2e6;
+    }
+
+    .axis-btn.negative {
+        background: #ffebee;
+        border-color: #ef5350;
+        color: #c62828;
+    }
+
+    .axis-btn.negative:hover {
+        background: #ffcdd2;
+    }
+
+    .axis-btn.positive {
+        background: #e8f5e8;
+        border-color: #66bb6a;
+        color: #2e7d32;
+    }
+
+    .axis-btn.positive:hover {
+        background: #c8e6c9;
+    }
+
+    .axis-value {
+        font-family: monospace;
+        font-size: 11px;
+        background: #f8f9fa;
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        min-width: 60px;
+        text-align: center;
+        color: #495057;
+    }
+
+    .fine-control {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 8px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .fine-control input[type="checkbox"] {
+        margin: 0;
+    }
+
+    .fine-control label {
+        font-size: 11px;
+        color: #6c757d;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .quick-actions {
+        margin-top: 15px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        background: #fff;
+        color: #495057;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 80px;
+    }
+
+    .quick-action-btn:hover {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+        transform: translateY(-1px);
+    }
+
+    .quick-action-btn.reset {
+        background: #fff3cd;
+        border-color: #ffeaa7;
+        color: #856404;
+    }
+
+    .quick-action-btn.reset:hover {
+        background: #ffeaa7;
+    }
+
+    .quick-action-btn.done {
+        background: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .quick-action-btn.done:hover {
+        background: #c3e6cb;
+    }
+
     /* Main container styles */
     .avatar-container {
         flex: 2;
@@ -725,6 +916,25 @@
     .active-item-name {
         flex: 1;
         font-weight: 500;
+    }
+
+    .active-item-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .active-item-edit {
+        cursor: pointer;
+        color: #f39c12;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+        font-size: 14px;
+    }
+
+    .active-item-edit:hover {
+        background-color: #fef3e2;
     }
 
     .active-item-remove {
@@ -939,6 +1149,11 @@
         .color-option {
             width: 28px;
             height: 28px;
+        }
+
+        .axis-buttons {
+            flex-direction: column;
+            gap: 5px;
         }
     }
 
@@ -1275,6 +1490,102 @@
                         </button>
                     </div>
 
+                    <!-- NEW: Clothing Position Controls -->
+                    <div id="clothing-controls" class="clothing-controls-section">
+                        <h5>
+                            <i class="bi bi-arrows-move"></i>
+                            Position Clothing Item
+                        </h5>
+
+                        <div id="selected-clothing-info" class="selected-clothing-info">
+                            <strong>Selected:</strong> <span id="selected-item-name">No item selected</span>
+                        </div>
+
+                        <div class="position-controls">
+                            <!-- X-Axis Controls -->
+                            <div class="axis-control">
+                                <h6>X-Axis (Left/Right)</h6>
+                                <div class="axis-buttons">
+                                    <button class="axis-btn negative" data-axis="x" data-direction="-1">
+                                        <i class="bi bi-arrow-left"></i> Left
+                                    </button>
+                                    <div class="axis-value" id="x-value">0.00</div>
+                                    <button class="axis-btn positive" data-axis="x" data-direction="1">
+                                        Right <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                                <div class="fine-control">
+                                    <input type="checkbox" id="x-fine" checked>
+                                    <label for="x-fine">Fine control (0.01)</label>
+                                </div>
+                            </div>
+
+                            <!-- Y-Axis Controls -->
+                            <div class="axis-control">
+                                <h6>Y-Axis (Up/Down)</h6>
+                                <div class="axis-buttons">
+                                    <button class="axis-btn positive" data-axis="y" data-direction="1">
+                                        <i class="bi bi-arrow-up"></i> Up
+                                    </button>
+                                    <div class="axis-value" id="y-value">0.00</div>
+                                    <button class="axis-btn negative" data-axis="y" data-direction="-1">
+                                        Down <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                </div>
+                                <div class="fine-control">
+                                    <input type="checkbox" id="y-fine" checked>
+                                    <label for="y-fine">Fine control (0.01)</label>
+                                </div>
+                            </div>
+
+                            <!-- Z-Axis Controls -->
+                            <div class="axis-control">
+                                <h6>Z-Axis (Forward/Back)</h6>
+                                <div class="axis-buttons">
+                                    <button class="axis-btn positive" data-axis="z" data-direction="1">
+                                        <i class="bi bi-arrow-up-circle"></i> Forward
+                                    </button>
+                                    <div class="axis-value" id="z-value">0.00</div>
+                                    <button class="axis-btn negative" data-axis="z" data-direction="-1">
+                                        Back <i class="bi bi-arrow-down-circle"></i>
+                                    </button>
+                                </div>
+                                <div class="fine-control">
+                                    <input type="checkbox" id="z-fine" checked>
+                                    <label for="z-fine">Fine control (0.01)</label>
+                                </div>
+                            </div>
+
+                            <!-- Scale Controls -->
+                            <div class="axis-control">
+                                <h6>Scale (Size)</h6>
+                                <div class="axis-buttons">
+                                    <button class="axis-btn negative" data-scale="-1">
+                                        <i class="bi bi-zoom-out"></i> Smaller
+                                    </button>
+                                    <div class="axis-value" id="scale-value">1.00</div>
+                                    <button class="axis-btn positive" data-scale="1">
+                                        Bigger <i class="bi bi-zoom-in"></i>
+                                    </button>
+                                </div>
+                                <div class="fine-control">
+                                    <input type="checkbox" id="scale-fine" checked>
+                                    <label for="scale-fine">Fine control (0.01)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="quick-actions">
+                            <button class="quick-action-btn reset" id="reset-position-btn">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset Position
+                            </button>
+                            <button class="quick-action-btn done" id="done-positioning-btn">
+                                <i class="bi bi-check-lg"></i> Done
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Current Outfit Display -->
                     <div class="active-items-section">
                         <h5>Current Outfit</h5>
@@ -1386,7 +1697,12 @@ if (typeof THREE === 'undefined') {
     let avatarManager = null;
     let clothingRenderer = null;
 
-    console.log('🚀 Initializing GLB Avatar System with 3D Clothing...');
+    /* NEW: Clothing Position Control State */
+    let selectedClothingItem = null;
+    let clothingPositions = new Map(); // Store positions for each clothing item
+    let clothingScales = new Map(); // Store scales for each clothing item
+
+    console.log('🚀 Initializing GLB Avatar System with 3D Clothing and Position Controls...');
 
     /* Application Initialization */
     document.addEventListener('DOMContentLoaded', function() {
@@ -1399,6 +1715,7 @@ if (typeof THREE === 'undefined') {
         setTimeout(() => initializeCameraViewSystem(), 900);
         setTimeout(() => initializeHairSystem(), 1100);
         setTimeout(() => initializeWardrobeSystem(), 1300);
+        setTimeout(() => initializeClothingPositionControls(), 1400); // NEW
         setTimeout(() => initializeSavedAvatarsSystem(), 1500);
         setTimeout(() => initializeDebugInfo(), 1700);
 
@@ -1517,6 +1834,202 @@ if (typeof THREE === 'undefined') {
             setTimeout(() => {
                 clearInterval(checkForAvatarInterval);
             }, 30000);
+        }
+
+        /* NEW: Initialize Clothing Position Controls */
+        function initializeClothingPositionControls() {
+            console.log('🎛️ Initializing clothing position controls...');
+
+            // Position control buttons
+            document.querySelectorAll('[data-axis]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const axis = this.dataset.axis;
+                    const direction = parseFloat(this.dataset.direction);
+
+                    moveSelectedClothing(axis, direction);
+                });
+            });
+
+            // Scale control buttons
+            document.querySelectorAll('[data-scale]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const direction = parseFloat(this.dataset.scale);
+                    scaleSelectedClothing(direction);
+                });
+            });
+
+            // Reset position button
+            document.getElementById('reset-position-btn')?.addEventListener('click', resetClothingPosition);
+
+            // Done positioning button
+            document.getElementById('done-positioning-btn')?.addEventListener('click', hidePositionControls);
+
+            console.log('✅ Clothing position controls initialized');
+        }
+
+        function moveSelectedClothing(axis, direction) {
+            if (!selectedClothingItem || !clothingRenderer) {
+                console.warn('⚠️ No clothing item selected for positioning');
+                return;
+            }
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) {
+                console.warn('⚠️ Selected clothing mesh not found');
+                return;
+            }
+
+            // Get fine control setting
+            const fineControl = document.getElementById(`${axis}-fine`)?.checked;
+            const step = fineControl ? 0.01 : 0.05;
+
+            // Apply movement
+            const mesh = clothingData.mesh;
+            mesh.position[axis] += direction * step;
+
+            // Store position
+            const itemId = selectedClothingItem;
+            if (!clothingPositions.has(itemId)) {
+                clothingPositions.set(itemId, { x: 0, y: 0, z: 0 });
+            }
+
+            const currentPos = clothingPositions.get(itemId);
+            currentPos[axis] = mesh.position[axis];
+
+            // Update display
+            updatePositionDisplay();
+
+            console.log(`📐 Moved ${axis}-axis by ${direction * step} to ${mesh.position[axis].toFixed(3)}`);
+        }
+
+        function scaleSelectedClothing(direction) {
+            if (!selectedClothingItem || !clothingRenderer) {
+                console.warn('⚠️ No clothing item selected for scaling');
+                return;
+            }
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) {
+                console.warn('⚠️ Selected clothing mesh not found');
+                return;
+            }
+
+            // Get fine control setting
+            const fineControl = document.getElementById('scale-fine')?.checked;
+            const step = fineControl ? 0.01 : 0.05;
+            const minScale = 0.1; // Minimum scale to prevent invisible clothing
+            const maxScale = 3.0; // Maximum scale to prevent huge clothing
+
+            // Apply scaling
+            const mesh = clothingData.mesh;
+            const currentScale = mesh.scale.x; // Assuming uniform scaling
+            const newScale = Math.max(minScale, Math.min(maxScale, currentScale + (direction * step)));
+
+            mesh.scale.setScalar(newScale);
+
+            // Store scale
+            const itemId = selectedClothingItem;
+            clothingScales.set(itemId, newScale);
+
+            // Update display
+            updateScaleDisplay();
+
+            console.log(`📏 Scaled to ${newScale.toFixed(3)} (step: ${direction * step})`);
+        }
+
+        function resetClothingPosition() {
+            if (!selectedClothingItem || !clothingRenderer) {
+                console.warn('⚠️ No clothing item selected for reset');
+                return;
+            }
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) {
+                console.warn('⚠️ Selected clothing mesh not found');
+                return;
+            }
+
+            // Reset to original position and scale
+            const clothingType = clothingRenderer.determineClothingType(clothingData.itemData);
+            clothingRenderer.positionClothingOnAvatar(clothingData.mesh, clothingType);
+
+            // Reset scale to default (1.0)
+            clothingData.mesh.scale.setScalar(1.0);
+
+            // Clear stored position and scale
+            clothingPositions.delete(selectedClothingItem);
+            clothingScales.delete(selectedClothingItem);
+
+            // Update display
+            updatePositionDisplay();
+            updateScaleDisplay();
+
+            showMessage('Clothing position and size reset', 'info');
+            console.log('↩️ Reset clothing position and scale to default');
+        }
+
+        function showPositionControls(itemId, itemName) {
+            selectedClothingItem = itemId;
+
+            const controlsSection = document.getElementById('clothing-controls');
+            const itemNameSpan = document.getElementById('selected-item-name');
+
+            if (controlsSection && itemNameSpan) {
+                controlsSection.classList.add('active');
+                itemNameSpan.textContent = itemName;
+
+                updatePositionDisplay();
+                updateScaleDisplay();
+
+                showMessage(`Now positioning: ${itemName}`, 'info');
+                console.log(`🎛️ Showing position controls for: ${itemName} (${itemId})`);
+            }
+        }
+
+        function hidePositionControls() {
+            selectedClothingItem = null;
+
+            const controlsSection = document.getElementById('clothing-controls');
+            const itemNameSpan = document.getElementById('selected-item-name');
+
+            if (controlsSection && itemNameSpan) {
+                controlsSection.classList.remove('active');
+                itemNameSpan.textContent = 'No item selected';
+
+                showMessage('Position controls hidden', 'info');
+                console.log('🎛️ Position controls hidden');
+            }
+        }
+
+        function updatePositionDisplay() {
+            if (!selectedClothingItem || !clothingRenderer) return;
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) return;
+
+            const mesh = clothingData.mesh;
+
+            // Update position value displays
+            const xValue = document.getElementById('x-value');
+            const yValue = document.getElementById('y-value');
+            const zValue = document.getElementById('z-value');
+
+            if (xValue) xValue.textContent = mesh.position.x.toFixed(2);
+            if (yValue) yValue.textContent = mesh.position.y.toFixed(2);
+            if (zValue) zValue.textContent = mesh.position.z.toFixed(2);
+        }
+
+        function updateScaleDisplay() {
+            if (!selectedClothingItem || !clothingRenderer) return;
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) return;
+
+            const mesh = clothingData.mesh;
+
+            // Update scale value display
+            const scaleValue = document.getElementById('scale-value');
+            if (scaleValue) scaleValue.textContent = mesh.scale.x.toFixed(2);
         }
 
         /* Load saved avatar or default */
@@ -2246,6 +2759,11 @@ if (typeof THREE === 'undefined') {
                             this.classList.remove('selected');
                             updateActiveOutfitList();
                             showMessage(`${itemName} removed`, 'info');
+
+                            // Hide position controls if this item was selected for positioning
+                            if (selectedClothingItem === itemId) {
+                                hidePositionControls();
+                            }
                         } else {
                             showMessage(`Failed to remove ${itemName}`, 'error');
                         }
@@ -2396,6 +2914,9 @@ if (typeof THREE === 'undefined') {
                 document.querySelectorAll('#wardrobe-items .wardrobe-item.selected').forEach(item => {
                     item.classList.remove('selected');
                 });
+
+                // Hide position controls
+                hidePositionControls();
 
                 updateActiveOutfitList();
                 showMessage('All 3D clothing cleared', 'info');
@@ -2592,9 +3113,14 @@ if (typeof THREE === 'undefined') {
                     itemsHtml += `
                         <div class="active-item" data-item-id="${itemId}" data-source="3d">
                             <span class="active-item-name">${itemName} (${renderType})</span>
-                            <span class="active-item-remove" title="Remove ${itemName}">
-                                <i class="bi bi-x-circle"></i>
-                            </span>
+                            <div class="active-item-controls">
+                                <span class="active-item-edit" title="Position ${itemName}">
+                                    <i class="bi bi-arrows-move"></i>
+                                </span>
+                                <span class="active-item-remove" title="Remove ${itemName}">
+                                    <i class="bi bi-x-circle"></i>
+                                </span>
+                            </div>
                         </div>
                     `;
                     totalItems++;
@@ -2606,6 +3132,7 @@ if (typeof THREE === 'undefined') {
             } else {
                 listContainer.innerHTML = itemsHtml;
 
+                // Add event listeners for remove buttons
                 listContainer.querySelectorAll('.active-item-remove').forEach(button => {
                     button.addEventListener('click', async function(e) {
                         e.stopPropagation();
@@ -2623,12 +3150,29 @@ if (typeof THREE === 'undefined') {
                                 wardrobeItem.classList.remove('selected');
                             }
 
+                            // Hide position controls if this item was selected for positioning
+                            if (selectedClothingItem === itemId) {
+                                hidePositionControls();
+                            }
+
                             updateActiveOutfitList();
                             showMessage(`${itemName} removed`, 'info');
                         } catch (error) {
                             console.error('Error removing 3D item:', error);
                             showMessage(`Failed to remove ${itemName}`, 'error');
                         }
+                    });
+                });
+
+                // Add event listeners for edit/position buttons
+                listContainer.querySelectorAll('.active-item-edit').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const itemElement = this.closest('.active-item');
+                        const itemId = itemElement.dataset.itemId;
+                        const itemName = itemElement.querySelector('.active-item-name').textContent.split(' (')[0]; // Remove (3D) suffix
+
+                        showPositionControls(itemId, itemName);
                     });
                 });
             }
@@ -2786,7 +3330,7 @@ if (typeof THREE === 'undefined') {
             return icons[type] || 'info-circle';
         }
 
-        console.log('✅ GLB Avatar System with 3D Clothing initialized successfully!');
+        console.log('✅ GLB Avatar System with 3D Clothing and Position Controls initialized successfully!');
     });
 
 })();

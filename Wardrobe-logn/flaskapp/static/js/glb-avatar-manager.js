@@ -88,6 +88,12 @@ class CustomizableGLBAvatarManager {
                     preview: '/static/models/makehuman/hair/previews/strawberry_hair.jpg',
                     glbPath:  '/static/models/makehuman/hair/Strawberry_Cloud_Hair/strawberry.glb',
                     category: 'medium'
+                },
+                  'bun': {
+                    name: 'Bun',
+                    preview: '/static/models/makehuman/hair/previews/bun_blonde.jpg',
+                    glbPath:  '/static/models/makehuman/hair/Wig_bun_blonde_female_braids/bun.glb',
+                    category: 'medium'
                 }
             },
             male: {
@@ -1104,7 +1110,7 @@ window.testPerfectPositioning = function(height = 'medium') {
     const coords = {
         'short': { x: 0, y: -0.534, z: -0.13, scale: 1.0 },
         'medium': { x: 0, y: -0.39, z: -0.12, scale: 1.0 },
-        'long': { x: 0, y: -0.534, z: -0.13, scale: 1.0 }
+        'long': { x: 0, y: -0.534, z: -0.06, scale: 1.0 }
     };
 
     const targetCoords = coords[height];
