@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}RPM Avatar Creator{% endblock %}
+{% block title %}Avatar Creator & Wardrobe{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -13,25 +13,1108 @@
         overflow: hidden;
     }
 
-    /* Left Panel - Controls & Wardrobe */
+    /* Left Panel - Tab System */
     .customization-panel {
-        width: 280px;
+        width: 320px;
         background: #fff;
         box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
         z-index: 1;
     }
 
-    /* Center Panel - Main 3D Viewport */
+    /* Tab Navigation - Updated for 3 tabs */
+    .tab-navigation {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 2px solid #e9ecef;
+        flex-shrink: 0;
+    }
+
+    .tab-button {
+        flex: 1;
+        padding: 15px 8px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        color: #6c757d;
+        transition: all 0.3s ease;
+        border-bottom: 3px solid transparent;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .tab-button:hover {
+        background: #e9ecef;
+        color: #495057;
+    }
+
+    .tab-button.active {
+        color: #3498db;
+        background: #fff;
+        border-bottom-color: #3498db;
+    }
+
+    .tab-button i {
+        margin-right: 6px;
+        font-size: 14px;
+    }
+
+    /* Tab Content Container */
+    .tab-content-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Avatar Creation Sections */
+    .avatar-creation-section {
+        margin-bottom: 25px;
+    }
+
+    .avatar-creation-section h4 {
+        margin-bottom: 15px;
+        color: #2c3e50;
+        font-size: 16px;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 5px;
+    }
+
+    /* Customization Controls */
+    .customization-group {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        border-left: 4px solid #3498db;
+    }
+
+    .customization-group h5 {
+        margin: 0 0 12px 0;
+        color: #495057;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    /* Format Selection */
+    .format-selection {
+        margin-bottom: 15px;
+        padding: 12px;
+        background: #e8f4fd;
+        border-radius: 6px;
+        border: 1px solid #bee5eb;
+    }
+
+    /* Color Picker Styles */
+    .color-picker-group {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .color-picker-group.large-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 5px;
+    }
+
+    .color-option {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .color-option:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .color-option.selected {
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    .color-option.selected::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* Color category labels */
+    .color-category-label {
+        font-size: 11px;
+        color: #6c757d;
+        margin: 15px 0 8px 0;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 3px;
+    }
+
+    .color-category-label:first-child {
+        margin-top: 5px;
+    }
+
+    /* Gender Toggle */
+    .gender-toggle {
+        display: flex;
+        background: #e9ecef;
+        border-radius: 25px;
+        padding: 3px;
+        margin-top: 10px;
+    }
+
+    .gender-option {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        background: none;
+        border-radius: 22px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        color: #6c757d;
+    }
+
+    .gender-option.active {
+        background: #3498db;
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Selection Grid */
+    .selection-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .selection-option {
+        aspect-ratio: 1;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 500;
+        color: #495057;
+        text-align: center;
+        padding: 5px;
+    }
+
+    .selection-option:hover {
+        border-color: #3498db;
+        background: #ebf5fb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .selection-option.selected {
+        border-color: #3498db;
+        background: #3498db;
+        color: white;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+    }
+
+    /* Body Size Grid */
+    .body-size-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    /* Hair Preview Styles */
+    .hair-preview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 15px;
+    }
+
+    .hair-preview-option {
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hair-preview-option:hover {
+        border-color: #3498db;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .hair-preview-option.selected {
+        border-color: #3498db;
+        background: #ebf5fb;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .hair-preview-option.selected::before {
+        content: '✓';
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #3498db;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 2;
+    }
+
+    .hair-preview-image {
+        width: 100%;
+        height: 80px;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hair-preview-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .hair-preview-option:hover .hair-preview-image img {
+        transform: scale(1.05);
+    }
+
+    .preview-placeholder {
+        width: 100%;
+        height: 100%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: #6c757d;
+        text-align: center;
+        padding: 5px;
+        border-radius: 4px;
+    }
+
+    .hair-preview-name {
+        padding: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #495057;
+        text-align: center;
+        background: #fff;
+    }
+
+    .hair-preview-option.selected .hair-preview-name {
+        background: #ebf5fb;
+        color: #2c3e50;
+    }
+
+    /* Category filters */
+    .hair-category-filters {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+
+    .hair-category-filter {
+        padding: 6px 12px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        color: #6c757d;
+    }
+
+    .hair-category-filter:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+    }
+
+    .hair-category-filter.active {
+        background: #3498db;
+        border-color: #3498db;
+        color: white;
+    }
+
+    /* Loading status for hair */
+    .loading-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin-top: 10px;
+        font-size: 13px;
+        color: #495057;
+    }
+
+    .loading-spinner-small {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    /* Hide filtered hair styles */
+    .hair-preview-option.hidden {
+        display: none;
+    }
+
+    /* Camera View Controls */
+    .camera-view-toggle {
+        display: flex;
+        background: #e9ecef;
+        border-radius: 25px;
+        padding: 3px;
+        margin-top: 10px;
+    }
+
+    .view-option {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        background: none;
+        border-radius: 22px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        color: #6c757d;
+        font-size: 13px;
+    }
+
+    .view-option.active {
+        background: #3498db;
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Wardrobe Section */
+    .wardrobe-section {
+        margin-top: 0;
+    }
+
+    .wardrobe-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-top: 15px;
+        padding: 10px;
+    }
+
+    .wardrobe-item {
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+        position: relative;
+    }
+
+    .wardrobe-item:hover {
+        border-color: #3498db;
+        background: #f7f9fc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .wardrobe-item.selected {
+        border-color: #3498db;
+        background: #ebf5fb;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .wardrobe-item.selected::before {
+        content: '✓';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #3498db;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 2;
+    }
+
+    .wardrobe-item .item-image {
+        width: 100%;
+        height: 120px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #f8f9fa;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .wardrobe-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+
+    .wardrobe-item .item-name {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #2c3e50;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .error-message {
+        color: #e74c3c;
+        font-size: 12px;
+        text-align: center;
+        padding: 10px;
+        background: #fde8e7;
+        border-radius: 4px;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* NEW: Clothing Position Controls */
+    .clothing-controls-section {
+        margin-top: 20px;
+        padding: 15px;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        border-left: 4px solid #f39c12;
+        display: none; /* Hidden by default */
+    }
+
+    .clothing-controls-section.active {
+        display: block;
+    }
+
+    .clothing-controls-section h5 {
+        margin: 0 0 15px 0;
+        color: #856404;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .selected-clothing-info {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        font-size: 13px;
+        color: #495057;
+        border: 1px solid #dee2e6;
+    }
+
+    .position-controls {
+        display: grid;
+        gap: 15px;
+    }
+
+    .axis-control {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 12px;
+    }
+
+    .axis-control h6 {
+        margin: 0 0 10px 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .axis-buttons {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .axis-btn {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 500;
+        color: #495057;
+        transition: all 0.2s ease;
+        min-width: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .axis-btn:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+        transform: translateY(-1px);
+    }
+
+    .axis-btn:active {
+        transform: translateY(0);
+        background: #dee2e6;
+    }
+
+    .axis-btn.negative {
+        background: #ffebee;
+        border-color: #ef5350;
+        color: #c62828;
+    }
+
+    .axis-btn.negative:hover {
+        background: #ffcdd2;
+    }
+
+    .axis-btn.positive {
+        background: #e8f5e8;
+        border-color: #66bb6a;
+        color: #2e7d32;
+    }
+
+    .axis-btn.positive:hover {
+        background: #c8e6c9;
+    }
+
+    .axis-value {
+        font-family: monospace;
+        font-size: 11px;
+        background: #f8f9fa;
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        min-width: 60px;
+        text-align: center;
+        color: #495057;
+    }
+
+    .fine-control {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 8px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .fine-control input[type="checkbox"] {
+        margin: 0;
+    }
+
+    .fine-control label {
+        font-size: 11px;
+        color: #6c757d;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    .quick-actions {
+        margin-top: 15px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        background: #fff;
+        color: #495057;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 80px;
+    }
+
+    .quick-action-btn:hover {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+        transform: translateY(-1px);
+    }
+
+    .quick-action-btn.reset {
+        background: #fff3cd;
+        border-color: #ffeaa7;
+        color: #856404;
+    }
+
+    .quick-action-btn.reset:hover {
+        background: #ffeaa7;
+    }
+
+    .quick-action-btn.done {
+        background: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .quick-action-btn.done:hover {
+        background: #c3e6cb;
+    }
+
+    /* FIXED: Saved Outfits Grid - Added missing CSS */
+    .saved-outfits-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-top: 15px;
+        padding: 10px;
+    }
+
+    .saved-outfit-item {
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+        position: relative;
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 15px;
+        align-items: start;
+    }
+
+    .saved-outfit-item:hover {
+        border-color: #3498db;
+        background: #f7f9fc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .saved-outfit-item.active {
+        border-color: #28a745;
+        background: #d4edda;
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+    }
+
+    .saved-outfit-item.active::before {
+        content: '✓';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #28a745;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 2;
+    }
+
+    /* FIXED: Preview Section CSS */
+    .outfit-preview-section {
+        position: relative;
+        width: 120px;
+        height: 120px;
+    }
+
+    .outfit-snapshot {
+        width: 100%;
+        height: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .outfit-snapshot:hover {
+        border-color: #3498db;
+        transform: scale(1.02);
+    }
+
+    .outfit-snapshot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+
+    .outfit-snapshot-overlay {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 500;
+    }
+
+    .outfit-snapshot-placeholder {
+        text-align: center;
+        color: #6c757d;
+        font-size: 11px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .outfit-snapshot-placeholder i {
+        font-size: 24px;
+        margin-bottom: 8px;
+        opacity: 0.5;
+    }
+
+    .generate-snapshot-btn {
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 3;
+    }
+
+    .generate-snapshot-btn:hover {
+        background: #2980b9;
+        transform: translateY(-1px);
+    }
+
+    .generate-snapshot-btn.loading {
+        background: #95a5a6;
+        cursor: not-allowed;
+    }
+
+    .generate-snapshot-btn i {
+        margin-right: 4px;
+    }
+
+    /* Details Section */
+    .outfit-details-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .outfit-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .outfit-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+        max-width: 200px;
+        word-wrap: break-word;
+    }
+
+    .outfit-date {
+        font-size: 11px;
+        color: #6c757d;
+        white-space: nowrap;
+    }
+
+    .outfit-items-preview {
+        margin: 10px 0;
+        flex: 1;
+    }
+
+    .outfit-items-count {
+        font-size: 12px;
+        color: #495057;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .outfit-items-count i {
+        color: #3498db;
+    }
+
+    .outfit-thumbnails {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        max-height: 50px;
+        overflow: hidden;
+    }
+
+    .outfit-thumbnail {
+        width: 35px;
+        height: 35px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #6c757d;
+        position: relative;
+    }
+
+    .outfit-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .outfit-thumbnail-name {
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 8px;
+        color: #6c757d;
+        white-space: nowrap;
+        background: rgba(255,255,255,0.9);
+        padding: 1px 3px;
+        border-radius: 2px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .outfit-thumbnail:hover .outfit-thumbnail-name {
+        opacity: 1;
+    }
+
+    .outfit-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .outfit-action-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        background: #fff;
+        color: #495057;
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .outfit-action-btn:hover {
+        background: #f8f9fa;
+        border-color: #adb5bd;
+        transform: translateY(-1px);
+    }
+
+    .outfit-action-btn.load {
+        background: #e8f5e8;
+        border-color: #66bb6a;
+        color: #2e7d32;
+    }
+
+    .outfit-action-btn.load:hover {
+        background: #c8e6c9;
+    }
+
+    .outfit-action-btn.delete {
+        background: #ffebee;
+        border-color: #ef5350;
+        color: #c62828;
+    }
+
+    .outfit-action-btn.delete:hover {
+        background: #ffcdd2;
+    }
+
+    /* FIXED: Preview Modal CSS */
+    .outfit-preview-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+
+    .outfit-preview-modal.show {
+        display: flex;
+    }
+
+    .outfit-preview-modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .outfit-preview-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 30px;
+        cursor: pointer;
+        color: #666;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .outfit-preview-modal-close:hover {
+        background: #f8f9fa;
+        color: #333;
+    }
+
+    /* Outfit Save Section */
+    .outfit-save-section {
+        margin-top: 20px;
+        padding: 15px;
+        background: #e8f5e8;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        border-left: 4px solid #28a745;
+    }
+
+    .outfit-save-section h5 {
+        margin: 0 0 15px 0;
+        color: #155724;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .outfit-name-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #c3e6cb;
+        border-radius: 6px;
+        font-size: 14px;
+        margin-bottom: 15px;
+        transition: border-color 0.3s ease;
+    }
+
+    .outfit-name-input:focus {
+        outline: none;
+        border-color: #28a745;
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+    }
+
+    /* Main container styles */
     .avatar-container {
         flex: 2;
         position: relative;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: #ffffff;
         min-width: 600px;
+        border-left: 1px solid #e9ecef;
     }
 
-    /* Loading & Feedback */
     .loading-overlay {
         position: absolute;
         top: 0;
@@ -66,7 +1149,6 @@
         100% { transform: rotate(360deg); }
     }
 
-    /* Toast Messages */
     .message {
         position: fixed;
         top: 20px;
@@ -88,7 +1170,6 @@
         to { transform: translateX(0); }
     }
 
-    /* Form Components */
     .form-group {
         margin-bottom: 15px;
     }
@@ -115,7 +1196,6 @@
         box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
     }
 
-    /* Button System */
     .btn {
         display: inline-block;
         padding: 12px 24px;
@@ -166,88 +1246,13 @@
         background: #138496;
     }
 
-    /* RPM Specific Button Styling */
-    .rpm-button {
-        display: block;
-        width: 100%;
-        margin-bottom: 12px;
-        text-align: center;
+    .btn-danger {
+        background: #e74c3c;
+        color: white;
     }
 
-    /* Wardrobe System */
-    .wardrobe-section {
-        margin-top: 30px;
-    }
-
-    .wardrobe-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-        margin-top: 15px;
-        padding: 10px;
-    }
-
-    .wardrobe-item {
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        padding: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #fff;
-    }
-
-    .wardrobe-item:hover {
-        border-color: #3498db;
-        background: #f7f9fc;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .wardrobe-item.selected {
-        border-color: #3498db;
-        background: #ebf5fb;
-        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-    }
-
-    .wardrobe-item .item-image {
-        width: 100%;
-        height: 120px;
-        border-radius: 6px;
-        overflow: hidden;
-        background: #f8f9fa;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .wardrobe-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 6px;
-    }
-
-    .wardrobe-item .item-name {
-        margin-top: 8px;
-        font-size: 13px;
-        color: #2c3e50;
-        text-align: center;
-        font-weight: 500;
-    }
-
-    .error-message {
-        color: #e74c3c;
-        font-size: 12px;
-        text-align: center;
-        padding: 10px;
-        background: #fde8e7;
-        border-radius: 4px;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .btn-danger:hover {
+        background: #c0392b;
     }
 
     /* Outfit Controls */
@@ -263,7 +1268,7 @@
         min-width: 120px;
     }
 
-    /* Current Outfit Display */
+    /* Active Items Section */
     .active-items-section {
         margin-top: 30px;
     }
@@ -299,6 +1304,25 @@
         font-weight: 500;
     }
 
+    .active-item-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .active-item-edit {
+        cursor: pointer;
+        color: #f39c12;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease;
+        font-size: 14px;
+    }
+
+    .active-item-edit:hover {
+        background-color: #fef3e2;
+    }
+
     .active-item-remove {
         cursor: pointer;
         color: #e74c3c;
@@ -311,23 +1335,95 @@
         background-color: #f8d7da;
     }
 
-    /* Avatar Scale Controls */
-    .scale-section {
+    /* Avatar Actions */
+    .avatar-actions {
         margin-top: 25px;
         padding-top: 20px;
         border-top: 1px solid #e9ecef;
     }
 
-    .scale-presets {
-        display: flex;
-        gap: 8px;
-        margin: 10px 0;
+    .avatar-actions .btn {
+        width: 100%;
+        margin-bottom: 10px;
     }
 
-    .scale-preset {
-        flex: 1;
+    /* Saved Avatars Section */
+    .saved-avatars-section {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .saved-avatars-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .saved-avatar-item {
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+        text-align: center;
+        position: relative;
+    }
+
+    .saved-avatar-item:hover {
+        border-color: #3498db;
+        background: #f7f9fc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .saved-avatar-preview {
+        width: 100%;
+        height: 60px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #f8f9fa;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 12px;
-        padding: 8px 4px;
+        color: #6c757d;
+    }
+
+    .saved-avatar-name {
+        font-size: 12px;
+        color: #2c3e50;
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+
+    .saved-avatar-date {
+        font-size: 10px;
+        color: #6c757d;
+    }
+
+    .delete-saved-avatar {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        font-size: 12px;
+        display: none;
+    }
+
+    .saved-avatar-item:hover .delete-saved-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     /* 3D Viewport Controls */
@@ -362,6 +1458,43 @@
         font-size: 18px;
     }
 
+    /* Debug Info Box */
+    .debug-info {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(255,255,255,0.95);
+        padding: 15px;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        z-index: 5;
+        border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .debug-info h5 {
+        margin: 0 0 10px 0;
+        color: #333;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .debug-info p {
+        margin: 2px 0;
+        font-size: 12px;
+        color: #666;
+    }
+
+    .debug-info .path-display {
+        font-family: monospace;
+        background: #f8f9fa;
+        padding: 4px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        word-break: break-all;
+        margin-top: 5px;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .avatar-page-content {
@@ -383,6 +1516,49 @@
         .viewport-controls {
             bottom: 15px;
             right: 15px;
+        }
+
+        .debug-info {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .hair-preview-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .color-picker-group.large-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .color-option {
+            width: 28px;
+            height: 28px;
+        }
+
+        .axis-buttons {
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .tab-button {
+            font-size: 11px;
+            padding: 12px 6px;
+        }
+
+        .tab-button i {
+            margin-right: 4px;
+        }
+
+        .saved-outfit-item {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .outfit-preview-section {
+            width: 100%;
+            height: 100px;
         }
     }
 
@@ -414,106 +1590,472 @@
 {% endblock %}
 
 {% block content %}
-<!-- Main Application Layout -->
 <div class="avatar-page-content">
 
-    <!-- Left Panel: RPM Avatar Controls & Wardrobe -->
+    <!-- Left Panel: Three-Tab System -->
     <div class="customization-panel">
-        <h2>Ready Player Me Avatar</h2>
-        <p class="text-muted">Create and customize your 3D avatar with clothing</p>
 
-        <!-- RPM Avatar Management Section -->
-        <div class="rpm-options">
-            <h4>Avatar Management</h4>
-
-            <!-- External RPM Creator -->
-            <button id="open-rpm-creator" class="btn btn-primary rpm-button">
-                <i class="bi bi-person-plus"></i> Create New Avatar
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="create-avatar">
+                <i class="bi bi-person-gear"></i>Avatar
             </button>
-
-            <!-- Load Saved Avatar -->
-            <button id="load-saved-rpm" class="btn btn-secondary rpm-button">
-                <i class="bi bi-download"></i> Load Saved Avatar
+            <button class="tab-button" data-tab="wardrobe">
+                <i class="bi bi-palette"></i>Wardrobe
             </button>
-
-            <!-- Manual URL Input -->
-            <div class="form-group">
-                <label for="rpm-avatar-url">Or Enter Avatar URL:</label>
-                <input type="text"
-                       id="rpm-avatar-url"
-                       class="form-control"
-                       placeholder="https://models.readyplayer.me/...">
-                <button id="load-rpm-url" class="btn btn-primary mt-2">
-                    <i class="bi bi-link"></i> Load Avatar
-                </button>
-            </div>
+            <button class="tab-button" data-tab="saved-outfits">
+                <i class="bi bi-bookmark-heart"></i>Outfits
+            </button>
         </div>
 
-        <!-- Avatar Scale Controls -->
-        <div class="scale-section">
-            <h4>Avatar Size</h4>
-            <p class="text-muted">Adjust avatar dimensions</p>
+        <!-- Tab Content Container -->
+        <div class="tab-content-container">
 
-            <div class="form-group">
-                <label for="avatar-scale-slider">Scale: <span id="scale-value">100%</span></label>
-                <input type="range"
-                       id="avatar-scale-slider"
-                       class="form-control"
-                       min="0.5"
-                       max="3.0"
-                       step="0.1"
-                       value="1.0">
+            <!-- Tab 1: Avatar Creation -->
+            <div id="create-avatar" class="tab-content active">
+
+                <!-- Avatar Base Section -->
+                <div class="avatar-creation-section">
+                    <h4><i class="bi bi-person-plus"></i> Avatar Base</h4>
+
+                    <!-- Model Format Selection - GLB ONLY -->
+                    <div class="format-selection">
+                        <label style="font-size: 13px; margin-bottom: 5px; display: block;">Model Format:</label>
+                        <div style="text-align: center; padding: 8px; background: #3498db; color: white; border-radius: 6px;">
+                            <i class="bi bi-file-earmark"></i> GLB + Hair System
+                        </div>
+                        <p style="font-size: 11px; margin: 8px 0 0 0; opacity: 0.8;">Customizable avatar with separate hair models</p>
+                    </div>
+
+                    <!-- Gender Selection -->
+                    <div class="customization-group">
+                        <h5>Gender</h5>
+                        <div class="gender-toggle">
+                            <button class="gender-option active" data-gender="female">
+                                <i class="bi bi-person-dress"></i> Female
+                            </button>
+                            <button class="gender-option" data-gender="male">
+                                <i class="bi bi-person"></i> Male
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Body Customization Section -->
+                <div class="avatar-creation-section">
+                    <h4><i class="bi bi-rulers"></i> Body Shape</h4>
+
+                    <!-- Body Proportions -->
+                    <div class="customization-group">
+                        <h5>Height</h5>
+                        <div class="selection-grid">
+                            <div class="selection-option" data-height="short">Short</div>
+                            <div class="selection-option selected" data-height="medium">Medium</div>
+                            <div class="selection-option" data-height="tall">Tall</div>
+                        </div>
+                    </div>
+
+                    <div class="customization-group">
+                        <h5>Body Size</h5>
+                        <div class="selection-grid body-size-grid">
+                            <div class="selection-option" data-body-size="xs">XS</div>
+                            <div class="selection-option" data-body-size="s">S</div>
+                            <div class="selection-option selected" data-body-size="m">M</div>
+                            <div class="selection-option" data-body-size="l">L</div>
+                            <div class="selection-option" data-body-size="xl">XL</div>
+                        </div>
+                    </div>
+
+                    <!-- Camera View Controls -->
+                    <div class="customization-group">
+                        <h5>Camera View</h5>
+                        <div class="camera-view-toggle">
+                            <button class="view-option active" data-view="normal">
+                                <i class="bi bi-person"></i> Normal
+                            </button>
+                            <button class="view-option" data-view="portrait">
+                                <i class="bi bi-person-bounding-box"></i> Portrait
+                            </button>
+                        </div>
+                        <p style="font-size: 11px; margin: 8px 0 0 0; opacity: 0.8;">Normal: Full body • Portrait: Face close-up</p>
+                    </div>
+                </div>
+
+                <!-- Facial Features Section -->
+                <div class="avatar-creation-section">
+                    <h4><i class="bi bi-emoji-smile"></i> Facial Features</h4>
+
+                    <!-- Skin Tone -->
+                    <div class="customization-group">
+                        <h5>Skin Color <span style="font-size: 11px; color: #6c757d;">(14 options)</span></h5>
+
+                        <div class="color-category-label">Light Tones</div>
+                        <div class="color-picker-group">
+                            <div class="color-option selected" style="background-color: #FDBCB4;" data-skin="light" title="Light"></div>
+                            <div class="color-option" style="background-color: #FCE4EC;" data-skin="fair" title="Fair"></div>
+                            <div class="color-option" style="background-color: #F8BBD9;" data-skin="pale" title="Pale"></div>
+                            <div class="color-option" style="background-color: #FFB6C1;" data-skin="pink" title="Pink"></div>
+                            <div class="color-option" style="background-color: #D3D3D3;" data-skin="cool" title="Cool"></div>
+                        </div>
+
+                        <div class="color-category-label">Medium Tones</div>
+                        <div class="color-picker-group">
+                            <div class="color-option" style="background-color: #EE9B82;" data-skin="medium" title="Medium"></div>
+                            <div class="color-option" style="background-color: #DDBEA9;" data-skin="olive" title="Olive"></div>
+                            <div class="color-option" style="background-color: #DEB887;" data-skin="warm" title="Warm"></div>
+                            <div class="color-option" style="background-color: #D08B5B;" data-skin="tan" title="Tan"></div>
+                            <div class="color-option" style="background-color: #CD7F32;" data-skin="bronze" title="Bronze"></div>
+                        </div>
+
+                        <div class="color-category-label">Dark Tones</div>
+                        <div class="color-picker-group">
+                            <div class="color-option" style="background-color: #AE5D29;" data-skin="dark" title="Dark"></div>
+                            <div class="color-option" style="background-color: #8B4513;" data-skin="darker" title="Darker"></div>
+                            <div class="color-option" style="background-color: #654321;" data-skin="darkest" title="Darkest"></div>
+                            <div class="color-option" style="background-color: #3C2414;" data-skin="ebony" title="Ebony"></div>
+                        </div>
+                    </div>
+
+                    <!-- Eye Color -->
+                    <div class="customization-group">
+                        <h5>Eye Color <span style="font-size: 11px; color: #6c757d;">(19 options)</span></h5>
+
+                        <div class="color-category-label">Brown Tones</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option selected" style="background-color: #6B4423;" data-eye="brown" title="Brown"></div>
+                            <div class="color-option" style="background-color: #4A2C17;" data-eye="dark-brown" title="Dark Brown"></div>
+                            <div class="color-option" style="background-color: #8B6914;" data-eye="light-brown" title="Light Brown"></div>
+                            <div class="color-option" style="background-color: #B8860B;" data-eye="hazel" title="Hazel"></div>
+                            <div class="color-option" style="background-color: #FFBF00;" data-eye="amber" title="Amber"></div>
+                            <div class="color-option" style="background-color: #FFD700;" data-eye="gold" title="Gold"></div>
+                        </div>
+
+                        <div class="color-category-label">Blue Tones</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option" style="background-color: #4A90E2;" data-eye="blue" title="Blue"></div>
+                            <div class="color-option" style="background-color: #87CEEB;" data-eye="light-blue" title="Light Blue"></div>
+                            <div class="color-option" style="background-color: #0F4C75;" data-eye="dark-blue" title="Dark Blue"></div>
+                            <div class="color-option" style="background-color: #87CEFA;" data-eye="sky-blue" title="Sky Blue"></div>
+                        </div>
+
+                        <div class="color-category-label">Green Tones</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option" style="background-color: #50C878;" data-eye="green" title="Green"></div>
+                            <div class="color-option" style="background-color: #90EE90;" data-eye="light-green" title="Light Green"></div>
+                            <div class="color-option" style="background-color: #228B22;" data-eye="dark-green" title="Dark Green"></div>
+                            <div class="color-option" style="background-color: #50C878;" data-eye="emerald" title="Emerald"></div>
+                        </div>
+
+                        <div class="color-category-label">Unique Colors</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option" style="background-color: #800080;" data-eye="purple" title="Purple"></div>
+                            <div class="color-option" style="background-color: #8A2BE2;" data-eye="violet" title="Violet"></div>
+                            <div class="color-option" style="background-color: #708090;" data-eye="gray" title="Gray"></div>
+                            <div class="color-option" style="background-color: #C0C0C0;" data-eye="silver" title="Silver"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hair Customization Section -->
+                <div class="avatar-creation-section">
+                    <h4><i class="bi bi-scissors"></i> GLB Hair System</h4>
+
+                    <!-- Hair Category Filters -->
+                    <div class="customization-group">
+                        <h5>Filter by Length</h5>
+                        <div class="hair-category-filters">
+                            <button class="hair-category-filter active" data-hair-category="all">All Styles</button>
+                            <button class="hair-category-filter" data-hair-category="short">Short</button>
+                            <button class="hair-category-filter" data-hair-category="medium">Medium</button>
+                            <button class="hair-category-filter" data-hair-category="long">Long</button>
+                            <button class="hair-category-filter" data-hair-category="none">Bald</button>
+                        </div>
+                    </div>
+
+                    <!-- Hair Style Selection -->
+                    <div class="customization-group">
+                        <h5>Hair Style (GLB Models)</h5>
+                        <div id="hair-preview-container">
+                            <div class="loading">Loading GLB hair styles...</div>
+                        </div>
+                    </div>
+
+                    <!-- Hair Color -->
+                    <div class="customization-group">
+                        <h5>Hair Color <span style="font-size: 11px; color: #6c757d;">(30+ options)</span></h5>
+
+                        <div class="color-category-label">Natural Browns</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option selected" style="background-color: #8B4513;" data-hair-color="brown" title="Brown"></div>
+                            <div class="color-option" style="background-color: #A0522D;" data-hair-color="light-brown" title="Light Brown"></div>
+                            <div class="color-option" style="background-color: #654321;" data-hair-color="dark-brown" title="Dark Brown"></div>
+                            <div class="color-option" style="background-color: #954535;" data-hair-color="chestnut" title="Chestnut"></div>
+                            <div class="color-option" style="background-color: #7B3F00;" data-hair-color="chocolate" title="Chocolate"></div>
+                            <div class="color-option" style="background-color: #C04000;" data-hair-color="mahogany" title="Mahogany"></div>
+                        </div>
+
+                        <div class="color-category-label">Blacks</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option" style="background-color: #000000;" data-hair-color="black" title="Black"></div>
+                            <div class="color-option" style="background-color: #0C0C0C;" data-hair-color="jet-black" title="Jet Black"></div>
+                            <div class="color-option" style="background-color: #36454F;" data-hair-color="charcoal" title="Charcoal"></div>
+                        </div>
+
+                        <div class="color-category-label">Blondes</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option" style="background-color: #FFD700;" data-hair-color="blonde" title="Blonde"></div>
+                            <div class="color-option" style="background-color: #FFF8DC;" data-hair-color="light-blonde" title="Light Blonde"></div>
+                            <div class="color-option" style="background-color: #DAA520;" data-hair-color="dark-blonde" title="Dark Blonde"></div>
+                            <div class="color-option" style="background-color: #E5E4E2;" data-hair-color="platinum" title="Platinum"></div>
+                            <div class="color-option" style="background-color: #FFB347;" data-hair-color="honey" title="Honey"></div>
+                            <div class="color-option" style="background-color: #FF8C69;" data-hair-color="strawberry-blonde" title="Strawberry Blonde"></div>
+                        </div>
+
+                        <div class="color-category-label">Reds</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option" style="background-color: #DC143C;" data-hair-color="red" title="Red"></div>
+                            <div class="color-option" style="background-color: #A0522D;" data-hair-color="auburn" title="Auburn"></div>
+                            <div class="color-option" style="background-color: #B87333;" data-hair-color="copper" title="Copper"></div>
+                            <div class="color-option" style="background-color: #B06500;" data-hair-color="ginger" title="Ginger"></div>
+                            <div class="color-option" style="background-color: #800020;" data-hair-color="burgundy" title="Burgundy"></div>
+                            <div class="color-option" style="background-color: #DE3163;" data-hair-color="cherry" title="Cherry"></div>
+                        </div>
+
+                        <div class="color-category-label">Fantasy Colors</div>
+                        <div class="color-picker-group large-grid">
+                            <div class="color-option" style="background-color: #FF69B4;" data-hair-color="pink" title="Pink"></div>
+                            <div class="color-option" style="background-color: #800080;" data-hair-color="purple" title="Purple"></div>
+                            <div class="color-option" style="background-color: #0000FF;" data-hair-color="blue" title="Blue"></div>
+                            <div class="color-option" style="background-color: #008000;" data-hair-color="green" title="Green"></div>
+                            <div class="color-option" style="background-color: #FF8C00;" data-hair-color="orange" title="Orange"></div>
+                            <div class="color-option" style="background: linear-gradient(45deg, #ff69b4, #00ff00, #1e90ff);" data-hair-color="rainbow" title="Rainbow"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hair Loading Status -->
+                    <div id="hair-loading-status" class="loading-status" style="display: none;">
+                        <div class="loading-spinner-small"></div>
+                        <span>Loading GLB hair model...</span>
+                    </div>
+                </div>
+
+                <!-- Avatar Actions -->
+                <div class="avatar-actions">
+                    <button id="reset-avatar" class="btn btn-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
+                    </button>
+                    <button id="save-avatar-btn" class="btn btn-success">
+                        <i class="bi bi-save"></i> Save Avatar
+                    </button>
+                    <button id="load-saved-avatar-btn" class="btn btn-info">
+                        <i class="bi bi-folder-open"></i> Load Saved Avatar
+                    </button>
+                </div>
+
+                <!-- Saved Avatars Section -->
+                <div class="saved-avatars-section">
+                    <h4><i class="bi bi-collection"></i> Saved Avatars</h4>
+                    <div id="saved-avatars-grid" class="saved-avatars-grid">
+                        <div class="loading">Loading saved avatars...</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="scale-presets">
-                <button class="btn btn-secondary scale-preset" data-scale="0.8">Small</button>
-                <button class="btn btn-secondary scale-preset" data-scale="1.0">Normal</button>
-                <button class="btn btn-secondary scale-preset" data-scale="1.5">Large</button>
-                <button class="btn btn-secondary scale-preset" data-scale="2.0">XL</button>
+            <!-- Tab 2: Wardrobe -->
+            <div id="wardrobe" class="tab-content">
+                <div class="wardrobe-section">
+                    <h4><i class="bi bi-palette"></i> Virtual Wardrobe</h4>
+                    <p class="text-muted">Select clothes to dress your avatar</p>
+
+                    <!-- Category Selection -->
+                    <div class="form-group">
+                        <label for="category-wardrobe">Clothing Category:</label>
+                        <select id="category-wardrobe" class="form-control category-select">
+                            <option value="tops">Tops</option>
+                            <option value="bottoms">Bottoms</option>
+                            <option value="dresses">Dresses</option>
+                            <option value="outerwear">Outerwear</option>
+                            <option value="shoes">Shoes</option>
+                            <option value="accessories">Accessories</option>
+                        </select>
+                    </div>
+
+                    <!-- Clothing Items Grid -->
+                    <div class="wardrobe-grid" id="wardrobe-items">
+                        <div class="loading">Loading wardrobe items...</div>
+                    </div>
+
+                    <!-- Outfit Action Buttons -->
+                    <div class="outfit-controls">
+                        <button id="try-on-selected" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Try On Selected
+                        </button>
+                        <button id="clear-outfit-btn" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Clear All
+                        </button>
+                    </div>
+
+                    <!-- NEW: Clothing Position Controls -->
+                    <div id="clothing-controls" class="clothing-controls-section">
+                        <h5>
+                            <i class="bi bi-arrows-move"></i>
+                            Position Clothing Item
+                        </h5>
+
+                        <div id="selected-clothing-info" class="selected-clothing-info">
+                            <strong>Selected:</strong> <span id="selected-item-name">No item selected</span>
+                        </div>
+
+                        <div class="position-controls">
+                            <!-- X-Axis Controls -->
+                            <div class="axis-control">
+                                <h6>X-Axis (Left/Right)</h6>
+                                <div class="axis-buttons">
+                                    <button class="axis-btn negative" data-axis="x" data-direction="-1">
+                                        <i class="bi bi-arrow-left"></i> Left
+                                    </button>
+                                    <div class="axis-value" id="x-value">0.00</div>
+                                    <button class="axis-btn positive" data-axis="x" data-direction="1">
+                                        Right <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
+                                <div class="fine-control">
+                                    <input type="checkbox" id="x-fine" checked>
+                                    <label for="x-fine">Fine control (0.01)</label>
+                                </div>
+                            </div>
+
+                            <!-- Y-Axis Controls -->
+                            <div class="axis-control">
+                                <h6>Y-Axis (Up/Down)</h6>
+                                <div class="axis-buttons">
+                                    <button class="axis-btn positive" data-axis="y" data-direction="1">
+                                        <i class="bi bi-arrow-up"></i> Up
+                                    </button>
+                                    <div class="axis-value" id="y-value">0.00</div>
+                                    <button class="axis-btn negative" data-axis="y" data-direction="-1">
+                                        Down <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                </div>
+                                <div class="fine-control">
+                                    <input type="checkbox" id="y-fine" checked>
+                                    <label for="y-fine">Fine control (0.01)</label>
+                                </div>
+                            </div>
+
+                            <!-- Z-Axis Controls -->
+                            <div class="axis-control">
+                                <h6>Z-Axis (Forward/Back)</h6>
+                                <div class="axis-buttons">
+                                    <button class="axis-btn positive" data-axis="z" data-direction="1">
+                                        <i class="bi bi-arrow-up-circle"></i> Forward
+                                    </button>
+                                    <div class="axis-value" id="z-value">0.00</div>
+                                    <button class="axis-btn negative" data-axis="z" data-direction="-1">
+                                        Back <i class="bi bi-arrow-down-circle"></i>
+                                    </button>
+                                </div>
+                                <div class="fine-control">
+                                    <input type="checkbox" id="z-fine" checked>
+                                    <label for="z-fine">Fine control (0.01)</label>
+                                </div>
+                            </div>
+
+                            <!-- Scale Controls -->
+                            <div class="axis-control">
+                                <h6>Scale (Size)</h6>
+                                <div class="axis-buttons">
+                                    <button class="axis-btn negative" data-scale="-1">
+                                        <i class="bi bi-zoom-out"></i> Smaller
+                                    </button>
+                                    <div class="axis-value" id="scale-value">1.00</div>
+                                    <button class="axis-btn positive" data-scale="1">
+                                        Bigger <i class="bi bi-zoom-in"></i>
+                                    </button>
+                                </div>
+                                <div class="fine-control">
+                                    <input type="checkbox" id="scale-fine" checked>
+                                    <label for="scale-fine">Fine control (0.01)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="quick-actions">
+                            <button class="quick-action-btn reset" id="reset-position-btn">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset Position
+                            </button>
+                            <button class="quick-action-btn done" id="done-positioning-btn">
+                                <i class="bi bi-check-lg"></i> Done
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Current Outfit Display -->
+                    <div class="active-items-section">
+                        <h5>Current Outfit</h5>
+                        <div id="active-outfit-items" class="active-items-list">
+                            <p class="text-muted">No items selected</p>
+                        </div>
+                    </div>
+
+                    <!-- Save Current Outfit Section -->
+                    <div class="outfit-save-section">
+                        <h5>
+                            <i class="bi bi-save"></i>
+                            Save Current Outfit
+                        </h5>
+                        <input type="text"
+                               id="outfit-name-input"
+                               class="outfit-name-input"
+                               placeholder="Enter outfit name..."
+                               maxlength="50">
+                        <button id="save-current-outfit-btn" class="btn btn-success" style="width: 100%;">
+                            <i class="bi bi-bookmark-plus"></i> Save 3D Outfit
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <!-- Wardrobe Section -->
-        <div class="wardrobe-section">
-            <h4>Virtual Wardrobe</h4>
-            <p class="text-muted">Select clothes to dress your avatar</p>
+            <!-- Tab 3: Saved Outfits -->
+            <div id="saved-outfits" class="tab-content">
+                <div class="saved-outfits-section">
+                    <h4><i class="bi bi-bookmark-heart"></i> Saved 3D Outfits</h4>
+                    <p class="text-muted">Load and manage your saved 3D outfit combinations</p>
 
-            <!-- Category Selection -->
-            <div class="form-group">
-                <label for="category-rpm">Clothing Category:</label>
-                <select id="category-rpm" class="form-control category-select">
-                    <option value="tops">Tops</option>
-                    <option value="bottoms">Bottoms</option>
-                    <option value="dresses">Dresses</option>
-                    <option value="outerwear">Outerwear</option>
-                    <option value="shoes">Shoes</option>
-                    <option value="accessories">Accessories</option>
-                </select>
-            </div>
+                    <!-- Outfit Filter Options -->
+                    <div class="form-group">
+                        <label for="outfit-filter">Filter Outfits:</label>
+                        <select id="outfit-filter" class="form-control">
+                            <option value="all">All Outfits</option>
+                            <option value="recent">Recent (Last 30 days)</option>
+                            <option value="3d">3D Outfits Only</option>
+                            <option value="favorites">Favorites</option>
+                        </select>
+                    </div>
 
-            <!-- Clothing Items Grid -->
-            <div class="wardrobe-grid" id="wardrobe-items-rpm">
-                <div class="loading">Loading wardrobe items...</div>
-            </div>
+                    <!-- Saved Outfits Grid -->
+                    <div class="saved-outfits-grid" id="saved-outfits-grid">
+                        <div class="loading">Loading saved outfits...</div>
+                    </div>
 
-            <!-- Outfit Action Buttons -->
-            <div class="outfit-controls">
-                <button id="try-on-rpm" class="btn btn-primary">
-                    <i class="bi bi-check-circle"></i> Try On Selected
-                </button>
-                <button id="save-outfit-btn" class="btn btn-success">
-                    <i class="bi bi-save"></i> Save Outfit
-                </button>
-                <button id="clear-outfit-btn" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> Clear All
-                </button>
-            </div>
+                    <!-- Outfit Management Actions -->
+                    <div class="outfit-controls">
+                        <button id="refresh-outfits-btn" class="btn btn-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                        <button id="clear-active-outfit-btn" class="btn btn-info">
+                            <i class="bi bi-x-circle"></i> Clear Active
+                        </button>
+                    </div>
 
-            <!-- Current Outfit Display -->
-            <div class="active-items-section">
-                <h5>Current Outfit</h5>
-                <div id="active-outfit-items" class="active-items-list">
-                    <p class="text-muted">No items selected</p>
+                    <!-- Active Outfit Info -->
+                    <div id="active-saved-outfit-info" class="active-items-section" style="display: none;">
+                        <h5>Currently Loaded Outfit</h5>
+                        <div id="active-saved-outfit-details" class="active-items-list">
+                            <p class="text-muted">No outfit loaded</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -524,7 +2066,7 @@
         <!-- Loading Overlay -->
         <div class="loading-overlay">
             <div class="loading-spinner"></div>
-            <div class="loading-progress">Loading: 0%</div>
+            <div class="loading-progress">Loading Avatar: 0%</div>
         </div>
 
         <!-- 3D Viewport Controls -->
@@ -540,33 +2082,60 @@
             </button>
         </div>
 
-        <!-- Avatar Stats Overlay -->
-        <div style="position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 8px; backdrop-filter: blur(10px); z-index: 5;">
-            <h5 style="margin: 0 0 10px 0; color: #333;">Avatar Stats</h5>
-            <div id="avatar-info" style="font-size: 12px; color: #666;">
-                <p>Load an avatar to see details</p>
+        <!-- Avatar Stats & Debug Info -->
+        <div class="debug-info">
+            <h5>Avatar System - GLB + Hair</h5>
+            <div id="avatar-info">
+                <p><strong>Status:</strong> <span id="debug-status">Initializing...</span></p>
+                <p><strong>Model:</strong> <span id="debug-model">Loading...</span></p>
+                <p><strong>Hair:</strong> <span id="debug-hair-type">None</span></p>
+                <p><strong>Gender:</strong> <span id="debug-gender">female</span></p>
+                <p><strong>Body:</strong> <span id="debug-body">m_medium</span></p>
+                <p><strong>Clothing:</strong> <span id="debug-clothing">0 items</span></p>
+                <p><strong>View:</strong> <span id="debug-view">Normal</span></p>
+                <div class="path-display" id="debug-path">/static/models/makehuman/bodies/female/m_medium.glb</div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Preview Modal -->
+<div id="outfit-preview-modal" class="outfit-preview-modal">
+    <div class="outfit-preview-modal-content">
+        <button class="outfit-preview-modal-close" onclick="hidePreviewModal()">&times;</button>
+        <div id="outfit-preview-modal-body"></div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <!-- Three.js MUST be loaded first -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- Wait for THREE.js to load completely -->
+<script>
+if (typeof THREE === 'undefined') {
+    console.error('❌ THREE.js failed to load');
+} else {
+    console.log('✅ THREE.js loaded successfully');
+}
+</script>
+
+<!-- Load THREE.js extensions -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
 
-<!-- Custom modules AFTER Three.js -->
+<!-- Avatar Manager -->
+<script src="{{ url_for('static', filename='js/glb-avatar-manager.js') }}"></script>
+
+<!-- Clothing System -->
 <script src="{{ url_for('static', filename='js/clothing-obj-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-mapper.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-processor.js') }}"></script>
-
-<!-- RPM Avatar Management Module -->
-<script src="{{ url_for('static', filename='js/rpm-avatar.js') }}"></script>
 
 <script>
 (function() {
@@ -574,265 +2143,1692 @@
 
     /* Avatar Configuration */
     const AVATAR_CONFIG = {
-        DEFAULT_SCALE: 0.7,
-        MIN_SCALE: 0.5,
-        MAX_SCALE: 3.0,
         CLOTHING_SCALE_MATCH: true,
-        AVATAR_Y_POSITION: -0.5
+        AVATAR_Y_POSITION: 0,
+        PREFERRED_FORMAT: 'glb',
+        HAIR_SYSTEM: 'glb'
     };
 
-    /* Dependency Verification */
-    console.log('🔍 Verifying dependencies...');
+    /* Avatar Customization State */
+    const avatarCustomization = {
+        gender: 'female',
+        body: {
+            height: 'medium',
+            bodySize: 'm'
+        },
+        skin: 'light',
+        eyes: 'brown',
+        hair: {
+            type: 'elvis_hazel',
+            color: 'brown'
+        },
+        view: 'normal'
+    };
 
-    // Function to wait for ClothingOBJRenderer
-    function waitForClothingOBJRenderer() {
-        return new Promise((resolve) => {
-            const checkInterval = setInterval(() => {
-                if (window.clothingOBJRenderer) {
-                    clearInterval(checkInterval);
-                    console.log('✅ ClothingOBJRenderer loaded successfully');
-                    resolve(true);
-                } else {
-                    console.log('⏳ Waiting for ClothingOBJRenderer...');
-                }
-            }, 100);
+    /* Global Avatar Manager and Clothing Renderer */
+    let avatarManager = null;
+    let clothingRenderer = null;
 
-            // Timeout after 10 seconds
-            setTimeout(() => {
-                clearInterval(checkInterval);
-                console.error('❌ ClothingOBJRenderer failed to load after 10 seconds');
-                resolve(false);
-            }, 10000);
-        });
-    }
+    /* NEW: Clothing Position Control State */
+    let selectedClothingItem = null;
+    let clothingPositions = new Map(); // Store positions for each clothing item
+    let clothingScales = new Map(); // Store scales for each clothing item
 
-    // Initialize ClothingOBJRenderer when dependencies are ready
-    async function initializeClothingSystem() {
-        const objRendererReady = await waitForClothingOBJRenderer();
+    /* NEW: Saved Outfits State */
+    let savedOutfits = [];
+    let activeLoadedOutfit = null;
 
-        if (!objRendererReady) {
-            console.error('❌ ClothingOBJRenderer not available - falling back to old method');
-            return false;
-        }
-
-        return true;
-    }
-
-    if (!window.ClothingMapper) {
-        console.error('❌ ClothingMapper failed to load properly');
-        return;
-    }
-
-    if (typeof THREE === 'undefined') {
-        console.error('❌ Three.js failed to load properly');
-        return;
-    }
-
-    // Verify OBJ loader
-    if (typeof THREE.OBJLoader === 'undefined') {
-        console.error('❌ OBJLoader failed to load properly');
-        return;
-    }
-
-    console.log('✅ All dependencies loaded successfully');
+    console.log('🚀 Initializing GLB Avatar System with 3D Clothing, Position Controls, and Saved Outfits...');
 
     /* Application Initialization */
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Initializing RPM Avatar Application...');
+        console.log('🚀 DOM Content Loaded - Starting GLB avatar initialization...');
 
-        /* Initialize RPM Avatar Manager */
-        const rpmManager = new RPMAvatarManager({
-            container: document.getElementById('avatar-container'),
-            debug: false, // Disabled debug mode
-            enableStats: true,
-            enableAutoSave: true
-        });
+        setTimeout(() => initializeTabSystem(), 100);
+        setTimeout(() => initializeAvatarSystem(), 300);
+        setTimeout(() => initializeClothingSystem(), 500);
+        setTimeout(() => initializeAvatarCustomization(), 700);
+        setTimeout(() => initializeCameraViewSystem(), 900);
+        setTimeout(() => initializeHairSystem(), 1100);
+        setTimeout(() => initializeWardrobeSystem(), 1300);
+        setTimeout(() => initializeClothingPositionControls(), 1400);
+        setTimeout(() => initializeSavedOutfitsSystem(), 1500); // NEW
+        setTimeout(() => initializeSavedAvatarsSystem(), 1700);
+        setTimeout(() => initializeDebugInfo(), 1900);
 
-        /* Configure camera controls */
-        if (rpmManager && rpmManager.controls) {
-            rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
-            rpmManager.controls.minDistance = 1;
-            rpmManager.controls.maxDistance = 10;
-            rpmManager.controls.target.set(0, -0.3, 0);
-            rpmManager.controls.enableDamping = true;
-            rpmManager.controls.dampingFactor = 0.1;
-        }
+        console.log('✅ All systems initialization queued');
 
-        /* Clean scene setup - NO GROUND PLANE */
-        setTimeout(() => {
-            if (rpmManager && rpmManager.scene) {
-                // Remove any existing ground planes from the scene
-                const objectsToRemove = [];
-                rpmManager.scene.traverse((child) => {
-                    if (child.isMesh && child.geometry && child.geometry.type === 'PlaneGeometry') {
-                        if (child.rotation.x < -1.5 && child.position.y < 0) {
-                            objectsToRemove.push(child);
-                        }
-                    }
-                });
+        /* Avatar System */
+        function initializeAvatarSystem() {
+            console.log('🤖 Initializing GLB Avatar System...');
 
-                objectsToRemove.forEach(obj => {
-                    rpmManager.scene.remove(obj);
-                    if (obj.geometry) obj.geometry.dispose();
-                    if (obj.material) {
-                        if (Array.isArray(obj.material)) {
-                            obj.material.forEach(mat => mat.dispose());
-                        } else {
-                            obj.material.dispose();
-                        }
-                    }
-                });
-
-                console.log('🗑️ Removed', objectsToRemove.length, 'ground plane objects');
-
-                // Ensure clean background
-                rpmManager.scene.background = new THREE.Color(0xf5f7fa);
-
-                // Disable shadows if they're enabled
-                if (rpmManager.renderer) {
-                    rpmManager.renderer.shadowMap.enabled = false;
-                }
-
-                // Update camera controls
-                if (rpmManager.controls) {
-                    rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
-                    rpmManager.controls.target.set(0, -0.3, 0);
-                    rpmManager.controls.update();
-                }
+            if (typeof THREE === 'undefined') {
+                console.log('⏳ Waiting for THREE.js to load...');
+                setTimeout(() => {
+                    initializeAvatarSystem();
+                }, 500);
+                return;
             }
-        }, 1000);
 
-        /* Initialize OBJ Clothing Renderer */
-        let objRenderer = null;
-        if (window.clothingOBJRenderer) {
-            objRenderer = window.clothingOBJRenderer;
-            objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+            if (typeof window.CustomizableGLBAvatarManager !== 'undefined') {
+                try {
+                    avatarManager = new window.CustomizableGLBAvatarManager({
+                        container: document.getElementById('avatar-container'),
+                        debug: true
+                    });
+
+                    window.avatarManager = avatarManager;
+
+                    window.addEventListener('resize', () => {
+                        if (avatarManager && avatarManager.onWindowResize) {
+                            avatarManager.onWindowResize();
+                        }
+                    });
+
+                    updateDebugInfo('GLB system initialized', 'success');
+                    showMessage('GLB Avatar system ready!', 'success');
+
+                    // Load saved avatar or default
+                    setTimeout(() => {
+                        loadSavedAvatarOrDefault();
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('❌ Error initializing Avatar Manager:', error);
+                    updateDebugInfo('Failed to initialize system', 'error');
+                    showMessage('Failed to initialize Avatar Manager: ' + error.message, 'error');
+                }
+            } else {
+                console.error('❌ Avatar Manager not available');
+                updateDebugInfo('Manager not found', 'error');
+                showMessage('Avatar Manager not found. Please check the script files.', 'error');
+            }
         }
 
-        /* Make globally available for debugging */
-        window.rpmManager = rpmManager;
-        window.objRenderer = objRenderer;
+        /* Initialize Clothing System */
+        function initializeClothingSystem() {
+            console.log('👕 Initializing 3D Clothing System...');
 
-        /* Auto-load saved avatar on startup */
-        initializeAvatar();
+            let attempts = 0;
+            const maxAttempts = 20;
 
-        /* Avatar Initialization */
-        async function initializeAvatar() {
-            try {
-                console.log('🤖 Loading saved RPM avatar...');
-                await rpmManager.loadSavedAvatar();
+            const checkAndInit = () => {
+                attempts++;
 
-                if (rpmManager.avatarModel) {
-                    rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
-                    rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
-                    updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
-
-                    // Wait for OBJ renderer to be available before setting references
-                    let attempts = 0;
-                    const maxAttempts = 50; // 5 seconds
-
-                    while (!window.clothingOBJRenderer && attempts < maxAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        attempts++;
-                    }
+                if (typeof THREE !== 'undefined' && THREE.GLTFLoader && THREE.OBJLoader) {
+                    console.log('✅ THREE.js and loaders available, initializing 3D clothing...');
 
                     if (window.clothingOBJRenderer) {
-                        console.log('🔄 Setting OBJ renderer references...');
-                        window.clothingOBJRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+                        try {
+                            clothingRenderer = window.clothingOBJRenderer;
+                            window.clothingRenderer = clothingRenderer;
+                            console.log('✅ 3D ClothingOBJRenderer initialized from existing instance');
 
-                        // Verify references were set
-                        setTimeout(() => {
-                            console.log('🔍 Reference verification:');
-                            console.log(`  - Scene set: ${!!window.clothingOBJRenderer.scene}`);
-                            console.log(`  - Avatar set: ${!!window.clothingOBJRenderer.avatar}`);
-                            console.log('✅ OBJ renderer ready for colored clothing!');
-                        }, 100);
+                            setupClothingReferences();
+
+                        } catch (error) {
+                            console.error('❌ Error initializing 3D ClothingOBJRenderer:', error);
+                        }
                     } else {
-                        console.log('❌ ClothingOBJRenderer not available after 5 seconds');
+                        console.warn('⚠️ clothingOBJRenderer not available yet, will retry...');
+                        if (attempts < maxAttempts) {
+                            setTimeout(checkAndInit, 500);
+                            return false;
+                        }
                     }
-                }
 
-                updateAvatarStats();
-                console.log('✅ Avatar loaded successfully');
-                showMessage('Avatar loaded and ready for colored clothing', 'success');
-            } catch (error) {
-                console.log(`⚠️ Error loading avatar: ${error.message}`);
-                showMessage('No saved avatar found. Create or load one to get started.', 'info');
+                    return true;
+                } else if (attempts < maxAttempts) {
+                    console.log(`⏳ Attempt ${attempts}/${maxAttempts}: Waiting for THREE.js and loaders...`);
+                    setTimeout(checkAndInit, 500);
+                    return false;
+                } else {
+                    console.error('❌ Failed to initialize 3D clothing system after 10 seconds');
+                    return false;
+                }
+            };
+
+            checkAndInit();
+        }
+
+        function setupClothingReferences() {
+            const checkForAvatarInterval = setInterval(() => {
+                if (avatarManager && avatarManager.avatarModel && clothingRenderer) {
+                    console.log('🔄 Setting 3D clothing renderer references...');
+                    clothingRenderer.setReferences(avatarManager.scene, avatarManager.avatarModel);
+
+                    setTimeout(() => {
+                        console.log('🔍 3D Clothing reference verification:');
+                        console.log(`  - Scene set: ${!!clothingRenderer.scene}`);
+                        console.log(`  - Avatar set: ${!!clothingRenderer.avatar}`);
+                        console.log('✅ 3D clothing renderer ready!');
+                    }, 100);
+
+                    clearInterval(checkForAvatarInterval);
+                }
+            }, 1000);
+
+            setTimeout(() => {
+                clearInterval(checkForAvatarInterval);
+            }, 30000);
+        }
+
+        /* NEW: Initialize Clothing Position Controls */
+        function initializeClothingPositionControls() {
+            console.log('🎛️ Initializing clothing position controls...');
+
+            // Position control buttons
+            document.querySelectorAll('[data-axis]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const axis = this.dataset.axis;
+                    const direction = parseFloat(this.dataset.direction);
+
+                    moveSelectedClothing(axis, direction);
+                });
+            });
+
+            // Scale control buttons
+            document.querySelectorAll('[data-scale]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const direction = parseFloat(this.dataset.scale);
+                    scaleSelectedClothing(direction);
+                });
+            });
+
+            // Reset position button
+            document.getElementById('reset-position-btn')?.addEventListener('click', resetClothingPosition);
+
+            // Done positioning button
+            document.getElementById('done-positioning-btn')?.addEventListener('click', hidePositionControls);
+
+            console.log('✅ Clothing position controls initialized');
+        }
+
+        function moveSelectedClothing(axis, direction) {
+            if (!selectedClothingItem || !clothingRenderer) {
+                console.warn('⚠️ No clothing item selected for positioning');
+                return;
+            }
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) {
+                console.warn('⚠️ Selected clothing mesh not found');
+                return;
+            }
+
+            // Get fine control setting
+            const fineControl = document.getElementById(`${axis}-fine`)?.checked;
+            const step = fineControl ? 0.01 : 0.05;
+
+            // Apply movement
+            const mesh = clothingData.mesh;
+            mesh.position[axis] += direction * step;
+
+            // Store position
+            const itemId = selectedClothingItem;
+            if (!clothingPositions.has(itemId)) {
+                clothingPositions.set(itemId, { x: 0, y: 0, z: 0 });
+            }
+
+            const currentPos = clothingPositions.get(itemId);
+            currentPos[axis] = mesh.position[axis];
+
+            // Update display
+            updatePositionDisplay();
+
+            console.log(`📐 Moved ${axis}-axis by ${direction * step} to ${mesh.position[axis].toFixed(3)}`);
+        }
+
+        function scaleSelectedClothing(direction) {
+            if (!selectedClothingItem || !clothingRenderer) {
+                console.warn('⚠️ No clothing item selected for scaling');
+                return;
+            }
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) {
+                console.warn('⚠️ Selected clothing mesh not found');
+                return;
+            }
+
+            // Get fine control setting
+            const fineControl = document.getElementById('scale-fine')?.checked;
+            const step = fineControl ? 0.01 : 0.05;
+            const minScale = 0.1; // Minimum scale to prevent invisible clothing
+            const maxScale = 3.0; // Maximum scale to prevent huge clothing
+
+            // Apply scaling
+            const mesh = clothingData.mesh;
+            const currentScale = mesh.scale.x; // Assuming uniform scaling
+            const newScale = Math.max(minScale, Math.min(maxScale, currentScale + (direction * step)));
+
+            mesh.scale.setScalar(newScale);
+
+            // Store scale
+            const itemId = selectedClothingItem;
+            clothingScales.set(itemId, newScale);
+
+            // Update display
+            updateScaleDisplay();
+
+            console.log(`📏 Scaled to ${newScale.toFixed(3)} (step: ${direction * step})`);
+        }
+
+        function resetClothingPosition() {
+            if (!selectedClothingItem || !clothingRenderer) {
+                console.warn('⚠️ No clothing item selected for reset');
+                return;
+            }
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) {
+                console.warn('⚠️ Selected clothing mesh not found');
+                return;
+            }
+
+            // Reset to original position and scale
+            const clothingType = clothingRenderer.determineClothingType(clothingData.itemData);
+            clothingRenderer.positionClothingOnAvatar(clothingData.mesh, clothingType);
+
+            // Reset scale to default (1.0)
+            clothingData.mesh.scale.setScalar(1.0);
+
+            // Clear stored position and scale
+            clothingPositions.delete(selectedClothingItem);
+            clothingScales.delete(selectedClothingItem);
+
+            // Update display
+            updatePositionDisplay();
+            updateScaleDisplay();
+
+            showMessage('Clothing position and size reset', 'info');
+            console.log('↩️ Reset clothing position and scale to default');
+        }
+
+        function showPositionControls(itemId, itemName) {
+            selectedClothingItem = itemId;
+
+            const controlsSection = document.getElementById('clothing-controls');
+            const itemNameSpan = document.getElementById('selected-item-name');
+
+            if (controlsSection && itemNameSpan) {
+                controlsSection.classList.add('active');
+                itemNameSpan.textContent = itemName;
+
+                updatePositionDisplay();
+                updateScaleDisplay();
+
+                showMessage(`Now positioning: ${itemName}`, 'info');
+                console.log(`🎛️ Showing position controls for: ${itemName} (${itemId})`);
             }
         }
 
-        /* Avatar Scale Controls */
-        const scaleSlider = document.getElementById('avatar-scale-slider');
-        const scaleValueDisplay = document.getElementById('scale-value');
+        function hidePositionControls() {
+            selectedClothingItem = null;
 
-        if (scaleSlider) {
-            scaleSlider.addEventListener('input', function() {
-                const scale = parseFloat(this.value);
-                updateAvatarScale(scale);
-                scaleValueDisplay.textContent = Math.round(scale * 100) + '%';
-            });
+            const controlsSection = document.getElementById('clothing-controls');
+            const itemNameSpan = document.getElementById('selected-item-name');
+
+            if (controlsSection && itemNameSpan) {
+                controlsSection.classList.remove('active');
+                itemNameSpan.textContent = 'No item selected';
+
+                showMessage('Position controls hidden', 'info');
+                console.log('🎛️ Position controls hidden');
+            }
         }
 
-        document.querySelectorAll('.scale-preset').forEach(button => {
-            button.addEventListener('click', function() {
-                const scale = parseFloat(this.dataset.scale);
-                updateAvatarScale(scale);
-                updateScaleUI(scale);
-                showMessage(`Avatar size set to ${Math.round(scale * 100)}%`, 'info');
-            });
-        });
+        function updatePositionDisplay() {
+            if (!selectedClothingItem || !clothingRenderer) return;
 
-        function updateAvatarScale(scale) {
-            if (!rpmManager || !rpmManager.avatarModel) {
-                console.warn('⚠️ No avatar loaded to scale');
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) return;
+
+            const mesh = clothingData.mesh;
+
+            // Update position value displays
+            const xValue = document.getElementById('x-value');
+            const yValue = document.getElementById('y-value');
+            const zValue = document.getElementById('z-value');
+
+            if (xValue) xValue.textContent = mesh.position.x.toFixed(2);
+            if (yValue) yValue.textContent = mesh.position.y.toFixed(2);
+            if (zValue) zValue.textContent = mesh.position.z.toFixed(2);
+        }
+
+        function updateScaleDisplay() {
+            if (!selectedClothingItem || !clothingRenderer) return;
+
+            const clothingData = clothingRenderer.currentClothing.get(selectedClothingItem);
+            if (!clothingData || !clothingData.mesh) return;
+
+            const mesh = clothingData.mesh;
+
+            // Update scale value display
+            const scaleValue = document.getElementById('scale-value');
+            if (scaleValue) scaleValue.textContent = mesh.scale.x.toFixed(2);
+        }
+
+        /* NEW: Initialize Saved Outfits System */
+        function initializeSavedOutfitsSystem() {
+            console.log('👗 Initializing Saved Outfits System...');
+
+            // Save current outfit button
+            document.getElementById('save-current-outfit-btn')?.addEventListener('click', saveCurrentOutfit);
+
+            // Refresh outfits button
+            document.getElementById('refresh-outfits-btn')?.addEventListener('click', loadSavedOutfits);
+
+            // Clear active outfit button
+            document.getElementById('clear-active-outfit-btn')?.addEventListener('click', clearActiveLoadedOutfit);
+
+            // Outfit filter
+            document.getElementById('outfit-filter')?.addEventListener('change', function() {
+                const filter = this.value;
+                filterSavedOutfits(filter);
+            });
+
+            // Load saved outfits on initialization
+            loadSavedOutfits();
+
+            console.log('✅ Saved Outfits System initialized');
+        }
+
+        async function saveCurrentOutfit() {
+            console.log('💾 Saving current 3D outfit...');
+
+            let currentItems = [];
+            let itemCount = 0;
+
+            // Get current clothing items
+            if (clothingRenderer && clothingRenderer.currentClothing) {
+                for (const [itemId, clothingData] of clothingRenderer.currentClothing.entries()) {
+                    const itemDetails = {
+                        id: itemId,
+                        name: clothingData.itemData?.label || 'Unknown Item',
+                        type: clothingData.type,
+                        category: clothingData.category,
+                        source: clothingData.source,
+                        image: clothingData.itemData?.file_path || null, // Add image path
+                        // Store position and scale data
+                        position: clothingPositions.get(itemId) || { x: 0, y: 0, z: 0 },
+                        scale: clothingScales.get(itemId) || 1.0
+                    };
+                    currentItems.push(itemDetails);
+                    itemCount++;
+                }
+            }
+
+            if (itemCount === 0) {
+                showMessage('No outfit to save - please select some clothing items first', 'error');
+                return;
+            }
+
+            // Get outfit name
+            const outfitNameInput = document.getElementById('outfit-name-input');
+            const outfitName = outfitNameInput?.value.trim();
+
+            if (!outfitName) {
+                showMessage('Please enter a name for your outfit', 'error');
+                outfitNameInput?.focus();
                 return;
             }
 
             try {
-                rpmManager.avatarModel.scale.setScalar(scale);
+                showLoading('Saving 3D outfit...');
 
-                if (AVATAR_CONFIG.CLOTHING_SCALE_MATCH && rpmManager.clothingItems) {
-                    rpmManager.clothingItems.forEach((item) => {
-                        if (item.model) {
-                            item.model.scale.setScalar(scale);
-                        }
-                    });
+                // Generate outfit snapshot
+                const snapshotData = await generateOutfitSnapshot();
+
+                const outfitData = {
+                    name: outfitName,
+                    items: currentItems.map(item => item.id), // Just item IDs for server
+                    itemsDetails: currentItems, // Full details for client-side usage
+                    avatarConfig: avatarManager ? avatarManager.getConfiguration() : avatarCustomization,
+                    outfitType: '3d',
+                    renderingType: '3d',
+                    itemCount: itemCount,
+                    createdAt: new Date().toISOString(),
+                    // Store positioning data
+                    clothingPositions: Object.fromEntries(clothingPositions),
+                    clothingScales: Object.fromEntries(clothingScales),
+                    // Store snapshot data
+                    snapshot: snapshotData
+                };
+
+                const response = await fetch('/api/outfits/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(outfitData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: Failed to save outfit`);
                 }
 
-                // Also scale OBJ clothing items
-                if (objRenderer && objRenderer.currentClothing) {
-                    objRenderer.currentClothing.forEach((item) => {
-                        if (item.mesh) {
-                            item.mesh.scale.setScalar(scale);
-                        }
-                    });
-                }
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`3D Outfit "${outfitName}" saved successfully!`, 'success');
 
-                console.log(`📏 Avatar scaled to: ${scale}`);
-                updateAvatarStats();
+                    // Clear the input
+                    if (outfitNameInput) {
+                        outfitNameInput.value = '';
+                    }
+
+                    // Refresh the saved outfits list
+                    setTimeout(() => {
+                        loadSavedOutfits();
+                    }, 1000);
+
+                    console.log(`✅ 3D Outfit "${outfitName}" saved with ${itemCount} items and snapshot`);
+                } else {
+                    throw new Error(data.error || 'Failed to save outfit');
+                }
 
             } catch (error) {
-                console.error('❌ Error scaling avatar:', error);
-                showMessage('Failed to scale avatar', 'error');
+                console.error('❌ Error saving 3D outfit:', error);
+                showMessage(`Failed to save outfit: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
             }
         }
 
-        function updateScaleUI(scale) {
-            if (scaleSlider && scaleValueDisplay) {
-                scaleSlider.value = scale;
-                scaleValueDisplay.textContent = Math.round(scale * 100) + '%';
+        /* FIXED: Improved Snapshot Generation Function */
+        async function generateOutfitSnapshot() {
+            console.log('📸 Generating outfit snapshot...');
+
+            if (!avatarManager || !avatarManager.renderer) {
+                console.warn('⚠️ Avatar manager or renderer not available for snapshot');
+                return null;
+            }
+
+            try {
+                const renderer = avatarManager.renderer;
+                const scene = avatarManager.scene;
+                const camera = avatarManager.camera;
+
+                if (!renderer || !scene || !camera) {
+                    throw new Error('3D components not available');
+                }
+
+                // FIXED: Wait for any pending animations/renders with longer timeout
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // FIXED: Force multiple renders to ensure everything is drawn
+                for (let i = 0; i < 5; i++) {
+                    renderer.render(scene, camera);
+                    await new Promise(resolve => requestAnimationFrame(resolve));
+                }
+
+                // Get canvas data as base64
+                const canvas = renderer.domElement;
+
+                // FIXED: Validate canvas has content
+                if (canvas.width === 0 || canvas.height === 0) {
+                    throw new Error('Canvas has no dimensions');
+                }
+
+                const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+
+                // FIXED: Validate data URL
+                if (!dataURL || dataURL.length < 1000) {
+                    throw new Error('Generated image data is too small or empty');
+                }
+
+                console.log('✅ Outfit snapshot generated successfully');
+                console.log(`📊 Snapshot size: ${dataURL.length} characters`);
+
+                return {
+                    dataURL: dataURL,
+                    timestamp: new Date().toISOString(),
+                    width: canvas.width,
+                    height: canvas.height
+                };
+
+            } catch (error) {
+                console.error('❌ Error generating snapshot:', error);
+                return null;
             }
         }
 
-        /* Wardrobe System with Enhanced Color Support */
-        document.getElementById('category-rpm').addEventListener('change', function() {
-            const category = this.value;
-            console.log(`👕 Loading wardrobe category: ${category}`);
-            loadWardrobeItems(category);
-        });
+        /* NEW: Generate snapshot for existing outfit */
+        async function generateSnapshotForOutfit(outfitId) {
+            console.log(`📸 Generating new snapshot for outfit: ${outfitId}`);
+
+            const outfit = savedOutfits.find(o => o._id === outfitId);
+            if (!outfit) {
+                showMessage('Outfit not found', 'error');
+                return;
+            }
+
+            // Find the generate button and show loading state
+            const generateBtn = document.querySelector(`[data-outfit-id="${outfitId}"] .generate-snapshot-btn`);
+            if (generateBtn) {
+                generateBtn.textContent = 'Generating...';
+                generateBtn.classList.add('loading');
+                generateBtn.disabled = true;
+            }
+
+            try {
+                // Load the outfit first
+                await loadSavedOutfit(outfitId);
+
+                // Wait a moment for rendering to complete
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Generate snapshot
+                const snapshotData = await generateOutfitSnapshot();
+
+                if (snapshotData) {
+                    // Update the outfit with the new snapshot
+                    const response = await fetch(`/api/outfits/update-snapshot/${outfitId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ snapshot: snapshotData })
+                    });
+
+                    if (response.ok) {
+                        // Update local data
+                        outfit.snapshot = snapshotData;
+
+                        // Re-render the outfit item
+                        renderSavedOutfits(savedOutfits);
+
+                        showMessage('Snapshot generated successfully!', 'success');
+                    } else {
+                        throw new Error('Failed to save snapshot');
+                    }
+                } else {
+                    throw new Error('Failed to generate snapshot');
+                }
+
+            } catch (error) {
+                console.error('❌ Error generating snapshot for outfit:', error);
+                showMessage('Failed to generate snapshot', 'error');
+            } finally {
+                // Reset button state
+                if (generateBtn) {
+                    generateBtn.textContent = 'Generate';
+                    generateBtn.classList.remove('loading');
+                    generateBtn.disabled = false;
+                }
+            }
+        }
+
+        async function loadSavedOutfits() {
+            console.log('📥 Loading saved 3D outfits...');
+
+            const container = document.getElementById('saved-outfits-grid');
+            if (!container) return;
+
+            try {
+                container.innerHTML = '<div class="loading">Loading saved outfits...</div>';
+
+                const response = await fetch('/api/outfits/saved');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: Failed to load outfits`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.outfits) {
+                    savedOutfits = data.outfits;
+                    renderSavedOutfits(savedOutfits);
+                    console.log(`✅ Loaded ${savedOutfits.length} saved outfits`);
+                } else {
+                    throw new Error(data.error || 'Failed to load outfits');
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading saved outfits:', error);
+                container.innerHTML = '<div class="error">Failed to load saved outfits. Please try again.</div>';
+                showMessage('Failed to load saved outfits', 'error');
+            }
+        }
+
+        function renderSavedOutfits(outfits) {
+            const container = document.getElementById('saved-outfits-grid');
+            if (!container) return;
+
+            if (!outfits || outfits.length === 0) {
+                container.innerHTML = '<div class="no-items">No saved outfits found. Create your first outfit in the Wardrobe tab!</div>';
+                return;
+            }
+
+            let html = '';
+
+            outfits.forEach(outfit => {
+                const createdDate = new Date(outfit.created_at || outfit.createdAt).toLocaleDateString();
+                const itemCount = outfit.itemCount || outfit.items?.length || 0;
+                const isActive = activeLoadedOutfit && activeLoadedOutfit.id === outfit._id;
+
+                html += `
+                    <div class="saved-outfit-item ${isActive ? 'active' : ''}" data-outfit-id="${outfit._id}">
+
+                        <!-- Preview Section with Snapshot -->
+                        <div class="outfit-preview-section">
+                            <div class="outfit-snapshot" onclick="showPreviewModal('${outfit._id}')">
+                                ${outfit.snapshot && outfit.snapshot.dataURL ? `
+                                    <img src="${outfit.snapshot.dataURL}" alt="Outfit Preview" title="Click to view larger">
+                                    <div class="outfit-snapshot-overlay">
+                                        ${itemCount} item${itemCount !== 1 ? 's' : ''}
+                                    </div>
+                                ` : `
+                                    <div class="outfit-snapshot-placeholder">
+                                        <i class="bi bi-camera"></i>
+                                        No Preview<br>Available
+                                    </div>
+                                `}
+                            </div>
+
+                            ${!outfit.snapshot || !outfit.snapshot.dataURL ? `
+                                <button class="generate-snapshot-btn"
+                                        onclick="generateSnapshotForOutfit('${outfit._id}')"
+                                        title="Generate outfit preview">
+                                    <i class="bi bi-camera"></i> Generate
+                                </button>
+                            ` : `
+                                <button class="generate-snapshot-btn"
+                                        onclick="generateSnapshotForOutfit('${outfit._id}')"
+                                        title="Update outfit preview">
+                                    <i class="bi bi-arrow-clockwise"></i> Update
+                                </button>
+                            `}
+                        </div>
+
+                        <!-- Details Section -->
+                        <div class="outfit-details-section">
+                            <div class="outfit-header">
+                                <h5 class="outfit-name">${outfit.name}</h5>
+                                <span class="outfit-date">${createdDate}</span>
+                            </div>
+
+                            <div class="outfit-items-preview">
+                                <div class="outfit-items-count">
+                                    <i class="bi bi-palette"></i>
+                                    <span>${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
+                                    ${outfit.outfitType === '3d' ? '<span style="color: #3498db;">(3D)</span>' : ''}
+                                </div>
+
+                                <div class="outfit-thumbnails">
+                                    ${generateOutfitThumbnails(outfit)}
+                                </div>
+                            </div>
+
+                            <div class="outfit-actions">
+                                <button class="outfit-action-btn load" data-action="load" data-outfit-id="${outfit._id}">
+                                    <i class="bi bi-play-circle"></i> Load
+                                </button>
+                                <button class="outfit-action-btn delete" data-action="delete" data-outfit-id="${outfit._id}">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Add event listeners
+            container.querySelectorAll('.outfit-action-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const action = this.dataset.action;
+                    const outfitId = this.dataset.outfitId;
+
+                    if (action === 'load') {
+                        loadSavedOutfit(outfitId);
+                    } else if (action === 'delete') {
+                        deleteSavedOutfit(outfitId);
+                    }
+                });
+            });
+
+            // Add click listeners for outfit cards (excluding buttons and preview actions)
+            container.querySelectorAll('.saved-outfit-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    // Don't trigger if clicking on buttons or preview elements
+                    if (e.target.closest('.outfit-action-btn') ||
+                        e.target.closest('.generate-snapshot-btn') ||
+                        e.target.closest('.outfit-snapshot')) {
+                        return;
+                    }
+
+                    const outfitId = this.dataset.outfitId;
+                    loadSavedOutfit(outfitId);
+                });
+            });
+        }
+
+        function generateOutfitThumbnails(outfit) {
+            let thumbnailsHtml = '';
+            const maxThumbnails = 6; // Increased for better preview
+            const items = outfit.itemsDetails || [];
+
+            for (let i = 0; i < Math.min(items.length, maxThumbnails); i++) {
+                const item = items[i];
+                thumbnailsHtml += `
+                    <div class="outfit-thumbnail" title="${item.name}">
+                        ${item.image ? `
+                            <img src="${item.image}" alt="${item.name}">
+                            <div class="outfit-thumbnail-name">${item.name}</div>
+                        ` : `
+                            <span style="font-size: 8px;">${item.name.charAt(0)}</span>
+                        `}
+                    </div>
+                `;
+            }
+
+            if (items.length > maxThumbnails) {
+                thumbnailsHtml += `
+                    <div class="outfit-thumbnail" title="${items.length - maxThumbnails} more items">
+                        <span style="font-size: 8px;">+${items.length - maxThumbnails}</span>
+                    </div>
+                `;
+            }
+
+            return thumbnailsHtml;
+        }
+
+        /* NEW: Preview Modal Functions */
+        function showPreviewModal(outfitId) {
+            const outfit = savedOutfits.find(o => o._id === outfitId);
+            if (!outfit || !outfit.snapshot || !outfit.snapshot.dataURL) {
+                showMessage('No preview available for this outfit', 'info');
+                return;
+            }
+
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('outfit-preview-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'outfit-preview-modal';
+                modal.className = 'outfit-preview-modal';
+                modal.innerHTML = `
+                    <div class="outfit-preview-modal-content">
+                        <button class="outfit-preview-modal-close" onclick="hidePreviewModal()">&times;</button>
+                        <div id="outfit-preview-modal-body"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // Close on outside click
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        hidePreviewModal();
+                    }
+                });
+            }
+
+            // Update modal content
+            const modalBody = document.getElementById('outfit-preview-modal-body');
+            const createdDate = new Date(outfit.created_at || outfit.createdAt).toLocaleDateString();
+
+            modalBody.innerHTML = `
+                <h3 style="margin-top: 0; color: #2c3e50;">${outfit.name}</h3>
+                <p style="color: #6c757d; margin-bottom: 20px;">
+                    Created: ${createdDate} • ${outfit.itemCount || 0} items • 3D Outfit
+                </p>
+                <div style="text-align: center;">
+                    <img src="${outfit.snapshot.dataURL}"
+                         alt="Outfit Preview"
+                         style="max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn btn-primary" onclick="loadSavedOutfit('${outfitId}'); hidePreviewModal();">
+                        <i class="bi bi-play-circle"></i> Load This Outfit
+                    </button>
+                </div>
+            `;
+
+            // Show modal
+            modal.classList.add('show');
+            console.log(`📸 Showing preview for outfit: ${outfit.name}`);
+        }
+
+        function hidePreviewModal() {
+            const modal = document.getElementById('outfit-preview-modal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+        }
+
+        // Make functions globally available
+        window.generateSnapshotForOutfit = generateSnapshotForOutfit;
+        window.showPreviewModal = showPreviewModal;
+        window.hidePreviewModal = hidePreviewModal;
+
+        async function loadSavedOutfit(outfitId) {
+            console.log(`👗 Loading saved outfit: ${outfitId}`);
+
+            if (!clothingRenderer) {
+                showMessage('Clothing renderer not available', 'error');
+                return;
+            }
+
+            if (!avatarManager || !avatarManager.avatarModel) {
+                showMessage('Please load an avatar first', 'error');
+                return;
+            }
+
+            try {
+                showLoading('Loading 3D outfit...');
+
+                // Find the outfit in our cached data
+                const outfit = savedOutfits.find(o => o._id === outfitId);
+                if (!outfit) {
+                    throw new Error('Outfit not found');
+                }
+
+                // Clear current clothing first
+                await clothingRenderer.clearAllClothing();
+                hidePositionControls();
+
+                // Clear current positioning data
+                clothingPositions.clear();
+                clothingScales.clear();
+
+                // Load each clothing item
+                let loadedCount = 0;
+                const itemIds = outfit.items || [];
+
+                for (const itemId of itemIds) {
+                    try {
+                        const success = await clothingRenderer.loadClothingFromDatabase(itemId);
+                        if (success) {
+                            loadedCount++;
+
+                            // Restore saved positions and scales if available
+                            if (outfit.clothingPositions && outfit.clothingPositions[itemId]) {
+                                clothingPositions.set(itemId, outfit.clothingPositions[itemId]);
+
+                                const clothingData = clothingRenderer.currentClothing.get(itemId);
+                                if (clothingData && clothingData.mesh) {
+                                    const pos = outfit.clothingPositions[itemId];
+                                    clothingData.mesh.position.set(pos.x || 0, pos.y || 0, pos.z || 0);
+                                }
+                            }
+
+                            if (outfit.clothingScales && outfit.clothingScales[itemId]) {
+                                clothingScales.set(itemId, outfit.clothingScales[itemId]);
+
+                                const clothingData = clothingRenderer.currentClothing.get(itemId);
+                                if (clothingData && clothingData.mesh) {
+                                    clothingData.mesh.scale.setScalar(outfit.clothingScales[itemId]);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.warn(`⚠️ Failed to load item ${itemId}:`, error);
+                    }
+                }
+
+                // Update UI
+                updateActiveOutfitList();
+
+                // Mark as active outfit
+                activeLoadedOutfit = {
+                    id: outfitId,
+                    name: outfit.name,
+                    itemCount: loadedCount
+                };
+
+                // Update saved outfits display
+                renderSavedOutfits(savedOutfits);
+
+                // Show active outfit info
+                updateActiveLoadedOutfitDisplay();
+
+                showMessage(`Outfit "${outfit.name}" loaded with ${loadedCount}/${itemIds.length} items`, 'success');
+                console.log(`✅ Loaded outfit "${outfit.name}" with ${loadedCount} items`);
+
+            } catch (error) {
+                console.error('❌ Error loading saved outfit:', error);
+                showMessage(`Failed to load outfit: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteSavedOutfit(outfitId) {
+            const outfit = savedOutfits.find(o => o._id === outfitId);
+            const outfitName = outfit ? outfit.name : 'Unknown Outfit';
+
+            if (!confirm(`Are you sure you want to delete the outfit "${outfitName}"?`)) {
+                return;
+            }
+
+            try {
+                showLoading('Deleting outfit...');
+
+                const response = await fetch(`/api/outfits/delete/${outfitId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: Failed to delete outfit`);
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`Outfit "${outfitName}" deleted successfully`, 'success');
+
+                    // If this was the active outfit, clear it
+                    if (activeLoadedOutfit && activeLoadedOutfit.id === outfitId) {
+                        clearActiveLoadedOutfit();
+                    }
+
+                    // Refresh the list
+                    loadSavedOutfits();
+
+                    console.log(`✅ Deleted outfit "${outfitName}"`);
+                } else {
+                    throw new Error(data.error || 'Failed to delete outfit');
+                }
+
+            } catch (error) {
+                console.error('❌ Error deleting outfit:', error);
+                showMessage(`Failed to delete outfit: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function clearActiveLoadedOutfit() {
+            activeLoadedOutfit = null;
+            updateActiveLoadedOutfitDisplay();
+            renderSavedOutfits(savedOutfits); // Refresh to remove active state
+            showMessage('Active outfit cleared', 'info');
+        }
+
+        function updateActiveLoadedOutfitDisplay() {
+            const infoSection = document.getElementById('active-saved-outfit-info');
+            const detailsContainer = document.getElementById('active-saved-outfit-details');
+
+            if (!infoSection || !detailsContainer) return;
+
+            if (activeLoadedOutfit) {
+                infoSection.style.display = 'block';
+                detailsContainer.innerHTML = `
+                    <div class="active-item">
+                        <span class="active-item-name">
+                            <i class="bi bi-bookmark-heart"></i> ${activeLoadedOutfit.name}
+                        </span>
+                        <span class="text-muted">${activeLoadedOutfit.itemCount} items</span>
+                    </div>
+                `;
+            } else {
+                infoSection.style.display = 'none';
+                detailsContainer.innerHTML = '<p class="text-muted">No outfit loaded</p>';
+            }
+        }
+
+        function filterSavedOutfits(filter) {
+            console.log(`🔍 Filtering outfits by: ${filter}`);
+
+            let filteredOutfits = [...savedOutfits];
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+
+            switch (filter) {
+                case 'recent':
+                    filteredOutfits = filteredOutfits.filter(outfit => {
+                        const outfitDate = new Date(outfit.created_at || outfit.createdAt);
+                        return outfitDate >= thirtyDaysAgo;
+                    });
+                    break;
+                case '3d':
+                    filteredOutfits = filteredOutfits.filter(outfit => outfit.outfitType === '3d');
+                    break;
+                case 'favorites':
+                    filteredOutfits = filteredOutfits.filter(outfit => outfit.isFavorite === true);
+                    break;
+                case 'all':
+                default:
+                    // No filtering
+                    break;
+            }
+
+            renderSavedOutfits(filteredOutfits);
+            console.log(`✅ Filtered to ${filteredOutfits.length} outfits`);
+        }
+
+        /* Load saved avatar or default */
+        async function loadSavedAvatarOrDefault() {
+            if (!avatarManager) {
+                console.log('❌ Avatar manager not available');
+                return;
+            }
+
+            try {
+                showLoading('Loading your saved avatar...');
+                updateDebugInfo('Loading saved avatar...', 'info');
+
+                const response = await fetch('/api/avatar/get-saved');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.avatar) {
+                        console.log('🎯 Loading saved avatar configuration...');
+
+                        Object.assign(avatarCustomization, data.avatar.configuration);
+
+                        await avatarManager.requestDefaultAvatar();
+
+                        if (avatarManager.setConfiguration) {
+                            await avatarManager.setConfiguration(data.avatar.configuration);
+                        }
+
+                        updateUIFromConfig(data.avatar.configuration);
+
+                        setTimeout(() => {
+                            if (data.avatar.configuration.hairType) {
+                                selectHairStyle(data.avatar.configuration.hairType);
+                            }
+                        }, 3000);
+
+                        updateDebugInfo('Saved avatar loaded', 'success');
+                        showMessage('Your saved avatar has been loaded!', 'success');
+                    } else {
+                        await loadDefaultAvatar();
+                    }
+                } else {
+                    await loadDefaultAvatar();
+                }
+
+                updateDebugDisplay();
+
+            } catch (error) {
+                console.error('❌ Error loading saved avatar:', error);
+                await loadDefaultAvatar();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        /* Load default avatar */
+        async function loadDefaultAvatar() {
+            console.log('🎯 Loading default avatar...');
+
+            try {
+                await avatarManager.requestDefaultAvatar();
+                updateDebugInfo('Default avatar loaded', 'success');
+                showMessage('Default avatar loaded!', 'success');
+
+                setTimeout(() => {
+                    selectHairStyle(avatarCustomization.hair.type);
+                }, 3000);
+
+            } catch (error) {
+                console.error('❌ Error loading default avatar:', error);
+                updateDebugInfo('Failed to load default avatar', 'error');
+                showMessage('Failed to load default avatar: ' + error.message, 'error');
+            }
+        }
+
+        /* Hair System */
+        function initializeHairSystem() {
+            console.log('🦱 Initializing Hair System...');
+
+            if (!avatarManager) {
+                console.log('⏳ Waiting for avatar manager...');
+                setTimeout(initializeHairSystem, 1000);
+                return;
+            }
+
+            try {
+                loadHairPreviews();
+                setupHairEventListeners();
+                setupHairCategoryFilters();
+                console.log('✅ Hair System initialized');
+            } catch (error) {
+                console.error('❌ Failed to initialize Hair System:', error);
+            }
+        }
+
+        function loadHairPreviews() {
+            const container = document.getElementById('hair-preview-container');
+            if (!container) {
+                console.error('❌ Hair preview container not found');
+                return;
+            }
+
+            try {
+                const currentGender = avatarCustomization.gender || 'female';
+                const hairPreviewHTML = avatarManager.generateHairPreviewHTML(currentGender);
+                container.innerHTML = hairPreviewHTML;
+
+                console.log(`✅ Hair previews loaded for gender: ${currentGender}`);
+
+                setTimeout(() => {
+                    const defaultHairElement = container.querySelector(`[data-hair-style="${avatarCustomization.hair.type}"]`);
+                    if (defaultHairElement) {
+                        defaultHairElement.classList.add('selected');
+                    }
+                }, 100);
+
+            } catch (error) {
+                console.error('❌ Error loading hair previews:', error);
+                container.innerHTML = '<div class="error">Failed to load hair styles</div>';
+            }
+        }
+
+        function setupHairEventListeners() {
+            console.log('🎧 Setting up hair event listeners...');
+
+            document.addEventListener('click', async function(e) {
+                const hairOption = e.target.closest('.hair-preview-option');
+                if (hairOption) {
+                    const hairStyleKey = hairOption.dataset.hairStyle;
+                    if (hairStyleKey) {
+                        await selectHairStyle(hairStyleKey);
+                    }
+                }
+            });
+
+            document.querySelectorAll('[data-hair-color]').forEach(colorOption => {
+                colorOption.addEventListener('click', function() {
+                    document.querySelectorAll('[data-hair-color]').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    const hairColor = this.dataset.hairColor;
+                    avatarCustomization.hair.color = hairColor;
+                    console.log('🎨 Hair color changed to:', hairColor);
+
+                    if (avatarManager && avatarManager.updateHairColor) {
+                        avatarManager.updateHairColor(hairColor);
+                    }
+
+                    updateDebugDisplay();
+                    showMessage(`Hair color changed to ${hairColor}`, 'success');
+                });
+            });
+        }
+
+        function setupHairCategoryFilters() {
+            console.log('🏷️ Setting up hair category filters...');
+
+            document.querySelectorAll('.hair-category-filter').forEach(filter => {
+                filter.addEventListener('click', function() {
+                    document.querySelectorAll('.hair-category-filter').forEach(f => f.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const category = this.dataset.hairCategory;
+                    filterHairByCategory(category);
+                });
+            });
+        }
+
+        function filterHairByCategory(category) {
+            console.log(`🔍 Filtering hair styles by category: ${category}`);
+
+            const hairOptions = document.querySelectorAll('.hair-preview-option');
+            const currentGender = avatarCustomization.gender || 'female';
+            const hairStyles = avatarManager.getAvailableHairStyles(currentGender);
+
+            hairOptions.forEach(option => {
+                const hairStyleKey = option.dataset.hairStyle;
+                const hairData = hairStyles[hairStyleKey];
+
+                if (category === 'all') {
+                    option.classList.remove('hidden');
+                } else {
+                    if (hairData && hairData.category === category) {
+                        option.classList.remove('hidden');
+                    } else {
+                        option.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        async function selectHairStyle(hairStyleKey) {
+            if (!avatarManager) {
+                console.log('❌ Avatar manager not available');
+                return false;
+            }
+
+            if (avatarManager.isHairLoading && avatarManager.isHairLoading()) {
+                console.log('⚠️ Hair already loading, please wait...');
+                return false;
+            }
+
+            if (!avatarManager.avatarModel) {
+                console.log('⚠️ No avatar loaded, cannot apply hair');
+                showMessage('Please load an avatar first', 'error');
+                return false;
+            }
+
+            console.log(`🦱 Selecting hair style: ${hairStyleKey}`);
+
+            showHairLoadingStatus(true, 'Loading hair model...');
+
+            try {
+                document.querySelectorAll('.hair-preview-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+
+                const selectedOption = document.querySelector(`[data-hair-style="${hairStyleKey}"]`);
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                }
+
+                const success = await avatarManager.updateHairStyle(hairStyleKey);
+
+                if (success) {
+                    avatarCustomization.hair.type = hairStyleKey;
+
+                    const hairData = avatarManager.getAvailableHairStyles()[hairStyleKey];
+                    const hairName = hairData ? hairData.name : hairStyleKey;
+
+                    updateDebugDisplay();
+                    showMessage(`Hairstyle "${hairName}" applied successfully`, 'success');
+                    console.log(`✅ Hair style applied: ${hairName}`);
+                } else {
+                    showMessage('Failed to apply hairstyle', 'error');
+                    console.error(`❌ Failed to apply hair style: ${hairStyleKey}`);
+                }
+
+                return success;
+
+            } catch (error) {
+                console.error('❌ Error selecting hair style:', error);
+                showMessage('Error applying hairstyle', 'error');
+                return false;
+            } finally {
+                showHairLoadingStatus(false);
+            }
+        }
+
+        function showHairLoadingStatus(show, message = '') {
+            const statusElement = document.getElementById('hair-loading-status');
+            if (statusElement) {
+                if (show) {
+                    statusElement.style.display = 'flex';
+                    const messageSpan = statusElement.querySelector('span');
+                    if (messageSpan && message) {
+                        messageSpan.textContent = message;
+                    }
+                } else {
+                    statusElement.style.display = 'none';
+                }
+            }
+        }
+
+        function updateHairPreviewsForGender(newGender) {
+            console.log(`🔄 Updating hair previews for gender: ${newGender}`);
+
+            if (avatarManager) {
+                avatarManager.removeCurrentHair();
+                loadHairPreviews();
+
+                const defaultHairStyles = {
+                    'female': 'elvis_hazel',
+                    'male': 'male_short'
+                };
+
+                avatarCustomization.hair.type = defaultHairStyles[newGender] || 'elvis_hazel';
+
+                setTimeout(() => {
+                    selectHairStyle(avatarCustomization.hair.type);
+                }, 2000);
+            }
+        }
+
+        /* Camera View System */
+        function initializeCameraViewSystem() {
+            console.log('📷 Initializing camera view system...');
+
+            document.querySelectorAll('.view-option').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.view-option').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const viewType = this.dataset.view;
+                    avatarCustomization.view = viewType;
+
+                    console.log(`📷 Camera view changed to: ${viewType}`);
+
+                    setCameraView(viewType);
+                    updateDebugDisplay();
+                    showMessage(`Camera view: ${viewType}`, 'info');
+                });
+            });
+        }
+
+        function setCameraView(viewType) {
+            if (!avatarManager || !avatarManager.camera || !avatarManager.controls) {
+                console.warn('⚠️ Avatar manager or camera not available');
+                return;
+            }
+
+            const camera = avatarManager.camera;
+            const controls = avatarManager.controls;
+
+            if (viewType === 'portrait') {
+                camera.position.set(0, 1.6, 2.5);
+                controls.target.set(0, 1.6, 0);
+                controls.minDistance = 1.5;
+                controls.maxDistance = 4;
+                controls.maxPolarAngle = Math.PI * 0.6;
+                console.log('📷 Set to portrait view (face close-up)');
+            } else {
+                camera.position.set(0, 1.6, 4);
+                controls.target.set(0, 1, 0);
+                controls.minDistance = 1;
+                controls.maxDistance = 10;
+                controls.maxPolarAngle = Math.PI * 0.8;
+                console.log('📷 Set to normal view (full body)');
+            }
+
+            controls.update();
+        }
+
+        /* Avatar Customization Functions */
+        function initializeAvatarCustomization() {
+            console.log('🎨 Initializing avatar customization system...');
+
+            // Gender selection
+            document.querySelectorAll('.gender-option').forEach(button => {
+                button.addEventListener('click', async function() {
+                    document.querySelectorAll('.gender-option').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const gender = this.dataset.gender;
+                    avatarCustomization.gender = gender;
+                    console.log('👤 Gender changed to:', gender);
+
+                    await handleGenderChange(gender);
+                });
+            });
+
+            // Height selection
+            document.querySelectorAll('[data-height]').forEach(button => {
+                button.addEventListener('click', async function() {
+                    document.querySelectorAll('[data-height]').forEach(btn => btn.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    const height = this.dataset.height;
+                    avatarCustomization.body.height = height;
+                    console.log('📏 Height changed to:', height);
+
+                    await handleHeightChange(height);
+                });
+            });
+
+            // Body size selection
+            document.querySelectorAll('[data-body-size]').forEach(button => {
+                button.addEventListener('click', async function() {
+                    document.querySelectorAll('[data-body-size]').forEach(btn => btn.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    const bodySize = this.dataset.bodySize;
+                    avatarCustomization.body.bodySize = bodySize;
+                    console.log('📏 Body size changed to:', bodySize);
+
+                    await handleBodySizeChange(bodySize);
+                });
+            });
+
+            // Skin color selection
+            document.querySelectorAll('[data-skin]').forEach(colorOption => {
+                colorOption.addEventListener('click', function() {
+                    document.querySelectorAll('[data-skin]').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    const skinColor = this.dataset.skin;
+                    avatarCustomization.skin = skinColor;
+                    console.log('🎨 Skin color changed to:', skinColor);
+
+                    if (avatarManager && avatarManager.updateSkinColor) {
+                        avatarManager.updateSkinColor(skinColor);
+                        showMessage(`Skin color changed to ${skinColor}`, 'success');
+                    }
+                    updateDebugDisplay();
+                });
+            });
+
+            // Eye color selection
+            document.querySelectorAll('[data-eye]').forEach(colorOption => {
+                colorOption.addEventListener('click', function() {
+                    document.querySelectorAll('[data-eye]').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    const eyeColor = this.dataset.eye;
+                    avatarCustomization.eyes = eyeColor;
+                    console.log('👁️ Eye color changed to:', eyeColor);
+
+                    if (avatarManager && avatarManager.updateEyeColor) {
+                        avatarManager.updateEyeColor(eyeColor);
+                        showMessage(`Eye color changed to ${eyeColor}`, 'success');
+                    }
+                    updateDebugDisplay();
+                });
+            });
+
+            // Reset avatar
+            document.getElementById('reset-avatar').addEventListener('click', async function() {
+                if (!avatarManager) {
+                    showMessage('Avatar manager not available', 'error');
+                    return;
+                }
+
+                console.log('↩️ Resetting avatar...');
+                showLoading('Resetting avatar...');
+                updateDebugInfo('Resetting...', 'info');
+
+                try {
+                    const defaultConfig = {
+                        gender: 'female',
+                        bodySize: 'm',
+                        height: 'medium',
+                        hairType: 'elvis_hazel',
+                        skinColor: 'light',
+                        hairColor: 'brown',
+                        eyeColor: 'brown'
+                    };
+
+                    Object.assign(avatarCustomization, {
+                        gender: defaultConfig.gender,
+                        body: {
+                            bodySize: defaultConfig.bodySize,
+                            height: defaultConfig.height
+                        },
+                        hair: {
+                            type: defaultConfig.hairType,
+                            color: defaultConfig.hairColor
+                        },
+                        skin: defaultConfig.skinColor,
+                        eyes: defaultConfig.eyeColor
+                    });
+
+                    if (avatarManager.setConfiguration) {
+                        await avatarManager.setConfiguration(defaultConfig);
+                    }
+
+                    updateUIFromConfig(defaultConfig);
+                    updateDebugDisplay();
+                    updateDebugInfo('Reset complete', 'success');
+                    showMessage('Avatar reset to defaults', 'info');
+
+                    loadHairPreviews();
+                    setTimeout(() => {
+                        selectHairStyle(defaultConfig.hairType);
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('❌ Error resetting avatar:', error);
+                    updateDebugInfo('Reset failed', 'error');
+                    showMessage('Failed to reset avatar', 'error');
+                } finally {
+                    hideLoading();
+                }
+            });
+
+            // Save avatar
+            document.getElementById('save-avatar-btn').addEventListener('click', async function() {
+                try {
+                    showLoading('Saving avatar...');
+
+                    let config;
+                    if (avatarManager && avatarManager.getConfiguration) {
+                        config = avatarManager.getConfiguration();
+                    } else {
+                        config = avatarCustomization;
+                    }
+
+                    const response = await fetch('/api/avatar/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            configuration: config,
+                            avatarType: 'glb',
+                            format: AVATAR_CONFIG.PREFERRED_FORMAT,
+                            hairSystem: AVATAR_CONFIG.HAIR_SYSTEM,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to save avatar');
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('Avatar saved successfully!', 'success');
+                        loadSavedAvatars();
+                    } else {
+                        throw new Error(data.error || 'Failed to save avatar');
+                    }
+                } catch (error) {
+                    console.error('❌ Error saving avatar:', error);
+                    showMessage('Failed to save avatar: ' + error.message, 'error');
+                } finally {
+                    hideLoading();
+                }
+            });
+
+            // Load saved avatar button
+            document.getElementById('load-saved-avatar-btn').addEventListener('click', function() {
+                loadSavedAvatars();
+                showMessage('Select a saved avatar from the list below', 'info');
+            });
+        }
+
+        // Gender change handler
+        async function handleGenderChange(gender) {
+            if (avatarManager && avatarManager.updateGender) {
+                if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
+                    console.log('⚠️ Avatar already loading, please wait...');
+                    showMessage('Please wait for current loading to complete', 'error');
+                    return;
+                }
+
+                showLoading('Changing gender...');
+                updateDebugInfo('Changing gender...', 'info');
+
+                try {
+                    await avatarManager.updateGender(gender);
+                    updateDebugDisplay();
+                    updateDebugInfo('Gender changed', 'success');
+                    showMessage(`Avatar gender changed to ${gender}`, 'success');
+
+                    updateHairPreviewsForGender(gender);
+                } catch (error) {
+                    console.error('❌ Error changing gender:', error);
+                    updateDebugInfo('Gender change failed', 'error');
+                    showMessage('Failed to change gender', 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                updateDebugDisplay();
+                showMessage(`Gender preference set to ${gender}`, 'info');
+            }
+        }
+
+        // Height change handler
+        async function handleHeightChange(height) {
+            if (avatarManager && avatarManager.updateHeight) {
+                if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
+                    console.log('⚠️ Avatar already loading, please wait...');
+                    showMessage('Please wait for current loading to complete', 'error');
+                    return;
+                }
+
+                showLoading('Changing height...');
+                updateDebugInfo('Changing height...', 'info');
+
+                try {
+                    await avatarManager.updateHeight(height);
+                    updateDebugDisplay();
+                    updateDebugInfo('Height changed', 'success');
+                    showMessage(`Avatar height changed to ${height}`, 'success');
+                } catch (error) {
+                    console.error('❌ Error changing height:', error);
+                    updateDebugInfo('Height change failed', 'error');
+                    showMessage('Failed to change height', 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                updateDebugDisplay();
+            }
+        }
+
+        // Body size change handler
+        async function handleBodySizeChange(bodySize) {
+            if (avatarManager && avatarManager.updateBodySize) {
+                if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
+                    console.log('⚠️ Avatar already loading, please wait...');
+                    showMessage('Please wait for current loading to complete', 'error');
+                    return;
+                }
+
+                showLoading('Changing body size...');
+                updateDebugInfo('Changing body size...', 'info');
+
+                try {
+                    await avatarManager.updateBodySize(bodySize);
+                    updateDebugDisplay();
+                    updateDebugInfo('Body size changed', 'success');
+                    showMessage(`Avatar body size changed to ${bodySize.toUpperCase()}`, 'success');
+                } catch (error) {
+                    console.error('❌ Error changing body size:', error);
+                    updateDebugInfo('Body size change failed', 'error');
+                    showMessage('Failed to change body size', 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                updateDebugDisplay();
+            }
+        }
+
+        /* Wardrobe System with 3D Rendering */
+        function initializeWardrobeSystem() {
+            console.log('👕 Initializing 3D Wardrobe System...');
+
+            // Category selection
+            document.getElementById('category-wardrobe')?.addEventListener('change', function() {
+                const category = this.value;
+                console.log(`👕 Loading wardrobe category: ${category}`);
+                loadWardrobeItems(category);
+            });
+
+            // Try on selected button
+            document.getElementById('try-on-selected')?.addEventListener('click', tryOnSelectedItems);
+
+            // Clear outfit button
+            document.getElementById('clear-outfit-btn')?.addEventListener('click', clearAllClothing);
+
+            // Load initial wardrobe items
+            loadWardrobeItems('tops');
+        }
 
         async function loadWardrobeItems(category) {
-            const container = document.getElementById('wardrobe-items-rpm');
+            const container = document.getElementById('wardrobe-items');
             if (!container) return;
 
             container.innerHTML = '<div class="loading">Loading items...</div>';
@@ -867,7 +3863,6 @@
             }
         }
 
-        // Enhanced wardrobe item creation with color support
         function createWardrobeItem(item, category) {
             const itemElement = document.createElement('div');
             itemElement.className = 'wardrobe-item';
@@ -890,26 +3885,23 @@
                 <div class="item-name">${itemName}</div>
             `;
 
-            // Enhanced click handler with color support
             itemElement.addEventListener('click', async function() {
                 console.log('🎯 Wardrobe item clicked:', itemName, item._id);
 
-                if (!rpmManager.avatarModel) {
+                if (!avatarManager || !avatarManager.avatarModel) {
                     showMessage('Please load an avatar first', 'error');
                     return;
                 }
 
-                // Ensure OBJ renderer is available and has references
-                if (!window.clothingOBJRenderer) {
-                    console.error('❌ ClothingOBJRenderer not available');
-                    showMessage('OBJ Renderer not initialized', 'error');
+                if (!clothingRenderer) {
+                    console.error('❌ ClothingRenderer not available');
+                    showMessage('Clothing Renderer not initialized', 'error');
                     return;
                 }
 
-                // Set references if missing
-                if (!window.clothingOBJRenderer.scene || !window.clothingOBJRenderer.avatar) {
-                    console.log('🔄 Setting OBJ renderer references...');
-                    window.clothingOBJRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
+                if (!clothingRenderer.scene || !clothingRenderer.avatar) {
+                    console.log('🔄 Setting clothing renderer references...');
+                    clothingRenderer.setReferences(avatarManager.scene, avatarManager.avatarModel);
                 }
 
                 const isSelected = this.classList.contains('selected');
@@ -917,35 +3909,38 @@
 
                 try {
                     if (isSelected) {
-                        // Remove clothing
-                        console.log('🗑️ Removing clothing:', itemId);
-                        const success = await window.clothingOBJRenderer.removeClothing(itemId);
+                        console.log('🗑️ Removing 3D clothing:', itemId);
+                        showLoading(`Removing ${itemName}...`);
+
+                        const success = await clothingRenderer.removeClothing(itemId);
 
                         if (success) {
                             this.classList.remove('selected');
                             updateActiveOutfitList();
                             showMessage(`${itemName} removed`, 'info');
+
+                            // Hide position controls if this item was selected for positioning
+                            if (selectedClothingItem === itemId) {
+                                hidePositionControls();
+                            }
                         } else {
                             showMessage(`Failed to remove ${itemName}`, 'error');
                         }
                     } else {
-                        // Add clothing with color
-                        console.log('👕 Adding colored clothing:', itemId, itemName);
-                        showLoading(`Applying ${itemName} with color...`);
+                        console.log('👕 Adding 3D clothing:', itemId, itemName);
+                        showLoading(`Applying ${itemName} in 3D...`);
 
                         let success = false;
 
-                        // Try database loading first
                         try {
-                            success = await window.clothingOBJRenderer.loadClothingFromDatabase(itemId);
+                            success = await clothingRenderer.loadClothingFromDatabase(itemId);
                             if (success) {
-                                console.log('✅ Colored database loading successful');
+                                console.log('✅ 3D database loading successful');
                             }
                         } catch (error) {
-                            console.warn('⚠️ Database loading failed, trying fallback:', error.message);
+                            console.warn('⚠️ 3D database loading failed, trying fallback:', error.message);
                         }
 
-                        // If database loading failed, try fallback with color
                         if (!success) {
                             try {
                                 const fallbackData = {
@@ -954,27 +3949,27 @@
                                     label: itemName,
                                     file_path: item.file_path,
                                     category: category,
-                                    color: item.color // Include color data
+                                    color: item.color
                                 };
-                                success = await window.clothingOBJRenderer.createFallbackClothing(fallbackData);
+                                success = await clothingRenderer.createFallbackClothing(fallbackData);
                                 if (success) {
-                                    console.log('✅ Colored fallback creation successful');
+                                    console.log('✅ 3D fallback creation successful');
                                 }
                             } catch (fallbackError) {
-                                console.error('❌ Colored fallback creation failed:', fallbackError);
+                                console.error('❌ 3D fallback creation failed:', fallbackError);
                             }
                         }
 
                         if (success) {
                             this.classList.add('selected');
                             updateActiveOutfitList();
-                            showMessage(`${itemName} applied with color successfully`, 'success');
+                            showMessage(`${itemName} applied in 3D successfully`, 'success');
                         } else {
-                            showMessage(`Failed to apply ${itemName}`, 'error');
+                            showMessage(`Failed to apply ${itemName} in 3D`, 'error');
                         }
                     }
                 } catch (error) {
-                    console.error('❌ Error in click handler:', error);
+                    console.error('❌ Error in 3D clothing click handler:', error);
                     showMessage(`Error: ${error.message}`, 'error');
                 } finally {
                     hideLoading();
@@ -984,92 +3979,8 @@
             return itemElement;
         }
 
-        /* RPM Avatar Management */
-        document.getElementById('open-rpm-creator').addEventListener('click', function() {
-            console.log('🔗 Opening RPM Creator...');
-            window.open('https://demo.readyplayer.me/avatar', '_blank', 'noopener,noreferrer');
-            showMessage('RPM Creator opened in new tab', 'info');
-        });
-
-        document.getElementById('load-saved-rpm').addEventListener('click', async function() {
-            try {
-                showLoading('Loading saved avatar...');
-                console.log('📥 Loading saved RPM avatar...');
-
-                const response = await fetch('/api/rpm/get-avatar');
-                if (!response.ok) {
-                    throw new Error('Failed to load saved avatar');
-                }
-
-                const data = await response.json();
-                if (data.success && data.avatarUrl) {
-                    document.getElementById('rpm-avatar-url').value = data.avatarUrl;
-                    await rpmManager.loadAvatar(data.avatarUrl);
-
-                    if (rpmManager.avatarModel) {
-                        rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
-                        rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
-                        updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
-
-                        // Update OBJ renderer references
-                        if (objRenderer) {
-                            objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
-                        }
-                    }
-
-                    await saveRPMAvatarUrlIfPresent(data.avatarUrl);
-                    updateAvatarStats();
-                    showMessage('Saved avatar loaded successfully', 'success');
-                } else {
-                    throw new Error('No saved avatar found');
-                }
-            } catch (error) {
-                console.error('❌ Error loading saved avatar:', error);
-                showMessage(error.message, 'error');
-            } finally {
-                hideLoading();
-            }
-        });
-
-        document.getElementById('load-rpm-url').addEventListener('click', async function() {
-            const avatarUrl = document.getElementById('rpm-avatar-url').value.trim();
-
-            if (!avatarUrl) {
-                showMessage('Please enter a valid RPM avatar URL', 'error');
-                return;
-            }
-
-            try {
-                showLoading('Loading avatar from URL...');
-                console.log('🔗 Loading RPM avatar from URL:', avatarUrl);
-
-                await rpmManager.loadAvatar(avatarUrl);
-
-                if (rpmManager.avatarModel) {
-                    rpmManager.avatarModel.scale.setScalar(AVATAR_CONFIG.DEFAULT_SCALE);
-                    rpmManager.avatarModel.position.y = AVATAR_CONFIG.AVATAR_Y_POSITION;
-                    updateScaleUI(AVATAR_CONFIG.DEFAULT_SCALE);
-
-                    // Update OBJ renderer references
-                    if (objRenderer) {
-                        objRenderer.setReferences(rpmManager.scene, rpmManager.avatarModel);
-                    }
-                }
-
-                await saveRPMAvatarUrlIfPresent(avatarUrl);
-                updateAvatarStats();
-                showMessage('Avatar loaded successfully from URL', 'success');
-            } catch (error) {
-                console.error('❌ Error loading avatar from URL:', error);
-                showMessage('Failed to load avatar: ' + error.message, 'error');
-            } finally {
-                hideLoading();
-            }
-        });
-
-        /* Outfit Management with Color Support */
-        document.getElementById('try-on-rpm').addEventListener('click', async function() {
-            const selectedItems = document.querySelectorAll('#wardrobe-items-rpm .wardrobe-item.selected');
+        async function tryOnSelectedItems() {
+            const selectedItems = document.querySelectorAll('#wardrobe-items .wardrobe-item.selected');
 
             if (selectedItems.length === 0) {
                 showMessage('Please select items to try on', 'error');
@@ -1077,140 +3988,221 @@
             }
 
             try {
-                showLoading('Applying colored outfit...');
-                console.log(`👕 Trying on ${selectedItems.length} colored items...`);
+                showLoading(`Applying ${selectedItems.length} 3D clothing items...`);
+                console.log(`👕 Trying on ${selectedItems.length} 3D items...`);
 
-                // Clear all clothing first
-                if (objRenderer) {
-                    await objRenderer.clearAllClothing();
-                } else if (rpmManager.clearAllClothing) {
-                    rpmManager.clearAllClothing();
+                if (clothingRenderer) {
+                    await clothingRenderer.clearAllClothing();
                 }
 
                 for (const item of selectedItems) {
                     const itemId = item.dataset.itemId;
                     const itemName = item.querySelector('.item-name').textContent;
 
-                    if (objRenderer) {
-                        await objRenderer.loadClothingFromDatabase(itemId);
-                    } else {
-                        // Fallback to original method
-                        const imagePath = item.querySelector('img')?.src;
-                        if (imagePath && rpmManager.loadClothing) {
-                            await rpmManager.loadClothing(itemId, imagePath, itemName);
-                        }
+                    if (clothingRenderer) {
+                        await clothingRenderer.loadClothingFromDatabase(itemId);
                     }
                 }
 
                 updateActiveOutfitList();
-                showMessage(`Colored outfit applied with ${selectedItems.length} items`, 'success');
+                showMessage(`3D outfit applied with ${selectedItems.length} items`, 'success');
             } catch (error) {
-                console.error('❌ Error applying outfit:', error);
-                showMessage('Failed to apply complete outfit', 'error');
+                console.error('❌ Error applying 3D outfit:', error);
+                showMessage('Failed to apply complete 3D outfit', 'error');
             } finally {
                 hideLoading();
             }
-        });
+        }
 
-        document.getElementById('save-outfit-btn').addEventListener('click', async function() {
-            let itemCount = 0;
-            let itemIds = [];
+        async function clearAllClothing() {
+            try {
+                console.log('🗑️ Clearing all 3D clothing...');
 
-            // Count items from both systems
-            if (objRenderer && objRenderer.currentClothing) {
-                itemCount += objRenderer.currentClothing.size;
-                itemIds = Array.from(objRenderer.currentClothing.keys());
-            } else if (rpmManager.clothingItems) {
-                itemCount += rpmManager.clothingItems.size;
-                itemIds = Array.from(rpmManager.clothingItems.keys());
+                if (clothingRenderer) {
+                    await clothingRenderer.clearAllClothing();
+                }
+
+                document.querySelectorAll('#wardrobe-items .wardrobe-item.selected').forEach(item => {
+                    item.classList.remove('selected');
+                });
+
+                // Hide position controls
+                hidePositionControls();
+
+                // Clear positioning data
+                clothingPositions.clear();
+                clothingScales.clear();
+
+                updateActiveOutfitList();
+                showMessage('All 3D clothing cleared', 'info');
+            } catch (error) {
+                console.error('❌ Error clearing 3D clothing:', error);
+                showMessage('Error clearing 3D clothing', 'error');
             }
+        }
 
-            if (itemCount === 0) {
-                showMessage('No outfit to save', 'error');
+        /* Saved Avatars System */
+        function initializeSavedAvatarsSystem() {
+            console.log('💾 Initializing saved avatars system...');
+            loadSavedAvatars();
+        }
+
+        async function loadSavedAvatars() {
+            const container = document.getElementById('saved-avatars-grid');
+            if (!container) return;
+
+            try {
+                container.innerHTML = '<div class="loading">Loading saved avatars...</div>';
+
+                const response = await fetch('/api/avatar/get-all-saved');
+
+                if (!response.ok) {
+                    throw new Error('Failed to load saved avatars');
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.avatars && data.avatars.length > 0) {
+                    let html = '';
+
+                    data.avatars.forEach((avatar, index) => {
+                        const date = new Date(avatar.created_at).toLocaleDateString();
+                        const config = avatar.configuration || {};
+                        const genderIcon = config.gender === 'male' ? '👨' : '👩';
+
+                        html += `
+                            <div class="saved-avatar-item" data-avatar-id="${avatar._id}">
+                                <button class="delete-saved-avatar" onclick="deleteSavedAvatar('${avatar._id}')" title="Delete">×</button>
+                                <div class="saved-avatar-preview">
+                                    ${genderIcon} Avatar ${index + 1}
+                                </div>
+                                <div class="saved-avatar-name">
+                                    ${config.gender || 'Unknown'} | ${config.skinColor || 'light'} | ${config.hairType || 'default'}
+                                </div>
+                                <div class="saved-avatar-date">${date}</div>
+                            </div>
+                        `;
+                    });
+
+                    container.innerHTML = html;
+
+                    container.querySelectorAll('.saved-avatar-item').forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            if (e.target.classList.contains('delete-saved-avatar')) return;
+
+                            const avatarId = this.dataset.avatarId;
+                            loadSavedAvatar(avatarId);
+                        });
+                    });
+
+                } else {
+                    container.innerHTML = '<div class="no-items">No saved avatars found</div>';
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading saved avatars:', error);
+                container.innerHTML = '<div class="error">Failed to load saved avatars</div>';
+            }
+        }
+
+        async function loadSavedAvatar(avatarId) {
+            if (!avatarManager) {
+                showMessage('Avatar manager not available', 'error');
                 return;
             }
 
             try {
-                const outfitName = prompt('Enter a name for this outfit:', 'My Outfit ' + new Date().toLocaleDateString());
-                if (!outfitName) return;
+                showLoading('Loading saved avatar...');
+                updateDebugInfo('Loading saved avatar...', 'info');
 
-                console.log('💾 Saving outfit:', outfitName);
-
-                const response = await fetch('/api/outfits/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: outfitName,
-                        items: itemIds,
-                        timestamp: new Date().toISOString()
-                    })
-                });
+                const response = await fetch(`/api/avatar/get-saved/${avatarId}`);
 
                 if (!response.ok) {
-                    throw new Error('Failed to save outfit');
+                    throw new Error('Failed to load saved avatar');
                 }
 
                 const data = await response.json();
-                if (data.success) {
-                    showMessage(`Outfit "${outfitName}" saved successfully`, 'success');
+
+                if (data.success && data.avatar) {
+                    console.log('🎯 Loading saved avatar configuration...');
+
+                    Object.assign(avatarCustomization, data.avatar.configuration);
+
+                    await avatarManager.requestDefaultAvatar();
+
+                    if (avatarManager.setConfiguration) {
+                        await avatarManager.setConfiguration(data.avatar.configuration);
+                    }
+
+                    updateUIFromConfig(data.avatar.configuration);
+
+                    setTimeout(() => {
+                        if (data.avatar.configuration.hairType) {
+                            selectHairStyle(data.avatar.configuration.hairType);
+                        }
+                    }, 3000);
+
+                    updateDebugInfo('Saved avatar loaded', 'success');
+                    showMessage('Saved avatar loaded successfully!', 'success');
+                    updateDebugDisplay();
                 } else {
-                    throw new Error(data.error || 'Failed to save outfit');
+                    throw new Error(data.error || 'Failed to load avatar');
                 }
+
             } catch (error) {
-                console.error('❌ Error saving outfit:', error);
-                showMessage('Failed to save outfit: ' + error.message, 'error');
+                console.error('❌ Error loading saved avatar:', error);
+                updateDebugInfo('Failed to load saved avatar', 'error');
+                showMessage('Failed to load saved avatar: ' + error.message, 'error');
+            } finally {
+                hideLoading();
             }
-        });
+        }
 
-        document.getElementById('clear-outfit-btn').addEventListener('click', async function() {
+        window.deleteSavedAvatar = async function(avatarId) {
+            if (!confirm('Are you sure you want to delete this saved avatar?')) {
+                return;
+            }
+
             try {
-                console.log('🗑️ Clearing all clothing...');
-
-                // Clear from OBJ renderer
-                if (objRenderer) {
-                    await objRenderer.clearAllClothing();
-                }
-
-                // Clear from RPM manager as backup
-                if (rpmManager.clearAllClothing) {
-                    rpmManager.clearAllClothing();
-                }
-
-                // Clear UI selections
-                document.querySelectorAll('#wardrobe-items-rpm .wardrobe-item.selected').forEach(item => {
-                    item.classList.remove('selected');
+                const response = await fetch(`/api/avatar/delete/${avatarId}`, {
+                    method: 'DELETE'
                 });
 
-                updateActiveOutfitList();
-                showMessage('All clothing cleared', 'info');
+                if (!response.ok) {
+                    throw new Error('Failed to delete avatar');
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Avatar deleted successfully', 'success');
+                    loadSavedAvatars();
+                } else {
+                    throw new Error(data.error || 'Failed to delete avatar');
+                }
+
             } catch (error) {
-                console.error('❌ Error clearing clothing:', error);
-                showMessage('Error clearing clothing', 'error');
+                console.error('❌ Error deleting avatar:', error);
+                showMessage('Failed to delete avatar: ' + error.message, 'error');
             }
-        });
+        };
 
         /* 3D Viewport Controls */
-        document.getElementById('rotate-left-btn').addEventListener('click', function() {
-            if (rpmManager.controls) {
-                rpmManager.controls.rotateLeft(Math.PI/8);
-                if (rpmManager.controls.maxPolarAngle < Math.PI * 0.8) {
-                    rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
-                }
+        document.getElementById('rotate-left-btn')?.addEventListener('click', function() {
+            if (avatarManager && avatarManager.controls) {
+                avatarManager.controls.rotateLeft(Math.PI/8);
                 console.log('↺ Rotating avatar left');
             }
         });
 
-        document.getElementById('rotate-right-btn').addEventListener('click', function() {
-            if (rpmManager.controls) {
-                rpmManager.controls.rotateLeft(-Math.PI/8);
-                if (rpmManager.controls.maxPolarAngle < Math.PI * 0.8) {
-                    rpmManager.controls.maxPolarAngle = Math.PI * 0.8;
-                }
+        document.getElementById('rotate-right-btn')?.addEventListener('click', function() {
+            if (avatarManager && avatarManager.controls) {
+                avatarManager.controls.rotateLeft(-Math.PI/8);
                 console.log('↻ Rotating avatar right');
             }
         });
 
-        document.getElementById('fullscreen-btn').addEventListener('click', function() {
+        document.getElementById('fullscreen-btn')?.addEventListener('click', function() {
             const container = document.getElementById('avatar-container');
             if (!document.fullscreenElement) {
                 container.requestFullscreen();
@@ -1229,33 +4221,21 @@
             let totalItems = 0;
             let itemsHtml = '';
 
-            // Get items from OBJ renderer
-            if (objRenderer && objRenderer.currentClothing) {
-                for (const [itemId, clothingData] of objRenderer.currentClothing.entries()) {
-                    const itemName = clothingData.itemData?.label || clothingData.category || 'OBJ Item';
-                    const source = clothingData.source || 'obj';
+            if (clothingRenderer && clothingRenderer.currentClothing) {
+                for (const [itemId, clothingData] of clothingRenderer.currentClothing.entries()) {
+                    const itemName = clothingData.itemData?.label || clothingData.category || '3D Clothing Item';
+                    const renderType = '3D';
                     itemsHtml += `
-                        <div class="active-item" data-item-id="${itemId}" data-source="obj">
-                            <span class="active-item-name">${itemName} (${source})</span>
-                            <span class="active-item-remove" title="Remove ${itemName}">
-                                <i class="bi bi-x-circle"></i>
-                            </span>
-                        </div>
-                    `;
-                    totalItems++;
-                }
-            }
-
-            // Get items from RPM manager (fallback)
-            if (rpmManager.clothingItems) {
-                for (const [itemId, item] of rpmManager.clothingItems.entries()) {
-                    const itemName = item.data?.itemType || item.type || 'GLB Item';
-                    itemsHtml += `
-                        <div class="active-item" data-item-id="${itemId}" data-source="rpm">
-                            <span class="active-item-name">${itemName} (GLB)</span>
-                            <span class="active-item-remove" title="Remove ${itemName}">
-                                <i class="bi bi-x-circle"></i>
-                            </span>
+                        <div class="active-item" data-item-id="${itemId}" data-source="3d">
+                            <span class="active-item-name">${itemName} (${renderType})</span>
+                            <div class="active-item-controls">
+                                <span class="active-item-edit" title="Position ${itemName}">
+                                    <i class="bi bi-arrows-move"></i>
+                                </span>
+                                <span class="active-item-remove" title="Remove ${itemName}">
+                                    <i class="bi bi-x-circle"></i>
+                                </span>
+                            </div>
                         </div>
                     `;
                     totalItems++;
@@ -1264,95 +4244,168 @@
 
             if (totalItems === 0) {
                 listContainer.innerHTML = '<p class="text-muted">No items selected</p>';
-                return;
+            } else {
+                listContainer.innerHTML = itemsHtml;
+
+                // Add event listeners for remove buttons
+                listContainer.querySelectorAll('.active-item-remove').forEach(button => {
+                    button.addEventListener('click', async function(e) {
+                        e.stopPropagation();
+                        const itemElement = this.closest('.active-item');
+                        const itemId = itemElement.dataset.itemId;
+                        const itemName = itemElement.querySelector('.active-item-name').textContent;
+
+                        try {
+                            if (clothingRenderer) {
+                                await clothingRenderer.removeClothing(itemId);
+                            }
+
+                            const wardrobeItem = document.querySelector(`[data-item-id="${itemId}"]`);
+                            if (wardrobeItem) {
+                                wardrobeItem.classList.remove('selected');
+                            }
+
+                            // Hide position controls if this item was selected for positioning
+                            if (selectedClothingItem === itemId) {
+                                hidePositionControls();
+                            }
+
+                            updateActiveOutfitList();
+                            showMessage(`${itemName} removed`, 'info');
+                        } catch (error) {
+                            console.error('Error removing 3D item:', error);
+                            showMessage(`Failed to remove ${itemName}`, 'error');
+                        }
+                    });
+                });
+
+                // Add event listeners for edit/position buttons
+                listContainer.querySelectorAll('.active-item-edit').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const itemElement = this.closest('.active-item');
+                        const itemId = itemElement.dataset.itemId;
+                        const itemName = itemElement.querySelector('.active-item-name').textContent.split(' (')[0]; // Remove (3D) suffix
+
+                        showPositionControls(itemId, itemName);
+                    });
+                });
             }
 
-            listContainer.innerHTML = itemsHtml;
+            document.getElementById('debug-clothing').textContent = `${totalItems} items`;
+        }
 
-            // Add remove event listeners
-            listContainer.querySelectorAll('.active-item-remove').forEach(button => {
-                button.addEventListener('click', async function(e) {
-                    e.stopPropagation();
-                    const itemElement = this.closest('.active-item');
-                    const itemId = itemElement.dataset.itemId;
-                    const source = itemElement.dataset.source;
-                    const itemName = itemElement.querySelector('.active-item-name').textContent;
+        /* Tab System Functions */
+        function initializeTabSystem() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
 
-                    try {
-                        if (source === 'obj' && objRenderer) {
-                            await objRenderer.removeClothing(itemId);
-                        } else if (source === 'rpm' && rpmManager.removeClothing) {
-                            rpmManager.removeClothing(itemId);
-                        }
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.dataset.tab;
 
-                        // Remove UI selection
-                        const wardrobeItem = document.querySelector(`[data-item-id="${itemId}"]`);
-                        if (wardrobeItem) {
-                            wardrobeItem.classList.remove('selected');
-                        }
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
 
-                        updateActiveOutfitList();
-                        showMessage(`${itemName} removed`, 'info');
-                    } catch (error) {
-                        console.error('Error removing item:', error);
-                        showMessage(`Failed to remove ${itemName}`, 'error');
+                    this.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+
+                    console.log(`📑 Switched to tab: ${targetTab}`);
+
+                    if (targetTab === 'wardrobe') {
+                        loadWardrobeItems('tops');
+                    } else if (targetTab === 'saved-outfits') {
+                        loadSavedOutfits();
                     }
                 });
             });
         }
 
-        function updateAvatarStats() {
-            const infoContainer = document.getElementById('avatar-info');
-            if (!infoContainer || !rpmManager.avatarModel) {
-                if (infoContainer) {
-                    infoContainer.innerHTML = '<p style="margin:0; color:#999;">No avatar loaded</p>';
-                }
-                return;
+        function updateUIFromConfig(config) {
+            document.querySelectorAll('.gender-option').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.gender === config.gender);
+            });
+
+            document.querySelectorAll('[data-height]').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.height === config.height);
+            });
+
+            document.querySelectorAll('[data-body-size]').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.bodySize === config.bodySize);
+            });
+
+            document.querySelectorAll('[data-skin]').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.skin === config.skinColor);
+            });
+
+            document.querySelectorAll('[data-eye]').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.eye === config.eyeColor);
+            });
+
+            document.querySelectorAll('[data-hair-color]').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.hairColor === config.hairColor);
+            });
+
+            document.querySelectorAll('.hair-preview-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.hairStyle === config.hairType);
+            });
+        }
+
+        /* Debug Info System */
+        function initializeDebugInfo() {
+            console.log('🐛 Initializing debug info system...');
+            updateDebugInfo('System starting...', 'info');
+
+            setInterval(() => {
+                updateDebugDisplay();
+            }, 2000);
+        }
+
+        function updateDebugInfo(status, type = 'info') {
+            const statusElement = document.getElementById('debug-status');
+            if (statusElement) {
+                statusElement.textContent = status;
+                statusElement.style.color = type === 'error' ? '#e74c3c' :
+                                          type === 'success' ? '#27ae60' : '#333';
+            }
+        }
+
+        function updateDebugDisplay() {
+            const modelElement = document.getElementById('debug-model');
+            if (modelElement && avatarManager && avatarManager.avatarModel) {
+                modelElement.textContent = 'GLB + Hair';
+            } else if (modelElement) {
+                modelElement.textContent = 'None';
             }
 
-            const stats = {
-                'Model': 'Ready Player Me',
-                'Scale': Math.round((rpmManager.avatarModel.scale.x || 1.0) * 100) + '%',
-                'Polygons': 'Calculating...',
-                'Materials': 'Calculating...',
-                'Clothing': 0
-            };
-
-            // Count clothing from both systems
-            let clothingCount = 0;
-            if (objRenderer && objRenderer.currentClothing) {
-                clothingCount += objRenderer.currentClothing.size;
-            }
-            if (rpmManager.clothingItems) {
-                clothingCount += rpmManager.clothingItems.size;
-            }
-            stats['Clothing'] = clothingCount;
-
-            if (rpmManager.avatarModel) {
-                let polyCount = 0;
-                let materialCount = 0;
-
-                rpmManager.avatarModel.traverse((child) => {
-                    if (child.isMesh) {
-                        if (child.geometry) {
-                            polyCount += child.geometry.index ?
-                                child.geometry.index.count / 3 :
-                                child.geometry.attributes.position.count / 3;
-                        }
-                        materialCount++;
-                    }
-                });
-
-                stats['Polygons'] = Math.floor(polyCount).toLocaleString();
-                stats['Materials'] = materialCount;
+            const genderElement = document.getElementById('debug-gender');
+            if (genderElement) {
+                genderElement.textContent = avatarCustomization.gender;
             }
 
-            let html = '';
-            for (const [key, value] of Object.entries(stats)) {
-                html += `<p style="margin: 2px 0;"><strong>${key}:</strong> ${value}</p>`;
+            const bodyElement = document.getElementById('debug-body');
+            if (bodyElement) {
+                bodyElement.textContent = `${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}`;
             }
 
-            infoContainer.innerHTML = html;
+            const hairElement = document.getElementById('debug-hair-type');
+            if (hairElement) {
+                const hairStatus = avatarManager && avatarManager.currentHairModel ? 'Loaded' : 'None';
+                hairElement.textContent = `${avatarCustomization.hair.type} (${avatarCustomization.hair.color}) - ${hairStatus}`;
+            }
+
+            const viewElement = document.getElementById('debug-view');
+            if (viewElement) {
+                viewElement.textContent = avatarCustomization.view.charAt(0).toUpperCase() + avatarCustomization.view.slice(1);
+            }
+
+            const pathElement = document.getElementById('debug-path');
+            if (pathElement && avatarManager) {
+                const currentPath = avatarManager.getAvatarPath ?
+                    avatarManager.getAvatarPath(avatarCustomization) :
+                    `/static/models/makehuman/bodies/${avatarCustomization.gender}/${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}.glb`;
+                pathElement.textContent = currentPath;
+            }
         }
 
         /* Utility Functions */
@@ -1394,25 +4447,7 @@
             return icons[type] || 'info-circle';
         }
 
-        async function saveRPMAvatarUrlIfPresent(avatarUrl) {
-            if (!avatarUrl) return;
-            try {
-                await fetch('/api/rpm/save-avatar', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({avatarUrl})
-                });
-                console.log('💾 RPM avatar URL saved automatically:', avatarUrl);
-            } catch (err) {
-                console.error('❌ Failed to auto-save RPM avatar URL:', err);
-            }
-        }
-
-        /* Initialization Completion */
-        loadWardrobeItems('tops');
-
-        console.log('✅ Clean RPM Avatar Application initialized successfully');
-        showMessage('Application ready! Create or load an avatar to get started.', 'info');
+        console.log('✅ GLB Avatar System with 3D Clothing, Position Controls, and Saved Outfits initialized successfully!');
     });
 
 })();
