@@ -4581,6 +4581,106 @@ def initialize_avatar_collections():
     except Exception as e:
         print(f"❌ Error initializing avatar collections: {str(e)}")
 
+
+#         saved outfits 3d
+# Add these routes to your run.py file
+
+@app.route('/api/outfits/save', methods=['POST'])
+@login_required
+def save_outfit():
+    try:
+        user_id = session['user']['_id']
+        data = request.json
+
+        outfit_doc = {
+            'userId': user_id,
+            'name': data['name'],
+            'items': data['items'],
+            'itemsDetails': data.get('itemsDetails', []),
+            'avatarConfig': data.get('avatarConfig', {}),
+            'outfitType': data.get('outfitType', '3d'),
+            'renderingType': data.get('renderingType', '3d'),
+            'itemCount': data.get('itemCount', 0),
+            'clothingPositions': data.get('clothingPositions', {}),
+            'clothingScales': data.get('clothingScales', {}),
+            'created_at': datetime.now(),
+            'isFavorite': False
+        }
+
+        result = db.saved_outfits.insert_one(outfit_doc)
+
+        return jsonify({
+            'success': True,
+            'outfit_id': str(result.inserted_id),
+            'message': 'Outfit saved successfully'
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/outfits/saved', methods=['GET'])
+@login_required
+def get_saved_outfits():
+    try:
+        user_id = session['user']['_id']
+        outfits = list(db.saved_outfits.find(
+            {'userId': user_id}
+        ).sort('created_at', -1))
+
+        # Convert ObjectIds to strings
+        for outfit in outfits:
+            outfit['_id'] = str(outfit['_id'])
+
+        return jsonify({
+            'success': True,
+            'outfits': outfits,
+            'count': len(outfits)
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/outfits/delete/<outfit_id>', methods=['DELETE'])
+@login_required
+def delete_saved_outfit(outfit_id):
+    try:
+        user_id = session['user']['_id']
+        result = db.saved_outfits.delete_one({
+            '_id': ObjectId(outfit_id),
+            'userId': user_id
+        })
+
+        if result.deleted_count > 0:
+            return jsonify({'success': True, 'message': 'Outfit deleted successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Outfit not found'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+        @app.route('/api/outfits/update-snapshot/<outfit_id>', methods=['PUT'])
+        @login_required
+        def update_outfit_snapshot(outfit_id):
+            try:
+                user_id = session['user']['_id']
+                data = request.json
+
+                result = db.saved_outfits.update_one(
+                    {'_id': ObjectId(outfit_id), 'userId': user_id},
+                    {'$set': {'snapshot': data['snapshot'], 'updated_at': datetime.now()}}
+                )
+
+                if result.modified_count > 0:
+                    return jsonify({'success': True, 'message': 'Snapshot updated successfully'})
+                else:
+                    return jsonify({'success': False, 'error': 'Outfit not found'}), 404
+
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     initialize_avatar_collections()
     app.run(debug=True, use_reloader=False)
