@@ -298,6 +298,7 @@ from sklearn.cluster import KMeans
 import imutils
 
 from flaskapp.ml_models import model_manager
+# from flaskapp.ml_models.improved_model_manager import model_manager
 
 print('🚀 Model loading optimized - models load on demand to save memory')
 def model_predict(img_path, model=None):
@@ -1649,11 +1650,10 @@ def get_outfit():
         )
 
 
-# FIXED: Enhanced wardrobe route with proper 3D model fields
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
 def add_wardrobe():
-    """Enhanced wardrobe route with proper 3D model database integration"""
+    """Enhanced wardrobe route with proper 3D model database integration and FIXED unique filenames"""
     if request.method == 'POST':
         try:
             # Check if the post request has the file part
@@ -1670,13 +1670,34 @@ def add_wardrobe():
                     f.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
                 return jsonify({'error': 'Invalid file type'}), 400
 
-            # Save the file
+            # FIXED: Create unique filename to prevent overwrites
             user_id = session['user']['_id']
             upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
             os.makedirs(upload_dir, exist_ok=True)
-            file_path = os.path.join(upload_dir, secure_filename(f.filename))
+
+            # Generate unique filename
+            original_filename = secure_filename(f.filename)
+            file_extension = os.path.splitext(original_filename)[1]  # Get .jpg, .png, etc
+
+            # Create unique filename using timestamp + random UUID
+            import time
+            import uuid
+            timestamp = int(time.time())
+            unique_id = uuid.uuid4().hex[:8]
+            unique_filename = f"{timestamp}_{unique_id}{file_extension}"
+
+            file_path = os.path.join(upload_dir, unique_filename)
+
+            # Ensure the filename is truly unique (just in case)
+            counter = 1
+            while os.path.exists(file_path):
+                unique_filename = f"{timestamp}_{unique_id}_{counter}{file_extension}"
+                file_path = os.path.join(upload_dir, unique_filename)
+                counter += 1
+
+            # Save the file with unique name
             f.save(file_path)
-            file_path_db = f'/static/image_users/{user_id}/{secure_filename(f.filename)}'
+            file_path_db = f'/static/image_users/{user_id}/{unique_filename}'
 
             try:
                 # Make prediction
@@ -1719,6 +1740,9 @@ def add_wardrobe():
 
                 texture_preview_path = file_path_db
 
+                # Generate unique model task ID
+                model_task_id = f"item_{user_id}_{uuid.uuid4().hex[:8]}"
+
                 # FIXED: Save image data to database with complete 3D model fields
                 wardrobe_item = {
                     'userId': user_id,
@@ -1730,7 +1754,8 @@ def add_wardrobe():
                     },
                     'material_properties': material_properties,
                     'normal_map_path': normal_map_path,
-                    'filename': secure_filename(f.filename),
+                    'filename': unique_filename,  # FIXED: Store unique filename
+                    'original_filename': original_filename,  # NEW: Also store original name for reference
                     'file_path': file_path_db,
                     'texture_preview_path': texture_preview_path,
                     'created_at': datetime.now(),
@@ -1738,14 +1763,14 @@ def add_wardrobe():
                     'times_worn': 0,
                     # CRITICAL: 3D MODEL FIELDS - PROPERLY INITIALIZED
                     'has_3d_model': False,
-                    'model_3d_path': None,           # Will store the OBJ/GLB file path
-                    'model_generated_at': None,      # When the 3D model was created
-                    'model_method': None,            # 'colab', 'triposr', etc.
-                    'model_file_format': None,       # 'OBJ', 'GLB', etc.
-                    'model_file_size': None,         # File size in bytes
-                    'model_last_updated': None,      # Last time the 3D model was updated
-                    'model_generation_status': None, # 'generating', 'completed', 'failed'
-                    'model_task_id': None           # Generation task ID for tracking
+                    'model_3d_path': None,  # Will store the OBJ/GLB file path
+                    'model_generated_at': None,  # When the 3D model was created
+                    'model_method': None,  # 'colab', 'triposr', etc.
+                    'model_file_format': None,  # 'OBJ', 'GLB', etc.
+                    'model_file_size': None,  # File size in bytes
+                    'model_last_updated': None,  # Last time the 3D model was updated
+                    'model_generation_status': None,  # 'generating', 'completed', 'failed'
+                    'model_task_id': model_task_id  # Generation task ID for tracking
                 }
 
                 # INSERT AND GET THE ID - THIS IS CRUCIAL FOR AUTO-SAVE!
@@ -1754,6 +1779,7 @@ def add_wardrobe():
                 item_id = str(insert_result.inserted_id)
 
                 print(f"✅ Created wardrobe item with ID: {item_id}")
+                print(f"✅ Saved with unique filename: {unique_filename}")
 
                 # CRITICAL: Return success response with the item_id for auto-save!
                 return jsonify({
@@ -1767,11 +1793,14 @@ def add_wardrobe():
                     },
                     'material_properties': material_properties,
                     'normal_map_path': normal_map_path,
-                    'texture_preview_path': texture_preview_path
+                    'texture_preview_path': texture_preview_path,
+                    'unique_filename': unique_filename,
+                    'original_filename': original_filename
                 })
 
             except Exception as e:
                 print(f"Prediction error: {str(e)}")
+                # FIXED: Clean up the unique file if prediction fails
                 if os.path.exists(file_path):
                     os.remove(file_path)
                 return jsonify({'error': f'Error processing image: {str(e)}'}), 500
@@ -1783,50 +1812,37 @@ def add_wardrobe():
     # GET request
     return render_template('wardrobe.html')
 
+# @app.route('/wardrobe/all', methods=['GET', 'POST'])
+# @login_required
+# def view_wardrobe_all():
+#     userId = session['user']['_id']
+#     filter = {'userId': userId}
+#     users_clothes = db.wardrobe.find(filter)
+#
+#     categories = {
+#         'tops': ['T-shirt/top', 'Shirt', 'Pullover'],
+#         'bottoms': ['Trouser'],
+#         'dresses': ['Dress'],
+#         'outerwear': ['Coat'],
+#         'shoes': ['Sandal', 'Sneaker', 'Ankle boot'],
+#         'accessories': ['Bag']
+#     }
+#     grouped_items = {cat: [] for cat in categories.keys()}
+#     for item_doc in users_clothes:
+#         label = item_doc.get('label', '')
+#         category = item_doc.get('category')
+#         if not category:
+#             category = next((cat for cat, lbls in categories.items() if label in lbls), None)
+#         if category:
+#             # Use the same logic as calendar: always normalize file_path
+#             grouped_items[category].append({
+#                 'id': str(item_doc['_id']),
+#                 'label': item_doc['label'],
+#                 'file_path': normalize_path(item_doc.get('file_path', '')),
+#                 'color': item_doc.get('color', '')
+#             })
+#     return render_template('wardrobe_all2.html', wardrobe_items=grouped_items)
 
-     # FIXED: Add this route to update existing items that don't have model_task_id
-    @app.route('/api/wardrobe/fix-missing-task-ids', methods=['POST'])
-    @login_required
-    def fix_missing_task_ids():
-        """Fix existing wardrobe items that are missing model_task_id"""
-        try:
-            user_id = session['user']['_id']
-
-            # Find items without model_task_id
-            items_without_task_id = list(db.wardrobe.find({
-                'userId': user_id,
-                '$or': [
-                    {'model_task_id': None},
-                    {'model_task_id': {'$exists': False}}
-                ]
-            }))
-
-            updated_count = 0
-
-            for item in items_without_task_id:
-                # Generate a new model_task_id
-                import uuid
-                new_task_id = f"item_{user_id}_{uuid.uuid4().hex[:8]}"
-
-                # Update the item
-                result = db.wardrobe.update_one(
-                    {'_id': item['_id']},
-                    {'$set': {'model_task_id': new_task_id}}
-                )
-
-                if result.modified_count > 0:
-                    updated_count += 1
-                    print(f"✅ Updated item {item['_id']} with task_id: {new_task_id}")
-
-            return jsonify({
-                'success': True,
-                'message': f'Updated {updated_count} items with model_task_id',
-                'updated_count': updated_count
-            })
-
-        except Exception as e:
-            print(f"❌ Error fixing task IDs: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/wardrobe/all', methods=['GET', 'POST'])
 @login_required
@@ -1844,20 +1860,39 @@ def view_wardrobe_all():
         'accessories': ['Bag']
     }
     grouped_items = {cat: [] for cat in categories.keys()}
+
+    # DEBUG: Print initial structure
+    print("DEBUG: Initial grouped_items structure:")
+    for cat, items in grouped_items.items():
+        print(f"  {cat}: {type(items)} with {len(items)} items")
+
     for item_doc in users_clothes:
         label = item_doc.get('label', '')
         category = item_doc.get('category')
         if not category:
             category = next((cat for cat, lbls in categories.items() if label in lbls), None)
+
+        print(f"DEBUG: Item '{label}' assigned to category '{category}'")
+
         if category:
-            # Use the same logic as calendar: always normalize file_path
-            grouped_items[category].append({
+            item_data = {
                 'id': str(item_doc['_id']),
                 'label': item_doc['label'],
                 'file_path': normalize_path(item_doc.get('file_path', '')),
                 'color': item_doc.get('color', '')
-            })
+            }
+            grouped_items[category].append(item_data)
+            print(f"DEBUG: Added item to {category}. Now has {len(grouped_items[category])} items")
+
+    # DEBUG: Print final structure
+    print("DEBUG: Final grouped_items structure:")
+    for cat, items in grouped_items.items():
+        print(f"  {cat}: {type(items)} with {len(items)} items")
+        if items:
+            print(f"    First item: {items[0]}")
+
     return render_template('wardrobe_all2.html', wardrobe_items=grouped_items)
+
 
 
 @app.route('/outfits/all', methods=['GET', 'POST'])
@@ -4784,7 +4819,7 @@ def get_upcoming_outfits():
     except Exception as e:
         print(f"Error getting upcoming outfits: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-    
+
 if __name__ == '__main__':
     initialize_avatar_collections()
     app.run(debug=True, use_reloader=False)

@@ -4,6 +4,37 @@
 
 {% block extra_css %}
 <style>
+    /* Custom button color overrides */
+    .btn-primary {
+        background-color: #D0FEF5 !important;
+        border-color: #D0FEF5 !important;
+        color: #333 !important;
+    }
+
+    .btn-primary:hover {
+        background-color: #B8F5E8 !important;
+        border-color: #B8F5E8 !important;
+        color: #333 !important;
+    }
+
+    .btn-primary:focus, .btn-primary:active {
+        background-color: #A0F0DB !important;
+        border-color: #A0F0DB !important;
+        color: #333 !important;
+        box-shadow: 0 0 0 0.2rem rgba(208, 254, 245, 0.5) !important;
+    }
+
+    .btn-outline-primary {
+        color: #333 !important;
+        border-color: #D0FEF5 !important;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #D0FEF5 !important;
+        border-color: #D0FEF5 !important;
+        color: #333 !important;
+    }
+
     .month-navigation {
         display: flex;
         justify-content: space-between;
