@@ -4684,6 +4684,107 @@ def delete_saved_outfit(outfit_id):
                 return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/calendar/outfits', methods=['GET'])
+@login_required
+def get_calendar_outfits():
+    """Get calendar outfits for a specific month for dashboard preview"""
+    try:
+        year = int(request.args.get('year', datetime.now().year))
+        month = int(request.args.get('month', datetime.now().month))
+        user_id = session['user']['_id']
+
+        # Get all outfits for the specified month
+        outfits_cursor = db.calendar.find({
+            "user_id": user_id,
+            "year": year,
+            "month": month
+        })
+
+        outfit_map = {}
+        for outfit_doc in outfits_cursor:
+            day_number = outfit_doc['day']
+            outfit_items = []
+
+            if 'items' in outfit_doc and isinstance(outfit_doc['items'], list):
+                for item_id in outfit_doc['items']:
+                    item_obj = db.wardrobe.find_one({'_id': ObjectId(item_id)})
+                    if item_obj:
+                        outfit_items.append({
+                            'id': str(item_obj['_id']),
+                            'label': item_obj['label'],
+                            'file_path': normalize_path(item_obj.get('file_path', '')),
+                            'color': item_obj.get('color', '')
+                        })
+
+            outfit_map[day_number] = {
+                'id': str(outfit_doc['_id']),
+                'outfit_items': outfit_items,
+                'description': outfit_doc.get('description', ''),
+                'custom_image': normalize_path(outfit_doc.get('custom_image')) if outfit_doc.get(
+                    'custom_image') else None
+            }
+
+        return jsonify({
+            'success': True,
+            'outfits': outfit_map,
+            'year': year,
+            'month': month
+        })
+
+    except Exception as e:
+        print(f"Error getting calendar outfits: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/calendar/upcoming', methods=['GET'])
+@login_required
+def get_upcoming_outfits():
+    """Get upcoming outfits for dashboard preview"""
+    try:
+        user_id = session['user']['_id']
+        limit = int(request.args.get('limit', 5))
+
+        # Get current date
+        today = datetime.now()
+
+        # Find outfits from today onwards
+        upcoming_outfits = []
+
+        # Look through next 30 days
+        for i in range(30):
+            check_date = today + timedelta(days=i)
+
+            outfit = db.calendar.find_one({
+                "user_id": user_id,
+                "year": check_date.year,
+                "month": check_date.month,
+                "day": check_date.day
+            })
+
+            if outfit and len(upcoming_outfits) < limit:
+                # Get item names
+                item_names = []
+                if 'items' in outfit and isinstance(outfit['items'], list):
+                    for item_id in outfit['items'][:3]:  # Limit to first 3 items
+                        item_obj = db.wardrobe.find_one({'_id': ObjectId(item_id)})
+                        if item_obj:
+                            item_names.append(item_obj['label'])
+
+                upcoming_outfits.append({
+                    'date': check_date.strftime('%b %d'),
+                    'name': outfit.get('description', 'Outfit'),
+                    'items': item_names
+                })
+
+        return jsonify({
+            'success': True,
+            'upcoming': upcoming_outfits
+        })
+
+    except Exception as e:
+        print(f"Error getting upcoming outfits: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
 if __name__ == '__main__':
     initialize_avatar_collections()
     app.run(debug=True, use_reloader=False)
