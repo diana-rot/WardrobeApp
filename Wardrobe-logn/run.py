@@ -1,5 +1,10 @@
+
 from __future__ import division, print_function
+
 import os
+import time
+import random
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import gc
 import uuid
 
@@ -11,10 +16,10 @@ from werkzeug.utils import secure_filename, send_from_directory
 import pymongo
 import requests
 from gridfs import GridFS
-import tensorflow
-from tensorflow.keras.models import load_model
-from tensorflow.keras.utils import load_img
-from keras.preprocessing import image
+# import tensorflow
+# from tensorflow.keras.models import load_model
+# from tensorflow.keras.utils import load_img
+# from keras.preprocessing import image
 import calendar
 import base64
 from bson import ObjectId
@@ -34,210 +39,210 @@ from flask import send_file
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 
-
-def extract_material_properties(img_path):
-    """
-    Extract material properties from an image including:
-    - Dominant colors
-    - Texture patterns
-    - Material type estimation based on texture analysis
-    - Pattern information
-
-    Returns a dictionary of material properties
-    """
-    # Load image
-    img = cv2.imread(img_path)
-    img = imutils.resize(img, height=300)  # Resize for consistent processing
-
-    # 1. Color analysis (using your existing KMeans approach)
-    flat_img = np.reshape(img, (-1, 3))
-    kmeans = KMeans(n_clusters=5, random_state=0)
-    kmeans.fit(flat_img)
-
-    dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
-    percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
-    p_and_c = sorted(zip(percentages, dominant_colors), reverse=True)
-
-    # 2. Texture analysis
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # GLCM (Gray Level Co-occurrence Matrix) texture features
-    # Convert to 8-bit grayscale for texture analysis
-    gray_8bit = (gray / gray.max() * 255).astype(np.uint8)
-
-    # Calculate texture features (variance as a simple measure)
-    texture_variance = np.var(gray_8bit)
-
-    # Calculate edge density (a proxy for texture complexity)
-    edges = cv2.Canny(gray_8bit, 100, 200)
-    edge_density = np.sum(edges > 0) / (edges.shape[0] * edges.shape[1])
-
-    # 3. Material type estimation based on texture properties
-    material_type = "unknown"
-
-    # Simple heuristic-based material classification
-    if edge_density < 0.05 and texture_variance < 50:
-        material_type = "smooth"  # Might be leather, silk, etc.
-    elif edge_density > 0.2:
-        material_type = "textured"  # Might be denim, wool, etc.
-    elif texture_variance > 200:
-        material_type = "patterned"  # Has distinct patterns
-    else:
-        material_type = "medium"  # Medium texture, like cotton
-
-    # 4. Add basic pattern information
-    # This is a placeholder - in the full implementation you'd use the detect_pattern_type function
-    # For now we'll create a basic pattern_info structure with default values
-    pattern_info = {
-        "pattern_type": "regular" if texture_variance > 150 else "irregular",
-        "pattern_scale": "medium",
-        "pattern_strength": min(1.0, edge_density * 2),  # Simple scaling to 0-1 range
-        "has_pattern": edge_density > 0.1 or texture_variance > 100,
-        "pattern_regularity": 0.5,
-        "is_directional": False,
-        "peak_count": 0
-    }
-
-    # Return the extracted material properties
-    return {
-        "dominant_colors": [color.tolist() for _, color in p_and_c[:3]],
-        "color_percentages": [float(pct) for pct, _ in p_and_c[:3]],
-        "texture_variance": float(texture_variance),
-        "edge_density": float(edge_density),
-        "estimated_material": material_type,
-        "primary_color_rgb": p_and_c[0][1].tolist(),
-        "pattern_info": pattern_info  # Add pattern_info to the returned dict
-    }
-
-
-def determine_material_type(texture_variance, edge_density, pattern_info):
-    """Determine material type based on texture and pattern analysis"""
-
-    # Check if it's a strong pattern first
-    if pattern_info["has_pattern"] and pattern_info["pattern_strength"] > 0.4:
-        if pattern_info["pattern_type"] in ["check", "stripe"]:
-            return "woven_patterned"
-        elif pattern_info["pattern_type"] == "irregular":
-            return "printed"
-        else:
-            return "patterned"
-
-    # If no strong pattern, determine by texture
-    if edge_density < 0.05 and texture_variance < 50:
-        return "smooth"  # Might be leather, silk, etc.
-    elif edge_density > 0.2:
-        if texture_variance > 150:
-            return "rough_textured"  # Might be tweed, heavy wool
-        else:
-            return "textured"  # Might be denim, canvas
-    elif texture_variance > 200:
-        return "detailed"  # Has distinct texture details
-    else:
-        return "medium"  # Medium texture, like cotton
-
-
-def detect_pattern_type(img_path):
-    """Detect and classify pattern types in the image"""
-    img = cv2.imread(img_path)
-
-    # Convert to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # Resize for faster processing if needed
-    resized = cv2.resize(gray, (256, 256))
-
-    # Apply FFT to detect regular patterns
-    f = fftpack.fft2(resized)
-    fshift = fftpack.fftshift(f)
-    magnitude_spectrum = 20 * np.log(np.abs(fshift) + 1)
-
-    # Threshold the magnitude spectrum to find strong frequencies
-    threshold = np.mean(magnitude_spectrum) + 3 * np.std(magnitude_spectrum)
-    peaks = magnitude_spectrum > threshold
-
-    # Count peaks in the frequency domain (excluding the DC component)
-    center_y, center_x = resized.shape[0] // 2, resized.shape[1] // 2
-    mask = np.ones_like(peaks)
-    mask[center_y - 5:center_y + 5, center_x - 5:center_x + 5] = 0  # Exclude center
-    peak_count = np.sum(peaks & mask)
-
-    # Analyze peak distribution
-    peak_locs = np.where(peaks & mask)
-    peak_distances = np.sqrt((peak_locs[0] - center_y) ** 2 + (peak_locs[1] - center_x) ** 2)
-    pattern_regularity = 0.0
-
-    if len(peak_distances) > 0:
-        # Calculate coefficient of variation (lower value = more regular)
-        if np.mean(peak_distances) > 0:
-            pattern_regularity = 1.0 - min(1.0, np.std(peak_distances) / np.mean(peak_distances))
-
-    # Gradient analysis for pattern direction
-    sobelx = cv2.Sobel(resized, cv2.CV_64F, 1, 0, ksize=3)
-    sobely = cv2.Sobel(resized, cv2.CV_64F, 0, 1, ksize=3)
-
-    # Calculate gradient magnitudes and directions
-    gradient_magnitude = np.sqrt(sobelx ** 2 + sobely ** 2)
-    gradient_direction = np.arctan2(sobely, sobelx) * 180 / np.pi
-
-    # Analyze gradient directions
-    hist, _ = np.histogram(gradient_direction, bins=8, range=(-180, 180))
-    hist_normalized = hist / np.sum(hist)
-    max_dir_idx = np.argmax(hist_normalized)
-
-    # Determine if there are strong directional patterns
-    has_directional_pattern = np.max(hist_normalized) > 0.25
-
-    # Determine pattern type
-    if peak_count > 15 and pattern_regularity > 0.7:
-        # Check for grid patterns (peaks in both horizontal and vertical)
-        horizontal_peaks = np.sum(peaks[center_y, :] & mask[center_y, :])
-        vertical_peaks = np.sum(peaks[:, center_x] & mask[:, center_x])
-
-        if horizontal_peaks > 3 and vertical_peaks > 3:
-            pattern_type = "check"
-        elif has_directional_pattern:
-            if max_dir_idx in [0, 4]:  # Horizontal (0° or 180°)
-                pattern_type = "horizontal_stripe"
-            elif max_dir_idx in [2, 6]:  # Vertical (90° or 270°)
-                pattern_type = "vertical_stripe"
-            else:
-                pattern_type = "diagonal_stripe"
-        else:
-            pattern_type = "regular"
-    elif peak_count > 5:
-        pattern_type = "semi_regular"
-    else:
-        # For low peak counts, further analyze texture
-        if np.max(hist_normalized) > 0.2:
-            pattern_type = "directional"
-        else:
-            pattern_type = "irregular"
-
-    # Determine pattern scale (fine, medium, large)
-    if len(peak_distances) > 0:
-        avg_distance = np.mean(peak_distances)
-        if avg_distance < 20:
-            pattern_scale = "fine"
-        elif avg_distance < 50:
-            pattern_scale = "medium"
-        else:
-            pattern_scale = "large"
-    else:
-        # Default if no peaks detected
-        pattern_scale = "medium"
-
-    # Calculate pattern strength (how dominant the pattern is)
-    pattern_strength = min(1.0, peak_count / 50)
-
-    return {
-        "pattern_type": pattern_type,
-        "pattern_scale": pattern_scale,
-        "pattern_strength": float(pattern_strength),
-        "has_pattern": peak_count > 3,
-        "pattern_regularity": float(pattern_regularity),
-        "is_directional": has_directional_pattern,
-        "peak_count": int(peak_count)
-    }
+# material properties comented
+# def extract_material_properties(img_path):
+#     """
+#     Extract material properties from an image including:
+#     - Dominant colors
+#     - Texture patterns
+#     - Material type estimation based on texture analysis
+#     - Pattern information
+#
+#     Returns a dictionary of material properties
+#     """
+#     # Load image
+#     img = cv2.imread(img_path)
+#     img = imutils.resize(img, height=300)  # Resize for consistent processing
+#
+#     # 1. Color analysis (using your existing KMeans approach)
+#     flat_img = np.reshape(img, (-1, 3))
+#     kmeans = KMeans(n_clusters=5, random_state=0)
+#     kmeans.fit(flat_img)
+#
+#     dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
+#     percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
+#     p_and_c = sorted(zip(percentages, dominant_colors), reverse=True)
+#
+#     # 2. Texture analysis
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#
+#     # GLCM (Gray Level Co-occurrence Matrix) texture features
+#     # Convert to 8-bit grayscale for texture analysis
+#     gray_8bit = (gray / gray.max() * 255).astype(np.uint8)
+#
+#     # Calculate texture features (variance as a simple measure)
+#     texture_variance = np.var(gray_8bit)
+#
+#     # Calculate edge density (a proxy for texture complexity)
+#     edges = cv2.Canny(gray_8bit, 100, 200)
+#     edge_density = np.sum(edges > 0) / (edges.shape[0] * edges.shape[1])
+#
+#     # 3. Material type estimation based on texture properties
+#     material_type = "unknown"
+#
+#     # Simple heuristic-based material classification
+#     if edge_density < 0.05 and texture_variance < 50:
+#         material_type = "smooth"  # Might be leather, silk, etc.
+#     elif edge_density > 0.2:
+#         material_type = "textured"  # Might be denim, wool, etc.
+#     elif texture_variance > 200:
+#         material_type = "patterned"  # Has distinct patterns
+#     else:
+#         material_type = "medium"  # Medium texture, like cotton
+#
+#     # 4. Add basic pattern information
+#     # This is a placeholder - in the full implementation you'd use the detect_pattern_type function
+#     # For now we'll create a basic pattern_info structure with default values
+#     pattern_info = {
+#         "pattern_type": "regular" if texture_variance > 150 else "irregular",
+#         "pattern_scale": "medium",
+#         "pattern_strength": min(1.0, edge_density * 2),  # Simple scaling to 0-1 range
+#         "has_pattern": edge_density > 0.1 or texture_variance > 100,
+#         "pattern_regularity": 0.5,
+#         "is_directional": False,
+#         "peak_count": 0
+#     }
+#
+#     # Return the extracted material properties
+#     return {
+#         "dominant_colors": [color.tolist() for _, color in p_and_c[:3]],
+#         "color_percentages": [float(pct) for pct, _ in p_and_c[:3]],
+#         "texture_variance": float(texture_variance),
+#         "edge_density": float(edge_density),
+#         "estimated_material": material_type,
+#         "primary_color_rgb": p_and_c[0][1].tolist(),
+#         "pattern_info": pattern_info  # Add pattern_info to the returned dict
+#     }
+#
+#
+# def determine_material_type(texture_variance, edge_density, pattern_info):
+#     """Determine material type based on texture and pattern analysis"""
+#
+#     # Check if it's a strong pattern first
+#     if pattern_info["has_pattern"] and pattern_info["pattern_strength"] > 0.4:
+#         if pattern_info["pattern_type"] in ["check", "stripe"]:
+#             return "woven_patterned"
+#         elif pattern_info["pattern_type"] == "irregular":
+#             return "printed"
+#         else:
+#             return "patterned"
+#
+#     # If no strong pattern, determine by texture
+#     if edge_density < 0.05 and texture_variance < 50:
+#         return "smooth"  # Might be leather, silk, etc.
+#     elif edge_density > 0.2:
+#         if texture_variance > 150:
+#             return "rough_textured"  # Might be tweed, heavy wool
+#         else:
+#             return "textured"  # Might be denim, canvas
+#     elif texture_variance > 200:
+#         return "detailed"  # Has distinct texture details
+#     else:
+#         return "medium"  # Medium texture, like cotton
+#
+#
+# def detect_pattern_type(img_path):
+#     """Detect and classify pattern types in the image"""
+#     img = cv2.imread(img_path)
+#
+#     # Convert to grayscale
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#
+#     # Resize for faster processing if needed
+#     resized = cv2.resize(gray, (256, 256))
+#
+#     # Apply FFT to detect regular patterns
+#     f = fftpack.fft2(resized)
+#     fshift = fftpack.fftshift(f)
+#     magnitude_spectrum = 20 * np.log(np.abs(fshift) + 1)
+#
+#     # Threshold the magnitude spectrum to find strong frequencies
+#     threshold = np.mean(magnitude_spectrum) + 3 * np.std(magnitude_spectrum)
+#     peaks = magnitude_spectrum > threshold
+#
+#     # Count peaks in the frequency domain (excluding the DC component)
+#     center_y, center_x = resized.shape[0] // 2, resized.shape[1] // 2
+#     mask = np.ones_like(peaks)
+#     mask[center_y - 5:center_y + 5, center_x - 5:center_x + 5] = 0  # Exclude center
+#     peak_count = np.sum(peaks & mask)
+#
+#     # Analyze peak distribution
+#     peak_locs = np.where(peaks & mask)
+#     peak_distances = np.sqrt((peak_locs[0] - center_y) ** 2 + (peak_locs[1] - center_x) ** 2)
+#     pattern_regularity = 0.0
+#
+#     if len(peak_distances) > 0:
+#         # Calculate coefficient of variation (lower value = more regular)
+#         if np.mean(peak_distances) > 0:
+#             pattern_regularity = 1.0 - min(1.0, np.std(peak_distances) / np.mean(peak_distances))
+#
+#     # Gradient analysis for pattern direction
+#     sobelx = cv2.Sobel(resized, cv2.CV_64F, 1, 0, ksize=3)
+#     sobely = cv2.Sobel(resized, cv2.CV_64F, 0, 1, ksize=3)
+#
+#     # Calculate gradient magnitudes and directions
+#     gradient_magnitude = np.sqrt(sobelx ** 2 + sobely ** 2)
+#     gradient_direction = np.arctan2(sobely, sobelx) * 180 / np.pi
+#
+#     # Analyze gradient directions
+#     hist, _ = np.histogram(gradient_direction, bins=8, range=(-180, 180))
+#     hist_normalized = hist / np.sum(hist)
+#     max_dir_idx = np.argmax(hist_normalized)
+#
+#     # Determine if there are strong directional patterns
+#     has_directional_pattern = np.max(hist_normalized) > 0.25
+#
+#     # Determine pattern type
+#     if peak_count > 15 and pattern_regularity > 0.7:
+#         # Check for grid patterns (peaks in both horizontal and vertical)
+#         horizontal_peaks = np.sum(peaks[center_y, :] & mask[center_y, :])
+#         vertical_peaks = np.sum(peaks[:, center_x] & mask[:, center_x])
+#
+#         if horizontal_peaks > 3 and vertical_peaks > 3:
+#             pattern_type = "check"
+#         elif has_directional_pattern:
+#             if max_dir_idx in [0, 4]:  # Horizontal (0° or 180°)
+#                 pattern_type = "horizontal_stripe"
+#             elif max_dir_idx in [2, 6]:  # Vertical (90° or 270°)
+#                 pattern_type = "vertical_stripe"
+#             else:
+#                 pattern_type = "diagonal_stripe"
+#         else:
+#             pattern_type = "regular"
+#     elif peak_count > 5:
+#         pattern_type = "semi_regular"
+#     else:
+#         # For low peak counts, further analyze texture
+#         if np.max(hist_normalized) > 0.2:
+#             pattern_type = "directional"
+#         else:
+#             pattern_type = "irregular"
+#
+#     # Determine pattern scale (fine, medium, large)
+#     if len(peak_distances) > 0:
+#         avg_distance = np.mean(peak_distances)
+#         if avg_distance < 20:
+#             pattern_scale = "fine"
+#         elif avg_distance < 50:
+#             pattern_scale = "medium"
+#         else:
+#             pattern_scale = "large"
+#     else:
+#         # Default if no peaks detected
+#         pattern_scale = "medium"
+#
+#     # Calculate pattern strength (how dominant the pattern is)
+#     pattern_strength = min(1.0, peak_count / 50)
+#
+#     return {
+#         "pattern_type": pattern_type,
+#         "pattern_scale": pattern_scale,
+#         "pattern_strength": float(pattern_strength),
+#         "has_pattern": peak_count > 3,
+#         "pattern_regularity": float(pattern_regularity),
+#         "is_directional": has_directional_pattern,
+#         "peak_count": int(peak_count)
+#     }
 
 
 def generate_normal_map(img_path):
@@ -292,33 +297,27 @@ import cv2
 from sklearn.cluster import KMeans
 import imutils
 
-MODEL_PATH = 'my_second_model.h5'
-# MODEL_PATH = 'my_model_june.h5'
-# Load your trained model
-model = load_model(MODEL_PATH)
-print('Model loaded. Check http://127.0.0.1:5000/')
+from flaskapp.ml_models import model_manager
 
-
-def model_predict(img_path, model):
+print('🚀 Model loading optimized - models load on demand to save memory')
+def model_predict(img_path, model=None):
+    """Optimized model predict with lazy loading"""
     try:
-        img = image.load_img(img_path, target_size=(28, 28))
-        img_array = np.asarray(img)
-        x = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
-        result = int(img_array[0][0][0])
+        # Use the model manager instead of loading at startup
+        result = model_manager.predict_clothing(img_path)
 
-        img = cv2.bitwise_not(x) if result > 128 else x
-        img = img / 255
-        img = np.expand_dims(img, 0)
-
-        preds = model.predict(img)
-        if preds is None or len(preds) == 0:
-            raise ValueError("Model prediction returned None or empty")
+        # Convert to your expected numpy array format
+        import numpy as np
+        preds = np.array([result['all_predictions']])
 
         return preds
 
     except Exception as e:
         print(f"Error in model_predict: {str(e)}")
         raise
+
+
+# Keep this import as is:
 
 from flaskapp.user.texture_mapping import process_clothing_texture
 
@@ -391,6 +390,10 @@ def api_process_clothing_texture():
         app.logger.error(f"Error processing texture: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
+def predict_color(img_path):
+    """Wrapper for improved_predict_color for compatibility"""
+    return improved_predict_color(img_path)
 
 def improved_predict_color(img_path):
     """
@@ -709,7 +712,7 @@ def upload():
 
             # Make predictions with validation
             try:
-                preds = model_predict(file_path, model)
+                preds = model_predict(file_path)  # NEW - no model parameter
                 if not isinstance(preds, np.ndarray) or preds.size == 0:
                     raise ValueError("Invalid prediction output")
 
@@ -1677,7 +1680,7 @@ def add_wardrobe():
 
             try:
                 # Make prediction
-                preds = model_predict(file_path, model)
+                preds = model_predict(file_path)  # NEW - no model parameter
                 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
