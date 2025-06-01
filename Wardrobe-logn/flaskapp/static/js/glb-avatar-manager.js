@@ -71,12 +71,6 @@ class CustomizableGLBAvatarManager {
                     glbPath: '/static/models/makehuman/hair/Hair_08/hair_08.glb',
                     category: 'long'
                 },
-                'female_medium': {
-                    name: 'Medium Length',
-                    preview: '/static/models/makehuman/hair/previews/hair_female_medium.jpg',
-                    glbPath: '/static/models/makehuman/hair/hair_female_medium/hair_female_medium.glb',
-                    category: 'medium'
-                },
                 'hair1': {
                     name: 'Short Curly',
                     preview: '/static/models/makehuman/hair/previews/hair1.jpg',

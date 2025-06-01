@@ -4,24 +4,24 @@
 
 {% block extra_css %}
 <style>
-    /* Dashboard Grid Layout */
+    /* Dashboard Grid Layout - UPDATED FOR BIGGER CALENDAR */
     .dashboard-container {
         padding: 20px;
-        max-width: 1600px;
+        max-width: 1800px; /* Increased from 1600px */
         margin: 0 auto;
     }
 
     .dashboard-grid {
         display: grid;
-        grid-template-columns: 400px 600px 350px;
+        grid-template-columns: 380px 750px 350px; /* Increased calendar column from 600px to 750px */
         gap: 25px;
         margin-top: 20px;
     }
 
     /* Responsive grid for smaller screens */
-    @media (max-width: 1400px) {
+    @media (max-width: 1500px) { /* Adjusted breakpoint */
         .dashboard-grid {
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
         }
     }
 
@@ -121,35 +121,35 @@
         transform: translateY(0);
     }
 
-    /* Calendar Preview Styles */
+    /* Calendar Preview Styles - ENHANCED FOR BIGGER WIDGET */
     .calendar-preview {
         background: #f8f9fa;
         border-radius: 15px;
-        padding: 20px;
+        padding: 25px; /* Increased from 20px */
         margin-bottom: 20px;
     }
 
     .calendar-mini-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 10px;
+        gap: 12px; /* Increased from 10px */
         margin-top: 15px;
     }
 
     .calendar-day {
         aspect-ratio: 1;
-        border-radius: 8px;
+        border-radius: 10px; /* Increased from 8px */
         background: white;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        font-size: 13px;
+        font-size: 14px; /* Increased from 13px */
         position: relative;
         transition: all 0.2s ease;
         border: 1px solid #dee2e6;
-        padding: 6px;
-        min-height: 75px;
+        padding: 8px; /* Increased from 6px */
+        min-height: 85px; /* Increased from 75px */
     }
 
     .calendar-day.has-outfit {
@@ -171,22 +171,23 @@
 
     .calendar-day-number {
         font-weight: bold;
-        margin-bottom: 2px;
+        margin-bottom: 4px; /* Increased from 2px */
+        font-size: 15px; /* Added explicit size */
     }
 
     .calendar-outfit-preview {
         display: flex;
         flex-wrap: wrap;
-        gap: 2px;
+        gap: 3px; /* Increased from 2px */
         justify-content: center;
         width: 100%;
-        margin-top: 4px;
+        margin-top: 6px; /* Increased from 4px */
     }
 
     .calendar-outfit-item {
-        width: 18px;
-        height: 18px;
-        border-radius: 3px;
+        width: 22px; /* Increased from 18px */
+        height: 22px; /* Increased from 18px */
+        border-radius: 4px; /* Increased from 3px */
         background-size: cover;
         background-position: center;
         border: 1px solid rgba(255,255,255,0.7);
@@ -200,17 +201,56 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
 
+    /* Calendar Navigation - ENHANCED */
+    .calendar-navigation {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 20px; /* Increased spacing */
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .calendar-nav-btn {
+        background: linear-gradient(135deg, #C8A68D, #9C7D68);
+        border: none;
+        color: white;
+        border-radius: 8px;
+        width: 40px; /* Increased from default */
+        height: 40px; /* Increased from default */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .calendar-nav-btn:hover {
+        background: linear-gradient(135deg, #9C7D68, #876955);
+        transform: scale(1.1);
+        color: white;
+    }
+
+    /* Month Title - ENHANCED */
+    .calendar-month-title {
+        font-size: 20px; /* Increased from default */
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+        text-align: center;
+        flex-grow: 1;
+    }
+
     .upcoming-outfits {
-        margin-top: 15px;
+        margin-top: 20px; /* Increased from 15px */
     }
 
     .outfit-item-mini {
         display: flex;
         align-items: center;
-        padding: 8px;
+        padding: 10px; /* Increased from 8px */
         background: white;
-        border-radius: 8px;
-        margin-bottom: 8px;
+        border-radius: 10px; /* Increased from 8px */
+        margin-bottom: 10px; /* Increased from 8px */
         border: 1px solid #dee2e6;
         transition: all 0.2s ease;
     }
@@ -223,25 +263,25 @@
     .outfit-date-mini {
         background: #C8A68D;
         color: white;
-        border-radius: 6px;
-        padding: 4px 8px;
-        font-size: 11px;
+        border-radius: 8px; /* Increased from 6px */
+        padding: 6px 10px; /* Increased from 4px 8px */
+        font-size: 12px; /* Increased from 11px */
         font-weight: 600;
-        margin-right: 10px;
-        min-width: 40px;
+        margin-right: 12px; /* Increased from 10px */
+        min-width: 45px; /* Increased from 40px */
         text-align: center;
     }
 
     .outfit-preview-mini {
         display: flex;
-        gap: 4px;
-        margin-right: 10px;
+        gap: 5px; /* Increased from 4px */
+        margin-right: 12px; /* Increased from 10px */
     }
 
     .outfit-preview-mini img {
-        width: 25px;
-        height: 25px;
-        border-radius: 4px;
+        width: 28px; /* Increased from 25px */
+        height: 28px; /* Increased from 25px */
+        border-radius: 5px; /* Increased from 4px */
         object-fit: cover;
         border: 1px solid #dee2e6;
     }
@@ -359,8 +399,23 @@
         100% { background-position: -200% 0; }
     }
 
-    /* Responsive Design */
-    @media (max-width: 1400px) {
+    /* Responsive Design - UPDATED FOR BIGGER CALENDAR */
+    @media (max-width: 1500px) {
+        .dashboard-grid {
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        }
+
+        .calendar-preview {
+            padding: 20px;
+        }
+
+        .calendar-day {
+            min-height: 75px;
+            font-size: 13px;
+        }
+    }
+
+    @media (max-width: 1200px) {
         .dashboard-grid {
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
         }
@@ -381,17 +436,22 @@
         }
 
         .calendar-mini-grid {
-            gap: 6px;
+            gap: 8px; /* Reduced for mobile */
         }
 
         .calendar-day {
-            font-size: 11px;
-            min-height: 50px;
+            font-size: 12px; /* Reduced for mobile */
+            min-height: 60px; /* Reduced for mobile */
+            padding: 6px;
         }
 
         .calendar-outfit-item {
-            width: 16px;
-            height: 16px;
+            width: 18px; /* Reduced for mobile */
+            height: 18px; /* Reduced for mobile */
+        }
+
+        .calendar-day-number {
+            font-size: 13px;
         }
     }
 
@@ -499,11 +559,11 @@
                 <!-- Mini Calendar -->
                 <div class="calendar-preview">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="navigateCalendar(-1)" title="Previous month">
+                        <button class="btn btn-sm btn-outline-secondary calendar-nav-btn" onclick="navigateCalendar(-1)" title="Previous month">
                             <i class="bi bi-chevron-left"></i>
                         </button>
-                        <h6 class="mb-0" id="mini-calendar-title">June 2025</h6>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="navigateCalendar(1)" title="Next month">
+                        <h6 class="mb-0 calendar-month-title" id="mini-calendar-title">June 2025</h6>
+                        <button class="btn btn-sm btn-outline-secondary calendar-nav-btn" onclick="navigateCalendar(1)" title="Next month">
                             <i class="bi bi-chevron-right"></i>
                         </button>
                     </div>
