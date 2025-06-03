@@ -10,17 +10,35 @@
         font-weight: bold;
     }
 
-    .carousel-item img {
-        max-height: 500px;
-        object-fit: contain;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    .outfit-container {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .carousel-caption {
-        background: rgba(0, 0, 0, 0.6);
+    .outfit-item {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .outfit-item img {
+        max-height: 200px;
+        width: auto;
+        object-fit: contain;
         border-radius: 10px;
-        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .outfit-item h6 {
+        margin-top: 10px;
+        color: var(--text-color);
+        font-weight: 500;
+    }
+
+    .carousel-item {
+        padding: 20px;
     }
 
     .carousel-control-prev, .carousel-control-next {
@@ -39,6 +57,28 @@
     .carousel-control-next:hover .carousel-control-next-icon {
         background-color: rgba(0, 0, 0, 1);
     }
+
+    .no-outfits {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .no-outfits i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        color: #dee2e6;
+    }
+
+    .debug-info {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 20px;
+        font-family: monospace;
+        font-size: 0.8em;
+    }
 </style>
 {% endblock %}
 
@@ -46,40 +86,100 @@
 <div class="container mt-4">
     <h1 class="wardrobe-title">Your Favorite Outfits</h1>
 
-    <div class="col-md-8 mx-auto">
-        {% set outfit_list = wardrobes | list %}
-        {% if outfit_list|length > 0 %}
+    <!-- Debug Information (remove in production) -->
+    <div class="debug-info">
+        <strong>Debug Info:</strong><br>
+        Total outfits found: {{ wardrobes|length }}<br>
+        {% for outfit in wardrobes %}
+            Outfit {{ loop.index }}: {{ outfit.outfit|length if outfit.outfit else 0 }} items<br>
+        {% endfor %}
+    </div>
+
+    <div class="col-md-10 mx-auto">
+        {% if wardrobes and wardrobes|length > 0 %}
             <div id="outfitCarousel" class="carousel slide" data-bs-ride="carousel">
+                <!-- Carousel Indicators -->
                 <div class="carousel-indicators">
-                    {% for doc in outfit_list %}
-                        <button type="button" data-bs-target="#outfitCarousel" data-bs-slide-to="{{ loop.index0 }}" 
+                    {% for outfit in wardrobes %}
+                        <button type="button" data-bs-target="#outfitCarousel" data-bs-slide-to="{{ loop.index0 }}"
                                 {% if loop.first %}class="active"{% endif %}></button>
                     {% endfor %}
                 </div>
 
+                <!-- Carousel Items -->
                 <div class="carousel-inner">
-                    {% for doc in outfit_list %}
+                    {% for outfit in wardrobes %}
                         <div class="carousel-item {% if loop.first %}active{% endif %}">
-                            {% for item in doc['outfit'] %}
-                                <img src="{{ item.file_path }}" class="d-block w-100 img-fluid" alt="{{ item.label }}">
-                                <div class="carousel-caption d-none d-md-block">
-                                    <h5>{{ item.label }}</h5>
-                                    <p>{{ item.attribute }}</p>
+                            <div class="outfit-container">
+                                <h4 class="text-center mb-4">Outfit {{ loop.index }}</h4>
+
+                                {% if outfit.outfit and outfit.outfit|length > 0 %}
+                                    <div class="row">
+                                        {% for item in outfit.outfit %}
+                                            <div class="col-md-{{ (12 / outfit.outfit|length)|round|int if outfit.outfit|length <= 4 else 3 }}">
+                                                <div class="outfit-item">
+                                                    {% if item.file_path %}
+                                                        <img src="{{ item.file_path }}"
+                                                             class="img-fluid"
+                                                             alt="{{ item.label }}"
+                                                             onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'alert alert-warning\'>Image not available</div>'">
+                                                    {% else %}
+                                                        <div class="alert alert-warning">No image available</div>
+                                                    {% endif %}
+
+                                                    <h6>{{ item.label }}</h6>
+
+                                                    {% if item.color %}
+                                                        <small class="text-muted">{{ item.color }}</small>
+                                                    {% endif %}
+
+                                                    {% if item.nota %}
+                                                        <div class="rating mt-2">
+                                                            {% for _ in range(item.nota|int) %}⭐{% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning text-center">
+                                        This outfit has no items to display.
+                                    </div>
+                                {% endif %}
+
+                                <!-- Outfit Info -->
+                                <div class="text-center mt-3">
+                                    <small class="text-muted">
+                                        Created: {{ outfit.created_at.strftime('%Y-%m-%d') if outfit.created_at else 'Unknown' }}
+                                    </small>
                                 </div>
-                            {% endfor %}
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
 
-                <button class="carousel-control-prev" type="button" data-bs-target="#outfitCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#outfitCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                </button>
+                <!-- Carousel Controls -->
+                {% if wardrobes|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#outfitCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#outfitCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                {% endif %}
             </div>
         {% else %}
-            <p class="text-center">No favorite outfits yet.</p>
+            <div class="no-outfits">
+                <i class="fas fa-tshirt"></i>
+                <h3>No Favorite Outfits Yet</h3>
+                <p>Generate some outfits and mark them as favorites to see them here!</p>
+                <a href="{{ url_for('get_outfit') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Generate New Outfit
+                </a>
+            </div>
         {% endif %}
     </div>
 </div>

@@ -1388,7 +1388,6 @@ def normalize_path(file_path):
     return normalized
 
 
-
 @app.route('/recommendations', methods=['GET', 'POST'])
 @login_required
 def get_outfit():
@@ -1409,7 +1408,7 @@ def get_outfit():
             if 'outfit' in outfit:
                 for piece in outfit['outfit']:
                     piece['file_path'] = normalize_path(piece.get('file_path', ''))
-                    print('olala' +  piece['file_path'])
+                    print('olala' + piece['file_path'])
             normalized_clothes.append(outfit)
 
         cityByDefault = 'Bucharest'
@@ -1484,63 +1483,102 @@ def get_outfit():
                 outfit_doc = db.outfits.find_one(filter_lookup, sort=[('_id', -1)])
 
                 if outfit_doc:
-                    # Update outfit pieces ratings
-                    updated_pieces = []
-                    for piece in outfit_doc['outfit']:
+                    print(f"Debug: Found outfit with ID: {outfit_doc['_id']}")
+                    print(f"Debug: Outfit has {len(outfit_doc.get('outfit', []))} pieces")
+
+                    # Get the current outfit pieces properly
+                    current_outfit_pieces = outfit_doc.get('outfit', [])
+
+                    if not current_outfit_pieces:
+                        print("ERROR: No outfit pieces found to save!")
+                        error_message = "No outfit pieces found to save. Please try generating a new outfit."
+                    else:
                         try:
-                            current_piece = db.wardrobe.find_one({'_id': piece['_id']})
-                            if current_piece:
-                                piece_data = {
-                                    '_id': str(current_piece['_id']),
-                                    'label': current_piece.get('label', ''),
-                                    'file_path': normalize_path(current_piece.get('file_path', '')),
-                                    'color': current_piece.get('color', ''),
-                                    'nota': current_piece.get('nota', DEFAULT_RATING)
-                                }
+                            # Update piece ratings in wardrobe
+                            updated_pieces = []
+                            for piece in current_outfit_pieces:
+                                try:
+                                    # Convert string ID back to ObjectId for database lookup
+                                    piece_id = ObjectId(piece['_id']) if isinstance(piece['_id'], str) else piece['_id']
+                                    current_piece = db.wardrobe.find_one({'_id': piece_id})
 
-                                # Update the rating
-                                db.wardrobe.update_one(
-                                    {'_id': current_piece['_id']},
-                                    {'$set': {'nota': piece_data['nota'] + 1}}
-                                )
-                                updated_pieces.append(piece_data)
+                                    if current_piece:
+                                        # Update the rating in wardrobe
+                                        new_rating = current_piece.get('nota', DEFAULT_RATING) + 1
+                                        db.wardrobe.update_one(
+                                            {'_id': piece_id},
+                                            {'$set': {'nota': new_rating}}
+                                        )
+
+                                        # Keep piece data for outfit
+                                        piece_data = {
+                                            '_id': str(piece_id),
+                                            'label': current_piece.get('label', ''),
+                                            'file_path': normalize_path(current_piece.get('file_path', '')),
+                                            'color': current_piece.get('color', ''),
+                                            'nota': new_rating
+                                        }
+                                        updated_pieces.append(piece_data)
+                                        print(f"Debug: Updated piece {piece_data['label']} rating to {new_rating}")
+
+                                except Exception as e:
+                                    print(f"Error updating piece rating: {str(e)}")
+                                    # Keep original piece data if update fails
+                                    updated_pieces.append(piece)
+
+                            # Update outfit as favorite
+                            current_outfit_rating = outfit_doc.get('nota', DEFAULT_RATING)
+                            update_result = db.outfits.update_one(
+                                {'_id': outfit_doc['_id']},
+                                {
+                                    '$set': {
+                                        'nota': current_outfit_rating + 1,
+                                        'isFavorite': 'yes',
+                                        'outfit': updated_pieces,
+                                        'updated_at': datetime.now()
+                                    }
+                                }
+                            )
+
+                            print(f"Debug: Outfit update result - modified: {update_result.modified_count}")
+
+                            if update_result.modified_count > 0:
+                                success_message = "Outfit has been saved to your favorites!"
+                                print("Debug: Outfit successfully saved as favorite")
+                            else:
+                                error_message = "Failed to save outfit. Please try again."
+                                print("Debug: Failed to update outfit")
+
                         except Exception as e:
-                            print(f"Error updating piece rating: {str(e)}")
+                            print(f"Error updating outfit: {str(e)}")
+                            import traceback
+                            traceback.print_exc()
+                            error_message = "Error saving outfit. Please try again."
+                else:
+                    print(f"Debug: No outfit found with outfitNo: {option}")
+                    error_message = "Outfit not found. Please try again."
 
-                    try:
-                        # Update outfit rating and pieces
-                        current_outfit_rating = outfit_doc.get('nota', DEFAULT_RATING)
-                        db.outfits.update_one(
-                            {'_id': outfit_doc['_id']},
-                            {
-                                '$set': {
-                                    'nota': current_outfit_rating + 1,
-                                    'isFavorite': 'yes',
-                                    'outfit': updated_pieces
-                                }
-                            }
-                        )
-                        success_message = "Outfit has been saved to your favorites!"
-                        show_outfits = False
-                        return render_template(
-                            'outfit_of_the_day.html',
-                            success_message=success_message,
-                            show_generator=show_generator,
-                            show_outfits=show_outfits,
-                            city1=city1,
-                            city2=city2,
-                            city3=city3,
-                            wardrobes=normalized_clothes
-                        )
-                    except Exception as e:
-                        print(f"Error updating outfit rating: {str(e)}")
-                        error_message = "Error saving outfit. Please try again."
+                # Return to generator after handling selection
+                show_outfits = False
+                return render_template(
+                    'outfit_of_the_day.html',
+                    success_message=success_message,
+                    error_message=error_message,
+                    show_generator=show_generator,
+                    show_outfits=show_outfits,
+                    city1=city1,
+                    city2=city2,
+                    city3=city3,
+                    wardrobes=normalized_clothes
+                )
 
             # Generate new outfits
             include_weather = request.form.get('weather') == 'yes'
             city = request.form.get('city')
             event = request.form.get('events')
             temperature = 20
+
+            print(f"Debug: Generating outfits - weather: {include_weather}, city: {city}, event: {event}")
 
             if include_weather and city:
                 selected_weather = next(
@@ -1557,14 +1595,19 @@ def get_outfit():
                 outfit_combination = result_outfit[index_of_outfit]
                 filters_outfits = outfit_combination.split('_')
 
+                print(f"Debug: Generating outfits with filters: {filters_outfits}")
+
                 # Generate three outfits based on classifier suggestion
                 for i in range(3):
                     outfit_pieces = []
+
                     for filter_name in filters_outfits:
                         clothes = list(db.wardrobe.find({
                             'userId': userId,
                             'label': filter_name
                         }).sort('nota', -1))
+
+                        print(f"Debug: Found {len(clothes)} items for {filter_name}")
 
                         if clothes:
                             # Get top rated pieces (top 5 or all if less than 5)
@@ -1574,42 +1617,65 @@ def get_outfit():
                             # Randomly select from top pieces
                             piece = random.choice(top_pieces)
                             piece_data = {
-                                '_id': str(piece['_id']),
+                                '_id': str(piece['_id']),  # Convert ObjectId to string
                                 'label': piece.get('label', ''),
                                 'file_path': normalize_path(piece.get('file_path', '')),
                                 'color': piece.get('color', ''),
                                 'nota': piece.get('nota', DEFAULT_RATING)
                             }
 
+                            # Update piece rating in wardrobe if it doesn't have one
                             if 'nota' not in piece:
                                 db.wardrobe.update_one(
                                     {'_id': piece['_id']},
                                     {'$set': {'nota': DEFAULT_RATING}}
                                 )
-                            outfit_pieces.append(piece_data)
 
+                            outfit_pieces.append(piece_data)
+                            print(f"Debug: Added piece: {piece_data['label']} (ID: {piece_data['_id']})")
+
+                    print(f"Debug: Outfit {i + 1} has {len(outfit_pieces)} pieces")
+
+                    # Only save outfit if it has pieces
                     if outfit_pieces:
                         outfit_doc = {
-                            'outfit': outfit_pieces,
+                            'outfit': outfit_pieces,  # This is the key field!
                             'userId': userId,
                             'nota': DEFAULT_RATING,
                             'outfitNo': f'piece{i + 1}',
                             'isFavorite': 'no',
                             'created_at': datetime.now()
                         }
-                        db.outfits.insert_one(outfit_doc)
 
+                        # Insert and verify
+                        insert_result = db.outfits.insert_one(outfit_doc)
+                        print(f"Debug: Inserted outfit {i + 1} with ID: {insert_result.inserted_id}")
+
+                        # Verify the insert worked
+                        verification = db.outfits.find_one({'_id': insert_result.inserted_id})
+                        if verification and verification.get('outfit'):
+                            print(f"Debug: Verification successful - outfit has {len(verification['outfit'])} pieces")
+                        else:
+                            print(f"Debug: Verification FAILED - outfit not saved properly")
+                            print(f"Debug: Verification data: {verification}")
+
+                        # Assign to template variables
                         if i == 0:
                             outfit1 = outfit_pieces
                         elif i == 1:
                             outfit2 = outfit_pieces
                         else:
                             outfit3 = outfit_pieces
+                    else:
+                        print(f"Debug: Outfit {i + 1} has no pieces - not saving")
 
                 show_outfits = True
+                print(f"Debug: Generated outfits - 1: {len(outfit1)}, 2: {len(outfit2)}, 3: {len(outfit3)} pieces")
 
             except Exception as e:
                 print(f"Error generating outfits: {e}")
+                import traceback
+                traceback.print_exc()
                 error_message = "Error generating outfits. Please try again."
 
         print("Debug: Rendering template")
@@ -1639,6 +1705,8 @@ def get_outfit():
 
     except Exception as e:
         print(f"Error in get_outfit: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return render_template(
             'outfit_of_the_day.html',
             error_message="An error occurred. Please try again.",
@@ -1866,12 +1934,39 @@ def view_wardrobe_all():
 @login_required
 def view_outfits_all():
     userId = session['user']['_id']
-    print(userId)
+    print(f"Debug: Loading outfits for user {userId}")
+
     filter = {'userId': userId, 'isFavorite': 'yes'}
-    users_clothes = db.outfits.find(filter)
-    return render_template('outfits_all.html', wardrobes=users_clothes)
+    users_clothes_cursor = db.outfits.find(filter)
+    users_clothes = list(users_clothes_cursor)  # Convert cursor to list
 
+    print(f"Debug: Found {len(users_clothes)} favorite outfits")
 
+    # Normalize file paths for each outfit
+    normalized_outfits = []
+    for outfit_doc in users_clothes:
+        print(f"Debug: Processing outfit {outfit_doc.get('_id')}")
+        if 'outfit' in outfit_doc and outfit_doc['outfit']:
+            normalized_outfit = outfit_doc.copy()
+            normalized_pieces = []
+
+            for piece in outfit_doc['outfit']:
+                piece_copy = piece.copy()
+                # Normalize the file path
+                if 'file_path' in piece_copy:
+                    piece_copy['file_path'] = normalize_path(piece_copy['file_path'])
+                    print(f"Debug: Normalized path: {piece_copy['file_path']}")
+                normalized_pieces.append(piece_copy)
+
+            normalized_outfit['outfit'] = normalized_pieces
+            normalized_outfits.append(normalized_outfit)
+            print(f"Debug: Outfit has {len(normalized_pieces)} pieces")
+        else:
+            print(f"Debug: Outfit {outfit_doc.get('_id')} has no items")
+
+    print(f"Debug: Sending {len(normalized_outfits)} normalized outfits to template")
+
+    return render_template('outfits_all.html', wardrobes=normalized_outfits)
 
 
 
