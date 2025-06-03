@@ -914,7 +914,6 @@ class MakeHumanAvatarManager {
                     if (child.material.name && child.material.name.includes('skin')) {
                         child.material.color.setHex(newColor);
                     } else if (!child.material.name) {
-                        // If no material name, assume it's skin
                         child.material.color.setHex(newColor);
                     }
                 }

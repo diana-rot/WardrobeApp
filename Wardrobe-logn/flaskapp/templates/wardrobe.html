@@ -1086,7 +1086,7 @@ class BulletproofOBJLoader {
 
 
 
-// FIXED: Enhanced CleanWhiteClothingViewer class with better method validation
+// FIXED: Enhanced CleanWhiteClothingViewer class with CORRECT ROTATION FROM AVATAR APP
 class CleanWhiteClothingViewer {
     constructor(container) {
         this.container = container;
@@ -1219,6 +1219,7 @@ class CleanWhiteClothingViewer {
         }
     }
 
+    // FIXED: Apply the EXACT SAME rotation that works in your avatar app!
     processColoredClothingModel(object) {
         // Remove previous model
         if (this.model) {
@@ -1255,10 +1256,21 @@ class CleanWhiteClothingViewer {
             }
         });
 
+        // APPLY THE SAME ROTATION THAT WORKS IN YOUR AVATAR APP
+        console.log('🔄 Applying WORKING rotation from avatar app...');
+
+        // Reset rotation first
+        this.model.rotation.set(0, 0, 0);
+
+        // Apply the EXACT same rotation that works in your avatar app
+        this.model.rotation.set(-Math.PI / 2, 0, Math.PI / 2); // X=-90°, Y=0°, Z=90°
+
+        console.log(`✅ Applied working rotation: X=${(this.model.rotation.x * 180 / Math.PI).toFixed(0)}°, Y=${(this.model.rotation.y * 180 / Math.PI).toFixed(0)}°, Z=${(this.model.rotation.z * 180 / Math.PI).toFixed(0)}°`);
+
         this.scene.add(this.model);
         this.fitCameraToClothing();
 
-        console.log(`🎯 Colored clothing model processed (type: ${this.clothingType})`);
+        console.log(`🎯 Colored clothing model processed with WORKING rotation (type: ${this.clothingType})`);
     }
 
     detectClothingType() {
@@ -2601,12 +2613,12 @@ window.loadCleanWhiteClothing3D = function(path) {
     view3DModel();
 };
 
-console.log('🎉 ENHANCED WARDROBE 3D VIEWER WITH CLEAN WHITE BACKGROUND & COLOR SUPPORT LOADED!');
+console.log('🎉 ENHANCED WARDROBE 3D VIEWER WITH CORRECT AVATAR APP ROTATION LOADED!');
 console.log('✨ Features:');
 console.log('   🎨 Full color support from OBJ vertex colors');
 console.log('   🤍 Clean white professional background');
 console.log('   👕 Clothing-optimized camera positioning');
-console.log('   🔄 Clothing-specific view presets (Front, Back, Side, Detail)');
+console.log('   🔄 FIXED: Using EXACT same rotation as avatar app (-90°, 0°, 90°)');
 console.log('   💡 Studio-quality lighting for fashion display');
 console.log('');
 console.log('🧪 Test commands:');
@@ -2614,7 +2626,8 @@ console.log('   window.testCleanWhiteViewer() - Load colored test cube with whit
 console.log('   window.testWithActualColoredModel() - Load your actual colored model');
 console.log('   window.debugOBJColors("path") - Analyze OBJ file for color data');
 console.log('   window.loadCleanWhiteClothing3D("path") - Load specific model path');
-console.log('✅ Clean white clothing viewer with full color support ready!');
+console.log('✅ Clean white clothing viewer with CORRECTED rotation ready!');
 
 </script>
+
 {% endblock %}
