@@ -1930,46 +1930,126 @@ def view_wardrobe_all():
     return render_template('wardrobe_all2.html', wardrobe_items=grouped_items)
 
 
+# Enhanced /outfits/all route with favorites support
+# Replace your existing view_outfits_all function with this enhanced version
+
 @app.route('/outfits/all', methods=['GET', 'POST'])
 @login_required
 def view_outfits_all():
-    userId = session['user']['_id']
-    print(f"Debug: Loading outfits for user {userId}")
+    """Enhanced outfits view with favorites and better rendering"""
+    try:
+        userId = session['user']['_id']
+        print(f"Debug: Loading outfits for user {userId}")
 
-    filter = {'userId': userId, 'isFavorite': 'yes'}
-    users_clothes_cursor = db.outfits.find(filter)
-    users_clothes = list(users_clothes_cursor)  # Convert cursor to list
+        # Get filter from query parameters (favorites or all)
+        outfit_filter = request.args.get('filter', 'all')
 
-    print(f"Debug: Found {len(users_clothes)} favorite outfits")
-
-    # Normalize file paths for each outfit
-    normalized_outfits = []
-    for outfit_doc in users_clothes:
-        print(f"Debug: Processing outfit {outfit_doc.get('_id')}")
-        if 'outfit' in outfit_doc and outfit_doc['outfit']:
-            normalized_outfit = outfit_doc.copy()
-            normalized_pieces = []
-
-            for piece in outfit_doc['outfit']:
-                piece_copy = piece.copy()
-                # Normalize the file path
-                if 'file_path' in piece_copy:
-                    piece_copy['file_path'] = normalize_path(piece_copy['file_path'])
-                    print(f"Debug: Normalized path: {piece_copy['file_path']}")
-                normalized_pieces.append(piece_copy)
-
-            normalized_outfit['outfit'] = normalized_pieces
-            normalized_outfits.append(normalized_outfit)
-            print(f"Debug: Outfit has {len(normalized_pieces)} pieces")
+        # Build database filter
+        if outfit_filter == 'favorites':
+            filter_query = {'userId': userId, 'isFavorite': 'yes'}
         else:
-            print(f"Debug: Outfit {outfit_doc.get('_id')} has no items")
+            # Show both favorite and non-favorite outfits
+            filter_query = {'userId': userId}
 
-    print(f"Debug: Sending {len(normalized_outfits)} normalized outfits to template")
+        users_clothes_cursor = db.outfits.find(filter_query).sort('created_at', -1)
+        users_clothes = list(users_clothes_cursor)
 
-    return render_template('outfits_all.html', wardrobes=normalized_outfits)
+        print(f"Debug: Found {len(users_clothes)} outfits")
 
+        # Normalize file paths and enhance outfit data for each outfit
+        normalized_outfits = []
+        total_items = 0
+        favorite_count = 0
+        recent_count = 0
+        current_month = datetime.now().replace(day=1)
 
+        for outfit_doc in users_clothes:
+            print(f"Debug: Processing outfit {outfit_doc.get('_id')}")
 
+            if 'outfit' in outfit_doc and outfit_doc['outfit']:
+                normalized_outfit = outfit_doc.copy()
+                normalized_pieces = []
+
+                for piece in outfit_doc['outfit']:
+                    piece_copy = piece.copy()
+                    # Normalize the file path
+                    if 'file_path' in piece_copy:
+                        piece_copy['file_path'] = normalize_path(piece_copy['file_path'])
+                        print(f"Debug: Normalized path: {piece_copy['file_path']}")
+
+                    # Add additional piece info if available
+                    piece_copy['category'] = get_item_category(piece_copy.get('label', ''))
+                    normalized_pieces.append(piece_copy)
+
+                normalized_outfit['outfit'] = normalized_pieces
+
+                # Calculate outfit statistics
+                total_items += len(normalized_pieces)
+
+                # Check if outfit is favorite
+                is_favorite = outfit_doc.get('isFavorite') == 'yes'
+                normalized_outfit['isFavorite'] = is_favorite
+                if is_favorite:
+                    favorite_count += 1
+
+                # Check if outfit is recent (this month)
+                if outfit_doc.get('created_at') and outfit_doc['created_at'] >= current_month:
+                    recent_count += 1
+
+                # Add display metadata
+                normalized_outfit['piece_count'] = len(normalized_pieces)
+                normalized_outfit['categories'] = list(
+                    set([piece.get('category', 'other') for piece in normalized_pieces]))
+
+                normalized_outfits.append(normalized_outfit)
+                print(f"Debug: Outfit has {len(normalized_pieces)} pieces")
+            else:
+                print(f"Debug: Outfit {outfit_doc.get('_id')} has no items")
+
+        print(f"Debug: Sending {len(normalized_outfits)} normalized outfits to template")
+
+        # Calculate additional statistics
+        outfit_stats = {
+            'total_outfits': len(normalized_outfits),
+            'total_pieces': total_items,
+            'favorite_outfits': favorite_count,
+            'recent_outfits': recent_count,
+            'avg_pieces_per_outfit': round(total_items / len(normalized_outfits), 1) if normalized_outfits else 0
+        }
+
+        return render_template(
+            'outfits_all.html',
+            wardrobes=normalized_outfits,
+            outfit_stats=outfit_stats,
+            current_filter=outfit_filter,
+            filter_options=[
+                {'value': 'all', 'label': 'All Outfits', 'count': len(normalized_outfits)},
+                {'value': 'favorites', 'label': 'Favorite Outfits', 'count': favorite_count}
+            ]
+        )
+
+    except Exception as e:
+        print(f"Error loading outfits: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+        return render_template(
+            'outfits_all_enhanced.html',
+            wardrobes=[],
+            outfit_stats={
+                'total_outfits': 0,
+                'total_pieces': 0,
+                'favorite_outfits': 0,
+                'recent_outfits': 0,
+                'avg_pieces_per_outfit': 0
+            },
+            current_filter='all',
+            filter_options=[
+                {'value': 'all', 'label': 'All Outfits', 'count': 0},
+                {'value': 'favorites', 'label': 'Favorite Outfits', 'count': 0}
+            ],
+            error="Error loading outfits"
+        )
 
 
 # avatar logic
@@ -4988,7 +5068,229 @@ def get_upcoming_outfits():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# Add these new routes to support outfit favorites functionality
 
+@app.route('/api/outfits/favorite/<outfit_id>', methods=['POST'])
+@login_required
+def add_outfit_to_favorites(outfit_id):
+    """Add outfit to favorites"""
+    try:
+        user_id = session['user']['_id']
+
+        # Update the outfit to mark as favorite
+        result = db.outfits.update_one(
+            {'_id': ObjectId(outfit_id), 'userId': user_id},
+            {'$set': {'isFavorite': 'yes', 'favorited_at': datetime.now()}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Outfit added to favorites',
+                'outfit_id': outfit_id
+            })
+        elif result.matched_count > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Outfit is already in favorites',
+                'outfit_id': outfit_id
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Outfit not found'
+            }), 404
+
+    except Exception as e:
+        print(f"Error adding outfit to favorites: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/outfits/favorite/<outfit_id>', methods=['DELETE'])
+@login_required
+def remove_outfit_from_favorites(outfit_id):
+    """Remove outfit from favorites"""
+    try:
+        user_id = session['user']['_id']
+
+        # Update the outfit to remove from favorites
+        result = db.outfits.update_one(
+            {'_id': ObjectId(outfit_id), 'userId': user_id},
+            {'$set': {'isFavorite': 'no'}, '$unset': {'favorited_at': 1}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Outfit removed from favorites',
+                'outfit_id': outfit_id
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Outfit not found or not in favorites'
+            }), 404
+
+    except Exception as e:
+        print(f"Error removing outfit from favorites: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/outfits/stats', methods=['GET'])
+@login_required
+def get_outfit_stats():
+    """Get outfit statistics"""
+    try:
+        user_id = session['user']['_id']
+        current_month = datetime.now().replace(day=1)
+
+        # Total outfits
+        total_outfits = db.outfits.count_documents({'userId': user_id})
+
+        # Favorite outfits
+        favorite_count = db.outfits.count_documents({
+            'userId': user_id,
+            'isFavorite': 'yes'
+        })
+
+        # Recent outfits (this month)
+        recent_count = db.outfits.count_documents({
+            'userId': user_id,
+            'created_at': {'$gte': current_month}
+        })
+
+        # Calculate total pieces across all outfits
+        pipeline = [
+            {'$match': {'userId': user_id}},
+            {'$project': {'piece_count': {'$size': '$outfit'}}},
+            {'$group': {'_id': None, 'total_pieces': {'$sum': '$piece_count'}}}
+        ]
+
+        total_pieces_result = list(db.outfits.aggregate(pipeline))
+        total_pieces = total_pieces_result[0]['total_pieces'] if total_pieces_result else 0
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_outfits': total_outfits,
+                'favorite_outfits': favorite_count,
+                'recent_outfits': recent_count,
+                'total_pieces': total_pieces,
+                'avg_pieces_per_outfit': round(total_pieces / total_outfits, 1) if total_outfits > 0 else 0
+            }
+        })
+
+    except Exception as e:
+        print(f"Error getting outfit stats: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Helper function to categorize items (if not already present)
+def get_item_category(label):
+    """Determine category from item label"""
+    if not label:
+        return 'other'
+
+    label_lower = label.lower()
+
+    if any(word in label_lower for word in ['shirt', 'top', 'pullover']):
+        return 'tops'
+    elif any(word in label_lower for word in ['trouser', 'pant']):
+        return 'bottoms'
+    elif 'dress' in label_lower:
+        return 'dresses'
+    elif any(word in label_lower for word in ['coat', 'jacket']):
+        return 'outerwear'
+    elif any(word in label_lower for word in ['shoe', 'sandal', 'boot', 'sneaker']):
+        return 'shoes'
+    elif 'bag' in label_lower:
+        return 'accessories'
+    else:
+        return 'other'
+
+
+# Database migration function to add favorites to existing outfits
+def migrate_outfit_favorites():
+    """Add isFavorite field to existing outfits"""
+    try:
+        # Update all outfits that don't have isFavorite field
+        result = db.outfits.update_many(
+            {'isFavorite': {'$exists': False}},
+            {'$set': {'isFavorite': 'no'}}
+        )
+
+        print(f"Updated {result.modified_count} outfits with isFavorite field")
+
+        # Also ensure all outfits that were marked as 'yes' for isFavorite are properly set
+        result2 = db.outfits.update_many(
+            {'isFavorite': True},
+            {'$set': {'isFavorite': 'yes'}}
+        )
+
+        print(f"Updated {result2.modified_count} outfits to use 'yes' instead of boolean")
+
+    except Exception as e:
+        print(f"Error migrating outfit favorites: {str(e)}")
+
+
+# Add this route for outfit deletion
+@app.route('/outfits/delete/<outfit_id>', methods=['DELETE'])
+@login_required
+def delete_outfit(outfit_id):
+    """Delete an outfit"""
+    try:
+        user_id = session['user']['_id']
+
+        # Delete the outfit (only if it belongs to the current user)
+        result = db.outfits.delete_one({
+            '_id': ObjectId(outfit_id),
+            'userId': user_id
+        })
+
+        if result.deleted_count > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Outfit deleted successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Outfit not found or access denied'
+            }), 404
+
+    except Exception as e:
+        print(f"Error deleting outfit: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/outfits/view/<outfit_id>')
+@login_required
+def view_outfit_detail(outfit_id):
+    """View individual outfit details"""
+    try:
+        user_id = session['user']['_id']
+        outfit = db.outfits.find_one({'_id': ObjectId(outfit_id), 'userId': user_id})
+
+        if not outfit:
+            flash('Outfit not found', 'error')
+            return redirect(url_for('view_outfits_all'))
+
+        # Normalize file paths for outfit pieces
+        if 'outfit' in outfit and outfit['outfit']:
+            for piece in outfit['outfit']:
+                if 'file_path' in piece:
+                    piece['file_path'] = normalize_path(piece['file_path'])
+
+        return render_template('outfits_all.html', outfit=outfit)
+
+    except Exception as e:
+        print(f"Error viewing outfit: {str(e)}")
+
+        return redirect(url_for('view_outfits_all'))
+
+
+# Uncomment this line to run the migration once
+migrate_outfit_favorites()
 
 if __name__ == '__main__':
     initialize_avatar_collections()

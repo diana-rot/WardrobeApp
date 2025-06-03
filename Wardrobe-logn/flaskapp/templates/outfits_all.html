@@ -1,186 +1,818 @@
 {% extends "base.html" %}
 
-{% block title %}Your Favorite Outfits - WardrobeApp{% endblock %}
+{% block title %}Your Outfits - Enhanced View{% endblock %}
 
 {% block extra_css %}
 <style>
-    .wardrobe-title {
-        color: var(--text-color);
-        text-align: center;
-        font-weight: bold;
+    :root {
+        --primary-bg: #f5f5f5;
+        --card-bg: #ffffff;
+        --text-primary: #333333;
+        --text-secondary: #666666;
+        --border-color: #e0e0e0;
+        --accent-color: #b8a082;
+        --hover-accent: #a68b6b;
+        --favorite-color: #d4a574;
+        --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+        --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+        --border-radius: 12px;
     }
 
-    .outfit-container {
-        background: #f8f9fa;
-        border-radius: 15px;
+    body {
+        background-color: var(--primary-bg);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .outfits-container {
+        max-width: 1400px;
+        margin: 0 auto;
         padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: var(--primary-bg);
+        min-height: 100vh;
     }
 
-    .outfit-item {
+    .outfits-header {
         text-align: center;
-        margin-bottom: 15px;
+        margin-bottom: 30px;
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-light);
+        border: 1px solid var(--border-color);
     }
 
-    .outfit-item img {
-        max-height: 200px;
-        width: auto;
-        object-fit: contain;
+    .outfits-title {
+        font-size: 2.5rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: var(--text-primary);
+    }
+
+    .outfits-subtitle {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        margin-bottom: 25px;
+    }
+
+    .outfits-stats {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin-top: 20px;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent-color);
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-top: 5px;
+    }
+
+    .outfits-content {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--shadow-light);
+        border: 1px solid var(--border-color);
+    }
+
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .content-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .filter-controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .filter-tabs {
+        display: flex;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .filter-tab {
+        padding: 8px 16px;
+        border: none;
+        background: white;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .filter-tab.active {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .filter-count {
+        background: rgba(0,0,0,0.1);
+        padding: 2px 6px;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-size: 0.75rem;
     }
 
-    .outfit-item h6 {
-        margin-top: 10px;
-        color: var(--text-color);
-        font-weight: 500;
+    .filter-tab.active .filter-count {
+        background: rgba(255,255,255,0.3);
     }
 
-    .carousel-item {
-        padding: 20px;
+    .view-toggle {
+        display: flex;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        overflow: hidden;
     }
 
-    .carousel-control-prev, .carousel-control-next {
-        width: 8%;
+    .toggle-btn {
+        padding: 8px 12px;
+        border: none;
+        background: white;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
     }
 
-    .carousel-control-prev-icon, .carousel-control-next-icon {
-        background-color: rgba(0, 0, 0, 0.7);
+    .toggle-btn.active {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .outfits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 25px;
+        margin-top: 20px;
+    }
+
+    .outfit-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 0;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .outfit-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+        border-color: var(--accent-color);
+    }
+
+    .outfit-header {
+        padding: 15px 20px;
+        background: #f8f8f8;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .outfit-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .outfit-favorite-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 5px;
         border-radius: 50%;
-        padding: 15px;
-        width: 50px;
-        height: 50px;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .carousel-control-prev:hover .carousel-control-prev-icon,
-    .carousel-control-next:hover .carousel-control-next-icon {
-        background-color: rgba(0, 0, 0, 1);
+    .outfit-favorite-btn:hover {
+        background: rgba(0,0,0,0.1);
     }
 
-    .no-outfits {
+    .outfit-favorite-btn.favorited {
+        color: var(--favorite-color);
+    }
+
+    .outfit-pieces {
+        padding: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 15px;
+        min-height: 200px;
+    }
+
+    .piece-item {
+        text-align: center;
+    }
+
+    .piece-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid var(--border-color);
+        margin-bottom: 8px;
+    }
+
+    .piece-label {
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        font-weight: 500;
+        margin-bottom: 2px;
+    }
+
+    .piece-color {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+    }
+
+    .outfit-footer {
+        padding: 15px 20px;
+        background: #f8f8f8;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .outfit-meta {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .outfit-categories {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .category-tag {
+        background: var(--accent-color);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .outfit-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        background: white;
+        color: var(--text-secondary);
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .action-btn:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+    }
+
+    .action-btn.btn-primary {
+        background: var(--accent-color);
+        color: white;
+        border-color: var(--accent-color);
+    }
+
+    .action-btn.btn-primary:hover {
+        background: var(--hover-accent);
+    }
+
+    .action-btn.btn-danger {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .action-btn.btn-danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+
+    /* Empty states */
+    .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: #6c757d;
+        color: var(--text-secondary);
     }
 
-    .no-outfits i {
-        font-size: 4rem;
+    .empty-state i {
+        font-size: 3rem;
         margin-bottom: 20px;
-        color: #dee2e6;
+        color: var(--border-color);
     }
 
-    .debug-info {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-        padding: 10px;
+    .empty-state h3 {
+        margin-bottom: 10px;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .empty-state p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
         margin-bottom: 20px;
-        font-family: monospace;
-        font-size: 0.8em;
+    }
+
+    .empty-state .action-btn {
+        margin-top: 10px;
+    }
+
+    /* Loading states */
+    .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px;
+    }
+
+    .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--border-color);
+        border-top: 3px solid var(--accent-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Alert messages */
+    .alert {
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border: 1px solid;
+        font-size: 0.9rem;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-error {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .outfits-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .outfits-stats {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .content-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+
+        .filter-controls {
+            justify-content: space-between;
+        }
+
+        .outfit-pieces {
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 10px;
+        }
+
+        .piece-image {
+            width: 60px;
+            height: 60px;
+        }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .outfit-card {
+        animation: fadeIn 0.3s ease forwards;
+    }
+
+    .outfit-card:nth-child(even) {
+        animation-delay: 0.05s;
+    }
+
+    .outfit-card:nth-child(3n) {
+        animation-delay: 0.1s;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="wardrobe-title">Your Favorite Outfits</h1>
+<div class="outfits-container">
+    <!-- Header Section -->
+    <div class="outfits-header">
+        <h1 class="outfits-title">Your Favorite Outfits</h1>
+        <p class="outfits-subtitle">Your curated collection of saved outfit combinations</p>
 
-    <!-- Debug Information (remove in production) -->
-    <div class="debug-info">
-        <strong>Debug Info:</strong><br>
-        Total outfits found: {{ wardrobes|length }}<br>
-        {% for outfit in wardrobes %}
-            Outfit {{ loop.index }}: {{ outfit.outfit|length if outfit.outfit else 0 }} items<br>
-        {% endfor %}
+        <!-- Statistics -->
+        <div class="outfits-stats">
+            <div class="stat-item">
+                <span class="stat-number">{{ outfit_stats.total_outfits or 0 }}</span>
+                <div class="stat-label">Total Outfits</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ outfit_stats.favorite_outfits or 0 }}</span>
+                <div class="stat-label">Favorites</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ outfit_stats.total_pieces or 0 }}</span>
+                <div class="stat-label">Total Pieces</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ outfit_stats.avg_pieces_per_outfit or 0 }}</span>
+                <div class="stat-label">Avg Per Outfit</div>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-10 mx-auto">
-        {% if wardrobes and wardrobes|length > 0 %}
-            <div id="outfitCarousel" class="carousel slide" data-bs-ride="carousel">
-                <!-- Carousel Indicators -->
-                <div class="carousel-indicators">
-                    {% for outfit in wardrobes %}
-                        <button type="button" data-bs-target="#outfitCarousel" data-bs-slide-to="{{ loop.index0 }}"
-                                {% if loop.first %}class="active"{% endif %}></button>
+    <!-- Alert Messages -->
+    <div id="alert-container"></div>
+
+    <!-- Main Content -->
+    <div class="outfits-content">
+        <div class="content-header">
+            <h2 class="content-title">
+                {% if current_filter == 'favorites' %}
+                    Favorite Outfits
+                {% else %}
+                    All Outfits
+                {% endif %}
+            </h2>
+
+            <div class="filter-controls">
+                <!-- Filter Tabs -->
+                <div class="filter-tabs">
+                    {% for filter_option in filter_options %}
+                    <button class="filter-tab {% if filter_option.value == current_filter %}active{% endif %}"
+                            onclick="filterOutfits('{{ filter_option.value }}')">
+                        {{ filter_option.label }}
+                        <span class="filter-count">{{ filter_option.count }}</span>
+                    </button>
                     {% endfor %}
                 </div>
 
-                <!-- Carousel Items -->
-                <div class="carousel-inner">
-                    {% for outfit in wardrobes %}
-                        <div class="carousel-item {% if loop.first %}active{% endif %}">
-                            <div class="outfit-container">
-                                <h4 class="text-center mb-4">Outfit {{ loop.index }}</h4>
+                <!-- View Toggle -->
+                <div class="view-toggle">
+                    <button class="toggle-btn active" data-view="grid">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button class="toggle-btn" data-view="list">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-                                {% if outfit.outfit and outfit.outfit|length > 0 %}
-                                    <div class="row">
-                                        {% for item in outfit.outfit %}
-                                            <div class="col-md-{{ (12 / outfit.outfit|length)|round|int if outfit.outfit|length <= 4 else 3 }}">
-                                                <div class="outfit-item">
-                                                    {% if item.file_path %}
-                                                        <img src="{{ item.file_path }}"
-                                                             class="img-fluid"
-                                                             alt="{{ item.label }}"
-                                                             onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'alert alert-warning\'>Image not available</div>'">
-                                                    {% else %}
-                                                        <div class="alert alert-warning">No image available</div>
-                                                    {% endif %}
+        <!-- Outfits Grid -->
+        <div class="outfits-grid" id="outfits-container">
+            {% if wardrobes and wardrobes|length > 0 %}
+                {% for outfit in wardrobes %}
+                <div class="outfit-card" data-outfit-id="{{ outfit._id }}">
+                    <!-- Outfit Header -->
+                    <div class="outfit-header">
+                        <h3 class="outfit-title">
+                            Outfit {{ loop.index }}
+                            {% if outfit.piece_count %}
+                                <small>({{ outfit.piece_count }} pieces)</small>
+                            {% endif %}
+                        </h3>
+                        <button class="outfit-favorite-btn {% if outfit.isFavorite %}favorited{% endif %}"
+                                onclick="toggleOutfitFavorite('{{ outfit._id }}', this)">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
 
-                                                    <h6>{{ item.label }}</h6>
-
-                                                    {% if item.color %}
-                                                        <small class="text-muted">{{ item.color }}</small>
-                                                    {% endif %}
-
-                                                    {% if item.nota %}
-                                                        <div class="rating mt-2">
-                                                            {% for _ in range(item.nota|int) %}⭐{% endfor %}
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+                    <!-- Outfit Pieces -->
+                    <div class="outfit-pieces">
+                        {% if outfit.outfit and outfit.outfit|length > 0 %}
+                            {% for item in outfit.outfit %}
+                            <div class="piece-item">
+                                {% if item.file_path %}
+                                    <img src="{{ item.file_path }}"
+                                         class="piece-image"
+                                         alt="{{ item.label }}"
+                                         onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'text-muted\'>No image</div>'">
                                 {% else %}
-                                    <div class="alert alert-warning text-center">
-                                        This outfit has no items to display.
+                                    <div class="piece-image" style="background: #f8f9fa; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 0.7rem;">
+                                        No image
                                     </div>
                                 {% endif %}
 
-                                <!-- Outfit Info -->
-                                <div class="text-center mt-3">
-                                    <small class="text-muted">
-                                        Created: {{ outfit.created_at.strftime('%Y-%m-%d') if outfit.created_at else 'Unknown' }}
-                                    </small>
-                                </div>
+                                <div class="piece-label">{{ item.label or 'Unknown Item' }}</div>
+                                {% if item.color %}
+                                    <div class="piece-color">{{ item.color }}</div>
+                                {% endif %}
                             </div>
-                        </div>
-                    {% endfor %}
-                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state" style="grid-column: 1/-1; padding: 30px;">
+                                <p>This outfit has no items to display.</p>
+                            </div>
+                        {% endif %}
+                    </div>
 
-                <!-- Carousel Controls -->
-                {% if wardrobes|length > 1 %}
-                    <button class="carousel-control-prev" type="button" data-bs-target="#outfitCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#outfitCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                {% endif %}
-            </div>
-        {% else %}
-            <div class="no-outfits">
-                <i class="fas fa-tshirt"></i>
-                <h3>No Favorite Outfits Yet</h3>
-                <p>Generate some outfits and mark them as favorites to see them here!</p>
-                <a href="{{ url_for('get_outfit') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Generate New Outfit
-                </a>
-            </div>
-        {% endif %}
+                    <!-- Outfit Footer -->
+                    <div class="outfit-footer">
+                        <div class="outfit-meta">
+                            <div class="outfit-categories">
+                                {% for category in outfit.categories[:3] %}
+                                    <span class="category-tag">{{ category }}</span>
+                                {% endfor %}
+                                {% if outfit.categories|length > 3 %}
+                                    <span class="category-tag">+{{ outfit.categories|length - 3 }}</span>
+                                {% endif %}
+                            </div>
+                            {% if outfit.created_at %}
+                                <small style="margin-top: 5px; display: block;">
+                                    Created: {{ outfit.created_at.strftime('%B %d, %Y') }}
+                                </small>
+                            {% endif %}
+                        </div>
+
+                        <div class="outfit-actions">
+                            <button class="action-btn btn-primary" onclick="viewOutfit('{{ outfit._id }}')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="action-btn btn-danger" onclick="deleteOutfit('{{ outfit._id }}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- Empty State -->
+                <div class="empty-state" style="grid-column: 1/-1;">
+                    <i class="fas fa-tshirt"></i>
+                    <h3>
+                        {% if current_filter == 'favorites' %}
+                            No favorite outfits yet
+                        {% else %}
+                            No outfits found
+                        {% endif %}
+                    </h3>
+                    <p>
+                        {% if current_filter == 'favorites' %}
+                            Mark some outfits as favorites to see them here!
+                        {% else %}
+                            Generate some outfits and mark them as favorites to see them here!
+                        {% endif %}
+                    </p>
+                    <a href="{{ url_for('get_outfit') }}" class="action-btn btn-primary">
+                        <i class="fas fa-plus"></i> Generate New Outfit
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Loading state -->
+        <div class="loading" id="loading-state" style="display: none;">
+            <div class="spinner"></div>
+        </div>
     </div>
 </div>
+
+<!-- JavaScript -->
+<script>
+class EnhancedOutfits {
+    constructor() {
+        this.currentFilter = '{{ current_filter }}';
+        this.init();
+    }
+
+    init() {
+        this.bindEventListeners();
+    }
+
+    bindEventListeners() {
+        // View toggle
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                // You can implement list view here if needed
+            });
+        });
+    }
+
+    async toggleOutfitFavorite(outfitId, button) {
+        try {
+            const isFavorite = button.classList.contains('favorited');
+            const method = isFavorite ? 'DELETE' : 'POST';
+
+            const response = await fetch(`/api/outfits/favorite/${outfitId}`, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                if (isFavorite) {
+                    button.classList.remove('favorited');
+                    this.showAlert('Removed from favorites', 'success');
+
+                    // If we're viewing favorites, remove the card
+                    if (this.currentFilter === 'favorites') {
+                        const card = button.closest('.outfit-card');
+                        card.style.animation = 'fadeOut 0.3s ease forwards';
+                        setTimeout(() => card.remove(), 300);
+                    }
+                } else {
+                    button.classList.add('favorited');
+                    this.showAlert('Added to favorites', 'success');
+                }
+
+                // Update counts
+                this.updateFilterCounts();
+            } else {
+                this.showAlert('Error updating favorites', 'error');
+            }
+        } catch (error) {
+            console.error('Error toggling favorite:', error);
+            this.showAlert('Error updating favorites', 'error');
+        }
+    }
+
+    async deleteOutfit(outfitId) {
+        if (!confirm('Are you sure you want to delete this outfit?')) {
+            return;
+        }
+
+        try {
+            // Find the outfit card
+            const card = document.querySelector(`[data-outfit-id="${outfitId}"]`);
+
+            const response = await fetch(`/outfits/delete/${outfitId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                this.showAlert('Outfit deleted successfully', 'success');
+
+                // Remove the card with animation
+                if (card) {
+                    card.style.animation = 'fadeOut 0.3s ease forwards';
+                    setTimeout(() => card.remove(), 300);
+                }
+
+                this.updateFilterCounts();
+            } else {
+                this.showAlert('Error deleting outfit', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting outfit:', error);
+            this.showAlert('Error deleting outfit', 'error');
+        }
+    }
+
+    viewOutfit(outfitId) {
+        // Implement outfit viewing logic
+        window.location.href = `/outfits/view/${outfitId}`;
+    }
+
+    async updateFilterCounts() {
+        try {
+            const response = await fetch('/api/outfits/stats');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Update the filter counts in the tabs
+                    const allTab = document.querySelector('[onclick*="all"]');
+                    const favTab = document.querySelector('[onclick*="favorites"]');
+
+                    if (allTab) {
+                        const countSpan = allTab.querySelector('.filter-count');
+                        if (countSpan) countSpan.textContent = data.stats.total_outfits;
+                    }
+
+                    if (favTab) {
+                        const countSpan = favTab.querySelector('.filter-count');
+                        if (countSpan) countSpan.textContent = data.stats.favorite_outfits;
+                    }
+
+                    // Update header stats
+                    const statNumbers = document.querySelectorAll('.stat-number');
+                    if (statNumbers[0]) statNumbers[0].textContent = data.stats.total_outfits;
+                    if (statNumbers[1]) statNumbers[1].textContent = data.stats.favorite_outfits;
+                    if (statNumbers[2]) statNumbers[2].textContent = data.stats.total_pieces;
+                    if (statNumbers[3]) statNumbers[3].textContent = data.stats.avg_pieces_per_outfit;
+                }
+            }
+        } catch (error) {
+            console.error('Error updating counts:', error);
+        }
+    }
+
+    showAlert(message, type) {
+        const container = document.getElementById('alert-container');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.textContent = message;
+
+        container.appendChild(alert);
+
+        setTimeout(() => {
+            alert.remove();
+        }, 3000);
+    }
+}
+
+// Global functions for onclick handlers
+let outfitsManager;
+
+function toggleOutfitFavorite(outfitId, button) {
+    outfitsManager.toggleOutfitFavorite(outfitId, button);
+}
+
+function deleteOutfit(outfitId) {
+    outfitsManager.deleteOutfit(outfitId);
+}
+
+function viewOutfit(outfitId) {
+    outfitsManager.viewOutfit(outfitId);
+}
+
+function filterOutfits(filter) {
+    window.location.href = `/outfits/all?filter=${filter}`;
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+    outfitsManager = new EnhancedOutfits();
+});
+
+// Add fadeOut animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+    }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %}
