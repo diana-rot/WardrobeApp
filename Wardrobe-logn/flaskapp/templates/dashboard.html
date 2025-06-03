@@ -1332,14 +1332,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update title first
             updateCalendarTitle();
 
-            // FIXED: Load calendar data from your actual API
-            const response = await fetch(`/api/calendar/outfits?year=${currentCalendarYear}&month=${currentCalendarMonth}`);
+            // FIXED: Use the correct calendar API endpoint
+            const response = await fetch(`/api/calendar/outfits-for-month?year=${currentCalendarYear}&month=${currentCalendarMonth}`);
             let calendarData = {};
 
             if (response.ok) {
                 const data = await response.json();
-                calendarData = data.outfits || {};
-                console.log(`✅ Loaded calendar data:`, Object.keys(calendarData).length, 'days with outfits');
+                if (data.success && data.outfits) {
+                    calendarData = data.outfits;
+                    console.log(`✅ Loaded calendar data:`, Object.keys(calendarData).length, 'days with outfits');
+                }
             } else {
                 console.log('Calendar API not available, showing empty calendar');
             }
@@ -1396,23 +1398,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     dayElement.classList.add('today');
                 }
 
-                // FIXED: Check your actual calendar data
+                // FIXED: Check calendar data using the correct structure
                 const dayOutfit = calendarData[dayNumber];
-                if (dayOutfit && dayOutfit.outfit_items && dayOutfit.outfit_items.length > 0) {
-                    dayElement.classList.add('has-outfit');
-                    dayElement.title = `${dayOutfit.outfit_items.length} item(s) planned`;
 
-                    dayElement.innerHTML = `
-                        <div class="calendar-day-number">${dayNumber}</div>
-                        <div class="calendar-outfit-preview">
-                            ${dayOutfit.outfit_items.slice(0, 3).map(item =>
-                                `<div class="calendar-outfit-item"
-                                     style="background-image: url('${item.file_path}')"
-                                     title="${item.label}"></div>`
-                            ).join('')}
-                            ${dayOutfit.outfit_items.length > 3 ? `<div class="calendar-outfit-item" style="background: linear-gradient(135deg, #C8A68D, #9C7D68); display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; font-weight: bold;">+${dayOutfit.outfit_items.length - 3}</div>` : ''}
-                        </div>
-                    `;
+                if (dayOutfit) {
+                    // Handle different possible data structures
+                    let outfitItems = [];
+
+                    if (dayOutfit.outfit_items) {
+                        outfitItems = dayOutfit.outfit_items;
+                    } else if (dayOutfit.items) {
+                        outfitItems = dayOutfit.items;
+                    } else if (Array.isArray(dayOutfit)) {
+                        outfitItems = dayOutfit;
+                    }
+
+                    if (outfitItems && outfitItems.length > 0) {
+                        dayElement.classList.add('has-outfit');
+                        dayElement.title = `${outfitItems.length} item(s) planned`;
+
+                        dayElement.innerHTML = `
+                            <div class="calendar-day-number">${dayNumber}</div>
+                            <div class="calendar-outfit-preview">
+                                ${outfitItems.slice(0, 3).map(item => {
+                                    const imagePath = item.file_path || item.image_path || item.src || '';
+                                    const label = item.label || item.name || 'Item';
+                                    return `<div class="calendar-outfit-item"
+                                             style="background-image: url('${imagePath}')"
+                                             title="${label}"></div>`;
+                                }).join('')}
+                                ${outfitItems.length > 3 ?
+                                    `<div class="calendar-outfit-item"
+                                         style="background: linear-gradient(135deg, #C8A68D, #9C7D68);
+                                                display: flex; align-items: center; justify-content: center;
+                                                font-size: 10px; color: white; font-weight: bold;">
+                                        +${outfitItems.length - 3}
+                                     </div>` : ''}
+                            </div>
+                        `;
+                    } else {
+                        dayElement.innerHTML = `<div class="calendar-day-number">${dayNumber}</div>`;
+                    }
                 } else {
                     dayElement.innerHTML = `<div class="calendar-day-number">${dayNumber}</div>`;
                 }
@@ -1431,15 +1457,52 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!container) return;
 
         try {
-            const response = await fetch(`/api/calendar/upcoming?limit=5`);
+            // FIXED: Try multiple endpoints to find upcoming outfits
             let upcomingOutfits = [];
 
-            if (response.ok) {
-                const data = await response.json();
-                upcomingOutfits = data.upcoming || [];
-            } else {
-                // If your API doesn't have this endpoint yet, show empty
-                upcomingOutfits = [];
+            // Method 1: Try dedicated upcoming API
+            try {
+                const response = await fetch(`/api/calendar/upcoming?limit=5`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.upcoming) {
+                        upcomingOutfits = data.upcoming;
+                    }
+                }
+            } catch (e) {
+                console.log('Upcoming API not available, trying alternative...');
+            }
+
+            // Method 2: If no dedicated API, get calendar data for next 30 days
+            if (upcomingOutfits.length === 0) {
+                const today = new Date();
+                for (let i = 0; i < 30; i++) {
+                    const checkDate = new Date(today);
+                    checkDate.setDate(today.getDate() + i);
+
+                    const year = checkDate.getFullYear();
+                    const month = checkDate.getMonth() + 1;
+                    const day = checkDate.getDate();
+
+                    try {
+                        const response = await fetch(`/api/calendar/outfits-for-day?year=${year}&month=${month}&day=${day}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success && data.outfit && data.outfit.items && data.outfit.items.length > 0) {
+                                upcomingOutfits.push({
+                                    date: `${month}/${day}`,
+                                    name: data.outfit.description || 'Planned Outfit',
+                                    items: data.outfit.items.map(item => item.label || item.name).slice(0, 3)
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        // Skip this date if there's an error
+                    }
+
+                    // Limit to 5 upcoming outfits
+                    if (upcomingOutfits.length >= 5) break;
+                }
             }
 
             container.innerHTML = '';
@@ -1452,11 +1515,16 @@ document.addEventListener('DOMContentLoaded', function() {
             upcomingOutfits.forEach(outfit => {
                 const outfitElement = document.createElement('div');
                 outfitElement.className = 'outfit-item-mini';
+
+                const itemsText = Array.isArray(outfit.items) ?
+                    outfit.items.join(', ') :
+                    (outfit.items || 'No items');
+
                 outfitElement.innerHTML = `
                     <div class="outfit-date-mini">${outfit.date}</div>
                     <div class="flex-grow-1">
                         <div class="fw-bold small">${outfit.name}</div>
-                        <small class="text-muted">${outfit.items.join(', ')}</small>
+                        <small class="text-muted">${itemsText}</small>
                     </div>
                 `;
                 container.appendChild(outfitElement);

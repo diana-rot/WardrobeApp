@@ -1,6 +1,7 @@
 
 from __future__ import division, print_function
-
+# IMPORTANT: Add this import at the top of your run.py if not already present
+from datetime import timedelta
 
 import os
 import time
@@ -4664,6 +4665,9 @@ def delete_saved_outfit(outfit_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+
+
         @app.route('/api/outfits/update-snapshot/<outfit_id>', methods=['PUT'])
         @login_required
         def update_outfit_snapshot(outfit_id):
@@ -4683,6 +4687,212 @@ def delete_saved_outfit(outfit_id):
 
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Add these Flask routes to your run.py file to fix the 404 errors
+
+@app.route('/api/calendar/outfits-for-month', methods=['GET'])
+@login_required
+def get_calendar_outfits_for_month():
+    """Get all outfits for a specific month for dashboard calendar"""
+    try:
+        year = int(request.args.get('year', datetime.now().year))
+        month = int(request.args.get('month', datetime.now().month))
+        user_id = session.get('user', {}).get('_id', '')
+
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 403
+
+        print(f"🗓️ Fetching calendar outfits for {year}-{month} for user {user_id}")
+
+        # Query the calendar collection for this month
+        outfits_cursor = db.calendar.find({
+            "user_id": user_id,
+            "year": year,
+            "month": month
+        })
+
+        outfit_map = {}
+
+        for outfit_doc in outfits_cursor:
+            day_number = outfit_doc['day']
+            outfit_items = []
+
+            # Get the actual wardrobe items
+            if 'items' in outfit_doc and isinstance(outfit_doc['items'], list):
+                for item_id in outfit_doc['items']:
+                    try:
+                        if isinstance(item_id, str):
+                            item_obj = db.wardrobe.find_one({'_id': ObjectId(item_id)})
+                        else:
+                            item_obj = db.wardrobe.find_one({'_id': item_id})
+
+                        if item_obj:
+                            outfit_items.append({
+                                'id': str(item_obj['_id']),
+                                'label': item_obj.get('label', 'Unknown'),
+                                'file_path': normalize_path(item_obj.get('file_path', '')),
+                                'color': item_obj.get('color', '')
+                            })
+                    except Exception as e:
+                        print(f"Error processing item {item_id}: {str(e)}")
+                        continue
+
+            # Include custom image if available
+            custom_image = normalize_path(outfit_doc.get('custom_image', ''))
+
+            outfit_map[day_number] = {
+                'id': str(outfit_doc['_id']),
+                'outfit_items': outfit_items,
+                'description': outfit_doc.get('description', ''),
+                'custom_image': custom_image
+            }
+
+        print(f"✅ Found {len(outfit_map)} days with outfits for {year}-{month}")
+
+        return jsonify({
+            'success': True,
+            'outfits': outfit_map,
+            'year': year,
+            'month': month,
+            'total_days': len(outfit_map)
+        })
+
+    except Exception as e:
+        print(f"❌ Error fetching calendar outfits: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/calendar/outfits-for-day', methods=['GET'])
+@login_required
+def get_calendar_outfits_for_day():
+    """Get outfit for a specific day"""
+    try:
+        year = int(request.args.get('year'))
+        month = int(request.args.get('month'))
+        day = int(request.args.get('day'))
+        user_id = session.get('user', {}).get('_id', '')
+
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 403
+
+        # Find outfit for this specific day
+        outfit_doc = db.calendar.find_one({
+            "user_id": user_id,
+            "year": year,
+            "month": month,
+            "day": day
+        })
+
+        if not outfit_doc:
+            return jsonify({
+                'success': False,
+                'message': 'No outfit found for this day'
+            }), 404
+
+        # Get the actual wardrobe items
+        outfit_items = []
+        if 'items' in outfit_doc and isinstance(outfit_doc['items'], list):
+            for item_id in outfit_doc['items']:
+                try:
+                    if isinstance(item_id, str):
+                        item_obj = db.wardrobe.find_one({'_id': ObjectId(item_id)})
+                    else:
+                        item_obj = db.wardrobe.find_one({'_id': item_id})
+
+                    if item_obj:
+                        outfit_items.append({
+                            'id': str(item_obj['_id']),
+                            'label': item_obj.get('label', 'Unknown'),
+                            'file_path': normalize_path(item_obj.get('file_path', '')),
+                            'color': item_obj.get('color', '')
+                        })
+                except Exception as e:
+                    print(f"Error processing item {item_id}: {str(e)}")
+                    continue
+
+        return jsonify({
+            'success': True,
+            'outfit': {
+                'id': str(outfit_doc['_id']),
+                'items': outfit_items,
+                'description': outfit_doc.get('description', ''),
+                'custom_image': normalize_path(outfit_doc.get('custom_image', ''))
+            },
+            'date': f"{year}-{month:02d}-{day:02d}"
+        })
+
+    except Exception as e:
+        print(f"❌ Error fetching day outfit: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/calendar/upcoming', methods=['GET'])
+@login_required
+def get_upcoming_outfits():
+    """Get upcoming planned outfits"""
+    try:
+        limit = int(request.args.get('limit', 5))
+        user_id = session.get('user', {}).get('_id', '')
+
+        if not user_id:
+            return jsonify({"success": False, "message": "User not logged in"}), 403
+
+        # Get current date
+        today = datetime.now()
+
+        # Find outfits from today onwards
+        upcoming_outfits = []
+
+        # Search for the next 30 days
+        for i in range(30):
+            check_date = today + timedelta(days=i)
+            year = check_date.year
+            month = check_date.month
+            day = check_date.day
+
+            outfit_doc = db.calendar.find_one({
+                "user_id": user_id,
+                "year": year,
+                "month": month,
+                "day": day
+            })
+
+            if outfit_doc and len(upcoming_outfits) < limit:
+                # Get item names
+                item_names = []
+                if 'items' in outfit_doc and isinstance(outfit_doc['items'], list):
+                    for item_id in outfit_doc['items'][:3]:  # Limit to first 3 items
+                        try:
+                            if isinstance(item_id, str):
+                                item_obj = db.wardrobe.find_one({'_id': ObjectId(item_id)})
+                            else:
+                                item_obj = db.wardrobe.find_one({'_id': item_id})
+
+                            if item_obj:
+                                item_names.append(item_obj.get('label', 'Unknown'))
+                        except Exception as e:
+                            print(f"Error processing upcoming item {item_id}: {str(e)}")
+                            continue
+
+                upcoming_outfits.append({
+                    'date': f"{month}/{day}",
+                    'name': outfit_doc.get('description', 'Planned Outfit'),
+                    'items': item_names,
+                    'full_date': f"{year}-{month:02d}-{day:02d}"
+                })
+
+        return jsonify({
+            'success': True,
+            'upcoming': upcoming_outfits,
+            'count': len(upcoming_outfits)
+        })
+
+    except Exception as e:
+        print(f"❌ Error fetching upcoming outfits: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 
 
 if __name__ == '__main__':
