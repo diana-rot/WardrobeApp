@@ -5487,7 +5487,64 @@ def migrate_wardrobe_favorites():
 
 
 # Run this once in your Python console or add to your app startup:
-migrate_wardrobe_favorites()
+# migrate_wardrobe_favorites()
+# Add these missing API endpoints to your run.py file
+
+# 1. Dashboard Avatar Stats Endpoint (404 error)
+@app.route('/api/dashboard/avatar-stats', methods=['GET'])
+@login_required
+def get_dashboard_avatar_stats():
+    """Get comprehensive avatar stats for dashboard"""
+    try:
+        user_id = session['user']['_id']
+
+        # Get saved avatar info
+        saved_avatar = db.saved_avatars.find_one({'userId': user_id})
+
+        # Get outfit counts
+        total_outfits = db.outfits.count_documents({'userId': user_id})
+        favorite_outfits = db.outfits.count_documents({'userId': user_id, 'isFavorite': 'yes'})
+        saved_3d_outfits = db.saved_outfits.count_documents({'userId': user_id})
+
+        # Get wardrobe stats
+        total_items = db.wardrobe.count_documents({'userId': user_id})
+        favorite_items = db.wardrobe.count_documents({'userId': user_id, 'isFavorite': True})
+        items_with_3d = db.wardrobe.count_documents({'userId': user_id, 'has_3d_model': True})
+
+        # Calculate days active (simplified)
+        days_active = 30  # You can calculate this from user creation date
+        if saved_avatar and saved_avatar.get('created_at'):
+            days_active = (datetime.now() - saved_avatar['created_at']).days
+
+        stats = {
+            'has_saved_avatar': bool(saved_avatar),
+            'avatar_created_at': saved_avatar.get('created_at').isoformat() if saved_avatar and saved_avatar.get(
+                'created_at') else None,
+            'total_outfits': total_outfits,
+            'favorite_outfits': favorite_outfits,
+            'saved_3d_outfits': saved_3d_outfits,
+            'total_wardrobe_items': total_items,
+            'favorite_items': favorite_items,
+            'items_with_3d_models': items_with_3d,
+            'days_active': max(1, days_active),
+            'avatar_customization_level': 'Advanced' if saved_avatar else 'Basic'
+        }
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+
+    except Exception as e:
+        print(f"❌ Error getting dashboard avatar stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'stats': {}
+        }), 500
+
+
+
 
 if __name__ == '__main__':
     initialize_avatar_collections()

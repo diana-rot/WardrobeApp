@@ -52,6 +52,150 @@
         background: linear-gradient(90deg, #C8A68D, #9C7D68, #876955);
     }
 
+    /* Enhanced Avatar Preview Container */
+    .avatar-preview-container {
+        height: 320px; /* Increased height */
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 20px;
+        border: 2px solid rgba(200,166,141,0.2);
+        transition: all 0.3s ease;
+    }
+
+    .avatar-preview-container:hover {
+        border-color: rgba(200,166,141,0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    /* 3D Viewport */
+    .avatar-3d-viewport {
+        width: 100%;
+        height: 100%;
+        border-radius: 15px;
+        cursor: grab;
+    }
+
+    .avatar-3d-viewport:active {
+        cursor: grabbing;
+    }
+
+    /* Enhanced Avatar Placeholder */
+    .avatar-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #6c757d;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .avatar-placeholder i {
+        font-size: 64px; /* Larger icon */
+        margin-bottom: 20px;
+        opacity: 0.6;
+        background: linear-gradient(135deg, #C8A68D, #9C7D68);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .avatar-placeholder h6 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #495057;
+    }
+
+    .avatar-placeholder small {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+
+    /* Enhanced Outfit Info Overlay */
+    .outfit-info-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(180deg, transparent, rgba(0,0,0,0.8));
+        backdrop-filter: blur(10px);
+        color: white;
+        padding: 15px;
+        transform: translateY(100%);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 0 0 15px 15px;
+    }
+
+    .avatar-preview-container:hover .outfit-info-overlay {
+        transform: translateY(0);
+    }
+
+    .outfit-info-overlay h6 {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    .outfit-info-overlay small {
+        font-size: 12px;
+        color: rgba(255,255,255,0.8);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .outfit-info-overlay small i {
+        color: #C8A68D;
+    }
+
+    /* Loading Indicator for Avatar */
+    .avatar-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+    }
+
+    .avatar-loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(200,166,141,0.2);
+        border-top: 3px solid #C8A68D;
+        border-radius: 50%;
+        animation: avatarSpin 1s linear infinite;
+    }
+
+    @keyframes avatarSpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Avatar Status Badge Enhancement */
+    .avatar-status-container {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 5;
+    }
+
+    #avatar-status {
+        font-size: 10px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        backdrop-filter: blur(5px);
+    }
+
     /* Weather Card */
     .weather-card {
         margin-bottom: 15px;
@@ -70,55 +214,6 @@
     .weather-icon {
         width: 50px;
         height: 50px;
-    }
-
-    /* Avatar Preview Styles */
-    .avatar-preview-container {
-        height: 300px;
-        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-        border-radius: 15px;
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 20px;
-    }
-
-    .avatar-3d-viewport {
-        width: 100%;
-        height: 100%;
-        border-radius: 15px;
-    }
-
-    .avatar-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #6c757d;
-        text-align: center;
-    }
-
-    .avatar-placeholder i {
-        font-size: 48px;
-        margin-bottom: 15px;
-        opacity: 0.6;
-    }
-
-    .outfit-info-overlay {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        background: rgba(255,255,255,0.9);
-        backdrop-filter: blur(10px);
-        border-radius: 8px;
-        padding: 10px;
-        transform: translateY(100%);
-        transition: transform 0.3s ease;
-    }
-
-    .avatar-preview-container:hover .outfit-info-overlay {
-        transform: translateY(0);
     }
 
     /* Calendar Preview Styles - ENHANCED FOR BIGGER WIDGET */
@@ -286,7 +381,7 @@
         border: 1px solid #dee2e6;
     }
 
-    /* Quick Stats */
+    /* Enhanced Stats Display */
     .quick-stats {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -296,26 +391,55 @@
 
     .stat-item {
         text-align: center;
-        padding: 15px;
+        padding: 18px 15px; /* Increased padding */
         background: linear-gradient(135deg, rgba(200,166,141,0.1), rgba(156,125,104,0.05));
-        border-radius: 12px;
+        border-radius: 15px; /* More rounded */
         border: 1px solid rgba(200,166,141,0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #C8A68D, #9C7D68);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .stat-item:hover::before {
+        transform: translateX(0);
+    }
+
+    .stat-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(200,166,141,0.2);
+        border-color: rgba(200,166,141,0.4);
     }
 
     .stat-number {
-        font-size: 24px;
+        font-size: 28px; /* Larger numbers */
         font-weight: 700;
         color: #9C7D68;
         display: block;
+        margin-bottom: 5px;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     }
 
     .stat-label {
-        font-size: 12px;
+        font-size: 11px;
         color: #6c757d;
-        margin-top: 5px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    /* Action Buttons */
+    /* Action Buttons Enhancement */
     .action-buttons {
         display: flex;
         gap: 10px;
@@ -324,8 +448,8 @@
 
     .btn-dashboard {
         flex: 1;
-        padding: 12px;
-        border-radius: 10px;
+        padding: 14px 16px; /* Increased padding */
+        border-radius: 12px; /* More rounded */
         border: none;
         font-weight: 600;
         text-decoration: none;
@@ -334,54 +458,88 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 10px; /* Increased gap */
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-dashboard::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn-dashboard:hover::before {
+        left: 100%;
     }
 
     .btn-dashboard.primary {
         background: linear-gradient(135deg, #C8A68D, #9C7D68);
         color: white;
+        box-shadow: 0 4px 15px rgba(200,166,141,0.3);
     }
 
     .btn-dashboard.primary:hover {
         background: linear-gradient(135deg, #9C7D68, #876955);
         transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(200,166,141,0.4);
         color: white;
     }
 
     .btn-dashboard.secondary {
-        background: #f8f9fa;
+        background: #ffffff;
         color: #6c757d;
-        border: 1px solid #dee2e6;
+        border: 2px solid #dee2e6;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
 
     .btn-dashboard.secondary:hover {
-        background: #e9ecef;
+        background: #f8f9fa;
         color: #495057;
+        border-color: #C8A68D;
         transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
-    /* Card Headers */
+    /* Card Header Enhancement */
     .card-header-custom {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #f8f9fa;
+        margin-bottom: 25px; /* Increased margin */
+        padding-bottom: 20px; /* Increased padding */
+        border-bottom: 2px solid rgba(200,166,141,0.1);
+        position: relative;
+    }
+
+    .card-header-custom::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(90deg, #C8A68D, #9C7D68);
     }
 
     .card-title-custom {
-        font-size: 18px;
+        font-size: 20px; /* Larger title */
         font-weight: 700;
         color: #2c3e50;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px; /* Increased gap */
     }
 
     .card-title-custom i {
         color: #C8A68D;
+        font-size: 22px; /* Larger icon */
     }
 
     /* Loading States */
@@ -452,6 +610,32 @@
 
         .calendar-day-number {
             font-size: 13px;
+        }
+
+        .avatar-preview-container {
+            height: 280px; /* Smaller on mobile */
+        }
+
+        .avatar-placeholder i {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+        }
+
+        .btn-dashboard {
+            padding: 12px 14px;
+            font-size: 13px;
+        }
+
+        .card-title-custom {
+            font-size: 18px;
+        }
+
+        .outfit-info-overlay {
+            padding: 12px;
         }
     }
 
@@ -725,7 +909,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize dashboard
-    console.log('🎯 Initializing Enhanced Dashboard...');
+    console.log('🎯 Initializing Enhanced Dashboard with Fixed Avatar & Hair...');
 
     // Initialize current date variables BEFORE any functions use them
     const today = new Date();
@@ -734,11 +918,685 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize all systems
     initializeWeatherSystem();
-    initializeAvatarPreview();
+    initializeEnhancedAvatarPreview();
     initializeCalendarPreview();
     loadDashboardStats();
 
     console.log('✅ Dashboard initialization complete!');
+
+    // Enhanced Avatar Preview System with Fixed Positioning & Hair
+    async function initializeEnhancedAvatarPreview() {
+        console.log('🤖 Loading enhanced avatar preview with fixed positioning & hair...');
+
+        const container = document.getElementById('avatar-preview-container');
+        const statusBadge = document.getElementById('avatar-status');
+
+        if (!container || !statusBadge) {
+            console.error('❌ Avatar preview containers not found');
+            return;
+        }
+
+        try {
+            statusBadge.textContent = 'Loading...';
+            statusBadge.className = 'badge bg-warning text-dark';
+
+            // Load saved avatar configuration first
+            const savedAvatarData = await loadSavedAvatarConfiguration();
+            console.log('📊 Loaded saved avatar data:', savedAvatarData);
+
+            // Load most recent saved outfit
+            const savedOutfit = await loadMostRecentSavedOutfit();
+            console.log('👗 Loaded saved outfit:', savedOutfit);
+
+            // Initialize 3D viewer with both avatar and outfit
+            await initializeEnhanced3DAvatarViewer(container, savedAvatarData, savedOutfit);
+
+            statusBadge.textContent = 'Ready';
+            statusBadge.className = 'badge bg-success text-white';
+
+        } catch (error) {
+            console.error('❌ Error initializing enhanced avatar preview:', error);
+            showAvatarPlaceholder(container, 'Error loading avatar');
+            statusBadge.textContent = 'Error';
+            statusBadge.className = 'badge bg-danger text-white';
+        }
+    }
+
+    // Load saved avatar configuration using the correct API
+    async function loadSavedAvatarConfiguration() {
+        try {
+            console.log('📡 Fetching saved avatar configuration from API...');
+
+            const response = await fetch('/api/avatar/get-saved');
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.avatar) {
+                    console.log('✅ Found saved avatar configuration');
+                    return data.avatar;
+                }
+            }
+
+            // Return default configuration if no saved avatar
+            console.log('📊 No saved avatar found, using default configuration');
+            return {
+                configuration: {
+                    gender: 'female',
+                    bodySize: 'm',
+                    height: 'medium',
+                    skinColor: 'light',
+                    hairType: 'elvis_hazel',
+                    hairColor: 'brown',
+                    eyeColor: 'brown'
+                }
+            };
+
+        } catch (error) {
+            console.error('❌ Error loading avatar configuration:', error);
+            throw error;
+        }
+    }
+
+    // Load most recent saved outfit using the correct API
+    async function loadMostRecentSavedOutfit() {
+        try {
+            console.log('👗 Fetching most recent saved outfit from /api/outfits/saved...');
+
+            const response = await fetch('/api/outfits/saved');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.outfits && data.outfits.length > 0) {
+                    // Get the most recent outfit (first in the list)
+                    const recentOutfit = data.outfits[0];
+                    console.log(`✅ Found recent saved outfit: ${recentOutfit.name}`);
+
+                    return {
+                        type: 'saved_3d',
+                        outfit: recentOutfit,
+                        items: recentOutfit.itemsDetails || []
+                    };
+                }
+            }
+
+            console.log('ℹ️ No saved outfits found');
+            return null;
+
+        } catch (error) {
+            console.error('❌ Error loading saved outfit:', error);
+            return null;
+        }
+    }
+
+    // FIXED: Enhanced 3D Avatar Viewer with Better Positioning
+    async function initializeEnhanced3DAvatarViewer(container, avatarData, savedOutfit) {
+        try {
+            console.log('🎮 Initializing enhanced 3D avatar viewer with fixed positioning...');
+
+            // Clear container
+            container.innerHTML = '';
+
+            if (typeof THREE === 'undefined') {
+                throw new Error('Three.js not loaded');
+            }
+
+            // Create 3D scene
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f9fa);
+
+            const camera = new THREE.PerspectiveCamera(
+                50,
+                container.offsetWidth / container.offsetHeight,
+                0.1,
+                1000
+            );
+
+            const renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+
+            container.appendChild(renderer.domElement);
+
+            // Enhanced lighting setup
+            setupEnhancedLighting(scene);
+
+            // Load avatar with saved configuration
+            const avatar = await loadAvatarWithConfiguration(scene, avatarData);
+
+            // Load saved outfit clothing on avatar
+            if (savedOutfit && avatar) {
+                await loadSavedOutfitOnAvatar(scene, avatar, savedOutfit);
+                // Show outfit info
+                showEnhancedOutfitInfo(savedOutfit);
+            }
+
+            // FIXED: Better camera positioning for full avatar view
+            camera.position.set(0, 1.4, 2.8); // Adjusted to see more of the avatar
+            camera.lookAt(0, 0.8, 0); // Look at upper torso/head area
+
+            // Add orbit controls for interaction
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                const controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableZoom = true;
+                controls.enablePan = false;
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.1;
+                controls.minDistance = 1.5; // Allow closer zoom
+                controls.maxDistance = 5;
+                controls.target.set(0, 0.8, 0); // Target the center-upper area of avatar
+
+                // Limit vertical rotation to keep avatar in view
+                controls.maxPolarAngle = Math.PI * 0.8; // Prevent going too low
+                controls.minPolarAngle = Math.PI * 0.1; // Prevent going too high
+
+                controls.update();
+
+                // Store for cleanup
+                window.dashboardAvatarControls = controls;
+            }
+
+            // Store references
+            window.dashboardAvatar = {
+                scene: scene,
+                camera: camera,
+                renderer: renderer,
+                avatar: avatar
+            };
+
+            // Start render loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                if (window.dashboardAvatarControls) {
+                    window.dashboardAvatarControls.update();
+                }
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Handle window resize
+            function handleResize() {
+                const width = container.offsetWidth;
+                const height = container.offsetHeight;
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            }
+
+            window.addEventListener('resize', handleResize);
+
+            console.log('✅ Enhanced 3D avatar viewer with fixed positioning initialized successfully');
+
+        } catch (error) {
+            console.error('❌ Error initializing enhanced 3D viewer:', error);
+            throw error;
+        }
+    }
+
+    // FIXED: Better lighting setup for avatar visibility
+    function setupEnhancedLighting(scene) {
+        // Ambient light for overall illumination
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Increased intensity
+        scene.add(ambientLight);
+
+        // Main directional light
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9); // Increased intensity
+        directionalLight.position.set(2, 4, 3);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 10;
+        directionalLight.shadow.camera.left = -3;
+        directionalLight.shadow.camera.right = 3;
+        directionalLight.shadow.camera.top = 3;
+        directionalLight.shadow.camera.bottom = -3;
+        scene.add(directionalLight);
+
+        // Fill light from the left
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.4); // Increased intensity
+        fillLight.position.set(-2, 2, 2);
+        scene.add(fillLight);
+
+        // Rim light for better definition
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.3); // Increased intensity
+        rimLight.position.set(0, 2, -3);
+        scene.add(rimLight);
+
+        // Add front light to illuminate face/hair better
+        const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        frontLight.position.set(0, 1, 4);
+        scene.add(frontLight);
+    }
+
+    // FIXED: Improved avatar loading with better positioning
+    async function loadAvatarWithConfiguration(scene, avatarData) {
+        try {
+            console.log('👤 Loading avatar with saved configuration and fixed positioning...');
+
+            const config = avatarData.configuration || {};
+            const gender = config.gender || 'female';
+            const bodySize = config.bodySize || 'm';
+            const height = config.height || 'medium';
+
+            // Construct avatar model path based on your system
+            const avatarPath = `/static/models/makehuman/bodies/${gender}/${bodySize}_${height}.glb`;
+            console.log('📁 Loading avatar from:', avatarPath);
+
+            const loader = new THREE.GLTFLoader();
+
+            return new Promise((resolve, reject) => {
+                loader.load(
+                    avatarPath,
+                    (gltf) => {
+                        console.log('✅ Avatar GLB loaded successfully');
+
+                        const avatar = gltf.scene;
+                        avatar.scale.setScalar(1);
+
+                        // EXACT same positioning as GLB Avatar Manager - NO modifications
+                        const box = new THREE.Box3().setFromObject(avatar);
+                        const size = box.getSize(new THREE.Vector3());
+                        const center = box.getCenter(new THREE.Vector3());
+
+                        let scale = 1.0;
+                        if (size.y > 3) {
+                            scale = 1.8 / size.y;
+                        } else if (size.y < 1) {
+                            scale = 1.8 / size.y;
+                        }
+
+                        avatar.scale.setScalar(scale);
+                        avatar.position.y = -box.min.y * scale;
+                        avatar.position.x = -center.x * scale;
+                        avatar.position.z = -center.z * scale;
+
+                        // Apply saved customizations
+                        applyAvatarCustomizations(avatar, config);
+
+                        // Enable shadows
+                        avatar.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
+
+                        scene.add(avatar);
+
+                        // FIXED: Load hair if specified in config
+                        if (config.hairType) {
+                            loadHairOnAvatar(scene, avatar, config.hairType, config.hairColor)
+                                .then(() => {
+                                    console.log('✅ Hair loading completed');
+                                    resolve(avatar);
+                                })
+                                .catch((error) => {
+                                    console.warn('⚠️ Hair loading failed, but continuing with avatar:', error);
+                                    resolve(avatar); // Still resolve even if hair fails
+                                });
+                        } else {
+                            resolve(avatar);
+                        }
+                    },
+                    (progress) => {
+                        console.log('📊 Avatar loading progress:', Math.round((progress.loaded / progress.total) * 100) + '%');
+                    },
+                    (error) => {
+                        console.error('❌ Error loading avatar GLB:', error);
+                        reject(error);
+                    }
+                );
+            });
+
+        } catch (error) {
+            console.error('❌ Error in loadAvatarWithConfiguration:', error);
+            throw error;
+        }
+    }
+
+    // FIXED: Use EXACT same coordinates as GLB Avatar Manager - NO modifications
+    async function loadHairOnAvatar(scene, avatar, hairType, hairColor) {
+        try {
+            console.log(`🦱 Loading hair: ${hairType} with color: ${hairColor}`);
+
+            const hairPath = `/static/models/makehuman/hair/${hairType}/${hairType}.glb`;
+            const loader = new THREE.GLTFLoader();
+
+            return new Promise((resolve, reject) => {
+                loader.load(
+                    hairPath,
+                    (gltf) => {
+                        console.log('✅ Hair GLB loaded successfully');
+
+                        const hairModel = gltf.scene;
+                        hairModel.scale.setScalar(1);
+
+                        // EXACT same coordinates as GLB Avatar Manager - NO adjustments
+                        const hairPositionsByHeight = {
+                            'short': { x: 0, y: -0.534, z: -0.13, scale: 1.0 },
+                            'medium': { x: 0, y: -0.39, z: -0.12, scale: 1.0 },
+                            'long': { x: 0, y: -0.534, z: -0.13, scale: 1.0 }
+                        };
+
+                        // Use medium as default (same as GLB Avatar Manager)
+                        const avatarHeight = 'medium';
+                        const coords = hairPositionsByHeight[avatarHeight];
+
+                        // Apply EXACT coordinates - no modifications
+                        hairModel.position.set(coords.x, coords.y, coords.z);
+                        hairModel.scale.setScalar(coords.scale);
+                        hairModel.rotation.set(0, 0, 0);
+
+                        // Set hair name for easy finding
+                        hairModel.name = `hair_${hairType}`;
+
+                        // Apply hair color
+                        if (hairColor) {
+                            applyHairColor(hairModel, hairColor);
+                        }
+
+                        // Enable shadows
+                        hairModel.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+
+                                // Ensure hair material is properly configured
+                                if (child.material) {
+                                    child.material.side = THREE.DoubleSide;
+                                    if (child.material.transparent === undefined) {
+                                        child.material.transparent = false;
+                                    }
+                                }
+                            }
+                        });
+
+                        // Add hair directly to avatar so it moves with the avatar
+                        avatar.add(hairModel);
+
+                        console.log(`✅ Hair attached with EXACT GLB Manager coordinates: (${coords.x}, ${coords.y}, ${coords.z})`);
+                        resolve(hairModel);
+                    },
+                    (progress) => {
+                        console.log('📊 Hair loading progress:', Math.round((progress.loaded / progress.total) * 100) + '%');
+                    },
+                    (error) => {
+                        console.warn('⚠️ Hair loading failed:', error);
+                        reject(error);
+                    }
+                );
+            });
+
+        } catch (error) {
+            console.warn('⚠️ Hair loading error:', error);
+            throw error;
+        }
+    }
+
+    // FIXED: Improved hair color application
+    function applyHairColor(hairModel, hairColor) {
+        const hairColorMap = {
+            'brown': 0x8B4513,
+            'black': 0x1a1a1a, // Slightly lighter than pure black for better visibility
+            'blonde': 0xFFD700,
+            'red': 0xDC143C,
+            'light-brown': 0xA0522D,
+            'dark-brown': 0x654321,
+            'hazel': 0x8B7355, // Added hazel color
+            'gray': 0x808080,
+            'white': 0xF5F5F5
+        };
+
+        const color = hairColorMap[hairColor] || 0x8B4513;
+
+        hairModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+                if (Array.isArray(child.material)) {
+                    // Handle multiple materials
+                    child.material.forEach(material => {
+                        if (material.color) {
+                            material.color.setHex(color);
+                        }
+                    });
+                } else {
+                    // Handle single material
+                    if (child.material.color) {
+                        child.material.color.setHex(color);
+                    }
+                }
+            }
+        });
+
+        console.log(`🎨 Applied hair color: ${hairColor} (${color.toString(16)})`);
+    }
+
+    // FIXED: Improved avatar customizations with better material handling
+    function applyAvatarCustomizations(avatar, config) {
+        try {
+            console.log('🎨 Applying saved avatar customizations...');
+
+            // Apply skin color
+            if (config.skinColor) {
+                const skinColorMap = {
+                    'light': 0xFDBCB4,
+                    'fair': 0xFCE4EC,
+                    'medium': 0xEE9B82,
+                    'tan': 0xD08B5B,
+                    'dark': 0xAE5D29,
+                    'darker': 0x8B4513
+                };
+
+                const skinColor = skinColorMap[config.skinColor] || 0xFDBCB4;
+
+                avatar.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        // Check if this is likely skin material by name or position
+                        const childName = (child.name || '').toLowerCase();
+                        const materialName = child.material.name ? child.material.name.toLowerCase() : '';
+
+                        if (childName.includes('body') || childName.includes('skin') ||
+                            childName.includes('head') || childName.includes('face') ||
+                            materialName.includes('skin') || materialName.includes('body')) {
+
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(material => {
+                                    if (material.color) {
+                                        material.color.setHex(skinColor);
+                                    }
+                                });
+                            } else if (child.material.color) {
+                                child.material.color.setHex(skinColor);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Apply eye color
+            if (config.eyeColor) {
+                const eyeColorMap = {
+                    'brown': 0x6B4423,
+                    'blue': 0x4A90E2,
+                    'green': 0x50C878,
+                    'hazel': 0xB8860B,
+                    'gray': 0x708090
+                };
+
+                const eyeColor = eyeColorMap[config.eyeColor] || 0x6B4423;
+
+                avatar.traverse((child) => {
+                    if (child.isMesh) {
+                        const childName = (child.name || '').toLowerCase();
+                        if (childName.includes('eye') || childName.includes('iris')) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(material => {
+                                    if (material.color) {
+                                        material.color.setHex(eyeColor);
+                                    }
+                                });
+                            } else if (child.material && child.material.color) {
+                                child.material.color.setHex(eyeColor);
+                            }
+                        }
+                    }
+                });
+            }
+
+            console.log('✅ Avatar customizations applied');
+
+        } catch (error) {
+            console.error('❌ Error applying avatar customizations:', error);
+        }
+    }
+
+    // Load saved outfit clothing on avatar
+    async function loadSavedOutfitOnAvatar(scene, avatar, savedOutfit) {
+        try {
+            console.log('👗 Loading saved outfit clothing on avatar...');
+
+            if (!savedOutfit || !savedOutfit.items || savedOutfit.items.length === 0) {
+                console.log('ℹ️ No saved outfit items to load');
+                return;
+            }
+
+            let loadedCount = 0;
+            const maxItems = Math.min(savedOutfit.items.length, 4); // Limit for performance
+
+            for (let i = 0; i < maxItems; i++) {
+                const item = savedOutfit.items[i];
+                try {
+                    console.log(`👕 Loading saved clothing item: ${item.name || item.label}`);
+
+                    // Create simple geometric representation since we don't have full OBJ loading here
+                    await createSimpleClothingRepresentation(scene, avatar, item);
+                    loadedCount++;
+
+                } catch (error) {
+                    console.warn(`⚠️ Failed to load saved item ${item.name || item.label}:`, error);
+                }
+            }
+
+            console.log(`✅ Loaded ${loadedCount}/${maxItems} saved outfit items`);
+
+        } catch (error) {
+            console.error('❌ Error loading saved outfit on avatar:', error);
+        }
+    }
+
+    async function createSimpleClothingRepresentation(scene, avatar, item) {
+        try {
+            const itemType = (item.name || item.label || item.type || '').toLowerCase();
+            let geometry;
+
+            // Create appropriate geometry based on clothing type
+            if (itemType.includes('dress')) {
+                geometry = new THREE.ConeGeometry(0.8, 1.6, 12);
+            } else if (itemType.includes('shirt') || itemType.includes('top')) {
+                geometry = new THREE.CylinderGeometry(0.5, 0.6, 1.0, 8);
+            } else if (itemType.includes('trouser') || itemType.includes('pants')) {
+                geometry = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 8);
+            } else if (itemType.includes('coat') || itemType.includes('jacket')) {
+                geometry = new THREE.CylinderGeometry(0.6, 0.7, 1.1, 8);
+            } else {
+                geometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+            }
+
+            // Get color from item data
+            let clothingColor = 0x9C7D68; // Default
+
+            if (item.color) {
+                try {
+                    if (typeof item.color === 'string' && item.color.includes(' ')) {
+                        // Handle "R G B" format
+                        const rgb = item.color.split(' ').map(v => parseInt(v));
+                        if (rgb.length === 3) {
+                            clothingColor = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not parse color for saved clothing representation');
+                }
+            }
+
+            const material = new THREE.MeshLambertMaterial({
+                color: clothingColor,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+
+            // Position based on clothing type
+            if (itemType.includes('dress')) {
+                mesh.position.set(0, -0.3, 0);
+            } else if (itemType.includes('shirt') || itemType.includes('top')) {
+                mesh.position.set(0, 0.4, 0);
+            } else if (itemType.includes('trouser') || itemType.includes('pants')) {
+                mesh.position.set(0, -0.2, 0);
+            } else if (itemType.includes('coat')) {
+                mesh.position.set(0, 0.3, 0);
+                mesh.scale.setScalar(1.1);
+            }
+
+            // Apply saved position and scale if available
+            if (savedOutfit.outfit && savedOutfit.outfit.clothingPositions && savedOutfit.outfit.clothingPositions[item.id]) {
+                const pos = savedOutfit.outfit.clothingPositions[item.id];
+                mesh.position.set(pos.x || 0, pos.y || mesh.position.y, pos.z || 0);
+            }
+
+            if (savedOutfit.outfit && savedOutfit.outfit.clothingScales && savedOutfit.outfit.clothingScales[item.id]) {
+                mesh.scale.setScalar(savedOutfit.outfit.clothingScales[item.id]);
+            }
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            avatar.add(mesh);
+
+            console.log(`✅ Simple clothing representation created: ${item.name || item.label}`);
+
+        } catch (error) {
+            console.error('❌ Error creating simple clothing representation:', error);
+        }
+    }
+
+    function showEnhancedOutfitInfo(savedOutfit) {
+        const overlay = document.getElementById('outfit-info-overlay');
+        const outfitName = document.getElementById('outfit-name');
+        const outfitDetails = document.getElementById('outfit-details');
+
+        if (overlay && outfitName && outfitDetails && savedOutfit) {
+            const outfitData = savedOutfit.outfit;
+            const itemCount = savedOutfit.items ? savedOutfit.items.length : 0;
+
+            outfitName.textContent = outfitData.name || 'Saved Outfit';
+            outfitDetails.textContent = `${itemCount} items • Saved 3D outfit`;
+
+            overlay.style.display = 'block';
+
+            console.log(`📋 Showing saved outfit info: ${outfitData.name || 'Saved Outfit'}`);
+        }
+    }
+
+    function showAvatarPlaceholder(container, message) {
+        if (container) {
+            container.innerHTML = `
+                <div class="avatar-placeholder">
+                    <i class="bi bi-person-plus"></i>
+                    <h6>${message}</h6>
+                    <small class="text-muted">Click "Customize Avatar" to get started</small>
+                </div>
+            `;
+        }
+    }
 
     // Weather System
     function initializeWeatherSystem() {
@@ -808,502 +1666,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Avatar Preview System - FIXED TO USE YOUR REAL API
-    function initializeAvatarPreview() {
-        console.log('🤖 Initializing Avatar Preview...');
-        loadAvatarPreview();
-        loadAvatarStats();
-    }
-
-    async function loadAvatarPreview() {
-        const container = document.getElementById('avatar-preview-container');
-        const placeholder = document.getElementById('avatar-placeholder');
-        const statusBadge = document.getElementById('avatar-status');
-
-        if (!container || !statusBadge) return;
-
-        try {
-            statusBadge.textContent = 'Loading...';
-            statusBadge.className = 'badge bg-warning text-dark';
-
-            console.log('📡 Fetching saved avatar from your API...');
-
-            // FIXED: Use your actual API endpoint
-            const response = await fetch('/api/avatar/get-saved');
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('📊 API Response:', data);
-
-                if (data.success && data.avatar) {
-                    console.log('✅ Found saved avatar configuration:', data.avatar.configuration);
-                    await initMiniAvatarViewer(container, data.avatar);
-                    statusBadge.textContent = 'Loaded';
-                    statusBadge.className = 'badge bg-success text-white';
-                } else {
-                    console.log('📊 No saved avatar found, creating default');
-                    await initDefaultAvatarViewer(container);
-                    statusBadge.textContent = 'Default';
-                    statusBadge.className = 'badge bg-info text-white';
-                }
-            } else {
-                console.log('📊 API error, creating default avatar');
-                await initDefaultAvatarViewer(container);
-                statusBadge.textContent = 'Default';
-                statusBadge.className = 'badge bg-info text-white';
-            }
-        } catch (error) {
-            console.error('❌ Error loading avatar preview:', error);
-            showAvatarPlaceholder('Error loading avatar');
-            statusBadge.textContent = 'Error';
-            statusBadge.className = 'badge bg-danger text-white';
-        }
-    }
-
-    async function initDefaultAvatarViewer(container) {
-        const defaultConfig = {
-            gender: 'female',
-            bodySize: 'm',
-            height: 'medium',
-            skinColor: 'light',
-            hairType: 'elvis_hazel',
-            hairColor: 'brown',
-            eyeColor: 'brown'
-        };
-
-        const defaultAvatarData = {
-            configuration: defaultConfig
-        };
-
-        await initMiniAvatarViewer(container, defaultAvatarData);
-    }
-
-    async function initMiniAvatarViewer(container, avatarData) {
-        try {
-            container.innerHTML = '';
-
-            if (typeof THREE === 'undefined') {
-                console.error('❌ Three.js not loaded');
-                showAvatarPlaceholder('3D engine not loaded');
-                return;
-            }
-
-            // Create 3D scene
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-
-            renderer.setSize(container.offsetWidth, container.offsetHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(renderer.domElement);
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(1, 1, 1);
-            directionalLight.castShadow = true;
-            scene.add(directionalLight);
-
-            // FIXED: Use your actual avatar model paths
-            const config = avatarData.configuration;
-            const gender = config.gender || 'female';
-            const bodySize = config.bodySize || 'm';
-            const height = config.height || 'medium';
-
-            // Use your MakeHuman model path structure
-            const modelPath = `/static/models/makehuman/bodies/${gender}/${bodySize}_${height}.glb`;
-            console.log('📁 Loading avatar model from:', modelPath);
-
-            // Check if GLTFLoader is available
-            if (typeof THREE.GLTFLoader === 'undefined') {
-                console.error('❌ GLTFLoader not available');
-                showAvatarPlaceholder('3D model loader not available');
-                return;
-            }
-
-            const loader = new THREE.GLTFLoader();
-            loader.load(modelPath, async (gltf) => {
-                const avatar = gltf.scene;
-                avatar.scale.setScalar(1);
-                avatar.position.y = -1;
-                scene.add(avatar);
-
-                // Store avatar reference
-                window.dashboardAvatar = {
-                    scene: scene,
-                    avatar: avatar,
-                    renderer: renderer,
-                    camera: camera
-                };
-
-                // Position camera for portrait view
-                camera.position.set(0, 1.6, 2.5);
-                camera.lookAt(0, 1.6, 0);
-
-                // FIXED: Load your actual favorite outfit
-                await loadFavoriteOutfitOnAvatar();
-
-                // Show outfit info overlay
-                showOutfitInfo();
-
-                // Render scene
-                renderer.render(scene, camera);
-
-                console.log('✅ Avatar viewer initialized with saved configuration');
-            }, undefined, (error) => {
-                console.error('❌ Error loading avatar model:', error);
-                showAvatarPlaceholder('Failed to load avatar model');
-            });
-
-            // Handle container resize
-            window.addEventListener('resize', () => {
-                const width = container.offsetWidth;
-                const height = container.offsetHeight;
-                camera.aspect = width / height;
-                camera.updateProjectionMatrix();
-                renderer.setSize(width, height);
-                renderer.render(scene, camera);
-            });
-
-        } catch (error) {
-            console.error('❌ Error initializing avatar viewer:', error);
-            showAvatarPlaceholder('3D preview unavailable');
-        }
-    }
-
-    // FIXED: Load your actual favorite outfit from your API
-    async function loadFavoriteOutfitOnAvatar() {
-        try {
-            console.log('🎽 Loading favorite outfit from your API...');
-
-            // FIXED: Use your actual saved outfits API
-            const response = await fetch('/api/outfits/saved');
-            if (!response.ok) {
-                console.log('No saved outfits found');
-                return;
-            }
-
-            const data = await response.json();
-            if (!data.success || !data.outfits || data.outfits.length === 0) {
-                console.log('No outfit data available');
-                return;
-            }
-
-            // Get the most recent outfit (your favorite)
-            const favoriteOutfit = data.outfits[0];
-            console.log(`Loading outfit: ${favoriteOutfit.name} with ${favoriteOutfit.items?.length || 0} items`);
-
-            if (!favoriteOutfit.items || favoriteOutfit.items.length === 0) {
-                console.log('No items in favorite outfit');
-                return;
-            }
-
-            // FIXED: Load each clothing item using your actual wardrobe API
-            for (const itemId of favoriteOutfit.items.slice(0, 5)) {
-                try {
-                    await loadClothingItemOnDashboardAvatar(itemId);
-                } catch (error) {
-                    console.warn(`Failed to load item ${itemId}:`, error);
-                }
-            }
-
-            console.log('✅ Favorite outfit loaded on dashboard avatar');
-
-        } catch (error) {
-            console.error('❌ Error loading favorite outfit:', error);
-        }
-    }
-
-    // FIXED: Load clothing items using your actual wardrobe API
-    async function loadClothingItemOnDashboardAvatar(itemId) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                // FIXED: Use your actual wardrobe item API
-                const itemResponse = await fetch(`/api/wardrobe/item/${itemId}`);
-                if (!itemResponse.ok) {
-                    throw new Error('Item not found');
-                }
-
-                const itemData = await itemResponse.json();
-                if (!itemData.success) {
-                    throw new Error('Failed to get item data');
-                }
-
-                console.log('👗 Loading clothing item:', itemData.label);
-
-                // FIXED: Check if item has your 3D model
-                if (itemData.has_3d_model && itemData.model_3d_path) {
-                    await loadOBJClothingOnDashboard(itemData);
-                } else {
-                    // Create simple representation
-                    await createSimpleClothingMesh(itemData);
-                }
-
-                resolve();
-
-            } catch (error) {
-                console.warn(`Could not load item ${itemId}:`, error);
-                resolve(); // Don't fail the whole process
-            }
-        });
-    }
-
-    // FIXED: Load OBJ clothing using your actual model paths
-    async function loadOBJClothingOnDashboard(itemData) {
-        return new Promise((resolve, reject) => {
-            if (!window.dashboardAvatar || typeof THREE.OBJLoader === 'undefined') {
-                console.warn('Dashboard avatar or OBJ loader not available');
-                resolve();
-                return;
-            }
-
-            const loader = new THREE.OBJLoader();
-            const objPath = itemData.model_3d_path; // Your actual OBJ path
-
-            console.log(`👗 Loading 3D clothing: ${itemData.label} from ${objPath}`);
-
-            loader.load(objPath, (object) => {
-                try {
-                    object.scale.setScalar(1.0);
-
-                    // Position clothing based on type
-                    const label = itemData.label?.toLowerCase() || '';
-
-                    if (label.includes('dress')) {
-                        object.position.set(0, -0.8, 0);
-                        object.scale.setScalar(0.95);
-                    } else if (label.includes('shirt') || label.includes('top')) {
-                        object.position.set(0, 0.2, 0);
-                    } else if (label.includes('trouser') || label.includes('pants')) {
-                        object.position.set(0, -0.5, 0);
-                    } else {
-                        object.position.set(0, 0, 0);
-                    }
-
-                    // FIXED: Apply color from your item data
-                    let clothingColor = 0x8B7355; // Default
-
-                    if (itemData.color) {
-                        try {
-                            if (typeof itemData.color === 'string') {
-                                if (itemData.color.startsWith('#')) {
-                                    clothingColor = parseInt(itemData.color.substring(1), 16);
-                                } else if (itemData.color.includes(' ')) {
-                                    // Your RGB format: "123 45 67"
-                                    const rgb = itemData.color.split(' ').map(v => parseInt(v));
-                                    if (rgb.length === 3) {
-                                        clothingColor = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-                                    }
-                                }
-                            } else if (itemData.color.rgb && Array.isArray(itemData.color.rgb)) {
-                                const rgb = itemData.color.rgb;
-                                clothingColor = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-                            }
-                        } catch (e) {
-                            console.warn('Could not parse color, using default');
-                        }
-                    }
-
-                    // Apply material
-                    object.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material = new THREE.MeshLambertMaterial({
-                                color: clothingColor,
-                                side: THREE.DoubleSide
-                            });
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-
-                    window.dashboardAvatar.avatar.add(object);
-
-                    // Re-render
-                    window.dashboardAvatar.renderer.render(
-                        window.dashboardAvatar.scene,
-                        window.dashboardAvatar.camera
-                    );
-
-                    console.log(`✅ Successfully loaded 3D clothing: ${itemData.label}`);
-                    resolve();
-
-                } catch (error) {
-                    console.error(`Error processing 3D clothing ${itemData.label}:`, error);
-                    resolve(); // Don't fail
-                }
-            }, undefined, (error) => {
-                console.error(`Failed to load 3D clothing ${itemData.label}:`, error);
-                resolve(); // Don't fail
-            });
-        });
-    }
-
-    async function createSimpleClothingMesh(itemData) {
-        return new Promise((resolve) => {
-            try {
-                if (!window.dashboardAvatar) {
-                    resolve();
-                    return;
-                }
-
-                console.log(`📦 Creating simple mesh for: ${itemData.label}`);
-
-                let geometry;
-                const label = itemData.label?.toLowerCase() || '';
-
-                if (label.includes('dress')) {
-                    geometry = new THREE.ConeGeometry(0.8, 1.8, 12);
-                } else if (label.includes('shirt') || label.includes('top')) {
-                    geometry = new THREE.CylinderGeometry(0.5, 0.6, 1.0, 8);
-                } else if (label.includes('trouser') || label.includes('pants')) {
-                    geometry = new THREE.CylinderGeometry(0.3, 0.4, 1.2, 8);
-                } else {
-                    geometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
-                }
-
-                // FIXED: Use your actual color data
-                let clothingColor = 0x9C7D68;
-
-                if (itemData.color) {
-                    try {
-                        if (typeof itemData.color === 'string' && itemData.color.includes(' ')) {
-                            const rgb = itemData.color.split(' ').map(v => parseInt(v));
-                            if (rgb.length === 3) {
-                                clothingColor = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-                            }
-                        } else if (itemData.color.rgb && Array.isArray(itemData.color.rgb)) {
-                            const rgb = itemData.color.rgb;
-                            clothingColor = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-                        }
-                    } catch (e) {
-                        console.warn('Could not parse color for simple mesh');
-                    }
-                }
-
-                const material = new THREE.MeshLambertMaterial({
-                    color: clothingColor,
-                    transparent: true,
-                    opacity: 0.8
-                });
-
-                const mesh = new THREE.Mesh(geometry, material);
-
-                if (label.includes('dress')) {
-                    mesh.position.set(0, -0.5, 0);
-                } else if (label.includes('shirt') || label.includes('top')) {
-                    mesh.position.set(0, 0.3, 0);
-                } else if (label.includes('trouser') || label.includes('pants')) {
-                    mesh.position.set(0, -0.3, 0);
-                } else {
-                    mesh.position.set(0, 0, 0);
-                }
-
-                window.dashboardAvatar.avatar.add(mesh);
-
-                window.dashboardAvatar.renderer.render(
-                    window.dashboardAvatar.scene,
-                    window.dashboardAvatar.camera
-                );
-
-                console.log(`✅ Created simple mesh for: ${itemData.label}`);
-                resolve();
-
-            } catch (error) {
-                console.warn('Error creating simple clothing mesh:', error);
-                resolve();
-            }
-        });
-    }
-
-    function showAvatarPlaceholder(message) {
-        const container = document.getElementById('avatar-preview-container');
-        const statusBadge = document.getElementById('avatar-status');
-
-        if (container) {
-            container.innerHTML = `
-                <div class="avatar-placeholder">
-                    <i class="bi bi-person-plus"></i>
-                    <h6>${message}</h6>
-                    <small class="text-muted">Click "Customize Avatar" to get started</small>
-                </div>
-            `;
-        }
-
-        if (statusBadge) {
-            statusBadge.textContent = 'Not Created';
-            statusBadge.className = 'badge bg-secondary text-white';
-        }
-    }
-
-    // FIXED: Show outfit info using your actual outfit data
-    function showOutfitInfo() {
-        fetch('/api/outfits/saved')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.outfits && data.outfits.length > 0) {
-                    const favoriteOutfit = data.outfits[0]; // Most recent
-                    const overlay = document.getElementById('outfit-info-overlay');
-                    const outfitName = document.getElementById('outfit-name');
-                    const outfitDetails = document.getElementById('outfit-details');
-
-                    if (overlay && outfitName && outfitDetails) {
-                        outfitName.textContent = favoriteOutfit.name;
-                        outfitDetails.textContent = `${favoriteOutfit.itemCount || favoriteOutfit.items?.length || 0} items • ${favoriteOutfit.outfitType || '3D'} outfit`;
-                        overlay.style.display = 'block';
-                        console.log(`📋 Showing outfit info: ${favoriteOutfit.name}`);
-                    }
-                } else {
-                    console.log('No saved outfits found for overlay');
-                }
-            })
-            .catch(error => console.log('No outfit data available:', error));
-    }
-
-    // FIXED: Load avatar stats using your actual APIs
-    async function loadAvatarStats() {
-        try {
-            // Load outfit count from your API
-            const outfitsResponse = await fetch('/api/outfits/saved');
-            if (outfitsResponse.ok) {
-                const outfitsData = await outfitsResponse.json();
-                const outfitsCountElement = document.getElementById('avatar-outfits-count');
-                if (outfitsCountElement) {
-                    outfitsCountElement.textContent = outfitsData.count || outfitsData.outfits?.length || 0;
-                }
-            }
-
-            // Load wardrobe items count from your API
-            const wardrobeResponse = await fetch('/api/wardrobe-items');
-            if (wardrobeResponse.ok) {
-                const wardrobeData = await wardrobeResponse.json();
-                const totalItems = Object.values(wardrobeData).reduce((sum, items) => sum + items.length, 0);
-                const itemsCountElement = document.getElementById('avatar-items-count');
-                if (itemsCountElement) {
-                    itemsCountElement.textContent = totalItems;
-                }
-            }
-
-            const createdDateElement = document.getElementById('avatar-created-date');
-            if (createdDateElement) {
-                createdDateElement.textContent = '7'; // You can calculate this from user creation date
-            }
-
-        } catch (error) {
-            console.error('Error loading avatar stats:', error);
-        }
-    }
-
-    // Calendar Preview System - FIXED TO LOAD IMMEDIATELY
+    // Calendar Preview System
     function initializeCalendarPreview() {
         console.log('📅 Initializing Calendar Preview...');
 
-        // FIXED: Set the title immediately
+        // Set the title immediately
         updateCalendarTitle();
 
-        // FIXED: Load calendar data immediately
+        // Load calendar data immediately
         loadMiniCalendar();
         loadUpcomingOutfits();
     }
@@ -1322,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // FIXED: Load calendar using your actual API
+    // Load calendar using your actual API
     async function loadMiniCalendar() {
         const grid = document.getElementById('mini-calendar-grid');
 
@@ -1332,7 +1702,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update title first
             updateCalendarTitle();
 
-            // FIXED: Use the correct calendar API endpoint
+            // Use the correct calendar API endpoint
             const response = await fetch(`/api/calendar/outfits-for-month?year=${currentCalendarYear}&month=${currentCalendarMonth}`);
             let calendarData = {};
 
@@ -1398,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     dayElement.classList.add('today');
                 }
 
-                // FIXED: Check calendar data using the correct structure
+                // Check calendar data using the correct structure
                 const dayOutfit = calendarData[dayNumber];
 
                 if (dayOutfit) {
@@ -1451,13 +1821,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // FIXED: Load upcoming outfits from your actual API
+    // Load upcoming outfits from your actual API
     async function loadUpcomingOutfits() {
         const container = document.getElementById('upcoming-outfits-list');
         if (!container) return;
 
         try {
-            // FIXED: Try multiple endpoints to find upcoming outfits
+            // Try multiple endpoints to find upcoming outfits
             let upcomingOutfits = [];
 
             // Method 1: Try dedicated upcoming API
@@ -1536,36 +1906,141 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // FIXED: Dashboard Stats using your actual APIs
+    // Enhanced Dashboard Stats Loading
     async function loadDashboardStats() {
         try {
-            const wardrobeResponse = await fetch('/api/wardrobe-items');
-            if (wardrobeResponse.ok) {
-                const wardrobeData = await wardrobeResponse.json();
-                const totalItems = Object.values(wardrobeData).reduce((sum, items) => sum + items.length, 0);
-                const totalElement = document.getElementById('wardrobe-total-items');
-                if (totalElement) {
-                    totalElement.textContent = totalItems;
+            console.log('📊 Loading enhanced dashboard stats...');
+
+            // Load comprehensive stats from new endpoint
+            const response = await fetch('/api/dashboard/avatar-stats');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.stats) {
+                    const stats = data.stats;
+
+                    // Update avatar stats
+                    const outfitsCountElement = document.getElementById('avatar-outfits-count');
+                    if (outfitsCountElement) {
+                        // Show both regular and 3D outfits
+                        const totalOutfits = stats.total_outfits + stats.saved_3d_outfits;
+                        outfitsCountElement.textContent = totalOutfits;
+                        outfitsCountElement.title = `${stats.total_outfits} regular + ${stats.saved_3d_outfits} 3D outfits`;
+                    }
+
+                    const itemsCountElement = document.getElementById('avatar-items-count');
+                    if (itemsCountElement) {
+                        itemsCountElement.textContent = stats.total_wardrobe_items;
+                        itemsCountElement.title = `${stats.items_with_3d_models} items have 3D models`;
+                    }
+
+                    const createdDateElement = document.getElementById('avatar-created-date');
+                    if (createdDateElement) {
+                        createdDateElement.textContent = stats.days_active;
+                        createdDateElement.title = `Active for ${stats.days_active} days`;
+                    }
+
+                    // Update wardrobe stats in the quick actions card
+                    const totalItemsElement = document.getElementById('wardrobe-total-items');
+                    if (totalItemsElement) {
+                        totalItemsElement.textContent = stats.total_wardrobe_items;
+                    }
+
+                    const outfitsElement = document.getElementById('wardrobe-outfits');
+                    if (outfitsElement) {
+                        const totalOutfits = stats.total_outfits + stats.saved_3d_outfits;
+                        outfitsElement.textContent = totalOutfits;
+                    }
+
+                    const favoritesElement = document.getElementById('wardrobe-favorites');
+                    if (favoritesElement) {
+                        favoritesElement.textContent = stats.favorite_items;
+                    }
+
+                    console.log('✅ Enhanced dashboard stats loaded successfully');
+                    console.log('📊 Stats:', stats);
+
+                    return stats;
                 }
             }
 
-            const outfitsResponse = await fetch('/api/outfits/saved');
-            if (outfitsResponse.ok) {
-                const outfitsData = await outfitsResponse.json();
-                const outfitsElement = document.getElementById('wardrobe-outfits');
-                if (outfitsElement) {
-                    outfitsElement.textContent = outfitsData.count || outfitsData.outfits?.length || 0;
-                }
-            }
-
-            const favoritesElement = document.getElementById('wardrobe-favorites');
-            if (favoritesElement) {
-                // You can calculate favorites from your outfits data
-                favoritesElement.textContent = '12';
-            }
+            // Fallback to individual API calls if enhanced endpoint fails
+            console.log('⚠️ Enhanced stats endpoint failed, using fallback...');
+            return await loadFallbackStats();
 
         } catch (error) {
-            console.error('Error loading dashboard stats:', error);
+            console.error('❌ Error loading enhanced avatar stats:', error);
+            return await loadFallbackStats();
+        }
+    }
+
+    async function loadFallbackStats() {
+        try {
+            console.log('📊 Loading fallback stats...');
+
+            // Load outfit count from saved outfits API
+            try {
+                const outfitsResponse = await fetch('/api/outfits/saved');
+                if (outfitsResponse.ok) {
+                    const outfitsData = await outfitsResponse.json();
+                    const outfitsCountElement = document.getElementById('avatar-outfits-count');
+                    if (outfitsCountElement) {
+                        outfitsCountElement.textContent = outfitsData.count || outfitsData.outfits?.length || 0;
+                    }
+
+                    const wardrobeOutfitsElement = document.getElementById('wardrobe-outfits');
+                    if (wardrobeOutfitsElement) {
+                        wardrobeOutfitsElement.textContent = outfitsData.count || outfitsData.outfits?.length || 0;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load outfits count:', e);
+            }
+
+            // Load wardrobe items count
+            try {
+                const wardrobeResponse = await fetch('/api/wardrobe-items');
+                if (wardrobeResponse.ok) {
+                    const wardrobeData = await wardrobeResponse.json();
+                    const totalItems = Object.values(wardrobeData).reduce((sum, items) => sum + items.length, 0);
+
+                    const itemsCountElement = document.getElementById('avatar-items-count');
+                    if (itemsCountElement) {
+                        itemsCountElement.textContent = totalItems;
+                    }
+
+                    const totalItemsElement = document.getElementById('wardrobe-total-items');
+                    if (totalItemsElement) {
+                        totalItemsElement.textContent = totalItems;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load wardrobe count:', e);
+            }
+
+            // Load favorites count
+            try {
+                const favoritesResponse = await fetch('/api/wardrobe/favorites');
+                if (favoritesResponse.ok) {
+                    const favoritesData = await favoritesResponse.json();
+                    const favoritesElement = document.getElementById('wardrobe-favorites');
+                    if (favoritesElement) {
+                        favoritesElement.textContent = favoritesData.count || 0;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load favorites count:', e);
+            }
+
+            // Set default days active
+            const createdDateElement = document.getElementById('avatar-created-date');
+            if (createdDateElement) {
+                createdDateElement.textContent = '7'; // Default value
+            }
+
+            console.log('✅ Fallback stats loaded');
+
+        } catch (error) {
+            console.error('❌ Error loading fallback stats:', error);
         }
     }
 
@@ -1612,10 +2087,60 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Global Functions
-    window.refreshAvatar = function() {
-        showToast('Refreshing avatar...', 'info');
-        loadAvatarPreview();
-        loadAvatarStats();
+    window.refreshAvatar = async function() {
+        console.log('🔄 Refreshing dashboard avatar...');
+
+        // Clean up existing viewer
+        if (window.dashboardAvatar && window.dashboardAvatar.renderer) {
+            window.dashboardAvatar.renderer.dispose();
+        }
+        if (window.dashboardAvatarControls) {
+            window.dashboardAvatarControls.dispose();
+        }
+
+        // Reinitialize
+        await initializeEnhancedAvatarPreview();
+
+        console.log('✅ Dashboard avatar refreshed');
+    };
+
+    // ADDED: Dashboard hair positioning helper function
+    window.adjustDashboardHair = function(x = 0, y = 0.05, z = -0.12) {
+        if (window.dashboardAvatar && window.dashboardAvatar.scene) {
+            let hairFound = false;
+            window.dashboardAvatar.scene.traverse((object) => {
+                if (object.name && object.name.includes('hair')) {
+                    console.log('Found hair:', object.name);
+                    object.position.set(x, y, z);
+                    console.log(`Hair positioned at: (${x}, ${y}, ${z})`);
+                    hairFound = true;
+                }
+            });
+            if (!hairFound) {
+                console.log('❌ No hair found in dashboard scene');
+            }
+            return hairFound;
+        } else {
+            console.log('❌ Dashboard avatar not available');
+            return false;
+        }
+    };
+
+    // ADDED: Use GLB Manager coordinates for dashboard
+    window.useGLBManagerPosition = function(height = 'medium') {
+        const glbPositions = {
+            'short': { x: 0, y: -0.534, z: -0.13 },
+            'medium': { x: 0, y: -0.39, z: -0.12 },
+            'long': { x: 0, y: -0.534, z: -0.13 }
+        };
+
+        const pos = glbPositions[height];
+        if (pos) {
+            // Adjust for dashboard avatar position (avatar is at y: -0.8)
+            const adjustedY = pos.y + 0.8;
+            return window.adjustDashboardHair(pos.x, adjustedY, pos.z);
+        }
+        return false;
     };
 
     window.refreshCalendar = function() {
@@ -1644,6 +2169,9 @@ document.addEventListener('DOMContentLoaded', function() {
         showToast(`Loading ${monthName}...`, 'info');
         loadMiniCalendar();
     };
+
+    console.log('✅ Enhanced Dashboard with Fixed Avatar & Hair System initialized');
 });
 </script>
+
 {% endblock %}
