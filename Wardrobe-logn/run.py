@@ -1288,32 +1288,103 @@ def delete_city(city_name):
         }), 500
 
 
-
 @app.route('/wardrobe/delete/<item_id>', methods=['DELETE'])
 @login_required
 def delete_wardrobe_item(item_id):
     try:
+        print(f"🗑️ Attempting to delete item: {item_id}")
+
         userId = session['user']['_id']
+        print(f"👤 User ID: {userId}")
+
+        # Validate ObjectId format
+        try:
+            object_id = ObjectId(item_id)
+            print(f"✅ Valid ObjectId: {object_id}")
+        except Exception as e:
+            print(f"❌ Invalid ObjectId format: {item_id}, Error: {str(e)}")
+            return jsonify({'error': 'Invalid item ID format'}), 400
+
         # Get item to delete its image file
-        item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': userId})
+        print("🔍 Looking for item in database...")
+        item = db.wardrobe.find_one({'_id': object_id, 'userId': userId})
 
         if not item:
-            return jsonify({'error': 'Item not found'}), 404
+            print(f"❌ Item not found for user {userId}")
+            # Check if item exists for any user
+            any_item = db.wardrobe.find_one({'_id': object_id})
+            if any_item:
+                print(f"⚠️ Item exists but belongs to different user: {any_item.get('userId')}")
+                return jsonify({'error': 'Item not found or access denied'}), 404
+            else:
+                print(f"❌ Item doesn't exist in database at all")
+                return jsonify({'error': 'Item not found'}), 404
 
-        # Delete physical file if it exists
-        file_path = os.path.join('flaskapp', item['file_path'].lstrip('/'))
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        print(f"✅ Found item: {item.get('label', 'Unknown')} (ID: {item_id})")
+
+        # Try to delete physical file if it exists
+        file_deleted = False
+        if item.get('file_path'):
+            try:
+                # Handle different path formats
+                file_path = item['file_path']
+                print(f"📁 File path from DB: {file_path}")
+
+                # Convert to actual file system path
+                if file_path.startswith('/static/'):
+                    actual_path = os.path.join('flaskapp', file_path.lstrip('/'))
+                elif file_path.startswith('static/'):
+                    actual_path = os.path.join('flaskapp', file_path)
+                else:
+                    actual_path = os.path.join('flaskapp', 'static', file_path.lstrip('/'))
+
+                print(f"📂 Actual file path: {actual_path}")
+
+                if os.path.exists(actual_path):
+                    os.remove(actual_path)
+                    file_deleted = True
+                    print(f"🗑️ Successfully deleted file: {actual_path}")
+                else:
+                    print(f"⚠️ File doesn't exist (already deleted or moved): {actual_path}")
+
+            except Exception as file_error:
+                print(f"⚠️ Error deleting file (continuing anyway): {str(file_error)}")
+                # Don't fail the entire operation if file deletion fails
+        else:
+            print("📄 No file_path in item, skipping file deletion")
 
         # Delete from database
-        result = db.wardrobe.delete_one({'_id': ObjectId(item_id), 'userId': userId})
+        print("🗄️ Deleting from database...")
+        result = db.wardrobe.delete_one({'_id': object_id, 'userId': userId})
 
-        if result.deleted_count:
-            return jsonify({'success': True})
-        return jsonify({'error': 'Delete failed'}), 500
+        if result.deleted_count > 0:
+            print(f"✅ Successfully deleted item from database")
+
+            response_data = {
+                'success': True,
+                'message': f'Item deleted successfully',
+                'file_deleted': file_deleted,
+                'item_label': item.get('label', 'Unknown')
+            }
+
+            return jsonify(response_data)
+        else:
+            print(f"❌ Failed to delete from database (no documents deleted)")
+            return jsonify({'error': 'Failed to delete from database'}), 500
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ Unexpected error in delete route: {str(e)}")
+        import traceback
+        print(f"📊 Full traceback:")
+        traceback.print_exc()
+
+        # Return detailed error for debugging
+        return jsonify({
+            'error': f'Server error: {str(e)}',
+            'type': type(e).__name__,
+            'item_id': item_id
+        }), 500,
+
 
 
 # First, define the helper function
@@ -1898,6 +1969,7 @@ def add_wardrobe():
             print(f"❌ Error fixing task IDs: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500
 
+
 @app.route('/wardrobe/all', methods=['GET', 'POST'])
 @login_required
 def view_wardrobe_all():
@@ -1913,22 +1985,24 @@ def view_wardrobe_all():
         'shoes': ['Sandal', 'Sneaker', 'Ankle boot'],
         'accessories': ['Bag']
     }
+
     grouped_items = {cat: [] for cat in categories.keys()}
+
     for item_doc in users_clothes:
         label = item_doc.get('label', '')
         category = item_doc.get('category')
         if not category:
             category = next((cat for cat, lbls in categories.items() if label in lbls), None)
         if category:
-            # Use the same logic as calendar: always normalize file_path
             grouped_items[category].append({
                 'id': str(item_doc['_id']),
                 'label': item_doc['label'],
                 'file_path': normalize_path(item_doc.get('file_path', '')),
-                'color': item_doc.get('color', '')
+                'color': item_doc.get('color', ''),
+                'isFavorite': item_doc.get('isFavorite', False)  # Add this line
             })
-    return render_template('wardrobe_all2.html', wardrobe_items=grouped_items)
 
+    return render_template('wardrobe_all2.html', wardrobe_items=grouped_items)
 
 # Enhanced /outfits/all route with favorites support
 # Replace your existing view_outfits_all function with this enhanced version
@@ -5272,7 +5346,6 @@ def view_outfit_detail(outfit_id):
         outfit = db.outfits.find_one({'_id': ObjectId(outfit_id), 'userId': user_id})
 
         if not outfit:
-            flash('Outfit not found', 'error')
             return redirect(url_for('view_outfits_all'))
 
         # Normalize file paths for outfit pieces
@@ -5290,7 +5363,99 @@ def view_outfit_detail(outfit_id):
 
 
 # Uncomment this line to run the migration once
-migrate_outfit_favorites()
+# Add these routes for favorites functionality
+# Add these routes to your run.py file:
+
+@app.route('/wardrobe/favorites/api', methods=['GET'])
+@login_required
+def get_favorites_api():
+    try:
+        userId = session['user']['_id']
+
+        # Get all favorite items
+        favorites_cursor = db.wardrobe.find({'userId': userId, 'isFavorite': True})
+        favorites = []
+
+        for item in favorites_cursor:
+            favorites.append({
+                'id': str(item['_id']),
+                'label': item.get('label', 'Unknown'),
+                'file_path': normalize_path(item.get('file_path', '')),
+                'color': item.get('color', ''),
+                'favorited_at': item.get('favorited_at')
+            })
+
+        return jsonify({
+            'success': True,
+            'favorites': favorites,
+            'count': len(favorites)
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/wardrobe/favorite/<item_id>', methods=['POST'])
+@login_required
+def add_to_favorites(item_id):
+    try:
+        userId = session['user']['_id']
+
+        # Update the wardrobe item to mark as favorite
+        result = db.wardrobe.update_one(
+            {'_id': ObjectId(item_id), 'userId': userId},
+            {'$set': {'isFavorite': True, 'favorited_at': datetime.now()}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({'success': True, 'message': 'Added to favorites'})
+        elif result.matched_count > 0:
+            return jsonify({'success': True, 'message': 'Already in favorites'})
+        else:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/wardrobe/favorite/<item_id>', methods=['DELETE'])
+@login_required
+def remove_from_favorites(item_id):
+    try:
+        userId = session['user']['_id']
+
+        # Update the wardrobe item to remove from favorites
+        result = db.wardrobe.update_one(
+            {'_id': ObjectId(item_id), 'userId': userId},
+            {'$set': {'isFavorite': False}, '$unset': {'favorited_at': 1}}
+        )
+
+        if result.modified_count > 0:
+            return jsonify({'success': True, 'message': 'Removed from favorites'})
+        else:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def migrate_wardrobe_favorites():
+    """Add isFavorite field to existing wardrobe items"""
+    try:
+        # Update all wardrobe items that don't have isFavorite field
+        result = db.wardrobe.update_many(
+            {'isFavorite': {'$exists': False}},
+            {'$set': {'isFavorite': False}}
+        )
+
+        print(f"Updated {result.modified_count} wardrobe items with isFavorite field")
+
+    except Exception as e:
+        print(f"Error migrating wardrobe favorites: {str(e)}")
+
+
+# Run this once in your Python console or add to your app startup:
+migrate_wardrobe_favorites()
 
 if __name__ == '__main__':
     initialize_avatar_collections()
