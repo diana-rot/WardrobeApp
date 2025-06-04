@@ -299,23 +299,47 @@ import cv2
 from sklearn.cluster import KMeans
 import imutils
 
+# from flaskapp.ml_models import model_manager
 from flaskapp.ml_models import model_manager
 
 print('🚀 Model loading optimized - models load on demand to save memory')
+# def model_predict(img_path, model=None):
+#     """Optimized model predict with lazy loading"""
+#     try:
+#         # Use the model manager instead of loading at startup
+#         result = model_manager.predict_clothing(img_path)
+#
+#         # Convert to your expected numpy array format
+#         import numpy as np
+#         preds = np.array([result['all_predictions']])
+#
+#         return preds
+#
+#     except Exception as e:
+#         print(f"Error in model_predict: {str(e)}")
+#         raise
+
 def model_predict(img_path, model=None):
-    """Optimized model predict with lazy loading"""
+    """Enhanced model predict with hybrid prediction system"""
     try:
-        # Use the model manager instead of loading at startup
+        print(f"🔍 Enhanced prediction for: {os.path.basename(img_path)}")
+
+        # Use the enhanced model manager with hybrid prediction
         result = model_manager.predict_clothing(img_path)
 
         # Convert to your expected numpy array format
         import numpy as np
         preds = np.array([result['all_predictions']])
 
+        # Log enhanced prediction info if available
+        if 'ensemble_confidence' in result:
+            print(f"🎯 Ensemble confidence: {result['ensemble_confidence']:.3f}")
+            print(f"🎯 Methods used: {result.get('methods_used', 1)}")
+
         return preds
 
     except Exception as e:
-        print(f"Error in model_predict: {str(e)}")
+        print(f"❌ Error in enhanced model_predict: {str(e)}")
         raise
 
 
@@ -714,9 +738,12 @@ def upload():
 
             # Make predictions with validation
             try:
-                preds = model_predict(file_path)  # NEW - no model parameter
+                print(f"🚀 Processing upload with enhanced model: {secure_filename(f.filename)}")
+                preds = model_predict(file_path)  # Enhanced prediction with hybrid system
                 if not isinstance(preds, np.ndarray) or preds.size == 0:
                     raise ValueError("Invalid prediction output")
+
+                print(f"✅ Enhanced prediction completed successfully")
 
                 # Extract color information
                 color_result = predict_color(file_path)
@@ -735,6 +762,10 @@ def upload():
 
                 result = class_names[predicted_label]
 
+                # Log the enhanced prediction details
+                print(f"🎯 Final prediction: {result}")
+                print(f"🎯 Confidence: {np.max(preds):.3f}")
+
                 # Save to database with material properties
                 db.wardrobe.insert_one({
                     'label': result,
@@ -743,7 +774,8 @@ def upload():
                     'userId': user_id,
                     'file_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',
                     'material_properties': material_properties,  # NEW - store material data
-                    'texture_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',  # Same as file_path for now
+                    'texture_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',
+                    # Same as file_path for now
                     'created_at': datetime.now()
                 })
 
