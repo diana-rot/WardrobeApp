@@ -262,7 +262,7 @@
         color: white;
     }
 
-    /* Model Preview Card */
+    /* Model Preview Card - REMOVED SAVE BUTTON */
     .model-preview-card {
         background: white;
         border-radius: 15px;
@@ -593,6 +593,23 @@
         font-size: 16px;
     }
 
+    /* Auto-Save Success Message */
+    .auto-save-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin: 15px 0;
+        text-align: center;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .auto-save-success i {
+        margin-right: 8px;
+        font-size: 18px;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .upload-area {
@@ -728,17 +745,25 @@
                 <small>Using Google Colab GPU - This may take 2-4 minutes...</small>
             </div>
 
-            <!-- Model Preview Card -->
+            <!-- Model Preview Card - REMOVED SAVE BUTTON -->
             <div id="model-preview-card" class="model-preview-card">
+                <div class="auto-save-success">
+                    <i class="fas fa-check-circle"></i>
+                    3D Model Automatically Saved to Wardrobe!
+                </div>
+
                 <div class="model-info">
                     <div class="model-thumbnail">
                         <i class="fas fa-cube"></i>
                     </div>
                     <div>
                         <h4>3D Model Generated Successfully!</h4>
-                        <p class="text-muted">Your clothing item has been converted to a 3D model using Colab GPU</p>
+                        <p class="text-muted">Your clothing item has been converted to a 3D model and automatically saved to your wardrobe</p>
                         <span class="badge" style="background-color: #4285f4; color: white; padding: 4px 8px; border-radius: 10px; font-size: 12px;">
                             <i class="fab fa-google"></i> Colab Generated
+                        </span>
+                        <span class="badge" style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 10px; font-size: 12px; margin-left: 5px;">
+                            <i class="fas fa-save"></i> Auto-Saved
                         </span>
                     </div>
                 </div>
@@ -748,9 +773,6 @@
                     </button>
                     <button id="download-model-btn" class="btn btn-secondary">
                         <i class="fas fa-download"></i> Download OBJ
-                    </button>
-                    <button id="save-to-wardrobe-btn" class="btn btn-success">
-                        <i class="fas fa-save"></i> Save to Wardrobe
                     </button>
                 </div>
             </div>
@@ -833,7 +855,7 @@
             <div class="modal-footer">
                 <div class="mr-auto">
                     <small class="text-muted">
-                        <i class="fab fa-google"></i> Generated with Colab GPU • <i class="fas fa-cube"></i> Three.js Powered • ✨ Clean White Background
+                        <i class="fab fa-google"></i> Generated with Colab GPU • <i class="fas fa-cube"></i> Three.js Powered • ✨ Auto-Saved to Wardrobe
                     </small>
                 </div>
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">
@@ -841,9 +863,6 @@
                 </button>
                 <button type="button" class="btn btn-primary" onclick="downloadModel()">
                     <i class="fas fa-download"></i> Download OBJ
-                </button>
-                <button type="button" class="btn btn-success" onclick="saveToWardrobe()">
-                    <i class="fas fa-save"></i> Save to Wardrobe
                 </button>
             </div>
         </div>
@@ -861,7 +880,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.min.js"></script>
 
 <script>
-console.log('🎯 Starting ENHANCED 3D Wardrobe System with Clean White Background & Color Support...');
+console.log('🎯 Starting ENHANCED 3D Wardrobe System with Auto-Save & No Duplicate Buttons...');
 
 // ENHANCED OBJ LOADER WITH COLOR SUPPORT
 class BulletproofOBJLoader {
@@ -1083,10 +1102,7 @@ class BulletproofOBJLoader {
     }
 }
 
-
-
-
-// FIXED: Enhanced CleanWhiteClothingViewer class with CORRECT ROTATION FROM AVATAR APP
+// Enhanced CleanWhiteClothingViewer class
 class CleanWhiteClothingViewer {
     constructor(container) {
         this.container = container;
@@ -1135,7 +1151,7 @@ class CleanWhiteClothingViewer {
         // Controls optimized for clothing
         this.controls = createOrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.08; // FIXED: Less sensitive
+        this.controls.dampingFactor = 0.08;
         this.controls.minDistance = 0.5;
         this.controls.maxDistance = 8;
 
@@ -1219,7 +1235,6 @@ class CleanWhiteClothingViewer {
         }
     }
 
-    // FIXED: Apply the EXACT SAME rotation that works in your avatar app!
     processColoredClothingModel(object) {
         // Remove previous model
         if (this.model) {
@@ -1256,14 +1271,10 @@ class CleanWhiteClothingViewer {
             }
         });
 
-        // APPLY THE SAME ROTATION THAT WORKS IN YOUR AVATAR APP
-        console.log('🔄 Applying WORKING rotation from avatar app...');
-
-        // Reset rotation first
+        // Apply the correct rotation for clothing
+        console.log('🔄 Applying working rotation from avatar app...');
         this.model.rotation.set(0, 0, 0);
-
-        // Apply the EXACT same rotation that works in your avatar app
-        this.model.rotation.set(-Math.PI / 2, 0, Math.PI / 2); // X=-90°, Y=0°, Z=90°
+        this.model.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
 
         console.log(`✅ Applied working rotation: X=${(this.model.rotation.x * 180 / Math.PI).toFixed(0)}°, Y=${(this.model.rotation.y * 180 / Math.PI).toFixed(0)}°, Z=${(this.model.rotation.z * 180 / Math.PI).toFixed(0)}°`);
 
@@ -1360,7 +1371,6 @@ class CleanWhiteClothingViewer {
         console.log(`📸 Camera positioned for ${this.clothingType}: distance=${cameraDistance.toFixed(2)}, height=${cameraHeight.toFixed(2)}`);
     }
 
-    // FIXED: Clothing view presets
     setClothingView(viewType) {
         console.log(`📸 Setting clothing view: ${viewType}`);
 
@@ -1440,7 +1450,6 @@ class CleanWhiteClothingViewer {
         animate();
     }
 
-    // FIXED: Control methods
     toggleAutoRotate() {
         if (this.controls) {
             this.controls.autoRotate = !this.controls.autoRotate;
@@ -1538,76 +1547,7 @@ class CleanWhiteClothingViewer {
     }
 }
 
-// FIXED: Debug functions
-window.testModalButtons = function() {
-    console.log('🧪 Testing modal button functions...');
-
-    // Test each function
-    console.log('Testing resetView...');
-    if (typeof window.resetView === 'function') {
-        console.log('✅ resetView function exists');
-    } else {
-        console.error('❌ resetView function missing');
-    }
-
-    console.log('Testing toggleWireframe...');
-    if (typeof window.toggleWireframe === 'function') {
-        console.log('✅ toggleWireframe function exists');
-    } else {
-        console.error('❌ toggleWireframe function missing');
-    }
-
-    console.log('Testing toggleAutoRotate...');
-    if (typeof window.toggleAutoRotate === 'function') {
-        console.log('✅ toggleAutoRotate function exists');
-    } else {
-        console.error('❌ toggleAutoRotate function missing');
-    }
-
-    console.log('Testing setClothingView...');
-    if (typeof window.setClothingView === 'function') {
-        console.log('✅ setClothingView function exists');
-    } else {
-        console.error('❌ setClothingView function missing');
-    }
-
-    console.log('wardrobeViewer status:', wardrobeViewer ? 'Available' : 'Not available');
-};
-
-console.log('🔧 Fixed button control functions loaded!');
-console.log('🧪 Test with: window.testModalButtons()');
-// CLEAN WHITE BACKGROUND CLOTHING VIEWER
-
-
-// Global variables
-let currentUploadedFile = null;
-let currentItemData = null;
-let generatedModelData = null;
-let currentGenerationTaskId = null;
-let colabConnected = false;
-let wardrobeViewer = null;
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 DOM loaded, initializing enhanced wardrobe app...');
-    initializeApp();
-
-    const savedUrl = document.getElementById('colab-url-input').value;
-    if (savedUrl) {
-        console.log('🔗 Auto-connecting to saved Colab URL...');
-        connectToColab();
-    }
-});
-
-function initializeApp() {
-    console.log('🚀 Initializing enhanced wardrobe app...');
-    setupEventListeners();
-    setupDragAndDrop();
-    console.log('✅ App initialization complete');
-}
-
 // WORKING ORBITCONTROLS FUNCTION
-// WORKING ORBITCONTROLS FUNCTION - FIXED SENSITIVITY
 function createOrbitControls(camera, domElement) {
     const controls = {
         camera: camera,
@@ -1616,9 +1556,9 @@ function createOrbitControls(camera, domElement) {
         minDistance: 1,
         maxDistance: 20,
         enableDamping: true,
-        dampingFactor: 0.08, // Increased for smoother movement
+        dampingFactor: 0.08,
         autoRotate: false,
-        autoRotateSpeed: 1, // Reduced from 2
+        autoRotateSpeed: 1,
 
         spherical: new THREE.Spherical(),
         sphericalDelta: new THREE.Spherical(),
@@ -1629,10 +1569,9 @@ function createOrbitControls(camera, domElement) {
         rotateStart: new THREE.Vector2(),
         rotateEnd: new THREE.Vector2(),
 
-        // Add sensitivity controls
-        rotateSpeed: 0.3, // NEW: Much lower sensitivity (was effectively 1.0)
-        panSpeed: 0.5,    // NEW: Pan sensitivity
-        zoomSpeed: 0.8,   // NEW: Zoom sensitivity
+        rotateSpeed: 0.3,
+        panSpeed: 0.5,
+        zoomSpeed: 0.8,
 
         update: function() {
             if (this.autoRotate && this.state === this.STATE.NONE) {
@@ -1677,9 +1616,8 @@ function createOrbitControls(camera, domElement) {
             this.rotateEnd.set(event.clientX, event.clientY);
             const delta = new THREE.Vector2().subVectors(this.rotateEnd, this.rotateStart);
 
-            // FIXED: Apply rotation speed multiplier - much more sensitive control
-            this.sphericalDelta.theta -= delta.x * 0.01 * this.rotateSpeed; // Was 0.01, now 0.01 * 0.3 = 0.003
-            this.sphericalDelta.phi -= delta.y * 0.01 * this.rotateSpeed;   // Much less sensitive
+            this.sphericalDelta.theta -= delta.x * 0.01 * this.rotateSpeed;
+            this.sphericalDelta.phi -= delta.y * 0.01 * this.rotateSpeed;
 
             this.rotateStart.copy(this.rotateEnd);
         }
@@ -1693,7 +1631,6 @@ function createOrbitControls(camera, domElement) {
 
     controls.onMouseWheel = function(event) {
         event.preventDefault();
-        // FIXED: Apply zoom speed and make it less sensitive
         const scale = event.deltaY > 0 ? (1 + (0.05 * controls.zoomSpeed)) : (1 - (0.05 * controls.zoomSpeed));
         controls.scale = (controls.scale || 1) * scale;
     };
@@ -1711,18 +1648,44 @@ function createOrbitControls(camera, domElement) {
     return controls;
 }
 
+// Global variables
+let currentUploadedFile = null;
+let currentItemData = null;
+let generatedModelData = null;
+let currentGenerationTaskId = null;
+let colabConnected = false;
+let wardrobeViewer = null;
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 DOM loaded, initializing enhanced wardrobe app...');
+    initializeApp();
+
+    const savedUrl = document.getElementById('colab-url-input').value;
+    if (savedUrl) {
+        console.log('🔗 Auto-connecting to saved Colab URL...');
+        connectToColab();
+    }
+});
+
+function initializeApp() {
+    console.log('🚀 Initializing enhanced wardrobe app...');
+    setupEventListeners();
+    setupDragAndDrop();
+    console.log('✅ App initialization complete');
+}
+
 function setupEventListeners() {
     // Upload functionality
     document.getElementById('imageUpload').addEventListener('change', handleFileSelect);
     document.getElementById('btn-predict').addEventListener('click', analyzeImage);
 
-    // 3D model generation
+    // 3D model generation - REMOVED SAVE BUTTON EVENT LISTENER
     document.getElementById('generate-3d-model-btn').addEventListener('click', generate3DModel);
     document.getElementById('view-3d-model-btn').addEventListener('click', view3DModel);
     document.getElementById('download-model-btn').addEventListener('click', downloadModel);
-    document.getElementById('save-to-wardrobe-btn').addEventListener('click', saveToWardrobe);
 
-    console.log('🎯 Event listeners attached');
+    console.log('🎯 Event listeners attached (save button removed)');
 }
 
 function setupDragAndDrop() {
@@ -1855,7 +1818,6 @@ function showColabConnectionStatus(success, message) {
 }
 
 // IMAGE ANALYSIS FUNCTION
-// FIXED: Enhanced analyze image function to properly store item_id
 function analyzeImage() {
     if (!currentUploadedFile) {
         showToast('Please select an image first', 'warning');
@@ -2058,68 +2020,7 @@ function startStatusPolling() {
     setTimeout(pollStatus, 2000);
 }
 
-function handleGenerationSuccess(data) {
-    console.log('🎉 Generation completed with data:', data);
-
-    generatedModelData = {
-        model_path: data.model_path,
-        local_path: data.local_path,
-        file_size: data.file_size,
-        file_format: data.file_format || 'OBJ',
-        method: data.method || 'colab',
-        completed_at: data.completed_at,
-        task_id: currentGenerationTaskId
-    };
-
-    console.log('💾 Stored model data:', generatedModelData);
-
-    const progressDiv = document.getElementById('generation-progress');
-    const previewCard = document.getElementById('model-preview-card');
-
-    progressDiv.style.display = 'none';
-    previewCard.classList.add('visible');
-
-    resetGenerationUI();
-    showToast('🎉 3D model generated successfully with Colab!', 'success');
-    showQuickViewButton();
-
-    // CRITICAL: Auto-save only if we have current item data with valid ID
-    if (currentItemData && (currentItemData.item_id || currentItemData._id || currentItemData.id)) {
-        console.log('🔄 Auto-saving 3D model to database...');
-        setTimeout(() => {
-            autoSave3DModel();
-        }, 1000); // Small delay to ensure UI updates complete
-    } else {
-        console.log('⚠️ No valid item data for auto-save:', currentItemData);
-        showToast('⚠️ 3D model generated but not auto-saved. Use Save button.', 'warning');
-    }
-
-    currentGenerationTaskId = null;
-}
-
-function handleGenerationFailure(data) {
-    const errorMessage = data.error || data.message || 'Generation failed';
-    console.error('❌ Generation failed:', errorMessage);
-    showToast(`❌ Generation failed: ${errorMessage}`, 'error');
-    resetGenerationUI();
-    currentGenerationTaskId = null;
-}
-
-function resetGenerationUI() {
-    const generateBtn = document.getElementById('generate-3d-model-btn');
-    const progressDiv = document.getElementById('generation-progress');
-
-    if (generateBtn) {
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = '<i class="fab fa-google"></i> Generate 3D Model with Colab';
-    }
-
-    if (progressDiv) {
-        progressDiv.style.display = 'none';
-    }
-}
-
-// FIXED: Auto-save function with better validation and error handling
+// FIXED: Auto-save function with proper JavaScript syntax
 function autoSave3DModel() {
     if (!generatedModelData || !currentItemData) {
         console.log('❌ Cannot auto-save: missing data');
@@ -2181,11 +2082,72 @@ function autoSave3DModel() {
     })
     .catch(error => {
         console.error('❌ Auto-save error:', error);
-        showToast(`⚠️ Auto-save failed: ${error.message}. Use the Save button manually.`, 'warning');
+        showToast(`⚠️ Auto-save failed: ${error.message}. Manual save not available (auto-save only).`, 'warning');
     });
 }
 
-// ENHANCED VIEW 3D MODEL FUNCTION WITH CLEAN WHITE BACKGROUND
+function handleGenerationSuccess(data) {
+    console.log('🎉 Generation completed with auto-save!', data);
+
+    generatedModelData = {
+        model_path: data.model_path,
+        local_path: data.local_path,
+        file_size: data.file_size,
+        file_format: data.file_format || 'OBJ',
+        method: data.method || 'colab',
+        completed_at: data.completed_at,
+        task_id: currentGenerationTaskId
+    };
+
+    console.log('💾 Stored model data:', generatedModelData);
+
+    const progressDiv = document.getElementById('generation-progress');
+    const previewCard = document.getElementById('model-preview-card');
+
+    progressDiv.style.display = 'none';
+    previewCard.classList.add('visible');
+
+    resetGenerationUI();
+    showToast('🎉 3D model generated and automatically saved to wardrobe!', 'success');
+    showQuickViewButton();
+
+    // CRITICAL: Auto-save only if we have current item data with valid ID
+    if (currentItemData && (currentItemData.item_id || currentItemData._id || currentItemData.id)) {
+        console.log('🔄 Auto-saving 3D model to database...');
+        setTimeout(() => {
+            autoSave3DModel();
+        }, 1000); // Small delay to ensure UI updates complete
+    } else {
+        console.log('⚠️ No valid item data for auto-save:', currentItemData);
+        showToast('⚠️ 3D model generated but not auto-saved. No item ID found.', 'warning');
+    }
+
+    currentGenerationTaskId = null;
+}
+
+function handleGenerationFailure(data) {
+    const errorMessage = data.error || data.message || 'Generation failed';
+    console.error('❌ Generation failed:', errorMessage);
+    showToast(`❌ Generation failed: ${errorMessage}`, 'error');
+    resetGenerationUI();
+    currentGenerationTaskId = null;
+}
+
+function resetGenerationUI() {
+    const generateBtn = document.getElementById('generate-3d-model-btn');
+    const progressDiv = document.getElementById('generation-progress');
+
+    if (generateBtn) {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<i class="fab fa-google"></i> Generate 3D Model with Colab';
+    }
+
+    if (progressDiv) {
+        progressDiv.style.display = 'none';
+    }
+}
+
+// ENHANCED VIEW 3D MODEL FUNCTION
 function view3DModel() {
     if (!generatedModelData) {
         showToast('No 3D model available', 'warning');
@@ -2210,7 +2172,7 @@ function view3DModel() {
     });
 }
 
-// FIXED: Setup control functions that the HTML buttons can call
+// Setup control functions for modal buttons
 function setupModalControlFunctions() {
     console.log('🔧 Setting up modal control functions...');
 
@@ -2225,7 +2187,8 @@ function setupModalControlFunctions() {
             showToast('❌ Reset function not available', 'error');
         }
     };
-      // Toggle wireframe function
+
+    // Toggle wireframe function
     window.toggleWireframe = function() {
         console.log('📐 Toggle wireframe clicked');
         if (wardrobeViewer && wardrobeViewer.toggleWireframe) {
@@ -2267,14 +2230,8 @@ function setupModalControlFunctions() {
         downloadModel(); // Call the existing function
     };
 
-    window.saveToWardrobe = function() {
-        console.log('💾 Save to wardrobe clicked from modal');
-        saveToWardrobe(); // Call the existing function
-    };
-
     console.log('✅ Modal control functions set up successfully');
 }
-
 
 // Initialize control functions properly when viewer is created
 function initCleanWhiteClothingViewer() {
@@ -2307,15 +2264,13 @@ function initCleanWhiteClothingViewer() {
         showToast('❌ No model data available', 'error');
     }
 
-    // FIXED: Properly define global functions for the modal buttons
+    // Setup global functions for the modal buttons
     setupModalControlFunctions();
 
     return wardrobeViewer;
 }
 
-
-
-// DOWNLOAD AND SAVE FUNCTIONS
+// DOWNLOAD FUNCTION (REMOVED SAVE FUNCTION)
 function downloadModel() {
     if (!generatedModelData || !generatedModelData.model_path) {
         showToast('No 3D model available for download', 'warning');
@@ -2350,64 +2305,6 @@ function downloadModel() {
             showToast(`❌ Download failed. Model path: ${generatedModelData.model_path}`, 'error');
         }
     }
-}
-
-function saveToWardrobe() {
-    if (!currentItemData || !generatedModelData) {
-        showToast('No model data to save', 'warning');
-        return;
-    }
-
-    const itemId = currentItemData.item_id || currentItemData._id || currentItemData.id;
-
-    if (!itemId) {
-        showToast('No valid item ID found', 'warning');
-        console.log('❌ Current item data:', currentItemData);
-        return;
-    }
-
-    const saveBtn = document.getElementById('save-to-wardrobe-btn');
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-    }
-
-    console.log('💾 Manually saving 3D model to wardrobe...');
-
-    fetch('/api/save-3d-model', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            item_id: itemId,
-            model_path: generatedModelData.model_path,
-            method: generatedModelData.method,
-            file_format: generatedModelData.file_format,
-            file_size: generatedModelData.file_size
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('✅ 3D model saved to wardrobe successfully!', 'success');
-            currentItemData.model_3d_path = generatedModelData.model_path;
-            currentItemData.has_3d_model = true;
-            console.log('✅ Manual save completed');
-        } else {
-            throw new Error(data.error || 'Failed to save model');
-        }
-    })
-    .catch(error => {
-        console.error('❌ Manual save error:', error);
-        showToast(`❌ Error saving to wardrobe: ${error.message}`, 'error');
-    })
-    .finally(() => {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Wardrobe';
-        }
-    });
 }
 
 function showQuickViewButton() {
@@ -2613,12 +2510,13 @@ window.loadCleanWhiteClothing3D = function(path) {
     view3DModel();
 };
 
-console.log('🎉 ENHANCED WARDROBE 3D VIEWER WITH CORRECT AVATAR APP ROTATION LOADED!');
+console.log('🎉 ENHANCED WARDROBE 3D VIEWER WITH AUTO-SAVE (NO DUPLICATE SAVE BUTTONS) LOADED!');
 console.log('✨ Features:');
 console.log('   🎨 Full color support from OBJ vertex colors');
 console.log('   🤍 Clean white professional background');
 console.log('   👕 Clothing-optimized camera positioning');
-console.log('   🔄 FIXED: Using EXACT same rotation as avatar app (-90°, 0°, 90°)');
+console.log('   💾 Automatic saving to database when 3D generation completes');
+console.log('   🚫 REMOVED: Duplicate "Save to Wardrobe" buttons (auto-save handles this)');
 console.log('   💡 Studio-quality lighting for fashion display');
 console.log('');
 console.log('🧪 Test commands:');
@@ -2626,7 +2524,7 @@ console.log('   window.testCleanWhiteViewer() - Load colored test cube with whit
 console.log('   window.testWithActualColoredModel() - Load your actual colored model');
 console.log('   window.debugOBJColors("path") - Analyze OBJ file for color data');
 console.log('   window.loadCleanWhiteClothing3D("path") - Load specific model path');
-console.log('✅ Clean white clothing viewer with CORRECTED rotation ready!');
+console.log('✅ Clean white clothing viewer with AUTO-SAVE ready!');
 
 </script>
 

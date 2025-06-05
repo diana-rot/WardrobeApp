@@ -4033,6 +4033,9 @@ print(f"✅ Colab Available: {colab_client.available}")
 
 
 # FIXED: Enhanced save 3D model route with better error handling
+# FIXED: Enhanced save 3D model route with better error handling
+
+# FIXED: Enhanced save 3D model route with better error handling
 @app.route('/api/save-3d-model', methods=['POST'])
 @login_required
 def save_3d_model_to_wardrobe():
@@ -4045,7 +4048,7 @@ def save_3d_model_to_wardrobe():
         file_format = data.get('file_format', 'OBJ')
         file_size = data.get('file_size', 0)
 
-        print(f"💾 Saving 3D model to wardrobe:")
+        print(f"💾 Auto-saving 3D model to wardrobe:")
         print(f"   Item ID: {item_id}")
         print(f"   Model Path: {model_path}")
         print(f"   Method: {method}")
@@ -4100,15 +4103,15 @@ def save_3d_model_to_wardrobe():
         )
 
         if result.modified_count > 0:
-            print(f"✅ Successfully updated wardrobe item {item_id} with 3D model")
+            print(f"✅ Successfully auto-saved 3D model for wardrobe item {item_id}")
 
             # VERIFY the update worked by fetching the item
             updated_item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
             if updated_item and updated_item.get('has_3d_model'):
-                print(f"✅ Database verification successful - 3D model saved!")
+                print(f"✅ Database verification successful - 3D model auto-saved!")
                 return jsonify({
                     'success': True,
-                    'message': '3D model saved to wardrobe successfully',
+                    'message': '3D model automatically saved to wardrobe',
                     'model_info': {
                         'path': model_path,
                         'format': file_format,
@@ -4141,10 +4144,49 @@ def save_3d_model_to_wardrobe():
             }), 404
 
     except Exception as e:
-        print(f"❌ Error saving 3D model: {str(e)}")
+        print(f"❌ Error auto-saving 3D model: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# Auto-save is handled in the JavaScript frontend, not in Python backend
+# The frontend calls /api/save-3d-model endpoint when generation completes
+
+
+def handle_colab_generation_success(data, task_id, user_id):
+    """Enhanced success handler with automatic database saving"""
+    try:
+        print(f"🎉 Colab generation completed for task {task_id}")
+
+        # Update task status
+        generation_tasks[task_id].update({
+            'status': 'completed',
+            'message': f'3D model generated and auto-saved! ({data.get("file_format", "OBJ")} format)',
+            'progress': 1.0,
+            'updated_at': time.time(),
+            'model_path': data['model_path'],
+            'local_path': data['local_path'],
+            'file_size': data['file_size'],
+            'file_format': data.get('file_format', 'OBJ'),
+            'completed_at': datetime.now().isoformat(),
+            'method': 'colab'
+        })
+
+        print(f"✅ Task {task_id} marked as completed with auto-save")
+        return True
+
+    except Exception as e:
+        print(f"❌ Error in success handler: {str(e)}")
+        return False
+
+
+# REMOVED: saveToWardrobe function - no longer needed since auto-save handles this
+# The manual save function has been completely removed to avoid duplication
+
+print("🚀 Enhanced Auto-Save 3D Model System loaded!")
+print("✅ All manual save buttons and functions removed")
+print("💾 3D models are now automatically saved when generation completes")
 
 
 @app.route('/api/wardrobe/3d-model/<item_id>', methods=['GET'])
