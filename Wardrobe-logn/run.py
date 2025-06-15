@@ -54,6 +54,45 @@ from functools import partial
 from flaskapp.user.routes import *
 import base64
 from bson.binary import Binary
+import re
+from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
+import requests
+import time
+import uuid
+from datetime import datetime
+import threading
+import os
+import requests
+import time
+import uuid
+from datetime import datetime
+import threading
+import os
+import tempfile
+import shutil
+from werkzeug.utils import secure_filename
+import random
+from gradio_client import Client, handle_file
+import tempfile
+import threading
+import queue
+import time
+import requests
+import os
+import shutil
+from werkzeug.utils import secure_filename
+from datetime import datetime
+import json
+import uuid
+
+
+# Global variables for Colab-only integration
+COLAB_API_URL = 'https://f606-34-72-94-244.ngrok-free.app/'
+colab_api_available = True
+generation_tasks = {}
+generation_lock = threading.Lock()
+active_generations = 0
+MAX_CONCURRENT_GENERATIONS = 2
 
 PATH = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn'
 PATH1 = r"C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn"
@@ -128,7 +167,6 @@ def model_predict(img_path, model=None):
     except Exception as e:
         print(f"Error in enhanced model_predict: {str(e)}")
         raise
-
 
 def predict_color(img_path):
     return improved_predict_color(img_path)
@@ -232,7 +270,6 @@ def improved_predict_color(img_path):
 
     # Convert BGR to RGB for the result
     return (float(dominant_percentage), dominant_color[::-1])  # BGR to RGB
-
 
 def improved_predict_color(img_path):
     """
@@ -545,7 +582,6 @@ class LabelSmoothingBCEWithLogitsLossFlat(BCEWithLogitsLossFlat):
     def __repr__(self):
         return "FlattenedLoss of LabelSmoothingBCEWithLogits()"
 
-
 def predict_attribute_model(img_path):
     # Define paths to files
     TRAIN_PATH = "multilabel-train.csv"
@@ -636,13 +672,7 @@ def predict_attribute_model(img_path):
         return
 
 
-
-
-
-
-
 # flask app and routes
-
 @app.route('/predict', methods=['POST'])
 @login_required
 def upload():
@@ -726,17 +756,6 @@ def dologin():
 def doregister():
     return render_template('register.html')
 
-# @app.route('/user/signOut')
-# def signout():
-#     # Clear the session
-#     session.clear()
-#     # Redirect to the login page
-#     return redirect(url_for('dologin'))
-#profile
-# Add these imports to your existing imports
-
-
-
 # Add this route to handle profile updates
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -792,7 +811,6 @@ def profile():
     user_data = db.users.find_one({'_id': session['user']['_id']})
     return render_template('profile.html', user=user_data)
 
-
 #  get user profile picture
 def get_user_profile_picture():
     if 'user' in session and session['user']:
@@ -805,7 +823,6 @@ def get_user_profile_picture():
 @app.context_processor
 def utility_processor():
     return dict(get_user_profile_picture=get_user_profile_picture)
-
 
 @app.route('/dashboard/', methods=['GET', 'POST'])
 @login_required
@@ -852,7 +869,7 @@ def dashboard():
                             'userId': userId
                         })
 
-                        # Get weather data for the new city
+                        # weather data for the new city
                         weather_url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric'
                         weather_response = requests.get(weather_url, timeout=5).json()
 
@@ -866,7 +883,7 @@ def dashboard():
                             }
                             new_weather_data.append(weather)
 
-                        # Return JSON response for AJAX requests
+                        # Return JSON response for AJAX
                         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                             return jsonify({
                                 'success': True,
@@ -899,8 +916,6 @@ def dashboard():
                 else:
                     flash(error_msg, 'error')
                     return redirect(url_for('dashboard'))
-
-    # GET request or fallback - render the dashboard
     filter = {'userId': userId}
 
     # Add default city if user has no cities
@@ -961,14 +976,12 @@ def dashboard():
     print(f"Weather data to be rendered: {weather_data}")
     return render_template('dashboard.html', weather_data=weather_data)
 
-
 @app.route('/dashboard/delete_city/<city_name>', methods=['DELETE'])
 @login_required
 def delete_city(city_name):
     userId = session['user']['_id']
 
     try:
-        # Find and delete the city
         result = db.city.delete_one({
             'name': {'$regex': f'^{city_name}$', '$options': 'i'},
             'userId': userId
@@ -992,49 +1005,40 @@ def delete_city(city_name):
             'message': 'Error removing city. Please try again.'
         }), 500
 
-
 @app.route('/wardrobe/delete/<item_id>', methods=['DELETE'])
 @login_required
 def delete_wardrobe_item(item_id):
     try:
-        print(f"🗑️ Attempting to delete item: {item_id}")
-
         userId = session['user']['_id']
-        print(f"👤 User ID: {userId}")
-
         # Validate ObjectId format
         try:
             object_id = ObjectId(item_id)
-            print(f"✅ Valid ObjectId: {object_id}")
+            print(f"Valid ObjectId: {object_id}")
         except Exception as e:
-            print(f"❌ Invalid ObjectId format: {item_id}, Error: {str(e)}")
+            print(f" Invalid ObjectId format: {item_id}, Error: {str(e)}")
             return jsonify({'error': 'Invalid item ID format'}), 400
 
         # Get item to delete its image file
-        print("🔍 Looking for item in database...")
+        print(" Looking for item in database...")
         item = db.wardrobe.find_one({'_id': object_id, 'userId': userId})
 
         if not item:
-            print(f"❌ Item not found for user {userId}")
+            print(f"Item not found for user {userId}")
             # Check if item exists for any user
             any_item = db.wardrobe.find_one({'_id': object_id})
             if any_item:
-                print(f"⚠️ Item exists but belongs to different user: {any_item.get('userId')}")
+                print(f" Item exists but belongs to different user: {any_item.get('userId')}")
                 return jsonify({'error': 'Item not found or access denied'}), 404
             else:
-                print(f"❌ Item doesn't exist in database at all")
+                print(f"Item doesn't exist in database at all")
                 return jsonify({'error': 'Item not found'}), 404
 
-        print(f"✅ Found item: {item.get('label', 'Unknown')} (ID: {item_id})")
+        print(f" Found item: {item.get('label', 'Unknown')} (ID: {item_id})")
 
-        # Try to delete physical file if it exists
         file_deleted = False
         if item.get('file_path'):
             try:
-                # Handle different path formats
                 file_path = item['file_path']
-                print(f"📁 File path from DB: {file_path}")
-
                 # Convert to actual file system path
                 if file_path.startswith('/static/'):
                     actual_path = os.path.join('flaskapp', file_path.lstrip('/'))
@@ -1043,27 +1047,25 @@ def delete_wardrobe_item(item_id):
                 else:
                     actual_path = os.path.join('flaskapp', 'static', file_path.lstrip('/'))
 
-                print(f"📂 Actual file path: {actual_path}")
+                print(f" Actual file path: {actual_path}")
 
                 if os.path.exists(actual_path):
                     os.remove(actual_path)
                     file_deleted = True
-                    print(f"🗑️ Successfully deleted file: {actual_path}")
+                    print(f"Successfully deleted file: {actual_path}")
                 else:
-                    print(f"⚠️ File doesn't exist (already deleted or moved): {actual_path}")
+                    print(f" File doesn't exist (already deleted or moved): {actual_path}")
 
             except Exception as file_error:
-                print(f"⚠️ Error deleting file (continuing anyway): {str(file_error)}")
-                # Don't fail the entire operation if file deletion fails
-        else:
-            print("📄 No file_path in item, skipping file deletion")
+                print(f" Error deleting file (continuing anyway): {str(file_error)}")
 
-        # Delete from database
-        print("🗄️ Deleting from database...")
+        else:
+            print("No file_path in item, skipping file deletion")
+
         result = db.wardrobe.delete_one({'_id': object_id, 'userId': userId})
 
         if result.deleted_count > 0:
-            print(f"✅ Successfully deleted item from database")
+            print(f" Successfully deleted item from database")
 
             response_data = {
                 'success': True,
@@ -1074,13 +1076,11 @@ def delete_wardrobe_item(item_id):
 
             return jsonify(response_data)
         else:
-            print(f"❌ Failed to delete from database (no documents deleted)")
             return jsonify({'error': 'Failed to delete from database'}), 500
 
     except Exception as e:
-        print(f"❌ Unexpected error in delete route: {str(e)}")
         import traceback
-        print(f"📊 Full traceback:")
+        print(f" Full traceback:")
         traceback.print_exc()
 
         # Return detailed error for debugging
@@ -1089,12 +1089,6 @@ def delete_wardrobe_item(item_id):
             'type': type(e).__name__,
             'item_id': item_id
         }), 500,
-
-
-
-# First, define the helper function
-DEFAULT_RATING = 4
-
 
 def prepare_features(include_weather, event, temperature):
     """Prepare features for model prediction"""
@@ -1126,20 +1120,8 @@ def prepare_features(include_weather, event, temperature):
 
     return features
 
-
-import re
-
-
 def normalize_path(file_path):
-    """
-    Comprehensive path normalization that handles all cases:
-    - Empty paths
-    - /outfit/ prefixes
-    - Duplicate /static/ paths
-    - Leading/trailing slashes
-    - Multiple combinations of the above
-    Always returns a path starting with '/'.
-    """
+
     if not file_path:
         return None
 
@@ -1162,7 +1144,6 @@ def normalize_path(file_path):
         normalized = '/' + normalized
 
     return normalized
-
 
 @app.route('/recommendations', methods=['GET', 'POST'])
 @login_required
@@ -1494,8 +1475,6 @@ def get_outfit():
             wardrobes=[]
         )
 
-
-# FIXED: Enhanced wardrobe route with proper 3D model fields
 @app.route('/wardrobe', methods=['GET', 'POST'])
 @login_required
 def add_wardrobe():
@@ -1674,7 +1653,6 @@ def add_wardrobe():
             print(f"❌ Error fixing task IDs: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500
 
-
 @app.route('/wardrobe/all', methods=['GET', 'POST'])
 @login_required
 def view_wardrobe_all():
@@ -1709,25 +1687,18 @@ def view_wardrobe_all():
 
     return render_template('wardrobe_all2.html', wardrobe_items=grouped_items)
 
-# Enhanced /outfits/all route with favorites support
-# Replace your existing view_outfits_all function with this enhanced version
-
 @app.route('/outfits/all', methods=['GET', 'POST'])
 @login_required
 def view_outfits_all():
-    """Enhanced outfits view with favorites and better rendering"""
     try:
         userId = session['user']['_id']
         print(f"Debug: Loading outfits for user {userId}")
-
-        # Get filter from query parameters (favorites or all)
         outfit_filter = request.args.get('filter', 'all')
 
-        # Build database filter
+        #  database filter
         if outfit_filter == 'favorites':
             filter_query = {'userId': userId, 'isFavorite': 'yes'}
         else:
-            # Show both favorite and non-favorite outfits
             filter_query = {'userId': userId}
 
         users_clothes_cursor = db.outfits.find(filter_query).sort('created_at', -1)
@@ -1735,7 +1706,7 @@ def view_outfits_all():
 
         print(f"Debug: Found {len(users_clothes)} outfits")
 
-        # Normalize file paths and enhance outfit data for each outfit
+        # Normalize file paths
         normalized_outfits = []
         total_items = 0
         favorite_count = 0
@@ -1832,8 +1803,6 @@ def view_outfits_all():
 
 
 # avatar logic
-
-
 @app.route('/api/avatar/<gender>', methods=['GET'])
 @login_required
 def get_avatar(gender):
@@ -1862,15 +1831,13 @@ def get_available_clothes():
 
     return jsonify(available_clothes)
 
-
-
 def get_user_preferences(user_id):
     try:
-        # You can replace this with your database query
+
         with open(f'user_preferences/{user_id}.json', 'r') as file:
             return json.load(file)
     except FileNotFoundError:
-        # Return default preferences if none exist
+
         return {
             'gender': 'female',
             'skinColor': '#FFE0BD',
@@ -1879,12 +1846,9 @@ def get_user_preferences(user_id):
             'clothes': []
         }
 
-
 def save_user_preferences(user_id, preferences):
-    # You can replace this with your database save logic
     with open(f'user_preferences/{user_id}.json', 'w') as file:
         json.dump(preferences, file)
-
 
 @app.route('/avatar')
 def avatar_page():
@@ -1909,25 +1873,17 @@ def customize_avatar():
 
     # Save the updated preferences
     save_user_preferences(user_id, user_preferences)
-
     return jsonify({'status': 'success', 'preferences': user_preferences})
 
 
 
-
-
-
-
-
 # calendar logic
-
 UPLOAD_FOLDER = 'static/image_users/'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(os.path.join('flaskapp', UPLOAD_FOLDER), exist_ok=True)
 
 @app.route('/api/wardrobe-items', methods=['GET'])
 def get_wardrobe_items():
-    """Get wardrobe items grouped by category"""
     user_id = session.get('user', {}).get('_id', '')
     if not user_id:
         return jsonify({"success": False, "message": "User not logged in"}), 400
@@ -1947,7 +1903,6 @@ def get_wardrobe_items():
 
     for item_doc in items_cursor:
         label = item_doc.get('label', '')
-        # Use stored category if present, otherwise infer from label
         category = item_doc.get('category')
         if not category:
             category = next((cat for cat, lbls in categories.items() if label in lbls), None)
@@ -2114,135 +2069,6 @@ def delete_calendar_outfit():
         return jsonify({"success": True, "message": "Outfit deleted successfully!"})
     return jsonify({"success": False, "message": "Outfit not found!"}), 404
 
-# rpm avatar
-
-import requests
-import base64
-from io import BytesIO
-from PIL import Image
-
-# Ready Player Me API Key - Replace with your own from RPM partner dashboard
-RPM_API_KEY = "your_rpm_api_key"
-
-
-@app.route('/api/avatar/generate-from-photo', methods=['POST'])
-@login_required
-def generate_avatar_from_photo():
-    try:
-        # Check if photo is in request
-        if 'photo' not in request.files:
-            return jsonify({'success': False, 'error': 'No photo provided'}), 400
-
-        photo = request.files['photo']
-
-        if photo.filename == '':
-            return jsonify({'success': False, 'error': 'Empty file'}), 400
-
-        # Get user ID
-        user_id = session['user']['_id']
-
-        # Save the photo temporarily
-        img = Image.open(photo)
-        img_buffer = BytesIO()
-        img.save(img_buffer, format='JPEG')
-        img_buffer.seek(0)
-
-        # Convert to base64 for the RPM API
-        base64_image = base64.b64encode(img_buffer.read()).decode('utf-8')
-
-        # Create directory for user avatars if it doesn't exist
-        avatar_dir = os.path.join('flaskapp', 'static', 'avatars', str(user_id))
-        os.makedirs(avatar_dir, exist_ok=True)
-
-        # Contact the Ready Player Me API
-        # For testing, we'll use their demo API endpoint
-        # In production, use their direct API with your API key
-        response = requests.post(
-            'https://api.readyplayer.me/v1/avatars',
-            json={
-                'photo': f'data:image/jpeg;base64,{base64_image}',
-                'gender': 'neutral'  # or get from form
-            },
-            headers={
-                'Authorization': f'Bearer {RPM_API_KEY}',
-                'Content-Type': 'application/json'
-            }
-        )
-
-        if response.status_code != 200:
-            # For testing, use their demo web API
-            # In production, this approach would require your own server-side implementation
-            print(f"API error: {response.status_code} - {response.text}")
-
-            # Fallback to a demo avatar URL for testing
-            avatar_url = "https://models.readyplayer.me/64c415db15199e3f53bbc65f.glb"
-        else:
-            # Get the avatar URL from the response
-            response_data = response.json()
-            avatar_url = response_data.get('avatarUrl')
-
-        if not avatar_url:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to generate avatar'
-            }), 500
-
-        # Download the avatar model
-        avatar_response = requests.get(avatar_url)
-        if avatar_response.status_code == 200:
-            # Save the model file
-            avatar_filename = f"avatar-{uuid.uuid4()}.glb"
-            avatar_filepath = os.path.join(avatar_dir, avatar_filename)
-
-            with open(avatar_filepath, 'wb') as f:
-                f.write(avatar_response.content)
-
-            # Save the avatar info to the database
-            db.avatars.update_one(
-                {'userId': user_id},
-                {
-                    '$set': {
-                        'avatarUrl': avatar_url,
-                        'localPath': f'/static/avatars/{user_id}/{avatar_filename}',
-                        'updated_at': datetime.now()
-                    }
-                },
-                upsert=True
-            )
-
-            return jsonify({
-                'success': True,
-                'avatarUrl': avatar_url,
-                'localPath': f'/static/avatars/{user_id}/{avatar_filename}'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Failed to download avatar model: {avatar_response.status_code}'
-            }), 500
-
-    except Exception as e:
-        print(f"Error generating avatar: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/avatar/get-rpm-avatar')
-@login_required
-def get_avatar_rpm():
-    user_id = session['user']['_id']
-
-    # Try to find an existing RPM avatar for this user
-    avatar_doc = db.avatars.find_one({'userId': user_id})
-
-    if avatar_doc and 'avatarUrl' in avatar_doc:
-        return jsonify({
-            'success': True,
-            'avatarUrl': avatar_doc['avatarUrl'],
-            'localPath': avatar_doc.get('localPath')
-        })
-
-    return jsonify({'success': False, 'error': 'No avatar found'})
-
 
 @app.route('/api/wardrobe/process-clothing', methods=['POST'])
 @login_required
@@ -2251,7 +2077,6 @@ def process_clothing():
         user_id = session['user']['_id']
         data = request.json
 
-        # Fix this line - explicit check for each key instead of using all()
         if not data or 'itemId' not in data or 'imageUrl' not in data or 'itemType' not in data:
             return jsonify({'success': False, 'error': 'Missing required data'}), 400
 
@@ -2280,18 +2105,17 @@ def process_clothing():
             print(f"Alternative path 1: {image_path}")
 
         if not os.path.exists(image_path):
-            # One more attempt with different path construction
+
             base_name = os.path.basename(image_url)
             if '?' in base_name:
                 base_name = base_name.split('?')[0]
             image_path = os.path.join('flaskapp', 'static', 'image_users', user_id, base_name)
             print(f"Alternative path 2: {image_path}")
 
-        # Return basic model data using the original image URL
         model_data = {
             'itemId': str(item['_id']),
             'itemType': item_type,
-            'textureUrl': image_url,  # Use the original image URL as texture
+            'textureUrl': image_url,
             'originalImage': image_url
         }
 
@@ -2307,28 +2131,19 @@ def process_clothing():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Add this to your Flask app (run.py or wherever your routes are)
-# Add this to your Flask app (run.py)
-
-
 @app.route('/api/wardrobe/item/<item_id>')
 def get_wardrobe_item(item_id):
-    """Get individual wardrobe item with 3D model information - FIXED"""
     try:
         from bson import ObjectId
-
-        print(f"🔍 Looking for item {item_id}")
-
-        # Use correct collection name 'wardrobe'
+        print(f" Looking for item {item_id}")
         item = db.wardrobe.find_one({"_id": ObjectId(item_id)})
 
         if not item:
-            print(f"❌ Item {item_id} not found in 'wardrobe' collection")
+            print(f" Item {item_id} not found in 'wardrobe' collection")
             return jsonify({"success": False, "error": "Item not found"})
 
-        print(f"✅ Found item {item_id}: {item.get('label', 'Unknown')}")
+        print(f" Found item {item_id}: {item.get('label', 'Unknown')}")
 
-        # Ensure all required fields exist with proper defaults
         item_data = {
             "success": True,
             "_id": str(item["_id"]),
@@ -2337,7 +2152,6 @@ def get_wardrobe_item(item_id):
             "userId": item.get("userId"),
             "user_id": item.get("userId"),
 
-            # Always provide model_task_id (auto-generate if missing)
             "model_task_id": item.get("model_task_id") or f"auto_{str(item['_id'])[:8]}",
             "modelTaskId": item.get("model_task_id") or f"auto_{str(item['_id'])[:8]}",
 
@@ -2350,23 +2164,17 @@ def get_wardrobe_item(item_id):
             "model_generated_at": item.get("model_generated_at"),
             "model_generation_status": item.get("model_generation_status", "none"),
 
-            # Add category mapping
+            #  category mapping
             "category": item.get("category") or get_item_category(item.get("label", ""))
         }
 
-        print(f"✅ Returning item data with model_task_id: {item_data['model_task_id']}")
         return jsonify(item_data)
 
     except Exception as e:
-        print(f"❌ Error getting wardrobe item {item_id}: {str(e)}")
         return jsonify({"success": False, "error": str(e)})
 
-
-# 3. ADD this helper function if it doesn't exist:
 def get_item_category(label):
-    """Determine category from item label"""
     label_lower = label.lower()
-
     if any(word in label_lower for word in ['shirt', 'top', 'pullover']):
         return 'tops'
     elif any(word in label_lower for word in ['trouser', 'pant']):
@@ -2380,22 +2188,14 @@ def get_item_category(label):
     elif 'bag' in label_lower:
         return 'accessories'
     else:
-        return 'tops'  # Default
-
-
-
-
-
+        return 'tops'
 
 @app.route('/api/wardrobe/check-obj/<user_id>/<model_task_id>')
 def check_obj_files(user_id, model_task_id):
-    """Check which OBJ files exist for a given user and model task"""
     import os
-
     try:
         base_path = os.path.join('static', 'models', 'generated', user_id)
 
-        # Check for different file variations
         possible_files = [
             f'colab_model_task_{model_task_id}_0.obj',
             f'colab_model_task_{model_task_id}_1.obj',
@@ -2426,17 +2226,12 @@ def check_obj_files(user_id, model_task_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-
-# Alternative endpoint to check if a specific OBJ file exists
 @app.route('/api/wardrobe/check-model/<user_id>/<model_task_id>')
 def check_model_file(user_id, model_task_id):
-    """Check which model files exist for a given user and model task"""
     import os
-
     try:
         base_path = os.path.join('static', 'models', 'generated', user_id)
 
-        # Check for different file variations
         possible_files = [
             f'colab_model_task_{model_task_id}_0.obj',
             f'colab_model_task_{model_task_id}_1.obj',
@@ -2463,15 +2258,11 @@ def check_model_file(user_id, model_task_id):
         return jsonify({"success": False, "error": str(e)})
 
 
-# Helper function to update existing items with model task IDs if missing
 @app.route('/api/wardrobe/update-model-paths', methods=['POST'])
 def update_model_paths():
-    """Update existing wardrobe items with proper model paths"""
-    try:
-        # Update items that have generated models but missing model_task_id
-        updated_count = 0
 
-        # Find items that might need updating
+    try:
+        updated_count = 0
         items = db.wardrobe_items.find({
             "has_3d_model": True,
             "$or": [
@@ -2481,11 +2272,7 @@ def update_model_paths():
         })
 
         for item in items:
-            # Try to extract model_task_id from existing file paths or other fields
-            # This is a heuristic approach - adjust based on your data structure
-
             if item.get("file_path"):
-                # If the file path contains a pattern we can extract
                 import re
                 match = re.search(r'colab_model_task_([a-f0-9]+)', item.get("file_path", ""))
                 if match:
@@ -2507,167 +2294,8 @@ def update_model_paths():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-# === Ready Player Me (RPM) API Integration ===
-import requests
-
-RPM_API_BASE = "https://api.readyplayer.me/v1"
-RPM_TOKEN = os.environ.get("RPM_API_TOKEN", "YOUR_RPM_API_TOKEN")  # Store securely!
-
-# Helper: Equip an outfit (asset) on an avatar
-def equip_outfit_on_avatar(avatar_id, asset_id):
-    url = f"{RPM_API_BASE}/avatars/{avatar_id}/assets/{asset_id}"
-    headers = {
-        "Authorization": f"Bearer {RPM_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    data = {"type": "outfit"}
-    response = requests.put(url, json=data, headers=headers)
-    return response.json()
-
-# Helper: Get avatar GLB URL (update if RPM changes endpoint)
-def get_avatar_url(avatar_id):
-    return f"https://models.readyplayer.me/{avatar_id}.glb"
-
-# Flask endpoint: Equip a custom outfit on the avatar
-@app.route('/api/rpm/equip_outfit', methods=['POST'])
-@login_required
-def api_rpm_equip_outfit():
-    data = request.get_json()
-    avatar_id = data.get('avatar_id')
-    asset_id = data.get('asset_id')
-    if not avatar_id or not asset_id:
-        return jsonify({'error': 'avatar_id and asset_id required'}), 400
-    result = equip_outfit_on_avatar(avatar_id, asset_id)
-    return jsonify(result)
-
-# Flask endpoint: Get avatar GLB URL (with equipped outfit)
-@app.route('/api/rpm/avatar_url', methods=['GET'])
-@login_required
-def api_rpm_avatar_url():
-    avatar_id = request.args.get('avatar_id')
-    if not avatar_id:
-        return jsonify({'error': 'avatar_id required'}), 400
-    url = get_avatar_url(avatar_id)
-    return jsonify({'avatar_url': url})
-
-@app.route('/api/rpm/current_avatar_id', methods=['GET'])
-@login_required
-def get_current_avatar_id():
-    try:
-        print('[DEBUG] /api/rpm/current_avatar_id called')
-        user_id = session.get('user', {}).get('_id')
-        print(f'[DEBUG] user_id: {user_id}')
-        avatar_doc = db.avatars.find_one({'userId': user_id})
-        print(f'[DEBUG] avatar_doc: {avatar_doc}')
-        if avatar_doc and 'avatarUrl' in avatar_doc:
-            avatar_url = avatar_doc['avatarUrl']
-            avatar_id = avatar_url.split('/')[-1].replace('.glb', '')
-            print(f'[DEBUG] avatar_id: {avatar_id}')
-            return jsonify({'avatarId': avatar_id})
-        print('[DEBUG] No avatar found for user')
-        return jsonify({'error': 'No avatar found'}), 404
-    except Exception as e:
-        print(f'[ERROR] Exception in /api/rpm/current_avatar_id: {e}')
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/rpm/top_asset_id', methods=['GET'])
-@login_required
-def get_top_asset_id():
-    headers = {
-        "Authorization": f"Bearer {RPM_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    response = requests.get(f"{RPM_API_BASE}/assets", headers=headers)
-    if response.status_code != 200:
-        return jsonify({'error': 'Failed to fetch assets'}), 500
-    assets = response.json().get('assets', [])
-    # Print all asset names for debugging
-    print("RPM Assets:")
-    for asset in assets:
-        print(asset.get('name'), asset.get('id'))
-    # Try to find by name containing 'top'
-    for asset in assets:
-        if 'top' in asset.get('name', '').lower():
-            return jsonify({'assetId': asset['id']})
-    return jsonify({'error': 'No assetId found for top.glb'}), 404
-
-@app.route('/api/rpm/save-avatar', methods=['POST'])
-@login_required
-def save_rpm_avatar():
-    try:
-        user_id = session.get('user', {}).get('_id')
-        data = request.get_json()
-        avatar_url = data.get('avatarUrl')
-        if not avatar_url:
-            return jsonify({'error': 'No avatarUrl provided'}), 400
-        db.avatars.update_one(
-            {'userId': user_id},
-            {'$set': {'avatarUrl': avatar_url}},
-            upsert=True
-        )
-        print(f'[DEBUG] Saved avatarUrl for user {user_id}: {avatar_url}')
-        return jsonify({'success': True})
-    except Exception as e:
-        print(f'[ERROR] Exception in /api/rpm/save-avatar: {e}')
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/rpm/upload-top-glb', methods=['POST'])
-def upload_top_glb():
-    import os
-    import requests
-    rpm_token = os.environ.get('RPM_API_TOKEN')
-    rpm_app_id = os.environ.get('RPM_APP_ID')
-    if not rpm_token or not rpm_app_id:
-        return jsonify({'error': 'RPM_API_TOKEN or RPM_APP_ID not set'}), 500
-    glb_path = os.path.join('flaskapp', 'static', 'models', 'clothing', 'top.glb')
-    if not os.path.exists(glb_path):
-        return jsonify({'error': 'top.glb not found'}), 404
-    # 1. Upload to temporary-media
-    headers = {'Authorization': f'Bearer {rpm_token}'}
-    with open(glb_path, 'rb') as f:
-        files = {'file': ('top.glb', f, 'model/gltf-binary')}
-        resp = requests.post('https://api.readyplayer.me/v1/temporary-media', files=files, headers=headers)
-    if resp.status_code != 200:
-        return jsonify({'error': 'Failed to upload to RPM', 'details': resp.text}), 500
-    model_url = resp.json()['data']['url']
-    # 2. Create asset
-    asset_data = {
-        "data": {
-            "name": "top.glb",
-            "type": "top",
-            "modelUrl": model_url,
-            "gender": "female",
-            "status": "published"
-        }
-    }
-    headers['Content-Type'] = 'application/json'
-    resp = requests.post('https://api.readyplayer.me/v1/assets', json=asset_data, headers=headers)
-    if resp.status_code not in (200, 201):
-        return jsonify({'error': 'Failed to create asset', 'details': resp.text}), 500
-    asset_id = resp.json()['data']['id']
-    # 3. Add asset to your application
-    add_data = {
-        "data": {
-            "applicationId": rpm_app_id,
-            "isVisibleInEditor": True
-        }
-    }
-    resp = requests.post(f'https://api.readyplayer.me/v1/assets/{asset_id}/application', json=add_data, headers=headers)
-    if resp.status_code not in (200, 201):
-        return jsonify({'error': 'Failed to add asset to app', 'details': resp.text}), 500
-    return jsonify({'assetId': asset_id, 'message': 'top.glb uploaded and linked to app successfully'})
-
-
-from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
-
-
 
 # material
-
 def extract_enhanced_material_features(img_path):
     """
     Extract comprehensive material features from an image
@@ -2803,7 +2431,6 @@ def extract_enhanced_material_features(img_path):
             'glcm_homogeneity': 0.5,
             'has_pattern': False
         }
-
 
 def get_material_prediction_with_confidence(features):
     """
@@ -3041,7 +2668,6 @@ def get_material_prediction_with_confidence(features):
             "alternative_materials": []
         }
 
-# Add a new route to handle material analysis
 @app.route('/api/wardrobe/analyze-material', methods=['POST'])
 @login_required
 def analyze_material():
@@ -3078,95 +2704,39 @@ def analyze_material():
         print(f"Error analyzing material: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# 3d clothes
 
-from gradio_client import Client, handle_file
-import tempfile
-import threading
-import queue
-import time
-import requests
-import os
-import shutil
-from werkzeug.utils import secure_filename
-from datetime import datetime
-import json
-import uuid
-
-
+# 3d clothes generation
 # colab api api TRIPOSR
-# Add this to your existing run.py file
-
-import requests
-import time
-import uuid
-from datetime import datetime
-import threading
-import os
-
-# Clean Colab-Only 3D Generation System
-# Remove all Hugging Face Spaces / TripoSG integration
-
-import requests
-import time
-import uuid
-from datetime import datetime
-import threading
-import os
-import tempfile
-import shutil
-from werkzeug.utils import secure_filename
-import random
-
-# Global variables for Colab-only integration
-COLAB_API_URL = 'https://f606-34-72-94-244.ngrok-free.app/'
-colab_api_available = True
-generation_tasks = {}
-generation_lock = threading.Lock()
-active_generations = 0
-MAX_CONCURRENT_GENERATIONS = 2  # Allow more since we're only using Colab
-
 
 class ColabTripoSRClient:
-    """Simplified Colab-only client"""
-
     def __init__(self):
         self.colab_url = None
         self.session = requests.Session()
-        self.session.timeout = 60  # Longer timeout for 3D generation
+        self.session.timeout = 60
         self.available = False
 
     def set_url(self, url):
-        """Set the Colab API URL"""
         self.colab_url = url.rstrip('/')
         self.check_availability()
 
     def check_availability(self):
-        """Check if Colab API is available"""
         if not self.colab_url:
             self.available = False
             return False
 
         try:
-            print(f"🔍 Checking Colab API at: {self.colab_url}")
             response = self.session.get(f"{self.colab_url}/health", timeout=15)
             self.available = response.status_code == 200
-            print(f"✅ Colab API {'available' if self.available else 'unavailable'}")
             return self.available
         except requests.exceptions.RequestException as e:
-            print(f"❌ Colab API check failed: {str(e)}")
             self.available = False
             return False
 
     def generate_3d_model(self, image_path, task_id, user_id):
-        """Generate 3D model using Colab API only"""
         if not self.available:
             raise Exception("Colab API not available")
 
         try:
-            print(f"🚀 Starting Colab 3D generation for task {task_id}")
-
-            # Update task status
             generation_tasks[task_id].update({
                 'status': 'processing',
                 'message': 'Uploading image to Colab...',
@@ -3184,42 +2754,28 @@ class ColabTripoSRClient:
                     'progress': 0.3,
                     'updated_at': time.time()
                 })
-
-                print(f"📤 Uploading to Colab API: {self.colab_url}/generate")
-
-                # Call Colab API with longer timeout
                 response = self.session.post(
                     f"{self.colab_url}/generate",
                     files=files,
                     timeout=300  # 5 minutes timeout for 3D generation
                 )
-
-            print(f"📥 Colab response: HTTP {response.status_code}")
-
             if response.status_code == 200:
-                # Update progress
                 generation_tasks[task_id].update({
                     'message': 'Saving generated model...',
                     'progress': 0.9,
                     'updated_at': time.time()
                 })
 
-                # Check if response contains actual file data
                 content_length = len(response.content)
-                print(f"📦 Response content length: {content_length:,} bytes")
-
                 if content_length < 1000:  # Less than 1KB suggests an error response
-                    # Try to parse as JSON error message
+                    # parse as JSON error message
                     try:
                         error_data = response.json()
                         error_msg = error_data.get('message', error_data.get('error', 'Unknown error'))
-                        print(f"❌ Colab API returned error: {error_msg}")
                         raise Exception(f"Colab processing failed: {error_msg}")
                     except:
-                        print(f"❌ Colab API returned insufficient data: {response.text[:200]}...")
                         raise Exception("Colab API returned insufficient data")
 
-                # Save the returned model file
                 user_model_dir = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
                 os.makedirs(user_model_dir, exist_ok=True)
 
@@ -3230,22 +2786,17 @@ class ColabTripoSRClient:
                 elif 'obj' in content_type or 'octet-stream' in content_type:
                     file_extension = 'obj'
                 else:
-                    # Default to OBJ since that's what we expect
                     file_extension = 'obj'
 
                 model_filename = f"colab_model_{task_id}_{int(time.time())}.{file_extension}"
                 model_path = os.path.join(user_model_dir, model_filename)
 
-                # Save the model file
                 with open(model_path, 'wb') as f:
                     f.write(response.content)
 
                 file_size = len(response.content)
-                print(f"💾 Model saved: {model_path} ({file_size:,} bytes)")
 
-                # Verify the saved file exists and has content
                 if not os.path.exists(model_path) or os.path.getsize(model_path) == 0:
-                    print("❌ Saved model file is empty or doesn't exist")
                     raise Exception("Failed to save model file properly")
 
                 # Update task as completed
@@ -3261,8 +2812,6 @@ class ColabTripoSRClient:
                     'completed_at': datetime.now().isoformat(),
                     'method': 'colab'
                 })
-
-                print(f"✅ Task {task_id} completed successfully!")
                 return True
 
             else:
@@ -3270,7 +2819,6 @@ class ColabTripoSRClient:
                 try:
                     error_data = response.json()
                     error_msg = error_data.get('error', error_data.get('message', error_msg))
-                    print(f"❌ Colab API error details: {error_data}")
 
                     # Handle specific error cases
                     if 'No OBJ file found' in str(error_data):
@@ -3281,7 +2829,6 @@ class ColabTripoSRClient:
                         error_msg = "Insufficient GPU memory for processing - try with a smaller image"
 
                 except:
-                    print(f"❌ Colab API error (raw response): {response.text[:500]}...")
                     if response.status_code == 500:
                         error_msg = "Colab server error - the 3D generation process failed. Try again or use a different image."
                     elif response.status_code == 404:
@@ -3293,17 +2840,14 @@ class ColabTripoSRClient:
 
         except requests.exceptions.Timeout:
             error_msg = "Colab API timeout - 3D generation took too long (>5 minutes). Try with a simpler image or check if Colab is still running."
-            print(f"❌ {error_msg}")
             raise Exception(error_msg)
 
         except requests.exceptions.ConnectionError:
             error_msg = "Cannot connect to Colab API. Make sure your Colab notebook is still running and the ngrok tunnel is active."
-            print(f"❌ {error_msg}")
             raise Exception(error_msg)
 
         except Exception as e:
             error_str = str(e)
-            print(f"❌ Colab generation error: {error_str}")
 
             # Provide more helpful error messages
             if "No OBJ file found" in error_str:
@@ -3315,37 +2859,23 @@ class ColabTripoSRClient:
             else:
                 raise Exception(f"Colab API error: {error_str}")
 
-# Create global Colab client (ONLY client we need)
 colab_client = ColabTripoSRClient()
 
 # Auto-configure the Colab client
 if COLAB_API_URL:
     colab_client.set_url(COLAB_API_URL)
-    print(f"🔗 Colab API configured: {COLAB_API_URL}")
-    print(f"✅ Colab available: {colab_client.available}")
-
 
 def generate_3d_model_colab_thread(image_path, task_id, user_id):
-    """Thread function for Colab-only 3D model generation"""
     global active_generations
 
     try:
         with generation_lock:
             active_generations += 1
-
-        print(f"🔄 Starting Colab 3D generation for task {task_id} (active: {active_generations})")
-
         success = colab_client.generate_3d_model(image_path, task_id, user_id)
 
-        if success:
-            print(f"✅ Task {task_id} completed successfully")
-        else:
-            print(f"❌ Task {task_id} failed")
 
     except Exception as e:
         error_message = str(e)
-        print(f"❌ Task {task_id} thread failed: {error_message}")
-
         current_time = time.time()
         generation_tasks[task_id] = {
             **generation_tasks.get(task_id, {}),
@@ -3360,21 +2890,17 @@ def generate_3d_model_colab_thread(image_path, task_id, user_id):
         with generation_lock:
             active_generations -= 1
 
-        # Clean up temporary image file
         try:
             if os.path.exists(image_path):
                 os.remove(image_path)
-                print(f"🗑️ Cleaned up temp file: {image_path}")
         except Exception as e:
-            print(f"⚠️ Failed to clean up temp file {image_path}: {str(e)}")
+            print(f"Failed to clean up temp file {image_path}: {str(e)}")
 
-
-# FLASK ROUTES - Simplified for Colab-only
 
 @app.route('/api/generate-3d-model', methods=['POST'])
 @login_required
 def api_generate_3d_model_colab():
-    """Generate 3D model using Colab API only"""
+    """Generate 3D model using Colab API """
     global active_generations
 
     try:
@@ -3567,7 +3093,6 @@ def get_colab_only_methods():
 @app.route('/api/set-colab-url', methods=['POST'])
 @login_required
 def set_colab_url():
-    """Update the Google Colab API URL"""
     try:
         data = request.json
         new_colab_url = data.get('colab_url', '').strip()
@@ -3608,7 +3133,6 @@ def set_colab_url():
 @app.route('/api/test-colab-connection', methods=['GET'])
 @login_required
 def test_colab_connection():
-    """Test current Colab connection"""
     try:
         if not COLAB_API_URL:
             return jsonify({
@@ -3617,7 +3141,6 @@ def test_colab_connection():
                 'connected': False
             })
 
-        # Test the connection
         is_available = colab_client.check_availability()
 
         return jsonify({
@@ -3638,7 +3161,6 @@ def test_colab_connection():
 @app.route('/api/generation-stats', methods=['GET'])
 @login_required
 def get_colab_generation_stats():
-    """Get Colab generation statistics"""
     try:
         return jsonify({
             'success': True,
@@ -3653,10 +3175,7 @@ def get_colab_generation_stats():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
-# Cleanup function for old tasks
 def cleanup_old_colab_tasks():
-    """Clean up old Colab generation tasks"""
     try:
         current_time = time.time()
         tasks_to_remove = []
@@ -3681,38 +3200,27 @@ def cleanup_old_colab_tasks():
             del generation_tasks[task_id]
 
         if len(tasks_to_remove) > 0:
-            print(f"🧹 Cleaned up {len(tasks_to_remove)} old Colab tasks")
+            print(f" Cleaned up {len(tasks_to_remove)} old Colab tasks")
 
     except Exception as e:
         print(f"Error in Colab cleanup: {str(e)}")
 
-
-# Periodic cleanup
 def periodic_colab_cleanup():
-    """Run Colab cleanup periodically"""
     while True:
         time.sleep(1800)  # 30 minutes
         cleanup_old_colab_tasks()
-
-
-# Start cleanup thread
 cleanup_thread = threading.Thread(target=periodic_colab_cleanup, name="Colab-Cleanup")
 cleanup_thread.daemon = True
 cleanup_thread.start()
 
-print("🚀 Colab-only 3D Generation System initialized!")
-print(f"🔗 Colab URL: {COLAB_API_URL}")
-print(f"✅ Colab Available: {colab_client.available}")
+print("Colab-only 3D Generation System initialized!")
+print(f" Colab URL: {COLAB_API_URL}")
+print(f"Colab Available: {colab_client.available}")
 
 
-# FIXED: Enhanced save 3D model route with better error handling
-# FIXED: Enhanced save 3D model route with better error handling
-
-# FIXED: Enhanced save 3D model route with better error handling
 @app.route('/api/save-3d-model', methods=['POST'])
 @login_required
 def save_3d_model_to_wardrobe():
-    """Save generated 3D model to wardrobe item with enhanced validation"""
     try:
         data = request.json
         item_id = data.get('item_id')
@@ -3721,12 +3229,6 @@ def save_3d_model_to_wardrobe():
         file_format = data.get('file_format', 'OBJ')
         file_size = data.get('file_size', 0)
 
-        print(f"💾 Auto-saving 3D model to wardrobe:")
-        print(f"   Item ID: {item_id}")
-        print(f"   Model Path: {model_path}")
-        print(f"   Method: {method}")
-        print(f"   Format: {file_format}")
-        print(f"   Size: {file_size}")
 
         if not item_id or not model_path:
             return jsonify({
@@ -3743,7 +3245,6 @@ def save_3d_model_to_wardrobe():
             full_model_path = os.path.join('flaskapp', model_path)
 
         if not os.path.exists(full_model_path):
-            print(f"❌ Model file not found at: {full_model_path}")
             return jsonify({
                 'success': False,
                 'error': f'Model file not found at path: {model_path}'
@@ -3756,9 +3257,6 @@ def save_3d_model_to_wardrobe():
             except:
                 file_size = 0
 
-        print(f"✅ Model file verified: {full_model_path} ({file_size} bytes)")
-
-        # FIXED: Update the wardrobe item with comprehensive 3D model info
         update_data = {
             'model_3d_path': model_path,
             'has_3d_model': True,
@@ -3778,7 +3276,6 @@ def save_3d_model_to_wardrobe():
         if result.modified_count > 0:
             print(f"✅ Successfully auto-saved 3D model for wardrobe item {item_id}")
 
-            # VERIFY the update worked by fetching the item
             updated_item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
             if updated_item and updated_item.get('has_3d_model'):
                 print(f"✅ Database verification successful - 3D model auto-saved!")
@@ -3794,11 +3291,9 @@ def save_3d_model_to_wardrobe():
                     }
                 })
             else:
-                print(f"❌ Database verification failed - 3D model not properly saved")
                 raise Exception("Database update verification failed")
 
         elif result.matched_count > 0:
-            print(f"⚠️ Wardrobe item {item_id} found but not modified (already up to date?)")
             return jsonify({
                 'success': True,
                 'message': '3D model info already up to date',
@@ -3810,28 +3305,22 @@ def save_3d_model_to_wardrobe():
                 }
             })
         else:
-            print(f"❌ Wardrobe item {item_id} not found for user {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Wardrobe item not found'
             }), 404
 
     except Exception as e:
-        print(f"❌ Error auto-saving 3D model: {str(e)}")
+        print(f" Error auto-saving 3D model: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Auto-save is handled in the JavaScript frontend, not in Python backend
 # The frontend calls /api/save-3d-model endpoint when generation completes
 
-
 def handle_colab_generation_success(data, task_id, user_id):
-    """Enhanced success handler with automatic database saving"""
     try:
-        print(f"🎉 Colab generation completed for task {task_id}")
-
         # Update task status
         generation_tasks[task_id].update({
             'status': 'completed',
@@ -3846,26 +3335,15 @@ def handle_colab_generation_success(data, task_id, user_id):
             'method': 'colab'
         })
 
-        print(f"✅ Task {task_id} marked as completed with auto-save")
         return True
 
     except Exception as e:
-        print(f"❌ Error in success handler: {str(e)}")
+        print(f" Error in success handler: {str(e)}")
         return False
-
-
-# REMOVED: saveToWardrobe function - no longer needed since auto-save handles this
-# The manual save function has been completely removed to avoid duplication
-
-print("🚀 Enhanced Auto-Save 3D Model System loaded!")
-print("✅ All manual save buttons and functions removed")
-print("💾 3D models are now automatically saved when generation completes")
-
 
 @app.route('/api/wardrobe/3d-model/<item_id>', methods=['GET'])
 @login_required
 def get_wardrobe_3d_model(item_id):
-    """Get 3D model info for a wardrobe item"""
     try:
         user_id = session['user']['_id']
         item = db.wardrobe.find_one({'_id': ObjectId(item_id), 'userId': user_id})
@@ -3891,11 +3369,7 @@ def get_wardrobe_3d_model(item_id):
 
 
 def handle_colab_generation_success(data, task_id, user_id):
-    """Enhanced success handler with automatic database saving"""
     try:
-        print(f"🎉 Colab generation completed for task {task_id}")
-
-        # Update task status
         generation_tasks[task_id].update({
             'status': 'completed',
             'message': f'3D model generated successfully via Colab! ({data.get("file_format", "OBJ")} format)',
@@ -3909,24 +3383,18 @@ def handle_colab_generation_success(data, task_id, user_id):
             'method': 'colab'
         })
 
-        print(f"✅ Task {task_id} marked as completed")
+        print(f"Task {task_id} marked as completed")
         return True
 
     except Exception as e:
-        print(f"❌ Error in success handler: {str(e)}")
+        print(f" Error in success handler: {str(e)}")
         return False
 
-
-# Enhanced Colab generation method in your existing ColabTripoSRClient class
 def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
-    """Enhanced Colab generation with better error handling and validation"""
     if not self.available:
         raise Exception("Colab API not available")
 
     try:
-        print(f"🚀 Starting enhanced Colab 3D generation for task {task_id}")
-
-        # Update task status
         generation_tasks[task_id].update({
             'status': 'processing',
             'message': 'Uploading image to Colab GPU...',
@@ -3945,9 +3413,6 @@ def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
                 'updated_at': time.time()
             })
 
-            print(f"📤 Uploading to enhanced Colab API: {self.colab_url}/generate")
-
-            # Call Colab API with extended timeout
             response = self.session.post(
                 f"{self.colab_url}/generate",
                 files=files,
@@ -3958,33 +3423,25 @@ def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
         print(f"📦 Response headers: {dict(response.headers)}")
 
         if response.status_code == 200:
-            # Update progress
             generation_tasks[task_id].update({
                 'message': 'Saving and validating 3D model...',
                 'progress': 0.9,
                 'updated_at': time.time()
             })
 
-            # Validate response content
             content_length = len(response.content)
             print(f"📦 Response content length: {content_length:,} bytes")
 
-            # More lenient validation - allow smaller OBJ files
             if content_length < 500:  # Changed from 1000 to 500
                 try:
                     error_data = response.json()
                     error_msg = error_data.get('message', error_data.get('error', 'Unknown error'))
-                    print(f"❌ Colab API returned error: {error_msg}")
                     raise Exception(f"Colab processing failed: {error_msg}")
                 except:
-                    print(f"❌ Colab API returned insufficient data: {response.text[:200]}...")
                     raise Exception("Colab API returned insufficient data - model may be too simple")
 
-            # Create user model directory
             user_model_dir = os.path.join('flaskapp', 'static', 'models', 'generated', user_id)
             os.makedirs(user_model_dir, exist_ok=True)
-
-            # Determine file format
             content_type = response.headers.get('content-type', '').lower()
             if 'glb' in content_type or 'gltf' in content_type:
                 file_extension = 'glb'
@@ -4008,11 +3465,10 @@ def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
                 f.write(response.content)
 
             file_size = len(response.content)
-            print(f"💾 Model saved: {model_path} ({file_size:,} bytes)")
+
 
             # Verify saved file
             if not os.path.exists(model_path) or os.path.getsize(model_path) == 0:
-                print("❌ Saved model file is empty or doesn't exist")
                 raise Exception("Failed to save model file properly")
 
             # Additional validation for OBJ files
@@ -4021,10 +3477,10 @@ def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
                     with open(model_path, 'r') as f:
                         content_check = f.read(1000)
                         if not ('v ' in content_check or 'f ' in content_check):
-                            print("⚠️ OBJ file may not contain valid geometry data")
+
                             print(f"Content preview: {content_check[:200]}...")
                 except Exception as e:
-                    print(f"⚠️ Could not validate OBJ content: {e}")
+                    print(f"Could not validate OBJ content: {e}")
 
             # Success data
             success_data = {
@@ -4045,7 +3501,7 @@ def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
                 'completed_at': datetime.now().isoformat()
             })
 
-            print(f"✅ Enhanced task {task_id} completed successfully!")
+            print(f" Enhanced task {task_id} completed successfully!")
             return True
 
         else:
@@ -4054,9 +3510,9 @@ def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
             try:
                 error_data = response.json()
                 error_msg = error_data.get('error', error_data.get('message', error_msg))
-                print(f"❌ Colab API error details: {error_data}")
+                print(f"Colab API error details: {error_data}")
             except:
-                print(f"❌ Colab API error (raw): {response.text[:500]}...")
+                print(f" Colab API error (raw): {response.text[:500]}...")
 
             # Provide specific error messages
             if response.status_code == 500:
@@ -4072,28 +3528,26 @@ def enhanced_colab_generate_3d_model(self, image_path, task_id, user_id):
 
     except requests.exceptions.Timeout:
         error_msg = "Colab processing timeout (>6 minutes). The 3D generation is taking too long - try with a simpler image."
-        print(f"❌ {error_msg}")
+        print(f" {error_msg}")
         raise Exception(error_msg)
 
     except requests.exceptions.ConnectionError:
         error_msg = "Cannot connect to Colab API. Please verify the Colab notebook is running and ngrok tunnel is active."
-        print(f"❌ {error_msg}")
+        print(f" {error_msg}")
         raise Exception(error_msg)
 
     except Exception as e:
         error_str = str(e)
-        print(f"❌ Enhanced Colab generation error: {error_str}")
+        print(f"Enhanced Colab generation error: {error_str}")
         raise Exception(f"3D generation failed: {error_str}")
 
+print("Enhanced Auto-Save 3D Model System loaded!")
 
-print("🚀 Enhanced Auto-Save 3D Model System loaded!")
 
-
-# FIXED: Route to get all wardrobe items WITH 3D model info
+# clothes in 3d format
 @app.route('/api/wardrobe/all-with-3d', methods=['GET'])
 @login_required
 def get_all_wardrobe_with_3d():
-    """Get all wardrobe items including 3D model information"""
     try:
         user_id = session['user']['_id']
         items_cursor = db.wardrobe.find({'userId': user_id})
@@ -4106,7 +3560,7 @@ def get_all_wardrobe_with_3d():
                 'file_path': normalize_path(item.get('file_path', '')),
                 'color': item.get('color', ''),
                 'created_at': item.get('created_at'),
-                # 3D MODEL INFO
+
                 'has_3d_model': item.get('has_3d_model', False),
                 'model_3d_path': normalize_path(item.get('model_3d_path', '')) if item.get('model_3d_path') else None,
                 'model_method': item.get('model_method'),
@@ -4131,11 +3585,9 @@ def get_all_wardrobe_with_3d():
         @app.route('/api/debug/wardrobe-items', methods=['GET'])
         @login_required
         def debug_wardrobe_items():
-            """Debug endpoint to see what wardrobe items exist"""
             try:
                 user_id = session['user']['_id']
 
-                # Get all items for the user
                 items = list(db.wardrobe.find({'userId': user_id}))
 
                 debug_info = {
@@ -4145,7 +3597,6 @@ def get_all_wardrobe_with_3d():
                     'sample_items': []
                 }
 
-                # Add sample items for debugging
                 for item in items[:5]:  # First 5 items
                     debug_info['sample_items'].append({
                         'id': str(item['_id']),
@@ -4162,19 +3613,11 @@ def get_all_wardrobe_with_3d():
             except Exception as e:
                 return jsonify({'error': str(e)})
 
-
-# ADD this route to your run.py to help find OBJ files
-
-# ADD this route to your run.py to help match specific OBJ files to items
-
 @app.route('/api/find-obj-for-item/<item_id>')
 @login_required
 def find_obj_for_item(item_id):
-    """Find the specific OBJ file for a wardrobe item"""
     try:
         user_id = session['user']['_id']
-
-        # Get the item from database
         item = db.wardrobe.find_one({"_id": ObjectId(item_id)})
         if not item:
             return jsonify({"success": False, "error": "Item not found"})
@@ -4226,14 +3669,11 @@ def find_obj_for_item(item_id):
 
 
 def calculate_match_score(filename, item_id, model_task_id):
-    """Calculate how well a filename matches an item"""
     score = 0
 
-    # Exact model_task_id match gets highest score
     if model_task_id and model_task_id in filename:
         score += 100
 
-    # Item ID matches
     if item_id in filename:
         score += 80
 
@@ -4242,30 +3682,22 @@ def calculate_match_score(filename, item_id, model_task_id):
     if item_id_short in filename:
         score += 60
 
-    # File recency (newer files get slightly higher score)
-    # This is a simple heuristic based on filename patterns
     if '_174826' in filename:  # Recent timestamp pattern
         score += 5
 
     return score
 
-
-# ALSO ADD: Route to check all wardrobe items and their OBJ matches
+#  Route to check all wardrobe items and their OBJ matches
 @app.route('/api/debug/check-obj-matches')
 @login_required
 def debug_check_obj_matches():
-    """Debug route to check OBJ matches for all wardrobe items"""
     try:
         user_id = session['user']['_id']
-
-        # Get all wardrobe items
         items = list(db.wardrobe.find({'userId': user_id}))
 
         results = []
         for item in items:
             item_id = str(item['_id'])
-
-            # Find matches for this item
             match_response = find_obj_for_item(item_id)
             match_data = match_response.get_json()
 
@@ -4278,7 +3710,6 @@ def debug_check_obj_matches():
                 'best_match': match_data.get('best_match')
             })
 
-        # Summary statistics
         total_items = len(results)
         items_with_matches = len([r for r in results if r['has_matches'] and r['match_count'] > 0])
 
@@ -4344,7 +3775,6 @@ def save_avatar():
             message = 'Avatar configuration saved successfully'
 
         if result:
-            print(f"✅ Avatar saved for user {user_id}")
             return jsonify({
                 'success': True,
                 'message': message,
@@ -4354,17 +3784,14 @@ def save_avatar():
             return jsonify({'success': False, 'error': 'Failed to save avatar'}), 500
 
     except Exception as e:
-        print(f"❌ Error saving avatar: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/avatar/get-saved', methods=['GET'])
 @login_required
 def get_saved_avatar():
-    """Get the most recent saved avatar for the current user"""
     try:
         user_id = session['user']['_id']
-
         # Get the most recent saved avatar
         avatar = db.saved_avatars.find_one(
             {'userId': user_id},
@@ -4386,17 +3813,14 @@ def get_saved_avatar():
             }), 404
 
     except Exception as e:
-        print(f"❌ Error getting saved avatar: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/avatar/get-all-saved', methods=['GET'])
 @login_required
 def get_all_saved_avatars():
-    """Get all saved avatars for the current user"""
     try:
         user_id = session['user']['_id']
-
         # Get all saved avatars for this user, sorted by most recent
         avatars = list(db.saved_avatars.find(
             {'userId': user_id}
@@ -4413,14 +3837,12 @@ def get_all_saved_avatars():
         })
 
     except Exception as e:
-        print(f"❌ Error getting all saved avatars: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/avatar/get-saved/<avatar_id>', methods=['GET'])
 @login_required
 def get_saved_avatar_by_id(avatar_id):
-    """Get a specific saved avatar by ID"""
     try:
         user_id = session['user']['_id']
 
@@ -4445,18 +3867,14 @@ def get_saved_avatar_by_id(avatar_id):
             }), 404
 
     except Exception as e:
-        print(f"❌ Error getting saved avatar by ID: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/avatar/delete/<avatar_id>', methods=['DELETE'])
 @login_required
 def delete_saved_avatar(avatar_id):
-    """Delete a saved avatar"""
     try:
         user_id = session['user']['_id']
-
-        # Delete the avatar (only if it belongs to the current user)
         result = db.saved_avatars.delete_one({
             '_id': ObjectId(avatar_id),
             'userId': user_id
@@ -4474,25 +3892,20 @@ def delete_saved_avatar(avatar_id):
             }), 404
 
     except Exception as e:
-        print(f"❌ Error deleting saved avatar: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/avatar/load-on-startup', methods=['GET'])
 @login_required
 def load_avatar_on_startup():
-    """Load avatar configuration on application startup"""
     try:
         user_id = session['user']['_id']
-
-        # Get the most recent saved avatar
         avatar = db.saved_avatars.find_one(
             {'userId': user_id},
             sort=[('updated_at', -1)]
         )
 
         if avatar:
-            # Convert ObjectId to string for JSON serialization
             avatar['_id'] = str(avatar['_id'])
 
             print(f"✅ Loading saved avatar for user {user_id} on startup")
@@ -4504,9 +3917,6 @@ def load_avatar_on_startup():
                 'message': 'Saved avatar configuration loaded'
             })
         else:
-            print(f"ℹ️ No saved avatar found for user {user_id}, loading defaults")
-
-            # Return default configuration
             default_config = {
                 'gender': 'female',
                 'bodySize': 'm',
@@ -4525,22 +3935,18 @@ def load_avatar_on_startup():
             })
 
     except Exception as e:
-        print(f"❌ Error loading avatar on startup: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Optional: Avatar statistics route
 @app.route('/api/avatar/stats', methods=['GET'])
 @login_required
 def get_avatar_stats():
-    """Get avatar statistics for the current user"""
+
     try:
         user_id = session['user']['_id']
 
-        # Count saved avatars
         avatar_count = db.saved_avatars.count_documents({'userId': user_id})
 
-        # Get creation date of first avatar
         first_avatar = db.saved_avatars.find_one(
             {'userId': user_id},
             sort=[('created_at', 1)]
@@ -4565,15 +3971,14 @@ def get_avatar_stats():
         })
 
     except Exception as e:
-        print(f"❌ Error getting avatar stats: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Database initialization - add this to your app startup
+
 def initialize_avatar_collections():
     """Initialize avatar-related database collections and indexes"""
     try:
-        # Create indexes for better performance
+
         db.saved_avatars.create_index([("userId", 1), ("updated_at", -1)])
         db.saved_avatars.create_index([("userId", 1), ("created_at", -1)])
 
@@ -4584,8 +3989,6 @@ def initialize_avatar_collections():
 
 
 #         saved outfits 3d
-# Add these routes to your run.py file
-
 @app.route('/api/outfits/save', methods=['POST'])
 @login_required
 def save_outfit():
@@ -4685,8 +4088,6 @@ def delete_saved_outfit(outfit_id):
                 return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Add these Flask routes to your run.py file to fix the 404 errors
-
 @app.route('/api/calendar/outfits-for-month', methods=['GET'])
 @login_required
 def get_calendar_outfits_for_month():
@@ -4744,7 +4145,6 @@ def get_calendar_outfits_for_month():
                 'custom_image': custom_image
             }
 
-        print(f"✅ Found {len(outfit_map)} days with outfits for {year}-{month}")
 
         return jsonify({
             'success': True,
@@ -4755,7 +4155,6 @@ def get_calendar_outfits_for_month():
         })
 
     except Exception as e:
-        print(f"❌ Error fetching calendar outfits: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -4819,7 +4218,6 @@ def get_calendar_outfits_for_day():
         })
 
     except Exception as e:
-        print(f"❌ Error fetching day outfit: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -4885,11 +4283,9 @@ def get_upcoming_outfits():
         })
 
     except Exception as e:
-        print(f"❌ Error fetching upcoming outfits: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Add these new routes to support outfit favorites functionality
 
 @app.route('/api/outfits/favorite/<outfit_id>', methods=['POST'])
 @login_required
@@ -4930,11 +4326,9 @@ def add_outfit_to_favorites(outfit_id):
 @app.route('/api/outfits/favorite/<outfit_id>', methods=['DELETE'])
 @login_required
 def remove_outfit_from_favorites(outfit_id):
-    """Remove outfit from favorites"""
     try:
         user_id = session['user']['_id']
 
-        # Update the outfit to remove from favorites
         result = db.outfits.update_one(
             {'_id': ObjectId(outfit_id), 'userId': user_id},
             {'$set': {'isFavorite': 'no'}, '$unset': {'favorited_at': 1}}
@@ -4956,11 +4350,10 @@ def remove_outfit_from_favorites(outfit_id):
         print(f"Error removing outfit from favorites: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# for dashboard
 @app.route('/api/outfits/stats', methods=['GET'])
 @login_required
 def get_outfit_stats():
-    """Get outfit statistics"""
     try:
         user_id = session['user']['_id']
         current_month = datetime.now().replace(day=1)
@@ -5006,9 +4399,9 @@ def get_outfit_stats():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Helper function to categorize items (if not already present)
+
 def get_item_category(label):
-    """Determine category from item label"""
+
     if not label:
         return 'other'
 
@@ -5030,11 +4423,9 @@ def get_item_category(label):
         return 'other'
 
 
-# Database migration function to add favorites to existing outfits
+# debug
 def migrate_outfit_favorites():
-    """Add isFavorite field to existing outfits"""
     try:
-        # Update all outfits that don't have isFavorite field
         result = db.outfits.update_many(
             {'isFavorite': {'$exists': False}},
             {'$set': {'isFavorite': 'no'}}
@@ -5042,7 +4433,6 @@ def migrate_outfit_favorites():
 
         print(f"Updated {result.modified_count} outfits with isFavorite field")
 
-        # Also ensure all outfits that were marked as 'yes' for isFavorite are properly set
         result2 = db.outfits.update_many(
             {'isFavorite': True},
             {'$set': {'isFavorite': 'yes'}}
@@ -5054,15 +4444,12 @@ def migrate_outfit_favorites():
         print(f"Error migrating outfit favorites: {str(e)}")
 
 
-# Add this route for outfit deletion
 @app.route('/outfits/delete/<outfit_id>', methods=['DELETE'])
 @login_required
 def delete_outfit(outfit_id):
-    """Delete an outfit"""
     try:
         user_id = session['user']['_id']
 
-        # Delete the outfit (only if it belongs to the current user)
         result = db.outfits.delete_one({
             '_id': ObjectId(outfit_id),
             'userId': user_id
@@ -5087,7 +4474,6 @@ def delete_outfit(outfit_id):
 @app.route('/outfits/view/<outfit_id>')
 @login_required
 def view_outfit_detail(outfit_id):
-    """View individual outfit details"""
     try:
         user_id = session['user']['_id']
         outfit = db.outfits.find_one({'_id': ObjectId(outfit_id), 'userId': user_id})
@@ -5109,9 +4495,6 @@ def view_outfit_detail(outfit_id):
         return redirect(url_for('view_outfits_all'))
 
 
-# Uncomment this line to run the migration once
-# Add these routes for favorites functionality
-# Add these routes to your run.py file:
 
 @app.route('/wardrobe/favorites/api', methods=['GET'])
 @login_required
@@ -5147,8 +4530,6 @@ def get_favorites_api():
 def add_to_favorites(item_id):
     try:
         userId = session['user']['_id']
-
-        # Update the wardrobe item to mark as favorite
         result = db.wardrobe.update_one(
             {'_id': ObjectId(item_id), 'userId': userId},
             {'$set': {'isFavorite': True, 'favorited_at': datetime.now()}}
@@ -5170,8 +4551,6 @@ def add_to_favorites(item_id):
 def remove_from_favorites(item_id):
     try:
         userId = session['user']['_id']
-
-        # Update the wardrobe item to remove from favorites
         result = db.wardrobe.update_one(
             {'_id': ObjectId(item_id), 'userId': userId},
             {'$set': {'isFavorite': False}, '$unset': {'favorited_at': 1}}
@@ -5185,11 +4564,10 @@ def remove_from_favorites(item_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# debug issue
 def migrate_wardrobe_favorites():
-    """Add isFavorite field to existing wardrobe items"""
+
     try:
-        # Update all wardrobe items that don't have isFavorite field
         result = db.wardrobe.update_many(
             {'isFavorite': {'$exists': False}},
             {'$set': {'isFavorite': False}}
@@ -5201,11 +4579,6 @@ def migrate_wardrobe_favorites():
         print(f"Error migrating wardrobe favorites: {str(e)}")
 
 
-# Run this once in your Python console or add to your app startup:
-# migrate_wardrobe_favorites()
-# Add these missing API endpoints to your run.py file
-
-# 1. Dashboard Avatar Stats Endpoint (404 error)
 @app.route('/api/dashboard/avatar-stats', methods=['GET'])
 @login_required
 def get_dashboard_avatar_stats():
@@ -5251,7 +4624,6 @@ def get_dashboard_avatar_stats():
         })
 
     except Exception as e:
-        print(f"❌ Error getting dashboard avatar stats: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
