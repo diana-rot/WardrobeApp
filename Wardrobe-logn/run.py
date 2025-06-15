@@ -1,6 +1,5 @@
 
 from __future__ import division, print_function
-# IMPORTANT: Add this import at the top of your run.py if not already present
 from datetime import timedelta
 
 import os
@@ -9,7 +8,6 @@ import random
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import gc
 import uuid
-
 import numpy as np
 from flask import render_template, request, session, url_for
 from flaskapp import app, login_required,redirect
@@ -18,235 +16,55 @@ from werkzeug.utils import secure_filename, send_from_directory
 import pymongo
 import requests
 from gridfs import GridFS
-# import tensorflow
-# from tensorflow.keras.models import load_model
-# from tensorflow.keras.utils import load_img
-# from keras.preprocessing import image
 import calendar
 import base64
 from bson import ObjectId
 from datetime import datetime
 from flask import jsonify, request, session
-
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 import joblib
-
 from flask import send_file
-
-
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+import cv2
+from sklearn.cluster import KMeans
+import imutils
+from flaskapp.ml_models import model_manager
+from flaskapp.user.texture_mapping import process_clothing_texture
+import fastai
+from fastai.vision.all import *
+import gc
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from fastai.vision import *
+from fastai.metrics import accuracy, top_k_accuracy
+from PIL import Image
+from fastai.vision.all import DataBlock, ImageBlock, MultiCategoryBlock, RandomResizedCrop, aug_transforms
+import pandas as pd
+import torch
+from fastai.vision.all import *
+from functools import partial
+from flaskapp.user.routes import *
+import base64
+from bson.binary import Binary
 
-# material properties comented
-# def extract_material_properties(img_path):
-#     """
-#     Extract material properties from an image including:
-#     - Dominant colors
-#     - Texture patterns
-#     - Material type estimation based on texture analysis
-#     - Pattern information
-#
-#     Returns a dictionary of material properties
-#     """
-#     # Load image
-#     img = cv2.imread(img_path)
-#     img = imutils.resize(img, height=300)  # Resize for consistent processing
-#
-#     # 1. Color analysis (using your existing KMeans approach)
-#     flat_img = np.reshape(img, (-1, 3))
-#     kmeans = KMeans(n_clusters=5, random_state=0)
-#     kmeans.fit(flat_img)
-#
-#     dominant_colors = np.array(kmeans.cluster_centers_, dtype='uint')
-#     percentages = (np.unique(kmeans.labels_, return_counts=True)[1]) / flat_img.shape[0]
-#     p_and_c = sorted(zip(percentages, dominant_colors), reverse=True)
-#
-#     # 2. Texture analysis
-#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#
-#     # GLCM (Gray Level Co-occurrence Matrix) texture features
-#     # Convert to 8-bit grayscale for texture analysis
-#     gray_8bit = (gray / gray.max() * 255).astype(np.uint8)
-#
-#     # Calculate texture features (variance as a simple measure)
-#     texture_variance = np.var(gray_8bit)
-#
-#     # Calculate edge density (a proxy for texture complexity)
-#     edges = cv2.Canny(gray_8bit, 100, 200)
-#     edge_density = np.sum(edges > 0) / (edges.shape[0] * edges.shape[1])
-#
-#     # 3. Material type estimation based on texture properties
-#     material_type = "unknown"
-#
-#     # Simple heuristic-based material classification
-#     if edge_density < 0.05 and texture_variance < 50:
-#         material_type = "smooth"  # Might be leather, silk, etc.
-#     elif edge_density > 0.2:
-#         material_type = "textured"  # Might be denim, wool, etc.
-#     elif texture_variance > 200:
-#         material_type = "patterned"  # Has distinct patterns
-#     else:
-#         material_type = "medium"  # Medium texture, like cotton
-#
-#     # 4. Add basic pattern information
-#     # This is a placeholder - in the full implementation you'd use the detect_pattern_type function
-#     # For now we'll create a basic pattern_info structure with default values
-#     pattern_info = {
-#         "pattern_type": "regular" if texture_variance > 150 else "irregular",
-#         "pattern_scale": "medium",
-#         "pattern_strength": min(1.0, edge_density * 2),  # Simple scaling to 0-1 range
-#         "has_pattern": edge_density > 0.1 or texture_variance > 100,
-#         "pattern_regularity": 0.5,
-#         "is_directional": False,
-#         "peak_count": 0
-#     }
-#
-#     # Return the extracted material properties
-#     return {
-#         "dominant_colors": [color.tolist() for _, color in p_and_c[:3]],
-#         "color_percentages": [float(pct) for pct, _ in p_and_c[:3]],
-#         "texture_variance": float(texture_variance),
-#         "edge_density": float(edge_density),
-#         "estimated_material": material_type,
-#         "primary_color_rgb": p_and_c[0][1].tolist(),
-#         "pattern_info": pattern_info  # Add pattern_info to the returned dict
-#     }
-#
-#
-# def determine_material_type(texture_variance, edge_density, pattern_info):
-#     """Determine material type based on texture and pattern analysis"""
-#
-#     # Check if it's a strong pattern first
-#     if pattern_info["has_pattern"] and pattern_info["pattern_strength"] > 0.4:
-#         if pattern_info["pattern_type"] in ["check", "stripe"]:
-#             return "woven_patterned"
-#         elif pattern_info["pattern_type"] == "irregular":
-#             return "printed"
-#         else:
-#             return "patterned"
-#
-#     # If no strong pattern, determine by texture
-#     if edge_density < 0.05 and texture_variance < 50:
-#         return "smooth"  # Might be leather, silk, etc.
-#     elif edge_density > 0.2:
-#         if texture_variance > 150:
-#             return "rough_textured"  # Might be tweed, heavy wool
-#         else:
-#             return "textured"  # Might be denim, canvas
-#     elif texture_variance > 200:
-#         return "detailed"  # Has distinct texture details
-#     else:
-#         return "medium"  # Medium texture, like cotton
-#
-#
-# def detect_pattern_type(img_path):
-#     """Detect and classify pattern types in the image"""
-#     img = cv2.imread(img_path)
-#
-#     # Convert to grayscale
-#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#
-#     # Resize for faster processing if needed
-#     resized = cv2.resize(gray, (256, 256))
-#
-#     # Apply FFT to detect regular patterns
-#     f = fftpack.fft2(resized)
-#     fshift = fftpack.fftshift(f)
-#     magnitude_spectrum = 20 * np.log(np.abs(fshift) + 1)
-#
-#     # Threshold the magnitude spectrum to find strong frequencies
-#     threshold = np.mean(magnitude_spectrum) + 3 * np.std(magnitude_spectrum)
-#     peaks = magnitude_spectrum > threshold
-#
-#     # Count peaks in the frequency domain (excluding the DC component)
-#     center_y, center_x = resized.shape[0] // 2, resized.shape[1] // 2
-#     mask = np.ones_like(peaks)
-#     mask[center_y - 5:center_y + 5, center_x - 5:center_x + 5] = 0  # Exclude center
-#     peak_count = np.sum(peaks & mask)
-#
-#     # Analyze peak distribution
-#     peak_locs = np.where(peaks & mask)
-#     peak_distances = np.sqrt((peak_locs[0] - center_y) ** 2 + (peak_locs[1] - center_x) ** 2)
-#     pattern_regularity = 0.0
-#
-#     if len(peak_distances) > 0:
-#         # Calculate coefficient of variation (lower value = more regular)
-#         if np.mean(peak_distances) > 0:
-#             pattern_regularity = 1.0 - min(1.0, np.std(peak_distances) / np.mean(peak_distances))
-#
-#     # Gradient analysis for pattern direction
-#     sobelx = cv2.Sobel(resized, cv2.CV_64F, 1, 0, ksize=3)
-#     sobely = cv2.Sobel(resized, cv2.CV_64F, 0, 1, ksize=3)
-#
-#     # Calculate gradient magnitudes and directions
-#     gradient_magnitude = np.sqrt(sobelx ** 2 + sobely ** 2)
-#     gradient_direction = np.arctan2(sobely, sobelx) * 180 / np.pi
-#
-#     # Analyze gradient directions
-#     hist, _ = np.histogram(gradient_direction, bins=8, range=(-180, 180))
-#     hist_normalized = hist / np.sum(hist)
-#     max_dir_idx = np.argmax(hist_normalized)
-#
-#     # Determine if there are strong directional patterns
-#     has_directional_pattern = np.max(hist_normalized) > 0.25
-#
-#     # Determine pattern type
-#     if peak_count > 15 and pattern_regularity > 0.7:
-#         # Check for grid patterns (peaks in both horizontal and vertical)
-#         horizontal_peaks = np.sum(peaks[center_y, :] & mask[center_y, :])
-#         vertical_peaks = np.sum(peaks[:, center_x] & mask[:, center_x])
-#
-#         if horizontal_peaks > 3 and vertical_peaks > 3:
-#             pattern_type = "check"
-#         elif has_directional_pattern:
-#             if max_dir_idx in [0, 4]:  # Horizontal (0° or 180°)
-#                 pattern_type = "horizontal_stripe"
-#             elif max_dir_idx in [2, 6]:  # Vertical (90° or 270°)
-#                 pattern_type = "vertical_stripe"
-#             else:
-#                 pattern_type = "diagonal_stripe"
-#         else:
-#             pattern_type = "regular"
-#     elif peak_count > 5:
-#         pattern_type = "semi_regular"
-#     else:
-#         # For low peak counts, further analyze texture
-#         if np.max(hist_normalized) > 0.2:
-#             pattern_type = "directional"
-#         else:
-#             pattern_type = "irregular"
-#
-#     # Determine pattern scale (fine, medium, large)
-#     if len(peak_distances) > 0:
-#         avg_distance = np.mean(peak_distances)
-#         if avg_distance < 20:
-#             pattern_scale = "fine"
-#         elif avg_distance < 50:
-#             pattern_scale = "medium"
-#         else:
-#             pattern_scale = "large"
-#     else:
-#         # Default if no peaks detected
-#         pattern_scale = "medium"
-#
-#     # Calculate pattern strength (how dominant the pattern is)
-#     pattern_strength = min(1.0, peak_count / 50)
-#
-#     return {
-#         "pattern_type": pattern_type,
-#         "pattern_scale": pattern_scale,
-#         "pattern_strength": float(pattern_strength),
-#         "has_pattern": peak_count > 3,
-#         "pattern_regularity": float(pattern_regularity),
-#         "is_directional": has_directional_pattern,
-#         "peak_count": int(peak_count)
-#     }
+PATH = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn'
+PATH1 = r"C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn"
+
+# data base connection
+client = pymongo.MongoClient('localhost', 27017)
+db = client.user_login_system_test
+DEFAULT_RATING = 4
 
 
+# methods for model prediction - predict route
 def generate_normal_map(img_path):
     """Generate a normal map from a texture for 3D relief"""
     try:
@@ -290,142 +108,33 @@ def normalize_path_filter(file_path):
     """Normalizes file paths for template rendering"""
     return normalize_path(file_path)
 
-
-client = pymongo.MongoClient('localhost', 27017)
-db = client.user_login_system_test
-DEFAULT_RATING = 4
-
-import cv2
-from sklearn.cluster import KMeans
-import imutils
-
-# from flaskapp.ml_models import model_manager
-from flaskapp.ml_models import model_manager
-
-print('🚀 Model loading optimized - models load on demand to save memory')
-# def model_predict(img_path, model=None):
-#     """Optimized model predict with lazy loading"""
-#     try:
-#         # Use the model manager instead of loading at startup
-#         result = model_manager.predict_clothing(img_path)
-#
-#         # Convert to your expected numpy array format
-#         import numpy as np
-#         preds = np.array([result['all_predictions']])
-#
-#         return preds
-#
-#     except Exception as e:
-#         print(f"Error in model_predict: {str(e)}")
-#         raise
-
+print(' Model loading optimized - model load on demand')
 def model_predict(img_path, model=None):
-    """Enhanced model predict with hybrid prediction system"""
-    try:
-        print(f"🔍 Enhanced prediction for: {os.path.basename(img_path)}")
 
-        # Use the enhanced model manager with hybrid prediction
+    try:
+        print(f" Enhanced prediction for: {os.path.basename(img_path)}")
         result = model_manager.predict_clothing(img_path)
 
         # Convert to your expected numpy array format
         import numpy as np
         preds = np.array([result['all_predictions']])
 
-        # Log enhanced prediction info if available
         if 'ensemble_confidence' in result:
-            print(f"🎯 Ensemble confidence: {result['ensemble_confidence']:.3f}")
-            print(f"🎯 Methods used: {result.get('methods_used', 1)}")
+            print(f" Ensemble confidence: {result['ensemble_confidence']:.3f}")
+            print(f" Methods used: {result.get('methods_used', 1)}")
 
         return preds
 
     except Exception as e:
-        print(f"❌ Error in enhanced model_predict: {str(e)}")
+        print(f"Error in enhanced model_predict: {str(e)}")
         raise
 
 
-# Keep this import as is:
-
-from flaskapp.user.texture_mapping import process_clothing_texture
-
-
-@app.route('/api/process-clothing-texture', methods=['POST'])
-@login_required
-def api_process_clothing_texture():
-    """
-    API endpoint to process clothing textures for 3D visualization
-
-    Request:
-        - file: The image file
-        - clothing_type: The type of clothing (e.g., "T-shirt/top", "Dress")
-
-    Response:
-        {
-            "success": true,
-            "model_path": "/static/models/clothing/tshirt.glb",
-            "texture_url": "/static/image_users/user_id/image_texture.png",
-            "normal_map_url": "/static/image_users/user_id/image_normal.png"
-        }
-    """
-    try:
-        # Check if the post request has the file part
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file part'}), 400
-
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
-
-        # Get clothing type from form or predict it
-        clothing_type = request.form.get('clothing_type')
-
-        # If no clothing type provided, try to predict it
-        if not clothing_type:
-            # You can use your existing model_predict function here
-            # For now, we'll default to T-shirt/top
-            clothing_type = "T-shirt/top"
-
-        # Save the file
-        user_id = session['user']['_id']
-        upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
-        os.makedirs(upload_dir, exist_ok=True)
-
-        # Add a unique identifier to prevent filename collisions
-        filename = secure_filename(file.filename)
-        base, ext = os.path.splitext(filename)
-        unique_filename = f"{base}_{user_id}_{int(time.time())}{ext}"
-        file_path = os.path.join(upload_dir, unique_filename)
-
-        file.save(file_path)
-
-        # Process the texture
-        result = process_clothing_texture(file_path, clothing_type)
-
-        # Convert absolute paths to relative URLs
-        base_url = f'/static/image_users/{user_id}/'
-        texture_url = os.path.basename(result['texture_path'])
-        normal_map_url = os.path.basename(result['normal_map_path'])
-
-        return jsonify({
-            'success': True,
-            'model_path': result['model_path'],
-            'texture_url': f"{base_url}{texture_url}",
-            'normal_map_url': f"{base_url}{normal_map_url}"
-        })
-
-    except Exception as e:
-        app.logger.error(f"Error processing texture: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-
 def predict_color(img_path):
-    """Wrapper for improved_predict_color for compatibility"""
     return improved_predict_color(img_path)
 
 def improved_predict_color(img_path):
-    """
-    Improved color prediction that accurately identifies the dominant color of clothing
-    by effectively removing the background and focusing on the central object.
-
+    """removing the background and focusing on the central object.
     Returns: (percentage, [R, G, B])
     """
     import cv2
@@ -439,15 +148,15 @@ def improved_predict_color(img_path):
         print(f"Error: Could not load image from {img_path}")
         return None
 
-    # Resize for consistent processing
+    # Resize
     img = imutils.resize(img, height=300)
 
-    # Step 1: Background Removal
-    # Convert to RGBA to detect white/transparent backgrounds
+    # Background Removal
+    # Convert to RGBA to detect white/transparent background
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
 
-    # Apply morphological operations to clean up the mask
+    # morphological operations to clean up the mask
     kernel = np.ones((5, 5), np.uint8)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
@@ -704,95 +413,8 @@ def extract_material_properties(img_path):
         "primary_color_rgb": p_and_c[0][1].tolist()
     }
 
-import fastai
-from fastai.vision.all import *
-import gc
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from fastai.vision import *
-from fastai.metrics import accuracy, top_k_accuracy
-from PIL import Image
 
-PATH = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn'
-PATH1 = r"C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn"
-
-
-@app.route('/predict', methods=['POST'])
-@login_required
-def upload():
-    if request.method == 'POST':
-        try:
-            f = request.files['file']
-            if not f:
-                return "No file uploaded", 400
-
-            user_id = session['user']['_id']
-            upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
-            os.makedirs(upload_dir, exist_ok=True)
-            file_path = os.path.join(upload_dir, secure_filename(f.filename))
-            f.save(file_path)
-
-            # Make predictions with validation
-            try:
-                print(f"🚀 Processing upload with enhanced model: {secure_filename(f.filename)}")
-                preds = model_predict(file_path)  # Enhanced prediction with hybrid system
-                if not isinstance(preds, np.ndarray) or preds.size == 0:
-                    raise ValueError("Invalid prediction output")
-
-                print(f"✅ Enhanced prediction completed successfully")
-
-                # Extract color information
-                color_result = predict_color(file_path)
-                if not color_result or len(color_result) < 2:
-                    raise ValueError("Invalid color prediction")
-
-                # Extract material properties - NEW
-                material_properties = extract_material_properties(file_path)
-
-                predicted_label = np.argmax(preds)
-                class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-
-                if predicted_label >= len(class_names):
-                    raise ValueError("Invalid predicted label index")
-
-                result = class_names[predicted_label]
-
-                # Log the enhanced prediction details
-                print(f"🎯 Final prediction: {result}")
-                print(f"🎯 Confidence: {np.max(preds):.3f}")
-
-                # Save to database with material properties
-                db.wardrobe.insert_one({
-                    'label': result,
-                    'color': ' '.join(map(str, color_result[1])),
-                    'nota': 4,
-                    'userId': user_id,
-                    'file_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',
-                    'material_properties': material_properties,  # NEW - store material data
-                    'texture_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',
-                    # Same as file_path for now
-                    'created_at': datetime.now()
-                })
-
-                return result
-
-            except Exception as e:
-                print(f"Prediction error: {str(e)}")
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                return str(e), 500
-
-        except Exception as e:
-            return str(e), 500
-
-    return None
-
-
+# load model run
 @app.route('/api/wardrobe/material/<item_id>', methods=['GET'])
 @login_required
 def get_material_properties(item_id):
@@ -884,8 +506,6 @@ def get_material_properties(item_id):
 
 def load_model():
     path = r'C:\Users\Diana\Desktop\Wardrobe-login\Wardrobe-logn\atr-recognition-stage-3-resnet34.pth'
-    # assert os.path.isfile(path)
-    # map_location = torch.device('cpu')
     learn = load_learner(path, cpu=True)
     print(learn)
     return learn
@@ -906,11 +526,6 @@ def splitter(df):
 
 def predict_attribute(model, path, display_img=True):
     predicted = model.predict(path)
-    # if display_img:
-    #     size = 244,244
-    #     img=Image.open(path)
-    #     # img.thumbnail(size,Image.ANTIALIAS)
-    #     img.show()
     return predicted[0]
 
 def accuracy_multi(inp, targ, thresh=0.5, sigmoid=True):
@@ -930,14 +545,8 @@ class LabelSmoothingBCEWithLogitsLossFlat(BCEWithLogitsLossFlat):
     def __repr__(self):
         return "FlattenedLoss of LabelSmoothingBCEWithLogits()"
 
-from fastai.vision.all import DataBlock, ImageBlock, MultiCategoryBlock, RandomResizedCrop, aug_transforms
-import pandas as pd
-import torch
-from fastai.vision.all import *
-from functools import partial
-def predict_attribute_model(img_path):
-    print('alo alo')
 
+def predict_attribute_model(img_path):
     # Define paths to files
     TRAIN_PATH = "multilabel-train.csv"
     TEST_PATH = "multilabel-test.csv"
@@ -1026,12 +635,88 @@ def predict_attribute_model(img_path):
         print(f"Error predicting attributes: {e}")
         return
 
+
+
+
+
+
+
 # flask app and routes
+
+@app.route('/predict', methods=['POST'])
+@login_required
+def upload():
+    if request.method == 'POST':
+        try:
+            f = request.files['file']
+            if not f:
+                return "No file uploaded", 400
+
+            user_id = session['user']['_id']
+            upload_dir = os.path.join('flaskapp', 'static', 'image_users', user_id)
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, secure_filename(f.filename))
+            f.save(file_path)
+
+            # predictions with validation
+            try:
+                print(f"Processing upload with enhanced model: {secure_filename(f.filename)}")
+                preds = model_predict(file_path)  # Enhanced prediction with hybrid system
+                if not isinstance(preds, np.ndarray) or preds.size == 0:
+                    raise ValueError("Invalid prediction output")
+
+                print(f" Enhanced prediction completed successfully")
+
+                # Extract color information
+                color_result = predict_color(file_path)
+                if not color_result or len(color_result) < 2:
+                    raise ValueError("Invalid color prediction")
+
+                # Extract material properties
+                material_properties = extract_material_properties(file_path)
+
+                predicted_label = np.argmax(preds)
+                class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+                if predicted_label >= len(class_names):
+                    raise ValueError("Invalid predicted label index")
+
+                result = class_names[predicted_label]
+
+                # Log the enhanced prediction details
+                print(f" Final prediction: {result}")
+                print(f" Confidence: {np.max(preds):.3f}")
+
+                # Save to database with material properties
+                db.wardrobe.insert_one({
+                    'label': result,
+                    'color': ' '.join(map(str, color_result[1])),
+                    'nota': 4,
+                    'userId': user_id,
+                    'file_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',
+                    'material_properties': material_properties,  # store material data
+                    'texture_path': f'/static/image_users/{user_id}/{secure_filename(f.filename)}',
+                    # Same as file_path for now
+                    'created_at': datetime.now()
+                })
+
+                return result
+
+            except Exception as e:
+                print(f"Prediction error: {str(e)}")
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                return str(e), 500
+
+        except Exception as e:
+            return str(e), 500
+
+    return None
+
 @app.route('/')
 def home():
     return render_template('welcome.html')
-
-from flaskapp.user.routes import *
 
 @app.route('/login/')
 def dologin():
@@ -1049,8 +734,7 @@ def doregister():
 #     return redirect(url_for('dologin'))
 #profile
 # Add these imports to your existing imports
-import base64
-from bson.binary import Binary
+
 
 
 # Add this route to handle profile updates
@@ -1061,24 +745,19 @@ def profile():
         try:
             user_id = session['user']['_id']
 
-            # Handle profile picture upload
             if 'profile_picture' in request.files:
                 file = request.files['profile_picture']
                 if file and allowed_file(file.filename):
-                    # Read the file and convert to binary for MongoDB storage
+                    #  convert to binary for MongoDB storage
                     file_data = file.read()
-
-                    # Create upload directory if it doesn't exist
                     upload_dir = os.path.join('flaskapp', 'static', 'profile_pictures', str(user_id))
                     os.makedirs(upload_dir, exist_ok=True)
-
-                    # Save file to disk
                     filename = secure_filename(file.filename)
                     file_path = os.path.join(upload_dir, filename)
                     with open(file_path, 'wb') as f:
                         f.write(file_data)
 
-                    # Update user document with profile picture path
+                    #  user document with profile picture path
                     db.users.update_one(
                         {'_id': user_id},
                         {'$set': {
@@ -1089,7 +768,6 @@ def profile():
             # Update other profile information
             name = request.form.get('name')
             email = request.form.get('email')
-
             # Update user document
             update_data = {}
             if name:
@@ -1102,8 +780,6 @@ def profile():
                     {'_id': user_id},
                     {'$set': update_data}
                 )
-
-                # Update session data
                 user = db.users.find_one({'_id': user_id})
                 session['user'] = user
 
@@ -1112,23 +788,20 @@ def profile():
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
 
-    # GET request - display profile page
+    #  display profile page
     user_data = db.users.find_one({'_id': session['user']['_id']})
     return render_template('profile.html', user=user_data)
 
 
-
-# Helper function to get user's profile picture
+#  get user profile picture
 def get_user_profile_picture():
     if 'user' in session and session['user']:
         user = db.users.find_one({'_id': session['user']['_id']})
         profile_picture = user.get('profile_picture') if user else None
         if profile_picture:
             return profile_picture
-    return None  # Return None instead of a default image path
+    return None
 
-
-# Add this to your template context
 @app.context_processor
 def utility_processor():
     return dict(get_user_profile_picture=get_user_profile_picture)
