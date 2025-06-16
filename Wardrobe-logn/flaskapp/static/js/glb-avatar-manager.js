@@ -1,7 +1,4 @@
-/**
- * CLEANED GLB Avatar Manager - Removed Unused Paths & Fixed Configuration
- * Save as: static/js/glb-avatar-manager.js
- */
+
 
 class CustomizableGLBAvatarManager {
     constructor(options = {}) {
@@ -248,23 +245,20 @@ class CustomizableGLBAvatarManager {
         this.animate();
 
         this.isInitialized = true;
-        console.log('✅ CLEANED GLB Avatar Manager initialized');
-        console.log('🎯 Using EXACT coordinates for perfect hair positioning');
+
     }
 
     // Manual method to load default avatar
     async loadDefaultAvatarManually() {
         if (this.hasLoadedDefault || this.isLoadingAvatar) {
-            console.log('⚠️ Default avatar already loaded or loading');
             return;
         }
 
-        console.log('🤖 Loading default GLB avatar with PERFECT hair positioning...');
         this.hasLoadedDefault = true;
 
         try {
             await this.loadAvatarFromConfig(this.config);
-            console.log('✅ Default avatar loaded successfully');
+
 
             // Load default hair with PERFECT positioning
             setTimeout(async () => {
@@ -282,14 +276,12 @@ class CustomizableGLBAvatarManager {
     // Loading protection methods
     async loadAvatarFromConfig(config) {
         if (this.isLoadingAvatar) {
-            console.log('⚠️ Avatar loading already in progress');
             return null;
         }
 
         const avatarPath = this.getAvatarPath(config);
 
         if (this.loadingQueue.has(avatarPath)) {
-            console.log('⚠️ Avatar path already queued:', avatarPath);
             return null;
         }
 
@@ -306,12 +298,11 @@ class CustomizableGLBAvatarManager {
     // Avatar loading with protection
     async loadGLBAvatar(glbPath) {
         if (this.isLoadingAvatar) {
-            console.log('⚠️ Avatar loading blocked - already in progress');
             return null;
         }
 
         if (this.loadingQueue.has(glbPath)) {
-            console.log('⚠️ Avatar loading blocked - already queued:', glbPath);
+
             return null;
         }
 
@@ -344,16 +335,16 @@ class CustomizableGLBAvatarManager {
             this.updateSkinColor(this.config.skinColor);
             await this.updateEyeColor(this.config.eyeColor);
 
-            console.log('✅ GLB avatar loaded successfully');
+
             return this.avatarModel;
 
         } catch (error) {
-            console.error('❌ Error loading GLB avatar:', error);
+
             throw error;
         } finally {
             this.isLoadingAvatar = false;
             this.loadingQueue.delete(glbPath);
-            console.log('🔓 Avatar loading flags cleared');
+
         }
     }
 
@@ -369,11 +360,11 @@ class CustomizableGLBAvatarManager {
                 (progress) => {
                     if (this.debug) {
                         const percentage = (progress.loaded / progress.total * 100).toFixed(1);
-                        console.log(`📊 GLB loading progress: ${percentage}%`);
+
                     }
                 },
                 (error) => {
-                    console.error('❌ GLB loading error:', error);
+
                     reject(error);
                 }
             );
@@ -383,17 +374,16 @@ class CustomizableGLBAvatarManager {
     // FIXED: Hair loading with PERFECT positioning using your exact coordinates
     async updateHairStyle(hairStyleKey) {
         if (this.isLoadingHair) {
-            console.log('⚠️ Hair loading blocked - already in progress');
+
             return false;
         }
 
-        console.log(`🦱 Updating hair style to: ${hairStyleKey} (using PERFECT coordinates)`);
+
 
         const gender = this.config.gender || 'female';
         const hairData = this.hairStyles[gender][hairStyleKey];
 
         if (!hairData) {
-            console.error(`❌ Hair style not found: ${hairStyleKey} for gender: ${gender}`);
             return false;
         }
 
@@ -405,12 +395,12 @@ class CustomizableGLBAvatarManager {
 
             // Handle bald case
             if (!hairData.glbPath || hairStyleKey === 'bald') {
-                console.log('👩‍🦲 Applied bald style (no hair model)');
+
                 this.config.hairType = hairStyleKey;
                 return true;
             }
 
-            console.log(`🦱 Loading GLB hair model: ${hairData.name}`);
+
             const hairModel = await this.loadHairGLB(hairData.glbPath);
 
             if (hairModel) {
@@ -424,30 +414,30 @@ class CustomizableGLBAvatarManager {
                 this.currentHairModel.name = `hair_${hairStyleKey}`;
                 this.config.hairType = hairStyleKey;
 
-                console.log(`✅ GLB hair model loaded with PERFECT positioning`);
+
                 const coords = this.hairPositionsByHeight[this.config.height];
-                console.log(`📍 Hair positioned at: (${coords.x}, ${coords.y}, ${coords.z}) scale: ${coords.scale}x`);
+
                 return true;
             }
         } catch (error) {
-            console.error(`❌ Failed to load GLB hair model: ${error.message}`);
+            console.error(` Failed to load GLB hair model: ${error.message}`);
             return false;
         } finally {
             this.isLoadingHair = false;
-            console.log('🔓 Hair loading flag cleared');
+
         }
 
         return false;
     }
 
-    // FIXED: Perfect hair positioning using your EXACT coordinates
+
     applyPerfectHairPositioning(hairModel) {
         if (!this.avatarModel || !hairModel) {
-            console.warn('❌ Missing avatar or hair model for positioning');
+            console.warn(' Missing avatar or hair model for positioning');
             return false;
         }
 
-        console.log('🎯 Applying PERFECT hair positioning with your EXACT coordinates...');
+
 
         try {
             // Get the exact coordinates for current avatar height
@@ -455,7 +445,7 @@ class CustomizableGLBAvatarManager {
             const coords = this.hairPositionsByHeight[heightKey];
 
             if (!coords) {
-                console.error(`❌ No coordinates found for height: ${heightKey}`);
+
                 return false;
             }
 
@@ -464,14 +454,14 @@ class CustomizableGLBAvatarManager {
             hairModel.position.set(coords.x, coords.y, coords.z);
             hairModel.rotation.set(0, 0, 0);
 
-            console.log(`✅ PERFECT hair positioning complete for ${heightKey} avatar:`);
+            console.log(`PERFECT hair positioning complete for ${heightKey} avatar:`);
             console.log(`   Position: (${coords.x}, ${coords.y}, ${coords.z})`);
             console.log(`   Scale: ${coords.scale}x`);
 
             return true;
 
         } catch (error) {
-            console.error('❌ Perfect hair positioning failed:', error);
+
             return false;
         }
     }
@@ -479,7 +469,7 @@ class CustomizableGLBAvatarManager {
     // Manual hair position adjustment (simplified)
     adjustHairPositionManually(adjustments = {}) {
         if (!this.currentHairModel) {
-            console.log('❌ No hair model available for manual adjustment');
+
             return false;
         }
 
@@ -597,9 +587,9 @@ class CustomizableGLBAvatarManager {
 
         if (typeof THREE.GLTFLoader !== 'undefined') {
             this.gltfLoader = new THREE.GLTFLoader();
-            console.log('✅ GLTFLoader available');
+
         } else {
-            console.error('❌ GLTFLoader not available');
+            console.error(' GLTFLoader not available');
             throw new Error('GLTFLoader is required for GLB files');
         }
     }
@@ -625,13 +615,13 @@ class CustomizableGLBAvatarManager {
 
     // Hair loading methods
     async loadHairGLB(glbPath) {
-        console.log(`🔄 Loading GLB hair from: ${glbPath}`);
+
 
         return new Promise((resolve, reject) => {
             this.gltfLoader.load(
                 glbPath,
                 (gltf) => {
-                    console.log('✅ GLB hair loaded successfully');
+
                     const hairModel = gltf.scene;
                     this.processHairModel(hairModel);
                     resolve(hairModel);
@@ -639,11 +629,11 @@ class CustomizableGLBAvatarManager {
                 (progress) => {
                     if (this.debug) {
                         const percentage = (progress.loaded / progress.total * 100).toFixed(1);
-                        console.log(`📊 GLB hair loading progress: ${percentage}%`);
+                        console.log(` GLB hair loading progress: ${percentage}%`);
                     }
                 },
                 (error) => {
-                    console.error('❌ GLB hair loading error:', error);
+                    console.error(' GLB hair loading error:', error);
                     reject(error);
                 }
             );
@@ -651,7 +641,7 @@ class CustomizableGLBAvatarManager {
     }
 
     processHairModel(hairModel) {
-        console.log('🎨 Processing GLB hair model...');
+        console.log(' Processing GLB hair model...');
 
         hairModel.traverse((child) => {
             if (child.isMesh) {
@@ -682,7 +672,6 @@ class CustomizableGLBAvatarManager {
     }
 
     enhanceHairMaterials(hairModel) {
-        console.log('🎨 Enhancing GLB hair materials...');
 
         const hairColor = this.hairColors[this.config.hairColor] || this.hairColors['brown'];
 
@@ -727,7 +716,7 @@ class CustomizableGLBAvatarManager {
 
     // Model processing methods
     processGLBModel(model) {
-        console.log('🎨 Processing GLB model for customization...');
+
 
         model.traverse((child) => {
             if (child.isMesh) {
@@ -788,7 +777,7 @@ class CustomizableGLBAvatarManager {
         this.avatarModel.position.x = -center.x * scale;
         this.avatarModel.position.z = -center.z * scale;
 
-        console.log(`📏 Avatar scaled and positioned`);
+
     }
 
     // Color update methods
@@ -872,7 +861,7 @@ class CustomizableGLBAvatarManager {
 
     // Avatar update methods
     async updateGender(gender) {
-        console.log(`👤 Updating gender to: ${gender}`);
+        console.log(` Updating gender to: ${gender}`);
         this.config.gender = gender;
         this.removeCurrentHair();
         await this.loadAvatarFromConfig(this.config);
@@ -889,7 +878,7 @@ class CustomizableGLBAvatarManager {
     }
 
     async updateBodySize(bodySize) {
-        console.log(`📏 Updating body size to: ${bodySize}`);
+        console.log(` Updating body size to: ${bodySize}`);
         this.config.bodySize = bodySize;
         await this.loadAvatarFromConfig(this.config);
 
@@ -901,7 +890,7 @@ class CustomizableGLBAvatarManager {
     }
 
     async updateHeight(height) {
-        console.log(`📐 Updating height to: ${height}`);
+        console.log(` Updating height to: ${height}`);
         this.config.height = height;
         await this.loadAvatarFromConfig(this.config);
 
@@ -999,7 +988,7 @@ class CustomizableGLBAvatarManager {
 
     // Fallback avatar
     loadFallbackAvatar() {
-        console.log('🔄 Loading fallback avatar...');
+        console.log(' Loading fallback avatar...');
 
         const geometry = new THREE.CapsuleGeometry(0.3, 1.4, 4, 8);
         const material = new THREE.MeshLambertMaterial({
@@ -1012,7 +1001,7 @@ class CustomizableGLBAvatarManager {
         this.avatarModel.receiveShadow = true;
 
         this.scene.add(this.avatarModel);
-        console.log('✅ Fallback avatar created');
+        console.log(' Fallback avatar created');
     }
 
     // Animation loop
@@ -1059,7 +1048,7 @@ class CustomizableGLBAvatarManager {
         this.loadingQueue.clear();
         this.hasLoadedDefault = false;
 
-        console.log('🧹 Avatar Manager cleaned up');
+        console.log(' Avatar Manager cleaned up');
     }
 
     // Status check methods
@@ -1085,7 +1074,7 @@ class CustomizableGLBAvatarManager {
         if (!this.hasLoadedDefault && !this.isLoadingAvatar) {
             await this.loadDefaultAvatarManually();
         } else {
-            console.log('⚠️ Default avatar already loaded or request in progress');
+            console.log(' Default avatar already loaded or request in progress');
         }
     }
 }
@@ -1097,7 +1086,7 @@ window.GLBAvatarManager = CustomizableGLBAvatarManager;
 // FIXED: Simplified console commands using your exact coordinates
 window.testPerfectPositioning = function(height = 'medium') {
     if (!window.avatarManager || !window.avatarManager.currentHairModel) {
-        console.log('❌ Hair model not available');
+        console.log(' Hair model not available');
         return false;
     }
 
@@ -1109,7 +1098,7 @@ window.testPerfectPositioning = function(height = 'medium') {
 
     const targetCoords = coords[height];
     if (!targetCoords) {
-        console.log(`❌ Unknown height: ${height}`);
+
         return false;
     }
 
@@ -1117,28 +1106,27 @@ window.testPerfectPositioning = function(height = 'medium') {
     hair.position.set(targetCoords.x, targetCoords.y, targetCoords.z);
     hair.scale.setScalar(targetCoords.scale);
 
-    console.log(`✅ Applied perfect positioning for ${height} avatar`);
-    console.log(`📍 Position: (${targetCoords.x}, ${targetCoords.y}, ${targetCoords.z}), Scale: ${targetCoords.scale}x`);
+
     return true;
 };
 
 window.switchToShort = async function() {
     if (window.avatarManager) {
         await window.avatarManager.setConfiguration({ height: 'short' });
-        console.log('🔄 Switched to short avatar - hair will auto-position');
+
     }
 };
 
 window.switchToMedium = async function() {
     if (window.avatarManager) {
         await window.avatarManager.setConfiguration({ height: 'medium' });
-        console.log('🔄 Switched to medium avatar - hair will auto-position');
+
     }
 };
 
 window.switchToLong = async function() {
     if (window.avatarManager) {
         await window.avatarManager.setConfiguration({ height: 'long' });
-        console.log('🔄 Switched to long avatar - hair will auto-position');
+
     }
 };

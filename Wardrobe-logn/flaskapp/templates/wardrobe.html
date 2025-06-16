@@ -880,7 +880,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.min.js"></script>
 
 <script>
-console.log('🎯 Starting ENHANCED 3D Wardrobe System with Auto-Save & No Duplicate Buttons...');
+console.log(' Starting ENHANCED 3D Wardrobe System with Auto-Save & No Duplicate Buttons...');
 
 // ENHANCED OBJ LOADER WITH COLOR SUPPORT
 class BulletproofOBJLoader {
@@ -897,14 +897,14 @@ class BulletproofOBJLoader {
                 const object = this.parse(text);
                 if (onLoad) onLoad(object);
             } catch (error) {
-                console.error('🔥 OBJ Parse Error:', error);
+                console.error(' OBJ Parse Error:', error);
                 if (onError) onError(error);
             }
         }, onProgress, onError);
     }
 
     parse(text) {
-        console.log('🎯 Parsing OBJ with color support...');
+        console.log(' Parsing OBJ with color support...');
 
         const vertices = [];
         const normals = [];
@@ -913,7 +913,7 @@ class BulletproofOBJLoader {
         const faces = [];
 
         const lines = text.split('\n');
-        console.log(`📊 Processing ${lines.length} lines...`);
+        console.log(` Processing ${lines.length} lines...`);
 
         let colorCount = 0;
 
@@ -944,7 +944,7 @@ class BulletproofOBJLoader {
                         colorCount++;
 
                         if (colorCount <= 5) { // Log first few for debugging
-                            console.log(`🎨 Vertex ${Math.floor(vertices.length/3)}: color(${r.toFixed(3)}, ${g.toFixed(3)}, ${b.toFixed(3)})`);
+                            console.log(` Vertex ${Math.floor(vertices.length/3)}: color(${r.toFixed(3)}, ${g.toFixed(3)}, ${b.toFixed(3)})`);
                         }
                     } else {
                         // Default gray if no color
@@ -973,8 +973,8 @@ class BulletproofOBJLoader {
             }
         }
 
-        console.log(`✅ Parsed: ${vertices.length/3} vertices, ${faces.length} faces`);
-        console.log(`🎨 Found ${colorCount} vertices with color data`);
+        console.log(` Parsed: ${vertices.length/3} vertices, ${faces.length} faces`);
+        console.log(` Found ${colorCount} vertices with color data`);
 
         return this.buildGeometry(vertices, normals, uvs, faces, vertexColors);
     }
@@ -1007,7 +1007,7 @@ class BulletproofOBJLoader {
         const colorsArray = [];
 
         const hasColors = vertexColors.length > 0;
-        console.log(`🎨 Building geometry - Has colors: ${hasColors}, Color count: ${vertexColors.length/3}`);
+        console.log(` Building geometry - Has colors: ${hasColors}, Color count: ${vertexColors.length/3}`);
 
         for (let i = 0; i < faces.length; i++) {
             const face = faces[i];
@@ -1069,7 +1069,7 @@ class BulletproofOBJLoader {
         // Add color attribute if we have colors
         if (hasColors) {
             geometry.setAttribute('color', new THREE.Float32BufferAttribute(colorsArray, 3));
-            console.log('🎨 ✅ Added color attribute to geometry!');
+            console.log(' Added color attribute to geometry!');
         }
 
         // Compute normals if not provided
@@ -1093,9 +1093,9 @@ class BulletproofOBJLoader {
         group.add(mesh);
 
         if (hasColors) {
-            console.log('🎉 ✅ COLORED OBJ geometry built successfully!');
+            console.log(' COLORED OBJ geometry built successfully!');
         } else {
-            console.log('🎯 Standard OBJ geometry built (no colors found)');
+            console.log('Standard OBJ geometry built (no colors found)');
         }
 
         return group;
@@ -1117,7 +1117,7 @@ class CleanWhiteClothingViewer {
     }
 
     init() {
-        console.log('🚀 Initializing Clean White Clothing Viewer...');
+        console.log(' Initializing Clean White Clothing Viewer...');
 
         // Scene with pure white background
         this.scene = new THREE.Scene();
@@ -1163,7 +1163,7 @@ class CleanWhiteClothingViewer {
         this.animate();
         window.addEventListener('resize', () => this.onWindowResize());
 
-        console.log('✅ Clean White Clothing Viewer ready');
+        console.log(' Clean White Clothing Viewer ready');
     }
 
     setupCleanWhiteLighting() {
@@ -1194,12 +1194,12 @@ class CleanWhiteClothingViewer {
         rim.position.set(0, 2, -3);
         this.scene.add(rim);
 
-        console.log('💡 Clean white studio lighting setup complete');
+
     }
 
     async loadOBJModel(objUrl) {
         try {
-            console.log(`🔄 Loading colored clothing model: ${objUrl}`);
+
             this.showLoadingState();
 
             const loader = new BulletproofOBJLoader();
@@ -1208,7 +1208,7 @@ class CleanWhiteClothingViewer {
                 loader.load(
                     objUrl,
                     (object) => {
-                        console.log('✅ Colored clothing model loaded successfully!');
+
                         this.processColoredClothingModel(object);
                         this.hideLoadingState();
                         resolve(object);
@@ -1220,7 +1220,7 @@ class CleanWhiteClothingViewer {
                         }
                     },
                     (error) => {
-                        console.error('❌ Error loading colored clothing model:', error);
+
                         this.hideLoadingState();
                         this.showErrorState('Failed to load colored clothing model');
                         reject(error);
@@ -1228,7 +1228,7 @@ class CleanWhiteClothingViewer {
                 );
             });
         } catch (error) {
-            console.error('❌ Error in loadOBJModel:', error);
+
             this.hideLoadingState();
             this.showErrorState('Failed to initialize colored clothing model loader');
             throw error;
@@ -1258,7 +1258,7 @@ class CleanWhiteClothingViewer {
                     // Ensure vertex colors are enabled if available
                     if (child.geometry.attributes.color) {
                         child.material.vertexColors = true;
-                        console.log('🎨 Enabled vertex colors for clothing mesh');
+                        console.log(' Enabled vertex colors for clothing mesh');
                     }
 
                     // Add slight roughness for fabric appearance
@@ -1267,21 +1267,21 @@ class CleanWhiteClothingViewer {
                     }
                 }
 
-                console.log(`🎨 Processed clothing mesh: ${child.name}, has colors: ${!!child.geometry.attributes.color}`);
+                console.log(` Processed clothing mesh: ${child.name}, has colors: ${!!child.geometry.attributes.color}`);
             }
         });
 
         // Apply the correct rotation for clothing
-        console.log('🔄 Applying working rotation from avatar app...');
+        console.log(' Applying working rotation from avatar app...');
         this.model.rotation.set(0, 0, 0);
         this.model.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
 
-        console.log(`✅ Applied working rotation: X=${(this.model.rotation.x * 180 / Math.PI).toFixed(0)}°, Y=${(this.model.rotation.y * 180 / Math.PI).toFixed(0)}°, Z=${(this.model.rotation.z * 180 / Math.PI).toFixed(0)}°`);
+        console.log(` Applied working rotation: X=${(this.model.rotation.x * 180 / Math.PI).toFixed(0)}°, Y=${(this.model.rotation.y * 180 / Math.PI).toFixed(0)}°, Z=${(this.model.rotation.z * 180 / Math.PI).toFixed(0)}°`);
 
         this.scene.add(this.model);
         this.fitCameraToClothing();
 
-        console.log(`🎯 Colored clothing model processed with WORKING rotation (type: ${this.clothingType})`);
+        console.log(` Colored clothing model processed with WORKING rotation (type: ${this.clothingType})`);
     }
 
     detectClothingType() {
@@ -1293,7 +1293,7 @@ class CleanWhiteClothingViewer {
         const height = size.y;
         const depth = size.z;
 
-        console.log(`📏 Clothing dimensions: ${width.toFixed(2)} x ${height.toFixed(2)} x ${depth.toFixed(2)}`);
+        console.log(` Clothing dimensions: ${width.toFixed(2)} x ${height.toFixed(2)} x ${depth.toFixed(2)}`);
 
         // Simple heuristics for clothing type detection
         if (height > width * 1.5 && height > depth * 2) {
@@ -1308,7 +1308,7 @@ class CleanWhiteClothingViewer {
             this.clothingType = 'general_clothing';
         }
 
-        console.log(`👕 Detected clothing type: ${this.clothingType}`);
+        console.log(` Detected clothing type: ${this.clothingType}`);
     }
 
     fitCameraToClothing() {
@@ -1368,14 +1368,14 @@ class CleanWhiteClothingViewer {
         this.controls.target.copy(center);
         this.controls.update();
 
-        console.log(`📸 Camera positioned for ${this.clothingType}: distance=${cameraDistance.toFixed(2)}, height=${cameraHeight.toFixed(2)}`);
+        console.log(` Camera positioned for ${this.clothingType}: distance=${cameraDistance.toFixed(2)}, height=${cameraHeight.toFixed(2)}`);
     }
 
     setClothingView(viewType) {
-        console.log(`📸 Setting clothing view: ${viewType}`);
+        console.log(` Setting clothing view: ${viewType}`);
 
         if (!this.model) {
-            console.error('❌ No model loaded for view change');
+            console.error(' No model loaded for view change');
             return;
         }
 
@@ -1453,20 +1453,20 @@ class CleanWhiteClothingViewer {
     toggleAutoRotate() {
         if (this.controls) {
             this.controls.autoRotate = !this.controls.autoRotate;
-            console.log(`🔄 Auto-rotate: ${this.controls.autoRotate ? 'ON' : 'OFF'}`);
+            console.log(` Auto-rotate: ${this.controls.autoRotate ? 'ON' : 'OFF'}`);
             return this.controls.autoRotate;
         }
         return false;
     }
 
     resetCamera() {
-        console.log('🏠 Resetting camera to optimal clothing position');
+        console.log(' Resetting camera to optimal clothing position');
         this.fitCameraToClothing();
     }
 
     toggleWireframe() {
         if (!this.model) {
-            console.error('❌ No model available for wireframe toggle');
+            console.error(' No model available for wireframe toggle');
             return false;
         }
 
@@ -1478,7 +1478,7 @@ class CleanWhiteClothingViewer {
             }
         });
 
-        console.log(`📐 Wireframe: ${wireframeEnabled ? 'ON' : 'OFF'}`);
+        console.log(` Wireframe: ${wireframeEnabled ? 'ON' : 'OFF'}`);
         return wireframeEnabled;
     }
 
@@ -1543,7 +1543,7 @@ class CleanWhiteClothingViewer {
         if (this.renderer) this.renderer.dispose();
         if (this.controls) this.controls.dispose();
         window.removeEventListener('resize', this.onWindowResize);
-        console.log('🗑️ Clean white clothing viewer disposed');
+
     }
 }
 
@@ -1658,21 +1658,21 @@ let wardrobeViewer = null;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 DOM loaded, initializing enhanced wardrobe app...');
+
     initializeApp();
 
     const savedUrl = document.getElementById('colab-url-input').value;
     if (savedUrl) {
-        console.log('🔗 Auto-connecting to saved Colab URL...');
+        console.log(' Auto-connecting to saved Colab URL...');
         connectToColab();
     }
 });
 
 function initializeApp() {
-    console.log('🚀 Initializing enhanced wardrobe app...');
+    console.log(' Initializing enhanced wardrobe app...');
     setupEventListeners();
     setupDragAndDrop();
-    console.log('✅ App initialization complete');
+    console.log(' App initialization complete');
 }
 
 function setupEventListeners() {
@@ -1685,7 +1685,7 @@ function setupEventListeners() {
     document.getElementById('view-3d-model-btn').addEventListener('click', view3DModel);
     document.getElementById('download-model-btn').addEventListener('click', downloadModel);
 
-    console.log('🎯 Event listeners attached (save button removed)');
+    console.log(' Event listeners attached (save button removed)');
 }
 
 function setupDragAndDrop() {
@@ -1795,7 +1795,7 @@ function connectToColab() {
     })
     .catch(error => {
         console.error('Error connecting to Colab:', error);
-        showToast('❌ Failed to connect to Colab API', 'error');
+        showToast(' Failed to connect to Colab API', 'error');
         showColabConnectionStatus(false, error.message);
         colabConnected = false;
     })
@@ -1858,11 +1858,11 @@ function analyzeImage() {
                 texture_preview_path: data.texture_preview_path
             };
 
-            console.log('🎯 Stored item data with ID:', currentItemData);
+            console.log(' Stored item data with ID:', currentItemData);
 
             displayAnalysisResults(data);
             showModelGenerationSection();
-            showToast('✅ Image analyzed and saved to wardrobe!', 'success');
+            showToast(' Image analyzed and saved to wardrobe!', 'success');
         } else {
             showToast(data.error || 'Analysis failed', 'error');
             currentItemData = null; // Clear on error
@@ -1957,7 +1957,7 @@ function generate3DModel() {
     const formData = new FormData();
     formData.append('image', currentUploadedFile);
 
-    console.log('🚀 Starting 3D generation...');
+
 
     fetch('/api/generate-3d-model', {
         method: 'POST',
@@ -1967,8 +1967,8 @@ function generate3DModel() {
     .then(data => {
         if (data.success) {
             currentGenerationTaskId = data.task_id;
-            console.log('✅ Generation started, task ID:', currentGenerationTaskId);
-            showToast(`🚀 3D generation started with Colab GPU! ${data.estimated_time}`, 'info');
+
+            showToast(` 3D generation started with Colab GPU! ${data.estimated_time}`, 'info');
             startStatusPolling();
         } else {
             throw new Error(data.error || 'Failed to start generation');
@@ -1976,7 +1976,7 @@ function generate3DModel() {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast(`❌ Error: ${error.message}`, 'error');
+        showToast(` Error: ${error.message}`, 'error');
         resetGenerationUI();
     });
 }
@@ -1987,7 +1987,7 @@ function startStatusPolling() {
     const statusText = document.getElementById('generation-status');
     const progressBar = document.getElementById('progress-bar');
 
-    console.log('🔍 Starting status polling for task:', currentGenerationTaskId);
+    console.log(' Starting status polling for task:', currentGenerationTaskId);
 
     const pollStatus = () => {
         fetch(`/api/check-generation-status?task_id=${currentGenerationTaskId}`)
@@ -1997,7 +1997,7 @@ function startStatusPolling() {
                     statusText.textContent = data.message;
                     progressBar.style.width = (data.progress * 100) + '%';
 
-                    console.log(`🔄 Status: ${data.status}, Progress: ${(data.progress * 100).toFixed(1)}%`);
+                    console.log(` Status: ${data.status}, Progress: ${(data.progress * 100).toFixed(1)}%`);
 
                     if (data.status === 'completed') {
                         handleGenerationSuccess(data);
@@ -2012,7 +2012,7 @@ function startStatusPolling() {
             })
             .catch(error => {
                 console.error('Error checking status:', error);
-                showToast(`❌ Error: ${error.message}`, 'error');
+                showToast(` Error: ${error.message}`, 'error');
                 resetGenerationUI();
             });
     };
@@ -2023,7 +2023,7 @@ function startStatusPolling() {
 // FIXED: Auto-save function with proper JavaScript syntax
 function autoSave3DModel() {
     if (!generatedModelData || !currentItemData) {
-        console.log('❌ Cannot auto-save: missing data');
+        console.log(' Cannot auto-save: missing data');
         console.log('generatedModelData:', generatedModelData);
         console.log('currentItemData:', currentItemData);
         return;
@@ -2033,16 +2033,16 @@ function autoSave3DModel() {
     const itemId = currentItemData.item_id || currentItemData._id || currentItemData.id;
 
     if (!itemId) {
-        console.log('❌ No valid item ID found:', currentItemData);
-        showToast('⚠️ Cannot auto-save 3D model - no item ID found', 'warning');
+        console.log(' No valid item ID found:', currentItemData);
+        showToast(' Cannot auto-save 3D model - no item ID found', 'warning');
         return;
     }
 
-    console.log('💾 Auto-saving 3D model for item:', itemId);
+    console.log(' Auto-saving 3D model for item:', itemId);
     console.log('Model data:', generatedModelData);
 
     // Show saving indicator
-    showToast('💾 Auto-saving 3D model to wardrobe...', 'info');
+    showToast(' Auto-saving 3D model to wardrobe...', 'info');
 
     fetch('/api/save-3d-model', {
         method: 'POST',
@@ -2065,8 +2065,8 @@ function autoSave3DModel() {
     })
     .then(data => {
         if (data.success) {
-            console.log('✅ 3D model auto-saved to database successfully');
-            showToast('✅ 3D model automatically saved to wardrobe!', 'success');
+            console.log(' 3D model auto-saved to database successfully');
+            showToast(' 3D model automatically saved to wardrobe!', 'success');
 
             // Update currentItemData to reflect the saved state
             currentItemData.has_3d_model = true;
@@ -2081,8 +2081,8 @@ function autoSave3DModel() {
         }
     })
     .catch(error => {
-        console.error('❌ Auto-save error:', error);
-        showToast(`⚠️ Auto-save failed: ${error.message}. Manual save not available (auto-save only).`, 'warning');
+        console.error(' Auto-save error:', error);
+        showToast(` Auto-save failed: ${error.message}. Manual save not available (auto-save only).`, 'warning');
     });
 }
 
@@ -2099,7 +2099,7 @@ function handleGenerationSuccess(data) {
         task_id: currentGenerationTaskId
     };
 
-    console.log('💾 Stored model data:', generatedModelData);
+    console.log(' Stored model data:', generatedModelData);
 
     const progressDiv = document.getElementById('generation-progress');
     const previewCard = document.getElementById('model-preview-card');
@@ -2113,13 +2113,13 @@ function handleGenerationSuccess(data) {
 
     // CRITICAL: Auto-save only if we have current item data with valid ID
     if (currentItemData && (currentItemData.item_id || currentItemData._id || currentItemData.id)) {
-        console.log('🔄 Auto-saving 3D model to database...');
+        console.log(' Auto-saving 3D model to database...');
         setTimeout(() => {
             autoSave3DModel();
         }, 1000); // Small delay to ensure UI updates complete
     } else {
-        console.log('⚠️ No valid item data for auto-save:', currentItemData);
-        showToast('⚠️ 3D model generated but not auto-saved. No item ID found.', 'warning');
+        console.log('No valid item data for auto-save:', currentItemData);
+        showToast('3D model generated but not auto-saved. No item ID found.', 'warning');
     }
 
     currentGenerationTaskId = null;
@@ -2127,8 +2127,8 @@ function handleGenerationSuccess(data) {
 
 function handleGenerationFailure(data) {
     const errorMessage = data.error || data.message || 'Generation failed';
-    console.error('❌ Generation failed:', errorMessage);
-    showToast(`❌ Generation failed: ${errorMessage}`, 'error');
+    console.error(' Generation failed:', errorMessage);
+    showToast(` Generation failed: ${errorMessage}`, 'error');
     resetGenerationUI();
     currentGenerationTaskId = null;
 }
@@ -2154,17 +2154,17 @@ function view3DModel() {
         return;
     }
 
-    console.log('🎯 Opening clean white clothing 3D viewer with:', generatedModelData.model_path);
+    console.log(' Opening clean white clothing 3D viewer with:', generatedModelData.model_path);
 
     $('#simple3DModal').modal('show');
 
     $('#simple3DModal').on('shown.bs.modal', function () {
-        console.log('📺 Modal shown, initializing clean white clothing viewer...');
+        console.log(' Modal shown, initializing clean white clothing viewer...');
         initCleanWhiteClothingViewer();
     });
 
     $('#simple3DModal').on('hidden.bs.modal', function () {
-        console.log('🗑️ Modal hidden, cleaning up viewer...');
+        console.log(' Modal hidden, cleaning up viewer...');
         if (wardrobeViewer) {
             wardrobeViewer.dispose();
             wardrobeViewer = null;
@@ -2174,72 +2174,72 @@ function view3DModel() {
 
 // Setup control functions for modal buttons
 function setupModalControlFunctions() {
-    console.log('🔧 Setting up modal control functions...');
+    console.log(' Setting up modal control functions...');
 
     // Reset view function
     window.resetView = function() {
-        console.log('🏠 Reset view clicked');
+        console.log(' Reset view clicked');
         if (wardrobeViewer && wardrobeViewer.resetCamera) {
             wardrobeViewer.resetCamera();
-            showToast('🏠 View reset to optimal clothing angle', 'success');
+            showToast('View reset to optimal clothing angle', 'success');
         } else {
-            console.error('❌ wardrobeViewer or resetCamera not available');
-            showToast('❌ Reset function not available', 'error');
+            console.error('wardrobeViewer or resetCamera not available');
+            showToast(' Reset function not available', 'error');
         }
     };
 
     // Toggle wireframe function
     window.toggleWireframe = function() {
-        console.log('📐 Toggle wireframe clicked');
+        console.log(' Toggle wireframe clicked');
         if (wardrobeViewer && wardrobeViewer.toggleWireframe) {
             const enabled = wardrobeViewer.toggleWireframe();
-            showToast(`📐 Wireframe ${enabled ? 'ON' : 'OFF'}`, 'success');
+            showToast(` Wireframe ${enabled ? 'ON' : 'OFF'}`, 'success');
         } else {
-            console.error('❌ wardrobeViewer or toggleWireframe not available');
-            showToast('❌ Wireframe function not available', 'error');
+            console.error(' wardrobeViewer or toggleWireframe not available');
+            showToast(' Wireframe function not available', 'error');
         }
     };
 
     // Toggle auto-rotate function
     window.toggleAutoRotate = function() {
-        console.log('🔄 Toggle auto-rotate clicked');
+        console.log('Toggle auto-rotate clicked');
         if (wardrobeViewer && wardrobeViewer.toggleAutoRotate) {
             const enabled = wardrobeViewer.toggleAutoRotate();
-            showToast(`🔄 Auto-rotate ${enabled ? 'ON' : 'OFF'}`, 'success');
+            showToast(` Auto-rotate ${enabled ? 'ON' : 'OFF'}`, 'success');
         } else {
-            console.error('❌ wardrobeViewer or toggleAutoRotate not available');
-            showToast('❌ Auto-rotate function not available', 'error');
+            console.error(' wardrobeViewer or toggleAutoRotate not available');
+            showToast(' Auto-rotate function not available', 'error');
         }
     };
 
     // Set clothing view function
     window.setClothingView = function(viewType) {
-        console.log(`📸 Set clothing view clicked: ${viewType}`);
+        console.log(` Set clothing view clicked: ${viewType}`);
         if (wardrobeViewer && wardrobeViewer.setClothingView) {
             wardrobeViewer.setClothingView(viewType);
-            showToast(`📸 ${viewType.charAt(0).toUpperCase() + viewType.slice(1)} view`, 'success');
+            showToast(` ${viewType.charAt(0).toUpperCase() + viewType.slice(1)} view`, 'success');
         } else {
-            console.error('❌ wardrobeViewer or setClothingView not available');
-            showToast('❌ View change function not available', 'error');
+            console.error(' wardrobeViewer or setClothingView not available');
+            showToast(' View change function not available', 'error');
         }
     };
 
     // Modal footer button functions
     window.downloadModel = function() {
-        console.log('📥 Download model clicked from modal');
+        console.log(' Download model clicked from modal');
         downloadModel(); // Call the existing function
     };
 
-    console.log('✅ Modal control functions set up successfully');
+    console.log(' Modal control functions set up successfully');
 }
 
 // Initialize control functions properly when viewer is created
 function initCleanWhiteClothingViewer() {
-    console.log('🎯 Initializing Clean White Clothing 3D Viewer...');
+    console.log(' Initializing Clean White Clothing 3D Viewer...');
 
     const threejsContainer = document.getElementById('threejs-viewer-container');
     if (!threejsContainer) {
-        console.error('❌ Viewer container not found!');
+        console.error(' Viewer container not found!');
         return;
     }
 
@@ -2248,20 +2248,20 @@ function initCleanWhiteClothingViewer() {
 
     // Load the model
     if (generatedModelData && generatedModelData.model_path) {
-        console.log(`🔥 LOADING COLORED CLOTHING MODEL: ${generatedModelData.model_path}`);
+        console.log(` LOADING COLORED CLOTHING MODEL: ${generatedModelData.model_path}`);
 
         wardrobeViewer.loadOBJModel(generatedModelData.model_path)
             .then((result) => {
-                console.log('🎉 SUCCESS! Colored clothing model loaded:', result);
-                showToast('✨ 3D clothing model loaded with clean white background!', 'success');
+                console.log(' SUCCESS! Colored clothing model loaded:', result);
+                showToast(' 3D clothing model loaded with clean white background!', 'success');
             })
             .catch(error => {
-                console.error('💥 FAILED to load colored clothing model:', error);
-                showToast('❌ Failed to load 3D model', 'error');
+                console.error(' FAILED to load colored clothing model:', error);
+                showToast(' Failed to load 3D model', 'error');
             });
     } else {
-        console.error('❌ No model path provided!');
-        showToast('❌ No model data available', 'error');
+        console.error(' No model path provided!');
+        showToast(' No model data available', 'error');
     }
 
     // Setup global functions for the modal buttons
@@ -2277,7 +2277,7 @@ function downloadModel() {
         return;
     }
 
-    console.log(`📥 Downloading model from: ${generatedModelData.model_path}`);
+    console.log(` Downloading model from: ${generatedModelData.model_path}`);
 
     try {
         const link = document.createElement('a');
@@ -2292,17 +2292,17 @@ function downloadModel() {
         link.click();
         document.body.removeChild(link);
 
-        showToast(`📥 3D model download started (${generatedModelData.file_format || 'OBJ'} format)`, 'success');
-        console.log('✅ Download initiated');
+        showToast(` 3D model download started (${generatedModelData.file_format || 'OBJ'} format)`, 'success');
+        console.log(' Download initiated');
     } catch (error) {
-        console.error('❌ Download error:', error);
+        console.error(' Download error:', error);
 
         try {
             window.open(generatedModelData.model_path, '_blank');
-            showToast('📥 Opening model file in new tab', 'success');
+            showToast(' Opening model file in new tab', 'success');
         } catch (error2) {
-            console.error('❌ Fallback download failed:', error2);
-            showToast(`❌ Download failed. Model path: ${generatedModelData.model_path}`, 'error');
+            console.error(' Fallback download failed:', error2);
+            showToast(` Download failed. Model path: ${generatedModelData.model_path}`, 'error');
         }
     }
 }
@@ -2441,7 +2441,7 @@ f 5 1 4 8`;
         file_size: coloredCubeOBJ.length
     };
 
-    console.log('🧪 Test data set for clean white clothing viewer:', generatedModelData);
+    console.log(' Test data set for clean white clothing viewer:', generatedModelData);
     view3DModel();
 };
 
@@ -2457,7 +2457,7 @@ window.testWithActualColoredModel = function(modelPath) {
         file_size: 6085950
     };
 
-    console.log('🔥 TESTING WITH ACTUAL COLORED CLOTHING MODEL:', generatedModelData);
+    console.log(' TESTING WITH ACTUAL COLORED CLOTHING MODEL:', generatedModelData);
     view3DModel();
 };
 
@@ -2471,7 +2471,7 @@ window.debugOBJColors = async function(objUrl) {
         let coloredVertices = 0;
         let totalVertices = 0;
 
-        console.log('🔍 Analyzing OBJ file for colors...');
+        console.log(' Analyzing OBJ file for colors...');
 
         for (const line of lines.slice(0, 50)) { // Check first 50 lines
             if (line.startsWith('v ')) {
@@ -2479,19 +2479,19 @@ window.debugOBJColors = async function(objUrl) {
                 const parts = line.split(/\s+/);
                 if (parts.length >= 7) {
                     coloredVertices++;
-                    console.log(`🎨 Vertex ${totalVertices}: ${line}`);
+                    console.log(` Vertex ${totalVertices}: ${line}`);
                 } else {
-                    console.log(`⚪ Vertex ${totalVertices}: ${line} (no colors)`);
+                    console.log(` Vertex ${totalVertices}: ${line} (no colors)`);
                 }
             }
         }
 
-        console.log(`📊 Summary: ${coloredVertices}/${totalVertices} vertices have colors`);
+        console.log(` Summary: ${coloredVertices}/${totalVertices} vertices have colors`);
 
         if (coloredVertices === 0) {
-            console.log('❌ No colored vertices found in this OBJ file');
+            console.log(' No colored vertices found in this OBJ file');
         } else {
-            console.log('✅ This OBJ file contains color data!');
+            console.log(' This OBJ file contains color data!');
         }
 
     } catch (error) {
@@ -2510,21 +2510,6 @@ window.loadCleanWhiteClothing3D = function(path) {
     view3DModel();
 };
 
-console.log('🎉 ENHANCED WARDROBE 3D VIEWER WITH AUTO-SAVE (NO DUPLICATE SAVE BUTTONS) LOADED!');
-console.log('✨ Features:');
-console.log('   🎨 Full color support from OBJ vertex colors');
-console.log('   🤍 Clean white professional background');
-console.log('   👕 Clothing-optimized camera positioning');
-console.log('   💾 Automatic saving to database when 3D generation completes');
-console.log('   🚫 REMOVED: Duplicate "Save to Wardrobe" buttons (auto-save handles this)');
-console.log('   💡 Studio-quality lighting for fashion display');
-console.log('');
-console.log('🧪 Test commands:');
-console.log('   window.testCleanWhiteViewer() - Load colored test cube with white background');
-console.log('   window.testWithActualColoredModel() - Load your actual colored model');
-console.log('   window.debugOBJColors("path") - Analyze OBJ file for color data');
-console.log('   window.loadCleanWhiteClothing3D("path") - Load specific model path');
-console.log('✅ Clean white clothing viewer with AUTO-SAVE ready!');
 
 </script>
 
