@@ -110,7 +110,7 @@
         gap: 8px;
     }
 
-    /* NEW: Tooltip styles for info icons */
+    /* Tooltip styles for info icons */
     .info-tooltip {
         position: relative;
         display: inline-block;
@@ -594,7 +594,7 @@
         justify-content: center;
     }
 
-    /* NEW: Clothing Position Controls */
+    /* Clothing Position Controls */
     .clothing-controls-section {
         margin-top: 20px;
         padding: 15px;
@@ -785,7 +785,7 @@
         background: #c3e6cb;
     }
 
-    /* FIXED: Saved Outfits Grid - Added missing CSS */
+    /* Saved Outfits Grid */
     .saved-outfits-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -839,7 +839,7 @@
         z-index: 2;
     }
 
-    /* FIXED: Preview Section CSS */
+    /* Preview Section CSS */
     .outfit-preview-section {
         position: relative;
         width: 120px;
@@ -1081,7 +1081,7 @@
         background: #ffcdd2;
     }
 
-    /* FIXED: Preview Modal CSS */
+    /* Preview Modal CSS */
     .outfit-preview-modal {
         position: fixed;
         top: 0;
@@ -1977,7 +1977,7 @@
                         </button>
                     </div>
 
-                    <!-- NEW: Clothing Position Controls -->
+                    <!-- Clothing Position Controls -->
                     <div id="clothing-controls" class="clothing-controls-section">
                         <h5>
                             <i class="bi bi-arrows-move"></i>
@@ -2193,9 +2193,9 @@
 
 <script>
 if (typeof THREE === 'undefined') {
-    console.error(' THREE.js failed to load');
+    console.error('THREE.js failed to load');
 } else {
-    console.log(' THREE.js loaded successfully');
+    console.log('THREE.js loaded successfully');
 }
 </script>
 
@@ -2246,13 +2246,11 @@ if (typeof THREE === 'undefined') {
     let avatarManager = null;
     let clothingRenderer = null;
 
-
     let selectedClothingItem = null;
     let clothingPositions = new Map(); // Store positions for each clothing item
     let clothingScales = new Map(); // Store scales for each clothing item
     let savedOutfits = [];
     let activeLoadedOutfit = null;
-
 
     /* Application Initialization */
     document.addEventListener('DOMContentLoaded', function() {
@@ -2264,14 +2262,12 @@ if (typeof THREE === 'undefined') {
         setTimeout(() => initializeHairSystem(), 1100);
         setTimeout(() => initializeWardrobeSystem(), 1300);
         setTimeout(() => initializeClothingPositionControls(), 1400);
-        setTimeout(() => initializeSavedOutfitsSystem(), 1500); // NEW
+        setTimeout(() => initializeSavedOutfitsSystem(), 1500);
         setTimeout(() => initializeSavedAvatarsSystem(), 1700);
         setTimeout(() => initializeDebugInfo(), 1900);
 
-
         /* Avatar System */
         function initializeAvatarSystem() {
-
             if (typeof THREE === 'undefined') {
                 setTimeout(() => {
                     initializeAvatarSystem();
@@ -2314,7 +2310,6 @@ if (typeof THREE === 'undefined') {
 
         /* Initialize Clothing System */
         function initializeClothingSystem() {
-
             let attempts = 0;
             const maxAttempts = 20;
 
@@ -2322,17 +2317,16 @@ if (typeof THREE === 'undefined') {
                 attempts++;
 
                 if (typeof THREE !== 'undefined' && THREE.GLTFLoader && THREE.OBJLoader) {
-
                     if (window.clothingOBJRenderer) {
                         try {
                             clothingRenderer = window.clothingOBJRenderer;
                             window.clothingRenderer = clothingRenderer;
-                            console.log(' 3D ClothingOBJRenderer initialized from existing instance');
+                            console.log('3D ClothingOBJRenderer initialized from existing instance');
 
                             setupClothingReferences();
 
                         } catch (error) {
-                            console.error(' Error initializing 3D ClothingOBJRenderer:', error);
+                            console.error('Error initializing 3D ClothingOBJRenderer:', error);
                         }
                     } else {
                         if (attempts < maxAttempts) {
@@ -2359,10 +2353,10 @@ if (typeof THREE === 'undefined') {
                     clothingRenderer.setReferences(avatarManager.scene, avatarManager.avatarModel);
 
                     setTimeout(() => {
-                        console.log(' 3D Clothing reference verification:');
+                        console.log('3D Clothing reference verification:');
                         console.log(`  - Scene set: ${!!clothingRenderer.scene}`);
                         console.log(`  - Avatar set: ${!!clothingRenderer.avatar}`);
-                        console.log(' 3D clothing renderer ready!');
+                        console.log('3D clothing renderer ready!');
                     }, 100);
 
                     clearInterval(checkForAvatarInterval);
@@ -2374,9 +2368,8 @@ if (typeof THREE === 'undefined') {
             }, 30000);
         }
 
-        /* NEW: Initialize Clothing Position Controls */
+        /* Initialize Clothing Position Controls */
         function initializeClothingPositionControls() {
-
             // Position control buttons
             document.querySelectorAll('[data-axis]').forEach(button => {
                 button.addEventListener('click', function() {
@@ -2431,7 +2424,6 @@ if (typeof THREE === 'undefined') {
 
             // Update display
             updatePositionDisplay();
-
         }
 
         function scaleSelectedClothing(direction) {
@@ -2464,7 +2456,7 @@ if (typeof THREE === 'undefined') {
             // Update display
             updateScaleDisplay();
 
-            console.log(` Scaled to ${newScale.toFixed(3)} (step: ${direction * step})`);
+            console.log(`Scaled to ${newScale.toFixed(3)} (step: ${direction * step})`);
         }
 
         function resetClothingPosition() {
@@ -2523,7 +2515,6 @@ if (typeof THREE === 'undefined') {
                 itemNameSpan.textContent = 'No item selected';
 
                 showMessage('Position controls hidden', 'info');
-
             }
         }
 
@@ -2559,7 +2550,6 @@ if (typeof THREE === 'undefined') {
         }
 
         function initializeSavedOutfitsSystem() {
-
             // Save current outfit button
             document.getElementById('save-current-outfit-btn')?.addEventListener('click', saveCurrentOutfit);
 
@@ -2577,11 +2567,9 @@ if (typeof THREE === 'undefined') {
 
             // Load saved outfits on initialization
             loadSavedOutfits();
-
         }
 
         async function saveCurrentOutfit() {
-
             let currentItems = [];
             let itemCount = 0;
 
@@ -2594,7 +2582,7 @@ if (typeof THREE === 'undefined') {
                         type: clothingData.type,
                         category: clothingData.category,
                         source: clothingData.source,
-                        image: clothingData.itemData?.file_path || null, // Add image path
+                        image: clothingData.itemData?.file_path || null,
                         // Store position and scale data
                         position: clothingPositions.get(itemId) || { x: 0, y: 0, z: 0 },
                         scale: clothingScales.get(itemId) || 1.0
@@ -2627,8 +2615,8 @@ if (typeof THREE === 'undefined') {
 
                 const outfitData = {
                     name: outfitName,
-                    items: currentItems.map(item => item.id), // Just item IDs for server
-                    itemsDetails: currentItems, // Full details for client-side usage
+                    items: currentItems.map(item => item.id),
+                    itemsDetails: currentItems,
                     avatarConfig: avatarManager ? avatarManager.getConfiguration() : avatarCustomization,
                     outfitType: '3d',
                     renderingType: '3d',
@@ -2670,7 +2658,6 @@ if (typeof THREE === 'undefined') {
                 }
 
             } catch (error) {
-
                 showMessage(`Failed to save outfit: ${error.message}`, 'error');
             } finally {
                 hideLoading();
@@ -2678,8 +2665,6 @@ if (typeof THREE === 'undefined') {
         }
 
         async function generateOutfitSnapshot() {
-
-
             if (!avatarManager || !avatarManager.renderer) {
                 return null;
             }
@@ -2693,15 +2678,12 @@ if (typeof THREE === 'undefined') {
                     throw new Error('3D components not available');
                 }
 
-
                 await new Promise(resolve => setTimeout(resolve, 1000));
-
 
                 for (let i = 0; i < 5; i++) {
                     renderer.render(scene, camera);
                     await new Promise(resolve => requestAnimationFrame(resolve));
                 }
-
 
                 const canvas = renderer.domElement;
 
@@ -2711,11 +2693,9 @@ if (typeof THREE === 'undefined') {
 
                 const dataURL = canvas.toDataURL('image/jpeg', 0.8);
 
-
                 if (!dataURL || dataURL.length < 1000) {
                     throw new Error('Generated image data is too small or empty');
                 }
-
 
                 return {
                     dataURL: dataURL,
@@ -2730,7 +2710,6 @@ if (typeof THREE === 'undefined') {
         }
 
         async function generateSnapshotForOutfit(outfitId) {
-
             const outfit = savedOutfits.find(o => o._id === outfitId);
             if (!outfit) {
                 showMessage('Outfit not found', 'error');
@@ -2791,7 +2770,6 @@ if (typeof THREE === 'undefined') {
         }
 
         async function loadSavedOutfits() {
-
             const container = document.getElementById('saved-outfits-grid');
             if (!container) return;
 
@@ -2814,7 +2792,6 @@ if (typeof THREE === 'undefined') {
                 }
 
             } catch (error) {
-
                 container.innerHTML = '<div class="error">Failed to load saved outfits. Please try again.</div>';
                 showMessage('Failed to load saved outfits', 'error');
             }
@@ -2937,7 +2914,7 @@ if (typeof THREE === 'undefined') {
 
         function generateOutfitThumbnails(outfit) {
             let thumbnailsHtml = '';
-            const maxThumbnails = 6; // Increased for better preview
+            const maxThumbnails = 6;
             const items = outfit.itemsDetails || [];
 
             for (let i = 0; i < Math.min(items.length, maxThumbnails); i++) {
@@ -2965,7 +2942,7 @@ if (typeof THREE === 'undefined') {
             return thumbnailsHtml;
         }
 
-        /* NEW: Preview Modal Functions */
+        /* Preview Modal Functions */
         function showPreviewModal(outfitId) {
             const outfit = savedOutfits.find(o => o._id === outfitId);
             if (!outfit || !outfit.snapshot || !outfit.snapshot.dataURL) {
@@ -3018,7 +2995,6 @@ if (typeof THREE === 'undefined') {
 
             // Show modal
             modal.classList.add('show');
-
         }
 
         function hidePreviewModal() {
@@ -3034,8 +3010,6 @@ if (typeof THREE === 'undefined') {
         window.hidePreviewModal = hidePreviewModal;
 
         async function loadSavedOutfit(outfitId) {
-
-
             if (!clothingRenderer) {
                 showMessage('Clothing renderer not available', 'error');
                 return;
@@ -3094,7 +3068,7 @@ if (typeof THREE === 'undefined') {
                             }
                         }
                     } catch (error) {
-                        console.warn(` Failed to load item ${itemId}:`, error);
+                        console.warn(`Failed to load item ${itemId}:`, error);
                     }
                 }
 
@@ -3116,9 +3090,7 @@ if (typeof THREE === 'undefined') {
 
                 showMessage(`Outfit "${outfit.name}" loaded with ${loadedCount}/${itemIds.length} items`, 'success');
 
-
             } catch (error) {
-
                 showMessage(`Failed to load outfit: ${error.message}`, 'error');
             } finally {
                 hideLoading();
@@ -3156,13 +3128,11 @@ if (typeof THREE === 'undefined') {
                     // Refresh the list
                     loadSavedOutfits();
 
-
                 } else {
                     throw new Error(data.error || 'Failed to delete outfit');
                 }
 
             } catch (error) {
-
                 showMessage(`Failed to delete outfit: ${error.message}`, 'error');
             } finally {
                 hideLoading();
@@ -3172,7 +3142,7 @@ if (typeof THREE === 'undefined') {
         function clearActiveLoadedOutfit() {
             activeLoadedOutfit = null;
             updateActiveLoadedOutfitDisplay();
-            renderSavedOutfits(savedOutfits); // Refresh to remove active state
+            renderSavedOutfits(savedOutfits);
             showMessage('Active outfit cleared', 'info');
         }
 
@@ -3199,8 +3169,6 @@ if (typeof THREE === 'undefined') {
         }
 
         function filterSavedOutfits(filter) {
-
-
             let filteredOutfits = [...savedOutfits];
             const now = new Date();
             const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
@@ -3225,7 +3193,6 @@ if (typeof THREE === 'undefined') {
             }
 
             renderSavedOutfits(filteredOutfits);
-
         }
 
         /* Load saved avatar or default */
@@ -3280,7 +3247,6 @@ if (typeof THREE === 'undefined') {
 
         /* Load default avatar */
         async function loadDefaultAvatar() {
-
             try {
                 await avatarManager.requestDefaultAvatar();
                 updateDebugInfo('Default avatar loaded', 'success');
@@ -3298,8 +3264,6 @@ if (typeof THREE === 'undefined') {
 
         /* Hair System */
         function initializeHairSystem() {
-
-
             if (!avatarManager) {
                 setTimeout(initializeHairSystem, 1000);
                 return;
@@ -3317,7 +3281,7 @@ if (typeof THREE === 'undefined') {
         function loadHairPreviews() {
             const container = document.getElementById('hair-preview-container');
             if (!container) {
-                console.error(' Hair preview container not found');
+                console.error('Hair preview container not found');
                 return;
             }
 
@@ -3325,8 +3289,6 @@ if (typeof THREE === 'undefined') {
                 const currentGender = avatarCustomization.gender || 'female';
                 const hairPreviewHTML = avatarManager.generateHairPreviewHTML(currentGender);
                 container.innerHTML = hairPreviewHTML;
-
-
 
                 setTimeout(() => {
                     const defaultHairElement = container.querySelector(`[data-hair-style="${avatarCustomization.hair.type}"]`);
@@ -3336,7 +3298,7 @@ if (typeof THREE === 'undefined') {
                 }, 100);
 
             } catch (error) {
-                console.error(' Error loading hair previews:', error);
+                console.error('Error loading hair previews:', error);
                 container.innerHTML = '<div class="error">Failed to load hair styles</div>';
             }
         }
@@ -3373,8 +3335,6 @@ if (typeof THREE === 'undefined') {
         }
 
         function setupHairCategoryFilters() {
-
-
             document.querySelectorAll('.hair-category-filter').forEach(filter => {
                 filter.addEventListener('click', function() {
                     document.querySelectorAll('.hair-category-filter').forEach(f => f.classList.remove('active'));
@@ -3387,7 +3347,6 @@ if (typeof THREE === 'undefined') {
         }
 
         function filterHairByCategory(category) {
-
             const hairOptions = document.querySelectorAll('.hair-preview-option');
             const currentGender = avatarCustomization.gender || 'female';
             const hairStyles = avatarManager.getAvailableHairStyles(currentGender);
@@ -3410,21 +3369,17 @@ if (typeof THREE === 'undefined') {
 
         async function selectHairStyle(hairStyleKey) {
             if (!avatarManager) {
-
                 return false;
             }
 
             if (avatarManager.isHairLoading && avatarManager.isHairLoading()) {
-
                 return false;
             }
 
             if (!avatarManager.avatarModel) {
-
                 showMessage('Please load an avatar first', 'error');
                 return false;
             }
-
 
             showHairLoadingStatus(true, 'Loading hair model...');
 
@@ -3451,13 +3406,11 @@ if (typeof THREE === 'undefined') {
 
                 } else {
                     showMessage('Failed to apply hairstyle', 'error');
-
                 }
 
                 return success;
 
             } catch (error) {
-
                 showMessage('Error applying hairstyle', 'error');
                 return false;
             } finally {
@@ -3481,11 +3434,11 @@ if (typeof THREE === 'undefined') {
         }
 
         function updateHairPreviewsForGender(newGender) {
-
             if (avatarManager) {
                 avatarManager.removeCurrentHair();
                 loadHairPreviews();
 
+                // Set appropriate default hair styles for each gender
                 const defaultHairStyles = {
                     'female': 'elvis_hazel',
                     'male': 'male_short'
@@ -3501,8 +3454,6 @@ if (typeof THREE === 'undefined') {
 
         /* Camera View System */
         function initializeCameraViewSystem() {
-
-
             document.querySelectorAll('.view-option').forEach(button => {
                 button.addEventListener('click', function() {
                     document.querySelectorAll('.view-option').forEach(btn => btn.classList.remove('active'));
@@ -3510,8 +3461,6 @@ if (typeof THREE === 'undefined') {
 
                     const viewType = this.dataset.view;
                     avatarCustomization.view = viewType;
-
-
 
                     setCameraView(viewType);
                     updateDebugDisplay();
@@ -3522,7 +3471,7 @@ if (typeof THREE === 'undefined') {
 
         function setCameraView(viewType) {
             if (!avatarManager || !avatarManager.camera || !avatarManager.controls) {
-                console.warn(' Avatar manager or camera not available');
+                console.warn('Avatar manager or camera not available');
                 return;
             }
 
@@ -3542,7 +3491,6 @@ if (typeof THREE === 'undefined') {
                 controls.minDistance = 1;
                 controls.maxDistance = 10;
                 controls.maxPolarAngle = Math.PI * 0.8;
-
             }
 
             controls.update();
@@ -3550,7 +3498,6 @@ if (typeof THREE === 'undefined') {
 
         /* Avatar Customization Functions */
         function initializeAvatarCustomization() {
-
             // Gender selection
             document.querySelectorAll('.gender-option').forEach(button => {
                 button.addEventListener('click', async function() {
@@ -3559,7 +3506,6 @@ if (typeof THREE === 'undefined') {
 
                     const gender = this.dataset.gender;
                     avatarCustomization.gender = gender;
-
 
                     await handleGenderChange(gender);
                 });
@@ -3600,7 +3546,6 @@ if (typeof THREE === 'undefined') {
                     const skinColor = this.dataset.skin;
                     avatarCustomization.skin = skinColor;
 
-
                     if (avatarManager && avatarManager.updateSkinColor) {
                         avatarManager.updateSkinColor(skinColor);
                         showMessage(`Skin color changed to ${skinColor}`, 'success');
@@ -3618,7 +3563,6 @@ if (typeof THREE === 'undefined') {
                     const eyeColor = this.dataset.eye;
                     avatarCustomization.eyes = eyeColor;
 
-
                     if (avatarManager && avatarManager.updateEyeColor) {
                         avatarManager.updateEyeColor(eyeColor);
                         showMessage(`Eye color changed to ${eyeColor}`, 'success');
@@ -3633,7 +3577,6 @@ if (typeof THREE === 'undefined') {
                     showMessage('Avatar manager not available', 'error');
                     return;
                 }
-
 
                 showLoading('Resetting avatar...');
                 updateDebugInfo('Resetting...', 'info');
@@ -3736,11 +3679,10 @@ if (typeof THREE === 'undefined') {
             });
         }
 
-        // Gender change handler
+        // Gender change handler - UPDATED for male support
         async function handleGenderChange(gender) {
             if (avatarManager && avatarManager.updateGender) {
                 if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
-
                     showMessage('Please wait for current loading to complete', 'error');
                     return;
                 }
@@ -3754,9 +3696,9 @@ if (typeof THREE === 'undefined') {
                     updateDebugInfo('Gender changed', 'success');
                     showMessage(`Avatar gender changed to ${gender}`, 'success');
 
+                    // Update hair previews for the new gender
                     updateHairPreviewsForGender(gender);
                 } catch (error) {
-
                     updateDebugInfo('Gender change failed', 'error');
                     showMessage('Failed to change gender', 'error');
                 } finally {
@@ -3772,7 +3714,6 @@ if (typeof THREE === 'undefined') {
         async function handleHeightChange(height) {
             if (avatarManager && avatarManager.updateHeight) {
                 if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
-
                     showMessage('Please wait for current loading to complete', 'error');
                     return;
                 }
@@ -3786,7 +3727,6 @@ if (typeof THREE === 'undefined') {
                     updateDebugInfo('Height changed', 'success');
                     showMessage(`Avatar height changed to ${height}`, 'success');
                 } catch (error) {
-
                     updateDebugInfo('Height change failed', 'error');
                     showMessage('Failed to change height', 'error');
                 } finally {
@@ -3801,7 +3741,6 @@ if (typeof THREE === 'undefined') {
         async function handleBodySizeChange(bodySize) {
             if (avatarManager && avatarManager.updateBodySize) {
                 if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
-
                     showMessage('Please wait for current loading to complete', 'error');
                     return;
                 }
@@ -3815,7 +3754,6 @@ if (typeof THREE === 'undefined') {
                     updateDebugInfo('Body size changed', 'success');
                     showMessage(`Avatar body size changed to ${bodySize.toUpperCase()}`, 'success');
                 } catch (error) {
-
                     updateDebugInfo('Body size change failed', 'error');
                     showMessage('Failed to change body size', 'error');
                 } finally {
@@ -3828,12 +3766,9 @@ if (typeof THREE === 'undefined') {
 
         /* Wardrobe System with 3D Rendering */
         function initializeWardrobeSystem() {
-
-
             // Category selection
             document.getElementById('category-wardrobe')?.addEventListener('change', function() {
                 const category = this.value;
-
                 loadWardrobeItems(category);
             });
 
@@ -3874,8 +3809,6 @@ if (typeof THREE === 'undefined') {
                     container.appendChild(itemElement);
                 });
 
-
-
             } catch (error) {
                 console.error('Error loading wardrobe items:', error);
                 container.innerHTML = '<div class="error">Failed to load items. Please try again.</div>';
@@ -3906,8 +3839,6 @@ if (typeof THREE === 'undefined') {
             `;
 
             itemElement.addEventListener('click', async function() {
-
-
                 if (!avatarManager || !avatarManager.avatarModel) {
                     showMessage('Please load an avatar first', 'error');
                     return;
@@ -3920,7 +3851,6 @@ if (typeof THREE === 'undefined') {
                 }
 
                 if (!clothingRenderer.scene || !clothingRenderer.avatar) {
-
                     clothingRenderer.setReferences(avatarManager.scene, avatarManager.avatarModel);
                 }
 
@@ -3929,7 +3859,6 @@ if (typeof THREE === 'undefined') {
 
                 try {
                     if (isSelected) {
-
                         showLoading(`Removing ${itemName}...`);
 
                         const success = await clothingRenderer.removeClothing(itemId);
@@ -3947,7 +3876,6 @@ if (typeof THREE === 'undefined') {
                             showMessage(`Failed to remove ${itemName}`, 'error');
                         }
                     } else {
-
                         showLoading(`Applying ${itemName} in 3D...`);
 
                         let success = false;
@@ -3955,10 +3883,10 @@ if (typeof THREE === 'undefined') {
                         try {
                             success = await clothingRenderer.loadClothingFromDatabase(itemId);
                             if (success) {
-                                console.log(' 3D database loading successful');
+                                console.log('3D database loading successful');
                             }
                         } catch (error) {
-                            console.warn(' 3D database loading failed, trying fallback:', error.message);
+                            console.warn('3D database loading failed, trying fallback:', error.message);
                         }
 
                         if (!success) {
@@ -3973,10 +3901,10 @@ if (typeof THREE === 'undefined') {
                                 };
                                 success = await clothingRenderer.createFallbackClothing(fallbackData);
                                 if (success) {
-                                    console.log(' 3D fallback creation successful');
+                                    console.log('3D fallback creation successful');
                                 }
                             } catch (fallbackError) {
-                                console.error(' 3D fallback creation failed:', fallbackError);
+                                console.error('3D fallback creation failed:', fallbackError);
                             }
                         }
 
@@ -3989,7 +3917,7 @@ if (typeof THREE === 'undefined') {
                         }
                     }
                 } catch (error) {
-                    console.error(' Error in 3D clothing click handler:', error);
+                    console.error('Error in 3D clothing click handler:', error);
                     showMessage(`Error: ${error.message}`, 'error');
                 } finally {
                     hideLoading();
@@ -4009,7 +3937,7 @@ if (typeof THREE === 'undefined') {
 
             try {
                 showLoading(`Applying ${selectedItems.length} 3D clothing items...`);
-                console.log(` Trying on ${selectedItems.length} 3D items...`);
+                console.log(`Trying on ${selectedItems.length} 3D items...`);
 
                 if (clothingRenderer) {
                     await clothingRenderer.clearAllClothing();
@@ -4027,7 +3955,7 @@ if (typeof THREE === 'undefined') {
                 updateActiveOutfitList();
                 showMessage(`3D outfit applied with ${selectedItems.length} items`, 'success');
             } catch (error) {
-                console.error(' Error applying 3D outfit:', error);
+                console.error('Error applying 3D outfit:', error);
                 showMessage('Failed to apply complete 3D outfit', 'error');
             } finally {
                 hideLoading();
@@ -4056,14 +3984,14 @@ if (typeof THREE === 'undefined') {
                 updateActiveOutfitList();
                 showMessage('All 3D clothing cleared', 'info');
             } catch (error) {
-                console.error(' Error clearing 3D clothing:', error);
+                console.error('Error clearing 3D clothing:', error);
                 showMessage('Error clearing 3D clothing', 'error');
             }
         }
 
         /* Saved Avatars System */
         function initializeSavedAvatarsSystem() {
-            console.log(' Initializing saved avatars system...');
+            console.log('Initializing saved avatars system...');
             loadSavedAvatars();
         }
 
@@ -4144,8 +4072,6 @@ if (typeof THREE === 'undefined') {
                 const data = await response.json();
 
                 if (data.success && data.avatar) {
-
-
                     Object.assign(avatarCustomization, data.avatar.configuration);
 
                     await avatarManager.requestDefaultAvatar();
@@ -4211,16 +4137,12 @@ if (typeof THREE === 'undefined') {
         document.getElementById('rotate-left-btn')?.addEventListener('click', function() {
             if (avatarManager && avatarManager.controls) {
                 avatarManager.controls.rotateLeft(Math.PI/8);
-
-
             }
         });
 
         document.getElementById('rotate-right-btn')?.addEventListener('click', function() {
             if (avatarManager && avatarManager.controls) {
                 avatarManager.controls.rotateLeft(-Math.PI/8);
-
-
             }
         });
 
@@ -4332,9 +4254,6 @@ if (typeof THREE === 'undefined') {
                     this.classList.add('active');
                     document.getElementById(targetTab).classList.add('active');
 
-
-
-
                     if (targetTab === 'wardrobe') {
                         loadWardrobeItems('tops');
                     } else if (targetTab === 'saved-outfits') {
@@ -4376,8 +4295,6 @@ if (typeof THREE === 'undefined') {
 
         /* Debug Info System */
         function initializeDebugInfo() {
-
-
             updateDebugInfo('System starting...', 'info');
 
             setInterval(() => {
@@ -4470,11 +4387,7 @@ if (typeof THREE === 'undefined') {
             };
             return icons[type] || 'info-circle';
         }
-
-
-
     });
-
 })();
 </script>
 
