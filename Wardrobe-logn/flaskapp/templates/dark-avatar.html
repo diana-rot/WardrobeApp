@@ -171,6 +171,15 @@
         opacity: 1;
     }
 
+    /* Format Selection */
+    .format-selection {
+        margin-bottom: 15px;
+        padding: 12px;
+        background: #c9ada7;
+        border-radius: 6px;
+        border: 1px solid #c9ada7;
+    }
+
     /* Color Picker Styles */
     .color-picker-group {
         display: grid;
@@ -1513,6 +1522,43 @@
         font-size: 18px;
     }
 
+    /* Debug Info Box */
+    .debug-info {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(255,255,255,0.95);
+        padding: 15px;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        z-index: 5;
+        border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .debug-info h5 {
+        margin: 0 0 10px 0;
+        color: #333;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .debug-info p {
+        margin: 2px 0;
+        font-size: 12px;
+        color: #666;
+    }
+
+    .debug-info .path-display {
+        font-family: monospace;
+        background: #f8f9fa;
+        padding: 4px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        word-break: break-all;
+        margin-top: 5px;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .avatar-page-content {
@@ -1534,6 +1580,11 @@
         .viewport-controls {
             bottom: 15px;
             right: 15px;
+        }
+
+        .debug-info {
+            position: relative;
+            margin-bottom: 10px;
         }
 
         .hair-preview-grid {
@@ -1628,7 +1679,13 @@
                 <!-- Avatar Base Section -->
                 <div class="avatar-creation-section">
                     <h4><i class="bi bi-person-plus"></i> Avatar Base</h4>
-
+                    <div class="format-selection">
+                        <label style="font-size: 13px; margin-bottom: 5px; display: block;">Model Format:</label>
+                        <div style="text-align: center; padding: 8px; background: #3498db; color: white; border-radius: 6px;">
+                            <i class="bi bi-file-earmark"></i> GLB + Hair System
+                        </div>
+                        <p style="font-size: 11px; margin: 8px 0 0 0; opacity: 0.8;">Customizable avatar with separate hair models</p>
+                    </div>
                     <!-- Gender Selection -->
                     <div class="customization-group">
                         <h5>Gender</h5>
@@ -1757,7 +1814,7 @@
 
                 <!-- Hair Customization Section -->
                 <div class="avatar-creation-section">
-                    <h4><i class="bi bi-scissors"></i> Hair Styles</h4>
+                    <h4><i class="bi bi-scissors"></i> GLB Hair System</h4>
 
                     <!-- Hair Category Filters -->
                     <div class="customization-group">
@@ -1773,9 +1830,9 @@
 
                     <!-- Hair Style Selection -->
                     <div class="customization-group">
-                        <h5>Hair Style</h5>
+                        <h5>Hair Style (GLB Models)</h5>
                         <div id="hair-preview-container">
-                            <div class="loading">Loading hair styles...</div>
+                            <div class="loading">Loading GLB hair styles...</div>
                         </div>
                     </div>
 
@@ -1834,7 +1891,7 @@
                     <!-- Hair Loading Status -->
                     <div id="hair-loading-status" class="loading-status" style="display: none;">
                         <div class="loading-spinner-small"></div>
-                        <span>Loading hair model...</span>
+                        <span>Loading GLB hair model...</span>
                     </div>
                 </div>
 
@@ -2076,6 +2133,21 @@
                 <i class="bi bi-fullscreen"></i>
             </button>
         </div>
+
+        <!-- Avatar Stats & Debug Info -->
+        <div class="debug-info">
+            <h5>Avatar System - GLB + Hair</h5>
+            <div id="avatar-info">
+                <p><strong>Status:</strong> <span id="debug-status">Initializing...</span></p>
+                <p><strong>Model:</strong> <span id="debug-model">Loading...</span></p>
+                <p><strong>Hair:</strong> <span id="debug-hair-type">None</span></p>
+                <p><strong>Gender:</strong> <span id="debug-gender">female</span></p>
+                <p><strong>Body:</strong> <span id="debug-body">m_medium</span></p>
+                <p><strong>Clothing:</strong> <span id="debug-clothing">0 items</span></p>
+                <p><strong>View:</strong> <span id="debug-view">Normal</span></p>
+                <div class="path-display" id="debug-path">/static/models/makehuman/bodies/female/m_medium.glb</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2110,8 +2182,737 @@ if (typeof THREE === 'undefined') {
 <!-- Avatar Manager -->
 <script src="{{ url_for('static', filename='js/glb-avatar-manager.js') }}"></script>
 
+<!-- Enhanced Clothing System with High-Quality Rendering -->
+<script>
+// Enhanced High-Quality ClothingOBJRenderer
+class HighQualityClothingOBJRenderer {
+    constructor() {
+        console.log('Initializing High-Quality ClothingOBJRenderer...');
+
+        this.scene = null;
+        this.avatar = null;
+        this.currentClothing = new Map();
+        this.objLoader = null;
+        this.mtlLoader = null;
+        this.textureLoader = null;
+        this.gltfLoader = null;
+
+        this.initializeLoaders();
+        this.setupAdvancedLighting();
+        console.log('High-Quality ClothingOBJRenderer initialized');
+    }
+
+    initializeLoaders() {
+        try {
+            if (typeof THREE === 'undefined') {
+                throw new Error('THREE.js not loaded');
+            }
+
+            this.objLoader = new THREE.OBJLoader();
+            this.textureLoader = new THREE.TextureLoader();
+
+            if (THREE.MTLLoader) {
+                this.mtlLoader = new THREE.MTLLoader();
+            }
+
+            if (THREE.GLTFLoader) {
+                this.gltfLoader = new THREE.GLTFLoader();
+            }
+
+            console.log('All loaders initialized for high-quality rendering');
+        } catch (error) {
+            console.error('Failed to initialize loaders:', error);
+        }
+    }
+
+    setupAdvancedLighting() {
+        // Advanced lighting setup for high-quality materials
+        this.lightingConfig = {
+            ambientIntensity: 0.4,
+            directionalIntensity: 0.8,
+            shadowMapSize: 2048,
+            enableEnvironmentLighting: true
+        };
+    }
+
+    setReferences(scene, avatar) {
+        console.log('Setting high-quality renderer references...');
+        this.scene = scene;
+        this.avatar = avatar;
+
+        if (this.scene && this.avatar) {
+            this.setupSceneLighting();
+            console.log('High-quality renderer references set successfully');
+            return true;
+        } else {
+            console.warn('Invalid references provided to high-quality renderer');
+            return false;
+        }
+    }
+
+    setupSceneLighting() {
+        if (!this.scene) return;
+
+        console.log('Setting up advanced lighting for high-quality rendering...');
+
+        // Remove existing lights
+        const lightsToRemove = [];
+        this.scene.traverse((child) => {
+            if (child.isLight) {
+                lightsToRemove.push(child);
+            }
+        });
+        lightsToRemove.forEach(light => this.scene.remove(light));
+
+        // Enhanced ambient light
+        const ambientLight = new THREE.AmbientLight(0xffffff, this.lightingConfig.ambientIntensity);
+        this.scene.add(ambientLight);
+
+        // Main directional light with high-quality shadows
+        const mainLight = new THREE.DirectionalLight(0xffffff, this.lightingConfig.directionalIntensity);
+        mainLight.position.set(5, 10, 5);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = this.lightingConfig.shadowMapSize;
+        mainLight.shadow.mapSize.height = this.lightingConfig.shadowMapSize;
+        mainLight.shadow.camera.near = 0.1;
+        mainLight.shadow.camera.far = 50;
+        mainLight.shadow.camera.left = -10;
+        mainLight.shadow.camera.right = 10;
+        mainLight.shadow.camera.top = 10;
+        mainLight.shadow.camera.bottom = -10;
+        mainLight.shadow.bias = -0.0001;
+        this.scene.add(mainLight);
+
+        // Fill light for softer shadows
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-3, 5, 2);
+        this.scene.add(fillLight);
+
+        // Rim light for definition
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.2);
+        rimLight.position.set(0, 3, -5);
+        this.scene.add(rimLight);
+
+        console.log('Advanced lighting setup complete');
+    }
+
+    async loadClothingFromDatabase(itemId) {
+        console.log(`Loading clothing with high-quality rendering: ${itemId}`);
+
+        if (!this.scene || !this.avatar) {
+            console.error('Scene or avatar not set');
+            throw new Error('Scene or avatar not set in high-quality renderer');
+        }
+
+        try {
+            // Fetch item data
+            const response = await fetch(`/api/wardrobe/item/${itemId}`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const itemData = await response.json();
+            console.log('Item data received:', itemData);
+
+            if (!itemData.success) {
+                throw new Error(itemData.error || 'Failed to fetch item data');
+            }
+
+            // Priority 1: Try to load existing 3D model with high-quality materials
+            if (itemData.has_3d_model && itemData.model_3d_path) {
+                console.log(`Loading existing 3D model with enhanced materials: ${itemData.model_3d_path}`);
+                try {
+                    const checkResponse = await fetch(itemData.model_3d_path, { method: 'HEAD' });
+                    if (checkResponse.ok) {
+                        return await this.loadHighQualityOBJ(itemData.model_3d_path, itemData);
+                    }
+                } catch (e) {
+                    console.warn(`Saved model not accessible: ${e.message}`);
+                }
+            }
+
+            // Priority 2: Search for OBJ files with high-quality rendering
+            const userId = itemData.userId || itemData.user_id;
+            const modelTaskId = itemData.model_task_id || itemData.modelTaskId;
+
+            if (modelTaskId && !modelTaskId.startsWith('auto_') && !modelTaskId.startsWith('fallback_')) {
+                const objPath = await this.findOBJFile(userId, modelTaskId);
+                if (objPath) {
+                    return await this.loadHighQualityOBJ(objPath, itemData);
+                }
+            }
+
+            // Priority 3: Create high-quality textured plane
+            if (itemData.file_path || itemData.texture_preview_path) {
+                console.log('Creating high-quality textured plane...');
+                return await this.createHighQualityTexturedPlane(itemData);
+            }
+
+            // Priority 4: High-quality fallback
+            console.warn('Creating high-quality fallback...');
+            return await this.createHighQualityFallback(itemData);
+
+        } catch (error) {
+            console.error('High-quality loading failed:', error);
+            return await this.createHighQualityFallback({
+                _id: itemId,
+                type: 'tops',
+                label: 'Clothing Item',
+                model_task_id: `fallback_${itemId}`
+            });
+        }
+    }
+
+    async findOBJFile(userId, modelTaskId) {
+        const patterns = [
+            `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_0.obj`,
+            `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_1.obj`,
+            `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_2.obj`,
+            `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_3.obj`,
+            `/static/models/generated/${userId}/colab_model_task_${modelTaskId}_4.obj`,
+            `/static/models/generated/${userId}/colab_model_task_${modelTaskId}.obj`
+        ];
+
+        for (const pattern of patterns) {
+            try {
+                const checkResponse = await fetch(pattern, { method: 'HEAD' });
+                if (checkResponse.ok) {
+                    return pattern;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+        return null;
+    }
+
+    async loadHighQualityOBJ(objPath, itemData) {
+        return new Promise((resolve, reject) => {
+            console.log(`Loading high-quality OBJ: ${objPath}`);
+
+            this.objLoader.load(
+                objPath,
+                (object) => {
+                    console.log('OBJ loaded, applying high-quality materials...');
+                    this.processHighQualityObject(object, itemData);
+                    resolve(true);
+                },
+                (progress) => {
+                    if (progress.lengthComputable) {
+                        const percent = (progress.loaded / progress.total * 100).toFixed(1);
+                        console.log(`Loading progress: ${percent}%`);
+                    }
+                },
+                (error) => {
+                    console.error('High-quality OBJ loading failed:', error);
+                    reject(error);
+                }
+            );
+        });
+    }
+
+    processHighQualityObject(object, itemData) {
+        console.log('Processing OBJ with high-quality materials...');
+
+        // Apply high-quality materials
+        this.applyHighQualityMaterials(object, itemData);
+
+        // Apply the working rotation from your original code
+        this.applyClothingRotation(object, itemData);
+
+        // Position on avatar
+        const clothingType = this.determineClothingType(itemData);
+        this.positionClothingOnAvatar(object, clothingType);
+
+        // Add to scene
+        this.scene.add(object);
+
+        // Store clothing data
+        const clothingData = {
+            mesh: object,
+            itemData: itemData,
+            type: clothingType,
+            category: itemData.type || clothingType,
+            source: 'high_quality_obj'
+        };
+
+        this.currentClothing.set(itemData._id, clothingData);
+    }
+
+    applyHighQualityMaterials(object, itemData) {
+        console.log('Applying high-quality materials...');
+
+        // Extract color
+        let materialColor = new THREE.Color(0x808080);
+        if (itemData.color) {
+            if (typeof itemData.color === 'object' && itemData.color.rgb) {
+                const [r, g, b] = itemData.color.rgb;
+                materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+            } else if (typeof itemData.color === 'string' && itemData.color.includes(' ')) {
+                const colorValues = itemData.color.split(' ').map(v => parseInt(v.trim()));
+                if (colorValues.length >= 3) {
+                    const [r, g, b] = colorValues;
+                    materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                }
+            }
+        }
+
+        // Load texture if available
+        const texturePath = itemData.file_path || itemData.texture_preview_path;
+        if (texturePath) {
+            this.textureLoader.load(
+                texturePath,
+                (texture) => {
+                    console.log('Texture loaded, applying high-quality material with texture');
+                    texture.wrapS = THREE.RepeatWrapping;
+                    texture.wrapT = THREE.RepeatWrapping;
+                    texture.anisotropy = 16; // High anisotropic filtering
+
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = this.createHighQualityMaterial(materialColor, texture);
+                            this.setupMeshProperties(child);
+                        }
+                    });
+                },
+                undefined,
+                (error) => {
+                    console.warn('Texture loading failed, using color-only high-quality material:', error);
+                    this.applyColorOnlyHighQualityMaterial(object, materialColor);
+                }
+            );
+        } else {
+            this.applyColorOnlyHighQualityMaterial(object, materialColor);
+        }
+    }
+
+    createHighQualityMaterial(color, texture = null) {
+        // Create high-quality material similar to generation phase
+        const materialConfig = {
+            color: color,
+            roughness: 0.6,
+            metalness: 0.1,
+            transparent: false,
+            side: THREE.DoubleSide,
+            shadowSide: THREE.DoubleSide,
+            // Enhanced material properties
+            envMapIntensity: 1.0,
+            bumpScale: 0.1,
+            normalScale: new THREE.Vector2(1, 1)
+        };
+
+        if (texture) {
+            materialConfig.map = texture;
+            // Add bump mapping for texture detail
+            materialConfig.bumpMap = texture;
+        }
+
+        return new THREE.MeshStandardMaterial(materialConfig);
+    }
+
+    applyColorOnlyHighQualityMaterial(object, color) {
+        console.log('Applying color-only high-quality material');
+
+        object.traverse((child) => {
+            if (child.isMesh) {
+                child.material = this.createHighQualityMaterial(color);
+                this.setupMeshProperties(child);
+            }
+        });
+    }
+
+    setupMeshProperties(mesh) {
+        // Enhanced mesh properties for high-quality rendering
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.frustumCulled = false;
+
+        // Ensure geometry has proper normals
+        if (mesh.geometry) {
+            if (!mesh.geometry.attributes.normal) {
+                mesh.geometry.computeVertexNormals();
+            }
+            // Compute tangents for normal mapping
+            if (mesh.geometry.attributes.uv && !mesh.geometry.attributes.tangent) {
+                mesh.geometry.computeTangents();
+            }
+        }
+    }
+
+    async createHighQualityTexturedPlane(itemData) {
+        console.log('Creating high-quality textured plane...');
+
+        try {
+            const clothingType = this.determineClothingType(itemData);
+            const geometry = this.createPlaneGeometry(clothingType);
+            const texturePath = itemData.file_path || itemData.texture_preview_path;
+
+            if (!texturePath) {
+                throw new Error('No texture path available');
+            }
+
+            // Load texture with high quality settings
+            const texture = await this.loadHighQualityTexture(texturePath);
+
+            // Extract color
+            let materialColor = new THREE.Color(0xffffff);
+            if (itemData.color && itemData.color.rgb) {
+                const [r, g, b] = itemData.color.rgb;
+                materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+            }
+
+            const material = this.createHighQualityMaterial(materialColor, texture);
+            const mesh = new THREE.Mesh(geometry, material);
+
+            this.applyClothingRotation(mesh, itemData);
+            this.positionClothingOnAvatar(mesh, clothingType);
+            this.setupMeshProperties(mesh);
+
+            this.scene.add(mesh);
+
+            const clothingData = {
+                mesh: mesh,
+                itemData: itemData,
+                type: clothingType,
+                category: itemData.type || clothingType,
+                source: 'high_quality_textured_plane'
+            };
+
+            this.currentClothing.set(itemData._id, clothingData);
+
+            console.log(`High-quality textured plane ${clothingType} created successfully`);
+            return true;
+
+        } catch (error) {
+            console.error('High-quality textured plane creation failed:', error);
+            return await this.createHighQualityFallback(itemData);
+        }
+    }
+
+    async loadHighQualityTexture(texturePath) {
+        return new Promise((resolve, reject) => {
+            this.textureLoader.load(
+                texturePath,
+                (texture) => {
+                    // High-quality texture settings
+                    texture.wrapS = THREE.RepeatWrapping;
+                    texture.wrapT = THREE.RepeatWrapping;
+                    texture.anisotropy = 16; // Maximum anisotropic filtering
+                    texture.magFilter = THREE.LinearFilter;
+                    texture.minFilter = THREE.LinearMipmapLinearFilter;
+                    texture.generateMipmaps = true;
+
+                    console.log('High-quality texture loaded');
+                    resolve(texture);
+                },
+                undefined,
+                reject
+            );
+        });
+    }
+
+    async createHighQualityFallback(itemData) {
+        console.log('Creating high-quality fallback...');
+
+        try {
+            const clothingType = this.determineClothingType(itemData);
+            const geometry = this.createPlaneGeometry(clothingType);
+
+            // Get default color for clothing type
+            let materialColor = this.getDefaultColorForType(clothingType);
+
+            // Override with item color if available
+            if (itemData.color) {
+                if (typeof itemData.color === 'object' && itemData.color.rgb) {
+                    const [r, g, b] = itemData.color.rgb;
+                    materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                } else if (typeof itemData.color === 'string' && itemData.color.includes(' ')) {
+                    const colorValues = itemData.color.split(' ').map(v => parseInt(v.trim()));
+                    if (colorValues.length >= 3) {
+                        const [r, g, b] = colorValues;
+                        materialColor = new THREE.Color(r / 255, g / 255, b / 255);
+                    }
+                }
+            }
+
+            const material = this.createHighQualityMaterial(materialColor);
+            const mesh = new THREE.Mesh(geometry, material);
+
+            this.applyClothingRotation(mesh, itemData);
+            this.positionClothingOnAvatar(mesh, clothingType);
+            this.setupMeshProperties(mesh);
+
+            this.scene.add(mesh);
+
+            const clothingData = {
+                mesh: mesh,
+                itemData: itemData,
+                type: clothingType,
+                category: itemData.type || clothingType,
+                source: 'high_quality_fallback'
+            };
+
+            this.currentClothing.set(itemData._id, clothingData);
+
+            console.log(`High-quality fallback ${clothingType} created successfully`);
+            return true;
+
+        } catch (error) {
+            console.error('High-quality fallback creation failed:', error);
+            return false;
+        }
+    }
+
+    createPlaneGeometry(clothingType) {
+        switch (clothingType) {
+            case 'top':
+                return new THREE.PlaneGeometry(1.2, 1.0, 32, 32); // Higher segments for better deformation
+            case 'bottom':
+                return new THREE.PlaneGeometry(1.0, 1.2, 32, 32);
+            case 'dress':
+                return new THREE.PlaneGeometry(1.2, 1.8, 32, 48);
+            case 'outerwear':
+                return new THREE.PlaneGeometry(1.3, 1.1, 32, 32);
+            case 'shoes':
+                return new THREE.PlaneGeometry(0.6, 0.8, 16, 16);
+            default:
+                return new THREE.PlaneGeometry(1.0, 1.0, 32, 32);
+        }
+    }
+
+    // Keep your working rotation function exactly as is
+    applyClothingRotation(object, itemData) {
+        const clothingType = this.determineClothingType(itemData);
+        console.log(`Applying CORRECTIVE rotation for ${clothingType}...`);
+
+        object.rotation.set(0, 0, 0);
+
+        switch (clothingType) {
+            case 'top':
+                object.rotation.set(-Math.PI / 2, 0, Math.PI/2);
+                break;
+            case 'bottom':
+                object.rotation.set(-Math.PI / 2, 0, Math.PI/2);
+                break;
+            case 'dress':
+                object.rotation.set(-Math.PI / 2, 0, Math.PI/2);
+                break;
+            case 'outerwear':
+                object.rotation.set(-Math.PI / 2, 0, Math.PI/2);
+                break;
+            case 'shoes':
+                object.rotation.set(-Math.PI / 2, 0, Math.PI/2);
+                break;
+            default:
+                object.rotation.set(-Math.PI / 2, 0, Math.PI/2);
+        }
+
+        console.log(`CORRECTIVE rotation applied: x=${object.rotation.x.toFixed(2)}, y=${object.rotation.y.toFixed(2)}, z=${object.rotation.z.toFixed(2)}`);
+    }
+
+    determineClothingType(itemData) {
+        const label = (itemData.label || itemData.type || '').toLowerCase();
+        const category = (itemData.category || itemData.type || '').toLowerCase();
+
+        if (label.includes('shirt') || label.includes('top') || label.includes('pullover') || category === 'tops') {
+            return 'top';
+        } else if (label.includes('trouser') || label.includes('pant') || category === 'bottoms') {
+            return 'bottom';
+        } else if (label.includes('dress') || category === 'dresses') {
+            return 'dress';
+        } else if (label.includes('coat') || label.includes('jacket') || category === 'outerwear') {
+            return 'outerwear';
+        } else if (label.includes('shoe') || label.includes('sandal') || label.includes('boot') || category === 'shoes') {
+            return 'shoes';
+        } else {
+            return 'top';
+        }
+    }
+
+    positionClothingOnAvatar(mesh, clothingType) {
+        if (!this.avatar) {
+            console.warn('No avatar available for positioning');
+            return;
+        }
+
+        const avatarBox = new THREE.Box3().setFromObject(this.avatar);
+        const avatarHeight = avatarBox.max.y - avatarBox.min.y;
+        const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+
+        switch (clothingType) {
+            case 'top':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarCenter.y + avatarHeight * 0.15,
+                    avatarCenter.z + 0.1
+                );
+                break;
+            case 'bottom':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarCenter.y - avatarHeight * 0.15,
+                    avatarCenter.z + 0.1
+                );
+                break;
+            case 'dress':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarCenter.y - avatarHeight * 0.05,
+                    avatarCenter.z + 0.1
+                );
+                break;
+            case 'outerwear':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarCenter.y + avatarHeight * 0.15,
+                    avatarCenter.z + 0.15
+                );
+                break;
+            case 'shoes':
+                mesh.position.set(
+                    avatarCenter.x,
+                    avatarBox.min.y + 0.05,
+                    avatarCenter.z + 0.05
+                );
+                break;
+            default:
+                mesh.position.copy(avatarCenter);
+                mesh.position.z += 0.1;
+        }
+
+        // Better scaling for different clothing types
+        let scale;
+        switch (clothingType) {
+            case 'dress':
+                scale = avatarHeight / 2.2;
+                break;
+            case 'top':
+                scale = avatarHeight / 2.8;
+                break;
+            case 'bottom':
+                scale = avatarHeight / 3.0;
+                break;
+            default:
+                scale = avatarHeight / 2.5;
+        }
+
+        mesh.scale.setScalar(scale);
+    }
+
+    getDefaultColorForType(clothingType) {
+        const defaultColors = {
+            'top': new THREE.Color(0x4CAF50),
+            'bottom': new THREE.Color(0x2196F3),
+            'dress': new THREE.Color(0xE91E63),
+            'outerwear': new THREE.Color(0x795548),
+            'shoes': new THREE.Color(0x424242),
+            'default': new THREE.Color(0x9E9E9E)
+        };
+
+        return defaultColors[clothingType] || defaultColors.default;
+    }
+
+    // Keep all your existing removal and utility functions
+    async removeClothing(itemId) {
+        if (!this.currentClothing.has(itemId)) {
+            console.warn(`Clothing ${itemId} not found`);
+            return false;
+        }
+
+        try {
+            const clothingData = this.currentClothing.get(itemId);
+
+            if (clothingData.mesh && this.scene) {
+                this.scene.remove(clothingData.mesh);
+
+                if (clothingData.mesh.geometry) {
+                    clothingData.mesh.geometry.dispose();
+                }
+
+                if (clothingData.mesh.material) {
+                    if (Array.isArray(clothingData.mesh.material)) {
+                        clothingData.mesh.material.forEach(mat => mat.dispose());
+                    } else {
+                        clothingData.mesh.material.dispose();
+                    }
+                }
+            }
+
+            this.currentClothing.delete(itemId);
+            console.log(`Clothing ${itemId} removed successfully`);
+            return true;
+
+        } catch (error) {
+            console.error('Error removing clothing:', error);
+            return false;
+        }
+    }
+
+    async clearAllClothing() {
+        console.log('Clearing all clothing...');
+
+        const itemIds = Array.from(this.currentClothing.keys());
+        let removedCount = 0;
+
+        for (const itemId of itemIds) {
+            const success = await this.removeClothing(itemId);
+            if (success) {
+                removedCount++;
+            }
+        }
+
+        console.log(`Cleared ${removedCount} clothing items`);
+        return removedCount;
+    }
+
+    getActiveClothing() {
+        const activeItems = [];
+
+        for (const [itemId, clothingData] of this.currentClothing.entries()) {
+            activeItems.push({
+                id: itemId,
+                name: clothingData.itemData?.label || 'Unknown Item',
+                type: clothingData.type,
+                category: clothingData.category,
+                source: clothingData.source
+            });
+        }
+
+        return activeItems;
+    }
+}
+
+// Initialize high-quality clothing renderer
+console.log('High-Quality ClothingOBJRenderer class defined');
+
+function initializeHighQualityClothingRenderer() {
+    if (typeof THREE !== 'undefined' && THREE.OBJLoader) {
+        window.clothingOBJRenderer = new HighQualityClothingOBJRenderer();
+        console.log('High-Quality ClothingOBJRenderer instance created globally');
+        return true;
+    } else {
+        console.log('Waiting for THREE.js...');
+        return false;
+    }
+}
+
+if (!initializeHighQualityClothingRenderer()) {
+    const initInterval = setInterval(() => {
+        if (initializeHighQualityClothingRenderer()) {
+            clearInterval(initInterval);
+        }
+    }, 100);
+
+    setTimeout(() => {
+        clearInterval(initInterval);
+        if (!window.clothingOBJRenderer) {
+            console.error('Failed to initialize High-Quality ClothingOBJRenderer after 10 seconds');
+        }
+    }, 10000);
+}
+</script>
+
 <!-- Clothing System -->
-<script src="{{ url_for('static', filename='js/clothing-obj-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-mapper.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-processor.js') }}"></script>
@@ -2642,7 +3443,8 @@ setTimeout(initializeEyeTextureLoader, 2000);
         setTimeout(() => initializeClothingPositionControls(), 1400);
         setTimeout(() => initializeSavedOutfitsSystem(), 1500);
         setTimeout(() => initializeSavedAvatarsSystem(), 1700);
-        setTimeout(() => initializeViewportControls(), 1900);
+        setTimeout(() => initializeDebugInfo(), 1900);
+        setTimeout(() => initializeViewportControls(), 2100);
 
         /* Avatar System */
         function initializeAvatarSystem() {
@@ -2657,7 +3459,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 try {
                     avatarManager = new window.CustomizableGLBAvatarManager({
                         container: document.getElementById('avatar-container'),
-                        debug: false
+                        debug: true
                     });
 
                     window.avatarManager = avatarManager;
@@ -2668,7 +3470,8 @@ setTimeout(initializeEyeTextureLoader, 2000);
                         }
                     });
 
-                    showMessage('Avatar system ready!', 'success');
+                    updateDebugInfo('GLB system initialized', 'success');
+                    showMessage('GLB Avatar system ready!', 'success');
 
                     // Load saved avatar or default
                     setTimeout(() => {
@@ -2676,9 +3479,11 @@ setTimeout(initializeEyeTextureLoader, 2000);
                     }, 2000);
 
                 } catch (error) {
+                    updateDebugInfo('Failed to initialize system', 'error');
                     showMessage('Failed to initialize Avatar Manager: ' + error.message, 'error');
                 }
             } else {
+                updateDebugInfo('Manager not found', 'error');
                 showMessage('Avatar Manager not found. Please check the script files.', 'error');
             }
         }
@@ -2696,12 +3501,12 @@ setTimeout(initializeEyeTextureLoader, 2000);
                         try {
                             clothingRenderer = window.clothingOBJRenderer;
                             window.clothingRenderer = clothingRenderer;
-                            console.log('3D ClothingOBJRenderer initialized from existing instance');
+                            console.log('High-Quality ClothingOBJRenderer initialized from existing instance');
 
                             setupClothingReferences();
 
                         } catch (error) {
-                            console.error('Error initializing 3D ClothingOBJRenderer:', error);
+                            console.error('Error initializing High-Quality ClothingOBJRenderer:', error);
                         }
                     } else {
                         if (attempts < maxAttempts) {
@@ -2728,10 +3533,10 @@ setTimeout(initializeEyeTextureLoader, 2000);
                     clothingRenderer.setReferences(avatarManager.scene, avatarManager.avatarModel);
 
                     setTimeout(() => {
-                        console.log('3D Clothing reference verification:');
+                        console.log('High-Quality Clothing reference verification:');
                         console.log(`  - Scene set: ${!!clothingRenderer.scene}`);
                         console.log(`  - Avatar set: ${!!clothingRenderer.avatar}`);
-                        console.log('3D clothing renderer ready!');
+                        console.log('High-quality clothing renderer ready!');
                     }, 100);
 
                     clearInterval(checkForAvatarInterval);
@@ -3578,6 +4383,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
 
             try {
                 showLoading('Loading your saved avatar...');
+                updateDebugInfo('Loading saved avatar...', 'info');
 
                 const response = await fetch('/api/avatar/get-saved');
 
@@ -3606,6 +4412,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
                             autoFixEyeColor();
                         }, 4000);
 
+                        updateDebugInfo('Saved avatar loaded', 'success');
                         showMessage('Your saved avatar has been loaded!', 'success');
                     } else {
                         await loadDefaultAvatar();
@@ -3613,6 +4420,8 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 } else {
                     await loadDefaultAvatar();
                 }
+
+                updateDebugDisplay();
 
             } catch (error) {
                 await loadDefaultAvatar();
@@ -3625,6 +4434,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
         async function loadDefaultAvatar() {
             try {
                 await avatarManager.requestDefaultAvatar();
+                updateDebugInfo('Default avatar loaded', 'success');
                 showMessage('Default avatar loaded!', 'success');
 
                 setTimeout(() => {
@@ -3637,7 +4447,26 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 }, 4000);
 
             } catch (error) {
+                updateDebugInfo('Failed to load default avatar', 'error');
                 showMessage('Failed to load default avatar: ' + error.message, 'error');
+            }
+        }
+
+        /* Debug Info System */
+        function initializeDebugInfo() {
+            updateDebugInfo('System starting...', 'info');
+
+            setInterval(() => {
+                updateDebugDisplay();
+            }, 2000);
+        }
+
+        function updateDebugInfo(status, type = 'info') {
+            const statusElement = document.getElementById('debug-status');
+            if (statusElement) {
+                statusElement.textContent = status;
+                statusElement.style.color = type === 'error' ? '#e74c3c' :
+                                          type === 'success' ? '#27ae60' : '#333';
             }
         }
 
@@ -3707,6 +4536,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
                         avatarManager.updateHairColor(hairColor);
                     }
 
+                    updateDebugDisplay();
                     showMessage(`Hair color changed to ${hairColor}`, 'success');
                 });
             });
@@ -3779,6 +4609,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
                     const hairData = avatarManager.getAvailableHairStyles()[hairStyleKey];
                     const hairName = hairData ? hairData.name : hairStyleKey;
 
+                    updateDebugDisplay();
                     showMessage(`Hairstyle "${hairName}" applied successfully`, 'success');
 
                 } else {
@@ -3840,6 +4671,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
                     avatarCustomization.view = viewType;
 
                     setCameraView(viewType);
+                    updateDebugDisplay();
                     showMessage(`Camera view: ${viewType}`, 'info');
                 });
             });
@@ -3926,13 +4758,14 @@ setTimeout(initializeEyeTextureLoader, 2000);
                         avatarManager.updateSkinColor(skinColor);
                         showMessage(`Skin color changed to ${skinColor}`, 'success');
                     }
+                    updateDebugDisplay();
                 });
             });
 
             // Eye color selection - updated to use available textures only
             document.querySelectorAll('[data-eye]').forEach(colorOption => {
                 colorOption.addEventListener('click', async function() {
-                    console.log('👁️ Eye color clicked:', this.dataset.eye);
+                    console.log('Eye color clicked:', this.dataset.eye);
 
                     document.querySelectorAll('[data-eye]').forEach(opt => opt.classList.remove('selected'));
                     this.classList.add('selected');
@@ -3946,9 +4779,9 @@ setTimeout(initializeEyeTextureLoader, 2000);
                     if (window.makeHumanEyeLoader) {
                         try {
                             success = await window.makeHumanEyeLoader.updateEyeColor(eyeColor, avatarCustomization.gender);
-                            console.log('✅ Eye texture loader successful');
+                            console.log('Eye texture loader successful');
                         } catch (error) {
-                            console.warn('⚠️ Eye texture loader failed:', error);
+                            console.warn('Eye texture loader failed:', error);
                         }
                     }
 
@@ -3957,9 +4790,9 @@ setTimeout(initializeEyeTextureLoader, 2000);
                         try {
                             await avatarManager.updateEyeColor(eyeColor);
                             success = true;
-                            console.log('✅ Avatar manager eye color successful');
+                            console.log('Avatar manager eye color successful');
                         } catch (error) {
-                            console.warn('⚠️ Avatar manager eye color failed:', error);
+                            console.warn('Avatar manager eye color failed:', error);
                         }
                     }
 
@@ -3967,8 +4800,10 @@ setTimeout(initializeEyeTextureLoader, 2000);
                         showMessage(`Eye color changed to ${eyeColor}`, 'success');
                     } else {
                         showMessage('Failed to change eye color', 'error');
-                        console.error('❌ All eye color methods failed');
+                        console.error('All eye color methods failed');
                     }
+
+                    updateDebugDisplay();
                 });
             });
 
@@ -3980,6 +4815,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 }
 
                 showLoading('Resetting avatar...');
+                updateDebugInfo('Resetting...', 'info');
 
                 try {
                     const defaultConfig = {
@@ -4011,6 +4847,8 @@ setTimeout(initializeEyeTextureLoader, 2000);
                     }
 
                     updateUIFromConfig(defaultConfig);
+                    updateDebugDisplay();
+                    updateDebugInfo('Reset complete', 'success');
                     showMessage('Avatar reset to defaults', 'info');
 
                     loadHairPreviews();
@@ -4020,6 +4858,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
 
                 } catch (error) {
                     console.error('Error resetting avatar:', error);
+                    updateDebugInfo('Reset failed', 'error');
                     showMessage('Failed to reset avatar', 'error');
                 } finally {
                     hideLoading();
@@ -4085,19 +4924,24 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 }
 
                 showLoading('Changing gender...');
+                updateDebugInfo('Changing gender...', 'info');
 
                 try {
                     await avatarManager.updateGender(gender);
+                    updateDebugDisplay();
+                    updateDebugInfo('Gender changed', 'success');
                     showMessage(`Avatar gender changed to ${gender}`, 'success');
 
                     // Update hair previews for the new gender
                     updateHairPreviewsForGender(gender);
                 } catch (error) {
+                    updateDebugInfo('Gender change failed', 'error');
                     showMessage('Failed to change gender', 'error');
                 } finally {
                     hideLoading();
                 }
             } else {
+                updateDebugDisplay();
                 showMessage(`Gender preference set to ${gender}`, 'info');
             }
         }
@@ -4111,15 +4955,21 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 }
 
                 showLoading('Changing height...');
+                updateDebugInfo('Changing height...', 'info');
 
                 try {
                     await avatarManager.updateHeight(height);
+                    updateDebugDisplay();
+                    updateDebugInfo('Height changed', 'success');
                     showMessage(`Avatar height changed to ${height}`, 'success');
                 } catch (error) {
+                    updateDebugInfo('Height change failed', 'error');
                     showMessage('Failed to change height', 'error');
                 } finally {
                     hideLoading();
                 }
+            } else {
+                updateDebugDisplay();
             }
         }
 
@@ -4132,19 +4982,25 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 }
 
                 showLoading('Changing body size...');
+                updateDebugInfo('Changing body size...', 'info');
 
                 try {
                     await avatarManager.updateBodySize(bodySize);
+                    updateDebugDisplay();
+                    updateDebugInfo('Body size changed', 'success');
                     showMessage(`Avatar body size changed to ${bodySize.toUpperCase()}`, 'success');
                 } catch (error) {
+                    updateDebugInfo('Body size change failed', 'error');
                     showMessage('Failed to change body size', 'error');
                 } finally {
                     hideLoading();
                 }
+            } else {
+                updateDebugDisplay();
             }
         }
 
-        /* Wardrobe System with 3D Rendering */
+        /* Wardrobe System with High-Quality 3D Rendering */
         function initializeWardrobeSystem() {
             // Category selection
             document.getElementById('category-wardrobe')?.addEventListener('change', function() {
@@ -4225,8 +5081,8 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 }
 
                 if (!clothingRenderer) {
-                    console.error('ClothingRenderer not available');
-                    showMessage('Clothing Renderer not initialized', 'error');
+                    console.error('High-quality ClothingRenderer not available');
+                    showMessage('High-quality Clothing Renderer not initialized', 'error');
                     return;
                 }
 
@@ -4256,17 +5112,17 @@ setTimeout(initializeEyeTextureLoader, 2000);
                             showMessage(`Failed to remove ${itemName}`, 'error');
                         }
                     } else {
-                        showLoading(`Applying ${itemName} in 3D...`);
+                        showLoading(`Applying ${itemName} with high-quality rendering...`);
 
                         let success = false;
 
                         try {
                             success = await clothingRenderer.loadClothingFromDatabase(itemId);
                             if (success) {
-                                console.log('3D database loading successful');
+                                console.log('High-quality database loading successful');
                             }
                         } catch (error) {
-                            console.warn('3D database loading failed, trying fallback:', error.message);
+                            console.warn('High-quality database loading failed, trying fallback:', error.message);
                         }
 
                         if (!success) {
@@ -4279,25 +5135,25 @@ setTimeout(initializeEyeTextureLoader, 2000);
                                     category: category,
                                     color: item.color
                                 };
-                                success = await clothingRenderer.createFallbackClothing(fallbackData);
+                                success = await clothingRenderer.createHighQualityFallback(fallbackData);
                                 if (success) {
-                                    console.log('3D fallback creation successful');
+                                    console.log('High-quality fallback creation successful');
                                 }
                             } catch (fallbackError) {
-                                console.error('3D fallback creation failed:', fallbackError);
+                                console.error('High-quality fallback creation failed:', fallbackError);
                             }
                         }
 
                         if (success) {
                             this.classList.add('selected');
                             updateActiveOutfitList();
-                            showMessage(`${itemName} applied in 3D successfully`, 'success');
+                            showMessage(`${itemName} applied with high-quality rendering successfully`, 'success');
                         } else {
-                            showMessage(`Failed to apply ${itemName} in 3D`, 'error');
+                            showMessage(`Failed to apply ${itemName} with high-quality rendering`, 'error');
                         }
                     }
                 } catch (error) {
-                    console.error('Error in 3D clothing click handler:', error);
+                    console.error('Error in high-quality clothing click handler:', error);
                     showMessage(`Error: ${error.message}`, 'error');
                 } finally {
                     hideLoading();
@@ -4316,8 +5172,8 @@ setTimeout(initializeEyeTextureLoader, 2000);
             }
 
             try {
-                showLoading(`Applying ${selectedItems.length} 3D clothing items...`);
-                console.log(`Trying on ${selectedItems.length} 3D items...`);
+                showLoading(`Applying ${selectedItems.length} high-quality clothing items...`);
+                console.log(`Trying on ${selectedItems.length} high-quality items...`);
 
                 if (clothingRenderer) {
                     await clothingRenderer.clearAllClothing();
@@ -4333,10 +5189,10 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 }
 
                 updateActiveOutfitList();
-                showMessage(`3D outfit applied with ${selectedItems.length} items`, 'success');
+                showMessage(`High-quality outfit applied with ${selectedItems.length} items`, 'success');
             } catch (error) {
-                console.error('Error applying 3D outfit:', error);
-                showMessage('Failed to apply complete 3D outfit', 'error');
+                console.error('Error applying high-quality outfit:', error);
+                showMessage('Failed to apply complete high-quality outfit', 'error');
             } finally {
                 hideLoading();
             }
@@ -4344,7 +5200,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
 
         async function clearAllClothing() {
             try {
-                console.log('Clearing all 3D clothing...');
+                console.log('Clearing all high-quality clothing...');
 
                 if (clothingRenderer) {
                     await clothingRenderer.clearAllClothing();
@@ -4362,10 +5218,10 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 clothingScales.clear();
 
                 updateActiveOutfitList();
-                showMessage('All 3D clothing cleared', 'info');
+                showMessage('All high-quality clothing cleared', 'info');
             } catch (error) {
-                console.error('Error clearing 3D clothing:', error);
-                showMessage('Error clearing 3D clothing', 'error');
+                console.error('Error clearing high-quality clothing:', error);
+                showMessage('Error clearing high-quality clothing', 'error');
             }
         }
 
@@ -4441,6 +5297,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
 
             try {
                 showLoading('Loading saved avatar...');
+                updateDebugInfo('Loading saved avatar...', 'info');
 
                 const response = await fetch(`/api/avatar/get-saved/${avatarId}`);
 
@@ -4467,13 +5324,16 @@ setTimeout(initializeEyeTextureLoader, 2000);
                         }
                     }, 3000);
 
+                    updateDebugInfo('Saved avatar loaded', 'success');
                     showMessage('Saved avatar loaded successfully!', 'success');
+                    updateDebugDisplay();
                 } else {
                     throw new Error(data.error || 'Failed to load avatar');
                 }
 
             } catch (error) {
                 console.error('Error loading saved avatar:', error);
+                updateDebugInfo('Failed to load saved avatar', 'error');
                 showMessage('Failed to load saved avatar: ' + error.message, 'error');
             } finally {
                 hideLoading();
@@ -4545,10 +5405,10 @@ setTimeout(initializeEyeTextureLoader, 2000);
 
             if (clothingRenderer && clothingRenderer.currentClothing) {
                 for (const [itemId, clothingData] of clothingRenderer.currentClothing.entries()) {
-                    const itemName = clothingData.itemData?.label || clothingData.category || '3D Clothing Item';
-                    const renderType = '3D';
+                    const itemName = clothingData.itemData?.label || clothingData.category || 'High-Quality Clothing Item';
+                    const renderType = 'High-Quality 3D';
                     itemsHtml += `
-                        <div class="active-item" data-item-id="${itemId}" data-source="3d">
+                        <div class="active-item" data-item-id="${itemId}" data-source="high_quality_3d">
                             <span class="active-item-name">${itemName} (${renderType})</span>
                             <div class="active-item-controls">
                                 <span class="active-item-edit" title="Position ${itemName}">
@@ -4595,7 +5455,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
                             updateActiveOutfitList();
                             showMessage(`${itemName} removed`, 'info');
                         } catch (error) {
-                            console.error('Error removing 3D item:', error);
+                            console.error('Error removing high-quality item:', error);
                             showMessage(`Failed to remove ${itemName}`, 'error');
                         }
                     });
@@ -4607,12 +5467,14 @@ setTimeout(initializeEyeTextureLoader, 2000);
                         e.stopPropagation();
                         const itemElement = this.closest('.active-item');
                         const itemId = itemElement.dataset.itemId;
-                        const itemName = itemElement.querySelector('.active-item-name').textContent.split(' (')[0]; // Remove (3D) suffix
+                        const itemName = itemElement.querySelector('.active-item-name').textContent.split(' (')[0]; // Remove (High-Quality 3D) suffix
 
                         showPositionControls(itemId, itemName);
                     });
                 });
             }
+
+            document.getElementById('debug-clothing').textContent = `${totalItems} items`;
         }
 
         /* Tab System Functions */
@@ -4669,10 +5531,48 @@ setTimeout(initializeEyeTextureLoader, 2000);
             });
         }
 
+        function updateDebugDisplay() {
+            const modelElement = document.getElementById('debug-model');
+            if (modelElement && avatarManager && avatarManager.avatarModel) {
+                modelElement.textContent = 'High-Quality GLB + Hair';
+            } else if (modelElement) {
+                modelElement.textContent = 'None';
+            }
+
+            const genderElement = document.getElementById('debug-gender');
+            if (genderElement) {
+                genderElement.textContent = avatarCustomization.gender;
+            }
+
+            const bodyElement = document.getElementById('debug-body');
+            if (bodyElement) {
+                bodyElement.textContent = `${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}`;
+            }
+
+            const hairElement = document.getElementById('debug-hair-type');
+            if (hairElement) {
+                const hairStatus = avatarManager && avatarManager.currentHairModel ? 'Loaded' : 'None';
+                hairElement.textContent = `${avatarCustomization.hair.type} (${avatarCustomization.hair.color}) - ${hairStatus}`;
+            }
+
+            const viewElement = document.getElementById('debug-view');
+            if (viewElement) {
+                viewElement.textContent = avatarCustomization.view.charAt(0).toUpperCase() + avatarCustomization.view.slice(1);
+            }
+
+            const pathElement = document.getElementById('debug-path');
+            if (pathElement && avatarManager) {
+                const currentPath = avatarManager.getAvatarPath ?
+                    avatarManager.getAvatarPath(avatarCustomization) :
+                    `/static/models/makehuman/bodies/${avatarCustomization.gender}/${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}.glb`;
+                pathElement.textContent = currentPath;
+            }
+        }
+
         // Auto-fix eye color on avatar load
         function autoFixEyeColor() {
             if (avatarManager && avatarManager.avatarModel && avatarCustomization.eyes) {
-                console.log('🔧 Auto-fixing eye color on avatar load...');
+                console.log('Auto-fixing eye color on avatar load...');
                 setTimeout(() => {
                     if (window.makeHumanEyeLoader) {
                         window.makeHumanEyeLoader.updateEyeColor(avatarCustomization.eyes, avatarCustomization.gender);
