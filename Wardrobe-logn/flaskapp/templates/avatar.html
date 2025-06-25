@@ -97,7 +97,7 @@
         background: #f8f9fa;
         border-radius: 8px;
         border: 1px solid #e9ecef;
-        border-left: 4px solid #070707;
+        border-left: 4px solid #c9ada7;
     }
 
     .customization-group h5 {
@@ -305,7 +305,7 @@
     }
 
     .selection-option.selected {
-        border-color: #070707;
+        border-color: #c9ada7;
         background: #c9ada7;
         color: white;
         box-shadow: 0 0 0 2px rgb(201, 173, 167);
@@ -686,7 +686,7 @@
     }
 
     .axis-btn.negative {
-        background: #c9a7b1;
+        background: #ffebee;
         border-color: #ef5350;
         color: #c62828;
     }
@@ -778,7 +778,7 @@
     .quick-action-btn.done {
         background: #d4edda;
         border-color: #c3e6cb;
-        color: #c3e6cb;
+        color: #155724;
     }
 
     .quick-action-btn.done:hover {
@@ -816,9 +816,9 @@
     }
 
     .saved-outfit-item.active {
-        border-color: #c3e6cb;
-        background: #c3e6cb;
-        box-shadow: 0 0 0 2px rgb(195, 230, 203);
+        border-color: #28a745;
+        background: #d4edda;
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
     }
 
     .saved-outfit-item.active::before {
@@ -826,7 +826,7 @@
         position: absolute;
         top: 8px;
         right: 8px;
-        background: #c3e6cb;
+        background: #28a745;
         color: white;
         width: 20px;
         height: 20px;
@@ -922,7 +922,7 @@
     }
 
     .generate-snapshot-btn:hover {
-        background: #c9ada7;
+        background: #b8998a;
         transform: translateY(-1px);
     }
 
@@ -1062,13 +1062,13 @@
     }
 
     .outfit-action-btn.load {
-        background: #c3e6cb;
+        background: #d4edda;
         border-color: #c3e6cb;
-        color: #d0fef5;
+        color: #155724;
     }
 
     .outfit-action-btn.load:hover {
-        background: #d0fef5;
+        background: #c3e6cb;
     }
 
     .outfit-action-btn.delete {
@@ -1141,7 +1141,7 @@
         background: #f1e2dd;
         border: 1px solid #f3e2de;
         border-radius: 8px;
-        border-left: 4px solid #9f8884;
+        border-left: 4px solid #c9ada7;
     }
 
     .outfit-save-section h5 {
@@ -1157,7 +1157,7 @@
     .outfit-name-input {
         width: 100%;
         padding: 10px;
-        border: 1px solid #f1e2dd;
+        border: 1px solid #dee2e6;
         border-radius: 6px;
         font-size: 14px;
         margin-bottom: 15px;
@@ -1166,8 +1166,8 @@
 
     .outfit-name-input:focus {
         outline: none;
-        border-color: #9f8884;
-        box-shadow: 0 0 0 2px rgb(241, 226, 221);
+        border-color: #c9ada7;
+        box-shadow: 0 0 0 2px rgba(201, 173, 167, 0.25);
     }
 
     /* Main container styles */
@@ -1225,7 +1225,7 @@
         animation: slideIn 0.3s ease-out;
     }
 
-    .message.success { background: #d0fef5; }
+    .message.success { background: #28a745; }
     .message.error { background: #e74c3c; }
     .message.info { background: #3498db; }
 
@@ -1257,7 +1257,7 @@
     .form-control:focus {
         outline: none;
         border-color: #c9ada7;
-        box-shadow: 0 0 0 2px rgb(201, 173, 167);
+        box-shadow: 0 0 0 2px rgba(201, 173, 167, 0.25);
     }
 
     .btn {
@@ -1279,7 +1279,7 @@
     }
 
     .btn-primary:hover {
-        background: #c9ada7;
+        background: #b8998a;
         transform: translateY(-1px);
     }
 
@@ -1293,21 +1293,21 @@
     }
 
     .btn-success {
-        background: #d0fef5;
+        background: #28a745;
         color: white;
     }
 
     .btn-success:hover {
-        background: #d0fef5;
+        background: #218838;
     }
 
     .btn-info {
-        background: #c9ada7;
+        background: #17a2b8;
         color: white;
     }
 
     .btn-info:hover {
-        background: #c9ada7;
+        background: #138496;
     }
 
     .btn-danger {
@@ -1376,7 +1376,7 @@
 
     .active-item-edit {
         cursor: pointer;
-        color: #c9a7b1;
+        color: #c9ada7;
         padding: 5px;
         border-radius: 4px;
         transition: background-color 0.2s ease;
@@ -1384,7 +1384,7 @@
     }
 
     .active-item-edit:hover {
-        background-color: #fef3e2;
+        background-color: #f3e2de;
     }
 
     .active-item-remove {
@@ -1671,7 +1671,6 @@
             </button>
         </div>
 
-
         <div class="tab-content-container">
 
             <!-- Tab 1: Avatar Creation -->
@@ -1800,40 +1799,15 @@
 
                     <!-- Eye Color -->
                     <div class="customization-group">
-                        <h5>Eye Color <span style="font-size: 11px; color: #6c757d;">(19 options)</span></h5>
+                        <h5>Eye Color <span style="font-size: 11px; color: #6c757d;">(Available textures)</span></h5>
 
-                        <div class="color-category-label">Brown Tones</div>
-                        <div class="color-picker-group large-grid">
-                            <div class="color-option selected" style="background-color: #6B4423;" data-eye="brown" title="Brown"></div>
-                            <div class="color-option" style="background-color: #4A2C17;" data-eye="dark-brown" title="Dark Brown"></div>
-                            <div class="color-option" style="background-color: #8B6914;" data-eye="light-brown" title="Light Brown"></div>
-                            <div class="color-option" style="background-color: #B8860B;" data-eye="hazel" title="Hazel"></div>
-                            <div class="color-option" style="background-color: #FFBF00;" data-eye="amber" title="Amber"></div>
-                            <div class="color-option" style="background-color: #FFD700;" data-eye="gold" title="Gold"></div>
-                        </div>
-
-                        <div class="color-category-label">Blue Tones</div>
-                        <div class="color-picker-group large-grid">
-                            <div class="color-option" style="background-color: #4A90E2;" data-eye="blue" title="Blue"></div>
-                            <div class="color-option" style="background-color: #87CEEB;" data-eye="light-blue" title="Light Blue"></div>
-                            <div class="color-option" style="background-color: #0F4C75;" data-eye="dark-blue" title="Dark Blue"></div>
-                            <div class="color-option" style="background-color: #87CEFA;" data-eye="sky-blue" title="Sky Blue"></div>
-                        </div>
-
-                        <div class="color-category-label">Green Tones</div>
-                        <div class="color-picker-group large-grid">
-                            <div class="color-option" style="background-color: #50C878;" data-eye="green" title="Green"></div>
-                            <div class="color-option" style="background-color: #90EE90;" data-eye="light-green" title="Light Green"></div>
-                            <div class="color-option" style="background-color: #228B22;" data-eye="dark-green" title="Dark Green"></div>
-                            <div class="color-option" style="background-color: #50C878;" data-eye="emerald" title="Emerald"></div>
-                        </div>
-
-                        <div class="color-category-label">Unique Colors</div>
-                        <div class="color-picker-group large-grid">
-                            <div class="color-option" style="background-color: #800080;" data-eye="purple" title="Purple"></div>
-                            <div class="color-option" style="background-color: #8A2BE2;" data-eye="violet" title="Violet"></div>
-                            <div class="color-option" style="background-color: #708090;" data-eye="gray" title="Gray"></div>
-                            <div class="color-option" style="background-color: #C0C0C0;" data-eye="silver" title="Silver"></div>
+                        <div class="color-picker-group">
+                            <div class="color-option selected" style="background-color: #8B4513;" data-eye="brown" title="Brown Eyes"></div>
+                            <div class="color-option" style="background-color: #4A90E2;" data-eye="blue" title="Blue Eyes"></div>
+                            <div class="color-option" style="background-color: #50C878;" data-eye="green" title="Green Eyes"></div>
+                            <div class="color-option" style="background-color: #708090;" data-eye="grey" title="Grey Eyes"></div>
+                            <div class="color-option" style="background-color: #87CEEB;" data-eye="lightblue" title="Light Blue Eyes"></div>
+                            <div class="color-option" style="background-color: #E0FFFF;" data-eye="ice" title="Ice Eyes"></div>
                         </div>
                     </div>
                 </div>
@@ -2214,6 +2188,482 @@ if (typeof THREE === 'undefined') {
 <script src="{{ url_for('static', filename='js/clothing-renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/clothing-processor.js') }}"></script>
 
+<!-- Eye Texture System -->
+<script>
+/**
+ * Eye Texture Loader for MakeHuman GLB Avatars
+ * Uses available eye texture files: brown_eye.png, blue_eye.png, green_eye.png, grey_eye.png, lightblue_eye.png, ice_eye.png
+ */
+
+class MakeHumanEyeTextureLoader {
+    constructor(avatarManager) {
+        this.avatarManager = avatarManager;
+        this.textureLoader = new THREE.TextureLoader();
+        this.loadedTextures = new Map();
+        this.currentEyeColor = 'brown';
+        this.currentGender = 'female';
+
+        // Map eye colors to actual texture files available
+        this.eyeTextureFiles = {
+            'female': {
+                'brown': '/static/models/makehuman/bodies/female/textures/brown_eye.png',
+                'blue': '/static/models/makehuman/bodies/female/textures/blue_eye.png',
+                'green': '/static/models/makehuman/bodies/female/textures/green_eye.png',
+                'grey': '/static/models/makehuman/bodies/female/textures/grey_eye.png',
+                'lightblue': '/static/models/makehuman/bodies/female/textures/lightblue_eye.png',
+                'ice': '/static/models/makehuman/bodies/female/textures/ice_eye.png'
+            },
+            'male': {
+                'brown': '/static/models/makehuman/bodies/male/textures/brown_eye.png',
+                'blue': '/static/models/makehuman/bodies/male/textures/blue_eye.png',
+                'green': '/static/models/makehuman/bodies/male/textures/green_eye.png',
+                'grey': '/static/models/makehuman/bodies/male/textures/grey_eye.png',
+                'lightblue': '/static/models/makehuman/bodies/male/textures/lightblue_eye.png',
+                'ice': '/static/models/makehuman/bodies/male/textures/ice_eye.png'
+            }
+        };
+
+        this.init();
+    }
+
+    init() {
+        console.log('Initializing MakeHuman Eye Texture Loader...');
+        this.preloadCommonEyeTextures();
+    }
+
+    /**
+     * Preload available eye textures for both genders
+     */
+    async preloadCommonEyeTextures() {
+        console.log('Preloading MakeHuman eye textures...');
+
+        const availableColors = ['brown', 'blue', 'green', 'grey', 'lightblue', 'ice'];
+        const genders = ['female', 'male'];
+
+        for (const gender of genders) {
+            for (const color of availableColors) {
+                try {
+                    const texturePath = this.eyeTextureFiles[gender][color];
+                    const textureKey = `${gender}_${color}`;
+                    await this.loadEyeTexture(textureKey, texturePath);
+                    console.log(`Loaded eye texture: ${textureKey}`);
+                } catch (error) {
+                    console.warn(`Failed to load eye texture ${gender}_${color}:`, error);
+                    this.createFallbackTexture(`${gender}_${color}`, color);
+                }
+            }
+        }
+
+        console.log('Eye texture preloading complete');
+    }
+
+    /**
+     * Load a specific eye texture
+     */
+    loadEyeTexture(textureKey, texturePath) {
+        return new Promise((resolve, reject) => {
+            this.textureLoader.load(
+                texturePath,
+                (texture) => {
+                    // Configure texture for GLB models
+                    texture.wrapS = THREE.ClampToEdgeWrapping;
+                    texture.wrapT = THREE.ClampToEdgeWrapping;
+                    texture.flipY = false; // Critical for GLB models
+                    texture.generateMipmaps = true;
+                    texture.minFilter = THREE.LinearMipmapLinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    texture.format = THREE.RGBAFormat;
+                    texture.encoding = THREE.sRGBEncoding;
+
+                    this.loadedTextures.set(textureKey, texture);
+                    resolve(texture);
+                },
+                (progress) => {
+                    console.log(`Loading ${textureKey} eye texture: ${(progress.loaded / progress.total * 100)}%`);
+                },
+                (error) => {
+                    console.error(`Failed to load eye texture ${textureKey}:`, error);
+                    reject(error);
+                }
+            );
+        });
+    }
+
+    /**
+     * Create fallback texture if original fails to load
+     */
+    createFallbackTexture(textureKey, colorKey) {
+        console.log(`Creating fallback texture for ${textureKey}`);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        // Eye color mapping for fallbacks
+        const eyeColorValues = {
+            'brown': '#8B4513',
+            'blue': '#4A90E2',
+            'green': '#50C878',
+            'grey': '#708090',
+            'lightblue': '#87CEEB',
+            'ice': '#E0FFFF'
+        };
+
+        const eyeColor = eyeColorValues[colorKey] || '#8B4513';
+
+        // Draw realistic eye
+        this.drawRealisticEye(ctx, canvas.width / 2, canvas.height / 2, canvas.width / 2, eyeColor);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.flipY = false;
+        texture.format = THREE.RGBAFormat;
+        texture.encoding = THREE.sRGBEncoding;
+
+        this.loadedTextures.set(textureKey, texture);
+    }
+
+    /**
+     * Draw a realistic eye on canvas
+     */
+    drawRealisticEye(ctx, centerX, centerY, radius, irisColor) {
+        // Clear canvas
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        // Draw sclera (white part)
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Add subtle sclera shading
+        const scleraGradient = ctx.createRadialGradient(
+            centerX, centerY, 0,
+            centerX, centerY, radius * 0.9
+        );
+        scleraGradient.addColorStop(0, '#FFFFFF');
+        scleraGradient.addColorStop(0.7, '#F8F8F8');
+        scleraGradient.addColorStop(1, '#E8E8E8');
+
+        ctx.fillStyle = scleraGradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw iris
+        const irisRadius = radius * 0.4;
+        const irisGradient = ctx.createRadialGradient(
+            centerX, centerY, 0,
+            centerX, centerY, irisRadius
+        );
+        irisGradient.addColorStop(0, this.lightenColor(irisColor, 30));
+        irisGradient.addColorStop(0.3, irisColor);
+        irisGradient.addColorStop(0.7, this.darkenColor(irisColor, 20));
+        irisGradient.addColorStop(1, this.darkenColor(irisColor, 40));
+
+        ctx.fillStyle = irisGradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, irisRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Add iris texture lines
+        ctx.strokeStyle = this.darkenColor(irisColor, 50);
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.3;
+
+        for (let i = 0; i < 20; i++) {
+            const angle = (i / 20) * Math.PI * 2;
+            const startRadius = irisRadius * 0.3;
+            const endRadius = irisRadius * 0.9;
+
+            ctx.beginPath();
+            ctx.moveTo(
+                centerX + Math.cos(angle) * startRadius,
+                centerY + Math.sin(angle) * startRadius
+            );
+            ctx.lineTo(
+                centerX + Math.cos(angle) * endRadius,
+                centerY + Math.sin(angle) * endRadius
+            );
+            ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1;
+
+        // Draw pupil
+        const pupilRadius = radius * 0.15;
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, pupilRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Add specular highlights
+        const highlight1Gradient = ctx.createRadialGradient(
+            centerX - pupilRadius * 0.5, centerY - pupilRadius * 0.5, 0,
+            centerX - pupilRadius * 0.5, centerY - pupilRadius * 0.5, pupilRadius * 2
+        );
+        highlight1Gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        highlight1Gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.fillStyle = highlight1Gradient;
+        ctx.beginPath();
+        ctx.arc(centerX - pupilRadius * 0.5, centerY - pupilRadius * 0.5, pupilRadius * 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Secondary highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.beginPath();
+        ctx.arc(centerX + pupilRadius * 1.5, centerY + pupilRadius, pupilRadius * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    /**
+     * Apply eye texture to avatar model
+     */
+    async applyEyeTextureToAvatar(avatarModel, eyeColor = 'brown', gender = 'female') {
+        if (!avatarModel) {
+            console.warn('No avatar model provided for eye texture application');
+            return false;
+        }
+
+        console.log(`Applying MakeHuman eye texture: ${eyeColor} for ${gender}`);
+
+        this.currentEyeColor = eyeColor;
+        this.currentGender = gender;
+
+        // Get or load the appropriate texture
+        const textureKey = `${gender}_${eyeColor}`;
+        let eyeTexture = this.loadedTextures.get(textureKey);
+
+        if (!eyeTexture) {
+            // Try to load the texture on demand
+            try {
+                const texturePath = this.eyeTextureFiles[gender][eyeColor];
+                if (texturePath) {
+                    await this.loadEyeTexture(textureKey, texturePath);
+                    eyeTexture = this.loadedTextures.get(textureKey);
+                }
+            } catch (error) {
+                console.warn(`Failed to load texture ${textureKey}, creating fallback`);
+                this.createFallbackTexture(textureKey, eyeColor);
+                eyeTexture = this.loadedTextures.get(textureKey);
+            }
+        }
+
+        if (!eyeTexture) {
+            console.warn(`Eye texture for ${textureKey} not available`);
+            return false;
+        }
+
+        let eyesFound = 0;
+
+        // Traverse the avatar model to find eye-related meshes
+        avatarModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+                const name = child.name.toLowerCase();
+                const materialName = child.material.name ? child.material.name.toLowerCase() : '';
+
+                // Check for eye-related mesh names (MakeHuman specific)
+                const isEyeMesh = this.isMakeHumanEyeMesh(name, materialName);
+
+                if (isEyeMesh) {
+                    console.log(`Found MakeHuman eye mesh: ${child.name}, material: ${materialName}`);
+
+                    // Create proper eye material
+                    const eyeMaterial = new THREE.MeshStandardMaterial({
+                        map: eyeTexture,
+                        transparent: false,
+                        alphaTest: 0.1,
+                        side: THREE.FrontSide,
+
+                        // Eye-specific material properties
+                        metalness: 0.1,
+                        roughness: 0.3,
+
+                        // Ensure proper lighting
+                        flatShading: false,
+
+                        // Color adjustments
+                        color: 0xffffff,
+                        emissive: 0x000000,
+
+                        // Encoding
+                        encoding: THREE.sRGBEncoding
+                    });
+
+                    // Apply material
+                    if (Array.isArray(child.material)) {
+                        // Handle multi-material meshes
+                        child.material = child.material.map(mat => {
+                            const matName = mat.name ? mat.name.toLowerCase() : '';
+                            return this.isMakeHumanEyeMesh('', matName) ? eyeMaterial : mat;
+                        });
+                    } else {
+                        child.material = eyeMaterial;
+                    }
+
+                    // Ensure proper geometry
+                    if (child.geometry) {
+                        child.geometry.computeVertexNormals();
+                    }
+
+                    // Enable shadows
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+
+                    eyesFound++;
+                }
+            }
+        });
+
+        if (eyesFound > 0) {
+            console.log(`Successfully applied MakeHuman eye textures to ${eyesFound} mesh(es)`);
+            return true;
+        } else {
+            console.warn('No MakeHuman eye meshes found in avatar model');
+            // Try generic approach
+            return this.applyGenericEyeTexture(avatarModel, eyeTexture);
+        }
+    }
+
+    /**
+     * Check if mesh is a MakeHuman eye mesh
+     */
+    isMakeHumanEyeMesh(meshName, materialName) {
+        const eyeKeywords = [
+            'eye', 'eyes', 'eyeball', 'eyeballs', 'iris', 'pupil', 'sclera',
+            'cornea', 'eye_l', 'eye_r', 'eyeball_l', 'eyeball_r',
+            'lefteye', 'righteye', 'leye', 'reye', 'brown_eye', 'blue_eye',
+            'green_eye', 'grey_eye', 'lightblue_eye', 'ice_eye'
+        ];
+
+        const nameToCheck = (meshName + ' ' + materialName).toLowerCase();
+        return eyeKeywords.some(keyword => nameToCheck.includes(keyword));
+    }
+
+    /**
+     * Generic eye texture application
+     */
+    applyGenericEyeTexture(avatarModel, eyeTexture) {
+        console.log('Trying generic eye texture application...');
+
+        let applied = 0;
+
+        avatarModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+                // Look for materials that might be eyes based on their properties
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+
+                materials.forEach((material, index) => {
+                    if (material && material.map) {
+                        const mapSrc = material.map.image ? material.map.image.src : '';
+
+                        // Check if the material uses an eye texture
+                        if (mapSrc.includes('eye') || mapSrc.includes('brown_eye') || mapSrc.includes('blue_eye')) {
+                            console.log('Found material with eye texture, updating...', child.name);
+
+                            const newMaterial = material.clone();
+                            newMaterial.map = eyeTexture;
+                            newMaterial.needsUpdate = true;
+
+                            if (Array.isArray(child.material)) {
+                                child.material[index] = newMaterial;
+                            } else {
+                                child.material = newMaterial;
+                            }
+
+                            applied++;
+                        }
+                    }
+                });
+            }
+        });
+
+        return applied > 0;
+    }
+
+    /**
+     * Update eye color
+     */
+    async updateEyeColor(eyeColor, gender = null) {
+        if (!this.avatarManager || !this.avatarManager.avatarModel) {
+            console.warn('No avatar model available for eye color update');
+            return false;
+        }
+
+        const genderToUse = gender || this.currentGender || 'female';
+        return await this.applyEyeTextureToAvatar(this.avatarManager.avatarModel, eyeColor, genderToUse);
+    }
+
+    /**
+     * Color utility functions
+     */
+    lightenColor(hex, percent) {
+        const num = parseInt(hex.slice(1), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = (num >> 16) + amt;
+        const G = (num >> 8 & 0x00FF) + amt;
+        const B = (num & 0x0000FF) + amt;
+        return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+            (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+            (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+    }
+
+    darkenColor(hex, percent) {
+        const num = parseInt(hex.slice(1), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = (num >> 16) - amt;
+        const G = (num >> 8 & 0x00FF) - amt;
+        const B = (num & 0x0000FF) - amt;
+        return "#" + (0x1000000 + (R > 255 ? 255 : R < 0 ? 0 : R) * 0x10000 +
+            (G > 255 ? 255 : G < 0 ? 0 : G) * 0x100 +
+            (B > 255 ? 255 : B < 0 ? 0 : B)).toString(16).slice(1);
+    }
+
+    /**
+     * Cleanup
+     */
+    dispose() {
+        this.loadedTextures.forEach(texture => {
+            if (texture.dispose) texture.dispose();
+        });
+        this.loadedTextures.clear();
+        console.log('MakeHuman Eye Texture Loader disposed');
+    }
+}
+
+// Initialize eye texture loader when avatar manager is available
+let makeHumanEyeLoader = null;
+
+function initializeEyeTextureLoader() {
+    const checkForAvatarManager = () => {
+        if (window.avatarManager) {
+            makeHumanEyeLoader = new MakeHumanEyeTextureLoader(window.avatarManager);
+            window.makeHumanEyeLoader = makeHumanEyeLoader;
+            console.log('MakeHuman Eye Texture Loader initialized');
+            return true;
+        }
+        return false;
+    };
+
+    if (!checkForAvatarManager()) {
+        const interval = setInterval(() => {
+            if (checkForAvatarManager()) {
+                clearInterval(interval);
+            }
+        }, 1000);
+
+        setTimeout(() => clearInterval(interval), 15000);
+    }
+}
+
+// Auto-initialize
+setTimeout(initializeEyeTextureLoader, 2000);
+</script>
+
 <script>
 (function() {
     'use strict';
@@ -2265,6 +2715,7 @@ if (typeof THREE === 'undefined') {
         setTimeout(() => initializeSavedOutfitsSystem(), 1500);
         setTimeout(() => initializeSavedAvatarsSystem(), 1700);
         setTimeout(() => initializeDebugInfo(), 1900);
+        setTimeout(() => initializeViewportControls(), 2100);
 
         /* Avatar System */
         function initializeAvatarSystem() {
@@ -3227,6 +3678,11 @@ if (typeof THREE === 'undefined') {
                             }
                         }, 3000);
 
+                        // Auto-fix eye color after avatar loads
+                        setTimeout(() => {
+                            autoFixEyeColor();
+                        }, 4000);
+
                         updateDebugInfo('Saved avatar loaded', 'success');
                         showMessage('Your saved avatar has been loaded!', 'success');
                     } else {
@@ -3256,9 +3712,32 @@ if (typeof THREE === 'undefined') {
                     selectHairStyle(avatarCustomization.hair.type);
                 }, 3000);
 
+                // Auto-fix eye color for default avatar
+                setTimeout(() => {
+                    autoFixEyeColor();
+                }, 4000);
+
             } catch (error) {
                 updateDebugInfo('Failed to load default avatar', 'error');
                 showMessage('Failed to load default avatar: ' + error.message, 'error');
+            }
+        }
+
+        /* Debug Info System */
+        function initializeDebugInfo() {
+            updateDebugInfo('System starting...', 'info');
+
+            setInterval(() => {
+                updateDebugDisplay();
+            }, 2000);
+        }
+
+        function updateDebugInfo(status, type = 'info') {
+            const statusElement = document.getElementById('debug-status');
+            if (statusElement) {
+                statusElement.textContent = status;
+                statusElement.style.color = type === 'error' ? '#e74c3c' :
+                                          type === 'success' ? '#27ae60' : '#333';
             }
         }
 
@@ -3554,19 +4033,47 @@ if (typeof THREE === 'undefined') {
                 });
             });
 
-            // Eye color selection
+            // Eye color selection - updated to use available textures only
             document.querySelectorAll('[data-eye]').forEach(colorOption => {
-                colorOption.addEventListener('click', function() {
+                colorOption.addEventListener('click', async function() {
+                    console.log('👁️ Eye color clicked:', this.dataset.eye);
+
                     document.querySelectorAll('[data-eye]').forEach(opt => opt.classList.remove('selected'));
                     this.classList.add('selected');
 
                     const eyeColor = this.dataset.eye;
                     avatarCustomization.eyes = eyeColor;
 
-                    if (avatarManager && avatarManager.updateEyeColor) {
-                        avatarManager.updateEyeColor(eyeColor);
-                        showMessage(`Eye color changed to ${eyeColor}`, 'success');
+                    // Apply eye color using the texture loader
+                    let success = false;
+
+                    if (window.makeHumanEyeLoader) {
+                        try {
+                            success = await window.makeHumanEyeLoader.updateEyeColor(eyeColor, avatarCustomization.gender);
+                            console.log('✅ Eye texture loader successful');
+                        } catch (error) {
+                            console.warn('⚠️ Eye texture loader failed:', error);
+                        }
                     }
+
+                    // Fallback to avatar manager if available
+                    if (!success && avatarManager && avatarManager.updateEyeColor) {
+                        try {
+                            await avatarManager.updateEyeColor(eyeColor);
+                            success = true;
+                            console.log('✅ Avatar manager eye color successful');
+                        } catch (error) {
+                            console.warn('⚠️ Avatar manager eye color failed:', error);
+                        }
+                    }
+
+                    if (success) {
+                        showMessage(`Eye color changed to ${eyeColor}`, 'success');
+                    } else {
+                        showMessage('Failed to change eye color', 'error');
+                        console.error('❌ All eye color methods failed');
+                    }
+
                     updateDebugDisplay();
                 });
             });
@@ -3679,7 +4186,7 @@ if (typeof THREE === 'undefined') {
             });
         }
 
-        // Gender change handler - UPDATED for male support
+        // Gender change handler
         async function handleGenderChange(gender) {
             if (avatarManager && avatarManager.updateGender) {
                 if (avatarManager.isAvatarLoading && avatarManager.isAvatarLoading()) {
@@ -4134,28 +4641,30 @@ if (typeof THREE === 'undefined') {
         };
 
         /* 3D Viewport Controls */
-        document.getElementById('rotate-left-btn')?.addEventListener('click', function() {
-            if (avatarManager && avatarManager.controls) {
-                avatarManager.controls.rotateLeft(Math.PI/8);
-            }
-        });
+        function initializeViewportControls() {
+            document.getElementById('rotate-left-btn')?.addEventListener('click', function() {
+                if (avatarManager && avatarManager.controls) {
+                    avatarManager.controls.rotateLeft(Math.PI/8);
+                }
+            });
 
-        document.getElementById('rotate-right-btn')?.addEventListener('click', function() {
-            if (avatarManager && avatarManager.controls) {
-                avatarManager.controls.rotateLeft(-Math.PI/8);
-            }
-        });
+            document.getElementById('rotate-right-btn')?.addEventListener('click', function() {
+                if (avatarManager && avatarManager.controls) {
+                    avatarManager.controls.rotateLeft(-Math.PI/8);
+                }
+            });
 
-        document.getElementById('fullscreen-btn')?.addEventListener('click', function() {
-            const container = document.getElementById('avatar-container');
-            if (!document.fullscreenElement) {
-                container.requestFullscreen();
-                showMessage('Entered fullscreen mode', 'info');
-            } else {
-                document.exitFullscreen();
-                showMessage('Exited fullscreen mode', 'info');
-            }
-        });
+            document.getElementById('fullscreen-btn')?.addEventListener('click', function() {
+                const container = document.getElementById('avatar-container');
+                if (!document.fullscreenElement) {
+                    container.requestFullscreen();
+                    showMessage('Entered fullscreen mode', 'info');
+                } else {
+                    document.exitFullscreen();
+                    showMessage('Exited fullscreen mode', 'info');
+                }
+            });
+        }
 
         /* UI Update Functions */
         function updateActiveOutfitList() {
@@ -4293,24 +4802,6 @@ if (typeof THREE === 'undefined') {
             });
         }
 
-        /* Debug Info System */
-        function initializeDebugInfo() {
-            updateDebugInfo('System starting...', 'info');
-
-            setInterval(() => {
-                updateDebugDisplay();
-            }, 2000);
-        }
-
-        function updateDebugInfo(status, type = 'info') {
-            const statusElement = document.getElementById('debug-status');
-            if (statusElement) {
-                statusElement.textContent = status;
-                statusElement.style.color = type === 'error' ? '#e74c3c' :
-                                          type === 'success' ? '#27ae60' : '#333';
-            }
-        }
-
         function updateDebugDisplay() {
             const modelElement = document.getElementById('debug-model');
             if (modelElement && avatarManager && avatarManager.avatarModel) {
@@ -4346,6 +4837,18 @@ if (typeof THREE === 'undefined') {
                     avatarManager.getAvatarPath(avatarCustomization) :
                     `/static/models/makehuman/bodies/${avatarCustomization.gender}/${avatarCustomization.body.bodySize}_${avatarCustomization.body.height}.glb`;
                 pathElement.textContent = currentPath;
+            }
+        }
+
+        // Auto-fix eye color on avatar load
+        function autoFixEyeColor() {
+            if (avatarManager && avatarManager.avatarModel && avatarCustomization.eyes) {
+                console.log('🔧 Auto-fixing eye color on avatar load...');
+                setTimeout(() => {
+                    if (window.makeHumanEyeLoader) {
+                        window.makeHumanEyeLoader.updateEyeColor(avatarCustomization.eyes, avatarCustomization.gender);
+                    }
+                }, 2000);
             }
         }
 
