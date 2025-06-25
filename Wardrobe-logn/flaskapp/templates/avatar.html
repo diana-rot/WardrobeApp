@@ -776,7 +776,7 @@
         background: #c3e6cb;
     }
 
-    /* Saved Outfits Grid */
+    /* Saved Outfits Grid - SIMPLIFIED VERSION */
     .saved-outfits-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -793,10 +793,9 @@
         transition: all 0.3s ease;
         background: #fff;
         position: relative;
-        display: grid;
-        grid-template-columns: 120px 1fr;
-        gap: 15px;
-        align-items: start;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
 
     .saved-outfit-item:hover {
@@ -830,115 +829,11 @@
         z-index: 2;
     }
 
-    /* Preview Section CSS */
-    .outfit-preview-section {
-        position: relative;
-        width: 120px;
-        height: 120px;
-    }
-
-    .outfit-snapshot {
-        width: 100%;
-        height: 100%;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #f8f9fa;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        position: relative;
-        border: 2px solid #e9ecef;
-        transition: all 0.3s ease;
-    }
-
-    .outfit-snapshot:hover {
-        border-color: #c9ada7;
-        transform: scale(1.02);
-    }
-
-    .outfit-snapshot img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 6px;
-    }
-
-    .outfit-snapshot-overlay {
-        position: absolute;
-        bottom: 5px;
-        right: 5px;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 500;
-    }
-
-    .outfit-snapshot-placeholder {
-        text-align: center;
-        color: #6c757d;
-        font-size: 11px;
-        padding: 10px;
-        background: #f8f9fa;
-        border-radius: 6px;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .outfit-snapshot-placeholder i {
-        font-size: 24px;
-        margin-bottom: 8px;
-        opacity: 0.5;
-    }
-
-    .generate-snapshot-btn {
-        position: absolute;
-        bottom: 5px;
-        left: 5px;
-        background: #c9ada7;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 4px 8px;
-        font-size: 10px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        z-index: 3;
-    }
-
-    .generate-snapshot-btn:hover {
-        background: #b8998a;
-        transform: translateY(-1px);
-    }
-
-    .generate-snapshot-btn.loading {
-        background: #95a5a6;
-        cursor: not-allowed;
-    }
-
-    .generate-snapshot-btn i {
-        margin-right: 4px;
-    }
-
-    /* Details Section */
-    .outfit-details-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-
+    /* Outfit Header */
     .outfit-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 10px;
     }
 
     .outfit-name {
@@ -946,7 +841,7 @@
         font-weight: 600;
         color: #2c3e50;
         margin: 0;
-        max-width: 200px;
+        flex: 1;
         word-wrap: break-word;
     }
 
@@ -954,17 +849,19 @@
         font-size: 11px;
         color: #6c757d;
         white-space: nowrap;
+        margin-left: 10px;
     }
 
+    /* Outfit Items Preview - Only Small Thumbnails */
     .outfit-items-preview {
-        margin: 10px 0;
-        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
     }
 
     .outfit-items-count {
         font-size: 12px;
         color: #495057;
-        margin-bottom: 8px;
         display: flex;
         align-items: center;
         gap: 5px;
@@ -995,6 +892,7 @@
         font-size: 10px;
         color: #6c757d;
         position: relative;
+        flex-shrink: 0;
     }
 
     .outfit-thumbnail img {
@@ -1016,16 +914,18 @@
         border-radius: 2px;
         opacity: 0;
         transition: opacity 0.3s ease;
+        z-index: 10;
     }
 
     .outfit-thumbnail:hover .outfit-thumbnail-name {
         opacity: 1;
     }
 
+    /* Outfit Actions */
     .outfit-actions {
         display: flex;
         gap: 8px;
-        margin-top: 12px;
+        margin-top: 10px;
     }
 
     .outfit-action-btn {
@@ -1070,59 +970,6 @@
 
     .outfit-action-btn.delete:hover {
         background: #ffcdd2;
-    }
-
-    /* Preview Modal CSS */
-    .outfit-preview-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.8);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        padding: 20px;
-    }
-
-    .outfit-preview-modal.show {
-        display: flex;
-    }
-
-    .outfit-preview-modal-content {
-        background: white;
-        border-radius: 12px;
-        padding: 30px;
-        max-width: 90vw;
-        max-height: 90vh;
-        overflow-y: auto;
-        position: relative;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-
-    .outfit-preview-modal-close {
-        position: absolute;
-        top: 15px;
-        right: 20px;
-        background: none;
-        border: none;
-        font-size: 30px;
-        cursor: pointer;
-        color: #666;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: all 0.3s ease;
-    }
-
-    .outfit-preview-modal-close:hover {
-        background: #f8f9fa;
-        color: #333;
     }
 
     /* Outfit Save Section */
@@ -1562,16 +1409,6 @@
 
         .tab-button i {
             margin-right: 4px;
-        }
-
-        .saved-outfit-item {
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-
-        .outfit-preview-section {
-            width: 100%;
-            height: 100px;
         }
     }
 
@@ -2076,14 +1913,6 @@
                 <i class="bi bi-fullscreen"></i>
             </button>
         </div>
-    </div>
-</div>
-
-<!-- Preview Modal -->
-<div id="outfit-preview-modal" class="outfit-preview-modal">
-    <div class="outfit-preview-modal-content">
-        <button class="outfit-preview-modal-close" onclick="hidePreviewModal()">&times;</button>
-        <div id="outfit-preview-modal-body"></div>
     </div>
 </div>
 
@@ -2985,9 +2814,6 @@ setTimeout(initializeEyeTextureLoader, 2000);
             try {
                 showLoading('Saving 3D outfit...');
 
-                // Generate outfit snapshot
-                const snapshotData = await generateOutfitSnapshot();
-
                 const outfitData = {
                     name: outfitName,
                     items: currentItems.map(item => item.id),
@@ -2999,9 +2825,7 @@ setTimeout(initializeEyeTextureLoader, 2000);
                     createdAt: new Date().toISOString(),
                     // Store positioning data
                     clothingPositions: Object.fromEntries(clothingPositions),
-                    clothingScales: Object.fromEntries(clothingScales),
-                    // Store snapshot data
-                    snapshot: snapshotData
+                    clothingScales: Object.fromEntries(clothingScales)
                 };
 
                 const response = await fetch('/api/outfits/save', {
@@ -3036,111 +2860,6 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 showMessage(`Failed to save outfit: ${error.message}`, 'error');
             } finally {
                 hideLoading();
-            }
-        }
-
-        async function generateOutfitSnapshot() {
-            if (!avatarManager || !avatarManager.renderer) {
-                return null;
-            }
-
-            try {
-                const renderer = avatarManager.renderer;
-                const scene = avatarManager.scene;
-                const camera = avatarManager.camera;
-
-                if (!renderer || !scene || !camera) {
-                    throw new Error('3D components not available');
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                for (let i = 0; i < 5; i++) {
-                    renderer.render(scene, camera);
-                    await new Promise(resolve => requestAnimationFrame(resolve));
-                }
-
-                const canvas = renderer.domElement;
-
-                if (canvas.width === 0 || canvas.height === 0) {
-                    throw new Error('Canvas has no dimensions');
-                }
-
-                const dataURL = canvas.toDataURL('image/jpeg', 0.8);
-
-                if (!dataURL || dataURL.length < 1000) {
-                    throw new Error('Generated image data is too small or empty');
-                }
-
-                return {
-                    dataURL: dataURL,
-                    timestamp: new Date().toISOString(),
-                    width: canvas.width,
-                    height: canvas.height
-                };
-
-            } catch (error) {
-                return null;
-            }
-        }
-
-        async function generateSnapshotForOutfit(outfitId) {
-            const outfit = savedOutfits.find(o => o._id === outfitId);
-            if (!outfit) {
-                showMessage('Outfit not found', 'error');
-                return;
-            }
-
-            // Find the generate button and show loading state
-            const generateBtn = document.querySelector(`[data-outfit-id="${outfitId}"] .generate-snapshot-btn`);
-            if (generateBtn) {
-                generateBtn.textContent = 'Generating...';
-                generateBtn.classList.add('loading');
-                generateBtn.disabled = true;
-            }
-
-            try {
-                // Load the outfit first
-                await loadSavedOutfit(outfitId);
-
-                // Wait a moment for rendering to complete
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                // Generate snapshot
-                const snapshotData = await generateOutfitSnapshot();
-
-                if (snapshotData) {
-                    // Update the outfit with the new snapshot
-                    const response = await fetch(`/api/outfits/update-snapshot/${outfitId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ snapshot: snapshotData })
-                    });
-
-                    if (response.ok) {
-                        // Update local data
-                        outfit.snapshot = snapshotData;
-
-                        // Re-render the outfit item
-                        renderSavedOutfits(savedOutfits);
-
-                        showMessage('Snapshot generated successfully!', 'success');
-                    } else {
-                        throw new Error('Failed to save snapshot');
-                    }
-                } else {
-                    throw new Error('Failed to generate snapshot');
-                }
-
-            } catch (error) {
-                showMessage('Failed to generate snapshot', 'error');
-            } finally {
-                // Reset button state
-                if (generateBtn) {
-                    generateBtn.textContent = 'Generate';
-                    generateBtn.classList.remove('loading');
-                    generateBtn.disabled = false;
-                }
             }
         }
 
@@ -3191,64 +2910,33 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 html += `
                     <div class="saved-outfit-item ${isActive ? 'active' : ''}" data-outfit-id="${outfit._id}">
 
-                        <!-- Preview Section with Snapshot -->
-                        <div class="outfit-preview-section">
-                            <div class="outfit-snapshot" onclick="showPreviewModal('${outfit._id}')">
-                                ${outfit.snapshot && outfit.snapshot.dataURL ? `
-                                    <img src="${outfit.snapshot.dataURL}" alt="Outfit Preview" title="Click to view larger">
-                                    <div class="outfit-snapshot-overlay">
-                                        ${itemCount} item${itemCount !== 1 ? 's' : ''}
-                                    </div>
-                                ` : `
-                                    <div class="outfit-snapshot-placeholder">
-                                        <i class="bi bi-camera"></i>
-                                        No Preview<br>Available
-                                    </div>
-                                `}
-                            </div>
-
-                            ${!outfit.snapshot || !outfit.snapshot.dataURL ? `
-                                <button class="generate-snapshot-btn"
-                                        onclick="generateSnapshotForOutfit('${outfit._id}')"
-                                        title="Generate outfit preview">
-                                    <i class="bi bi-camera"></i> Generate
-                                </button>
-                            ` : `
-                                <button class="generate-snapshot-btn"
-                                        onclick="generateSnapshotForOutfit('${outfit._id}')"
-                                        title="Update outfit preview">
-                                    <i class="bi bi-arrow-clockwise"></i> Update
-                                </button>
-                            `}
+                        <!-- Outfit Header -->
+                        <div class="outfit-header">
+                            <h5 class="outfit-name">${outfit.name}</h5>
+                            <span class="outfit-date">${createdDate}</span>
                         </div>
 
-                        <!-- Details Section -->
-                        <div class="outfit-details-section">
-                            <div class="outfit-header">
-                                <h5 class="outfit-name">${outfit.name}</h5>
-                                <span class="outfit-date">${createdDate}</span>
+                        <!-- Outfit Items Preview - Only Small Thumbnails -->
+                        <div class="outfit-items-preview">
+                            <div class="outfit-items-count">
+                                <i class="bi bi-palette"></i>
+                                <span>${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
+                                ${outfit.outfitType === '3d' ? '<span style="color: #3498db;">(3D)</span>' : ''}
                             </div>
 
-                            <div class="outfit-items-preview">
-                                <div class="outfit-items-count">
-                                    <i class="bi bi-palette"></i>
-                                    <span>${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
-                                    ${outfit.outfitType === '3d' ? '<span style="color: #3498db;">(3D)</span>' : ''}
-                                </div>
-
-                                <div class="outfit-thumbnails">
-                                    ${generateOutfitThumbnails(outfit)}
-                                </div>
+                            <div class="outfit-thumbnails">
+                                ${generateOutfitThumbnails(outfit)}
                             </div>
+                        </div>
 
-                            <div class="outfit-actions">
-                                <button class="outfit-action-btn load" data-action="load" data-outfit-id="${outfit._id}">
-                                    <i class="bi bi-play-circle"></i> Load
-                                </button>
-                                <button class="outfit-action-btn delete" data-action="delete" data-outfit-id="${outfit._id}">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
-                            </div>
+                        <!-- Outfit Actions -->
+                        <div class="outfit-actions">
+                            <button class="outfit-action-btn load" data-action="load" data-outfit-id="${outfit._id}">
+                                <i class="bi bi-play-circle"></i> Load
+                            </button>
+                            <button class="outfit-action-btn delete" data-action="delete" data-outfit-id="${outfit._id}">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
                         </div>
                     </div>
                 `;
@@ -3271,13 +2959,11 @@ setTimeout(initializeEyeTextureLoader, 2000);
                 });
             });
 
-            // Add click listeners for outfit cards (excluding buttons and preview actions)
+            // Add click listeners for outfit cards (excluding buttons)
             container.querySelectorAll('.saved-outfit-item').forEach(item => {
                 item.addEventListener('click', function(e) {
-                    // Don't trigger if clicking on buttons or preview elements
-                    if (e.target.closest('.outfit-action-btn') ||
-                        e.target.closest('.generate-snapshot-btn') ||
-                        e.target.closest('.outfit-snapshot')) {
+                    // Don't trigger if clicking on buttons
+                    if (e.target.closest('.outfit-action-btn')) {
                         return;
                     }
 
@@ -3316,73 +3002,6 @@ setTimeout(initializeEyeTextureLoader, 2000);
 
             return thumbnailsHtml;
         }
-
-        /* Preview Modal Functions */
-        function showPreviewModal(outfitId) {
-            const outfit = savedOutfits.find(o => o._id === outfitId);
-            if (!outfit || !outfit.snapshot || !outfit.snapshot.dataURL) {
-                showMessage('No preview available for this outfit', 'info');
-                return;
-            }
-
-            // Create modal if it doesn't exist
-            let modal = document.getElementById('outfit-preview-modal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'outfit-preview-modal';
-                modal.className = 'outfit-preview-modal';
-                modal.innerHTML = `
-                    <div class="outfit-preview-modal-content">
-                        <button class="outfit-preview-modal-close" onclick="hidePreviewModal()">&times;</button>
-                        <div id="outfit-preview-modal-body"></div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-
-                // Close on outside click
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        hidePreviewModal();
-                    }
-                });
-            }
-
-            // Update modal content
-            const modalBody = document.getElementById('outfit-preview-modal-body');
-            const createdDate = new Date(outfit.created_at || outfit.createdAt).toLocaleDateString();
-
-            modalBody.innerHTML = `
-                <h3 style="margin-top: 0; color: #2c3e50;">${outfit.name}</h3>
-                <p style="color: #6c757d; margin-bottom: 20px;">
-                    Created: ${createdDate} • ${outfit.itemCount || 0} items • 3D Outfit
-                </p>
-                <div style="text-align: center;">
-                    <img src="${outfit.snapshot.dataURL}"
-                         alt="Outfit Preview"
-                         style="max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                </div>
-                <div style="margin-top: 20px; text-align: center;">
-                    <button class="btn btn-primary" onclick="loadSavedOutfit('${outfitId}'); hidePreviewModal();">
-                        <i class="bi bi-play-circle"></i> Load This Outfit
-                    </button>
-                </div>
-            `;
-
-            // Show modal
-            modal.classList.add('show');
-        }
-
-        function hidePreviewModal() {
-            const modal = document.getElementById('outfit-preview-modal');
-            if (modal) {
-                modal.classList.remove('show');
-            }
-        }
-
-        // Make functions globally available
-        window.generateSnapshotForOutfit = generateSnapshotForOutfit;
-        window.showPreviewModal = showPreviewModal;
-        window.hidePreviewModal = hidePreviewModal;
 
         async function loadSavedOutfit(outfitId) {
             if (!clothingRenderer) {
